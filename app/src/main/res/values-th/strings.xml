@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">เพิ่มรายการธุรกรรม</string>
     <string name="add_subscription">เพิ่มการสมัครสมาชิก</string>
     <string name="add_transfer">เพิ่มการโอน</string>
@@ -281,7 +281,7 @@
     <string name="share">แชร์</string>
     <string name="retry">ลองอีกครั้ง</string>
     <string name="share_csv">แชร์ CSV</string>
-    <string name="csv_export_subject">ส่งออกธุรกรรม Cashiro</string>
+    <string name="csv_export_subject">ส่งออกธุรกรรม Hootbook</string>
     <string name="edit_transaction">แก้ไขธุรกรรม</string>
     <string name="transaction_details">รายละเอียดธุรกรรม</string>
     <string name="delete_transaction">ลบธุรกรรม</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">ไม่มีธุรกรรมที่ตรงกับ "%1$s"</string>
     <string name="no_transactions_for_format">ไม่มีธุรกรรมสำหรับ %1$s</string>
     <string name="about">เกี่ยวกับ</string>
-    <string name="cashiro_logo_cd">โลโก้ Cashiro</string>
+    <string name="hootbook_logo_cd">โลโก้ Hootbook</string>
     <string name="version_format">เวอร์ชัน %1$s, db-v%2$d</string>
     <string name="website">เว็บไซต์</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">คำถามที่พบบ่อย</string>
     <string name="faq_desc">คำถามที่ถามบ่อย</string>
     <string name="guides">คู่มือ</string>
-    <string name="guides_desc">วิธีการใช้ Cashiro</string>
+    <string name="guides_desc">วิธีการใช้ Hootbook</string>
     <string name="report_bug">รายงานข้อบกพร่อง</string>
-    <string name="report_bug_desc">ช่วยเราปรับปรุง Cashiro</string>
+    <string name="report_bug_desc">ช่วยเราปรับปรุง Hootbook</string>
     <string name="privacy_policy">นโยบายความเป็นส่วนตัว</string>
     <string name="privacy_policy_desc">การใช้ข้อมูลและความเป็นส่วนตัวของคุณ</string>
     <string name="terms_of_service">ข้อกำหนดในการให้บริการ</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">เพิ่มธุรกรรมหรือการสมัครสมาชิก</string>
     <string name="selected_cd">ที่เลือก</string>
     <string name="net_worth_label">มูลค่าสุทธิ</string>
-    <string name="app_locked_title">Cashiro ถูกล็อก</string>
+    <string name="app_locked_title">Hootbook ถูกล็อก</string>
     <string name="authenticate_desc">ตรวจสอบตัวตนเพื่อเข้าถึงข้อมูลค่าใช้จ่ายของคุณ</string>
     <string name="unlock">ปลดล็อก</string>
     <string name="biometric_unavailable_title">การตรวจสอบทางชีวมิติไม่สามารถใช้งานได้</string>

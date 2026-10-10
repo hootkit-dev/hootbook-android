@@ -54,12 +54,12 @@ env:
   DEFAULT_DEVICE: blazer-36
   # Measuring order of the two builds; compare.py maps test indexes back with it.
   ORDER: base+candidate+candidate+base
-  TEST_CLASS: com.ritesh.cashiro.benchmark.ScreenBenchmark
+  TEST_CLASS: io.github.hootkit_dev.hootbook.benchmark.ScreenBenchmark
   # Where Macrobenchmark writes its results by default: the media directory of the test APK
   # (it instruments itself), which the shell can read and so pull. Device Run hands test
   # options to `am instrument` only as -e arguments, so the no-isolated-storage switch that
   # let Test Lab runs write to /sdcard/Download is not available.
-  OUTPUT_DIR: /sdcard/Android/media/com.ritesh.cashiro.benchmark.tests
+  OUTPUT_DIR: /sdcard/Android/media/io.github.hootkit_dev.hootbook.benchmark.tests
   # BuildConfig carries the commit SHA and count (app/build.gradle.kts). Fixed values here
   # keep it identical across commits, so Gradle's build cache can reuse the app's
   # compilation and R8 output when only other files changed.
@@ -329,7 +329,7 @@ jobs:
           if [ -z "$PR" ]; then echo "No open pull request for $BRANCH"; exit 0; fi
           # One comment per pull request, updated by every run.
           ID=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
-            --jq '.[] | select(.body | startswith("<!-- cashiro-perf -->")) | .id' | tail -n 1)
+            --jq '.[] | select(.body | startswith("<!-- hootbook-perf -->")) | .id' | tail -n 1)
           if [ -n "$ID" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$ID" -F body=@report.md > /dev/null
           else
@@ -408,7 +408,7 @@ jobs:
             --device "$DEFAULT_DEVICE" \
             --test apks/tests.apk \
             --apps apks/app.apk \
-            --test-targets "class=com.ritesh.cashiro.benchmark.BaselineProfileGenerator" \
+            --test-targets "class=io.github.hootkit_dev.hootbook.benchmark.BaselineProfileGenerator" \
             --paths-to-pull "$OUTPUT_DIR" \
             --instrumentation-timeout 40m \
             2>&1 | tee device-run.txt
@@ -436,7 +436,7 @@ jobs:
           cp "$RAW" profile/raw-prof.txt
           # Drop the benchmark-only classes, and rename Kotlin internal members' module
           # suffix from the profiling build to the standard release build.
-          grep -v 'com/ritesh/cashiro/benchmark/\|SeedActivity' "$RAW" \
+          grep -v 'io/github/hootkit_dev/hootbook/benchmark/\|SeedActivity' "$RAW" \
             | sed 's/\$app_standardProfiling/$app_standardRelease/g' > profile/baseline-prof.txt
           echo "### Baseline Profile: $(wc -l < profile/baseline-prof.txt) rules" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4

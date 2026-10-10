@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Добавить транзакцию</string>
     <string name="add_subscription">Добавить подписку</string>
     <string name="add_transfer">Добавить перевод</string>
@@ -281,7 +281,7 @@
     <string name="share">Поделиться</string>
     <string name="retry">Повторить попытку</string>
     <string name="share_csv">Поделиться CSV</string>
-    <string name="csv_export_subject">Экспорт транзакций Cashiro</string>
+    <string name="csv_export_subject">Экспорт транзакций Hootbook</string>
     <string name="edit_transaction">Редактировать транзакцию</string>
     <string name="transaction_details">Детали транзакции</string>
     <string name="delete_transaction">Удалить транзакцию</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Нет транзакций, соответствующих "%1$s"</string>
     <string name="no_transactions_for_format">Нет транзакций для %1$s</string>
     <string name="about">О приложении</string>
-    <string name="cashiro_logo_cd">Логотип Cashiro</string>
+    <string name="hootbook_logo_cd">Логотип Hootbook</string>
     <string name="version_format">Версия %1$s, db-v%2$d</string>
     <string name="website">Веб-сайт</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">ЧАВО</string>
     <string name="faq_desc">Часто задаваемые вопросы</string>
     <string name="guides">Руководства</string>
-    <string name="guides_desc">Как использовать Cashiro</string>
+    <string name="guides_desc">Как использовать Hootbook</string>
     <string name="report_bug">Сообщить об ошибке</string>
-    <string name="report_bug_desc">Помогите нам улучшить Cashiro</string>
+    <string name="report_bug_desc">Помогите нам улучшить Hootbook</string>
     <string name="privacy_policy">Политика конфиденциальности</string>
     <string name="privacy_policy_desc">Использование и защита ваших данных</string>
     <string name="terms_of_service">Условия обслуживания</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Добавить транзакцию или подписку</string>
     <string name="selected_cd">Выбрано</string>
     <string name="net_worth_label">Чистая стоимость</string>
-    <string name="app_locked_title">Cashiro заблокирован</string>
+    <string name="app_locked_title">Hootbook заблокирован</string>
     <string name="authenticate_desc">Аутентифицируйтесь, чтобы получить доступ к данным о расходах</string>
     <string name="unlock">Разблокировать</string>
     <string name="biometric_unavailable_title">Биометрическая аутентификация недоступна</string>

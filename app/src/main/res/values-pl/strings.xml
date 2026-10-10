@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Dodaj transakcję</string>
     <string name="add_subscription">Dodaj subskrypcję</string>
     <string name="add_transfer">Dodaj przelew</string>
@@ -281,7 +281,7 @@
     <string name="share">Udostępnij</string>
     <string name="retry">Ponów próbę</string>
     <string name="share_csv">Udostępnij CSV</string>
-    <string name="csv_export_subject">Eksport transakcji Cashiro</string>
+    <string name="csv_export_subject">Eksport transakcji Hootbook</string>
     <string name="edit_transaction">Edytuj transakcję</string>
     <string name="transaction_details">Szczegóły transakcji</string>
     <string name="delete_transaction">Usuń transakcję</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Brak transakcji pasujących do \"%1$s\"</string>
     <string name="no_transactions_for_format">Brak transakcji dla %1$s</string>
     <string name="about">O programie</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Wersja %1$s, db-v%2$d</string>
     <string name="website">Strona internetowa</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Często zadawane pytania</string>
     <string name="faq_desc">Często zadawane pytania</string>
     <string name="guides">Przewodniki</string>
-    <string name="guides_desc">Jak stosować lek Cashiro</string>
+    <string name="guides_desc">Jak stosować lek Hootbook</string>
     <string name="report_bug">Zgłoś błąd</string>
-    <string name="report_bug_desc">Pomóż nam ulepszyć Cashiro</string>
+    <string name="report_bug_desc">Pomóż nam ulepszyć Hootbook</string>
     <string name="privacy_policy">Polityka prywatności</string>
     <string name="privacy_policy_desc">Wykorzystanie danych i prywatność</string>
     <string name="terms_of_service">Warunki korzystania z usługi</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Dodaj transakcję lub subskrypcję</string>
     <string name="selected_cd">Wybrane</string>
     <string name="net_worth_label">Wartość netto</string>
-    <string name="app_locked_title">Cashiro jest zablokowany</string>
+    <string name="app_locked_title">Hootbook jest zablokowany</string>
     <string name="authenticate_desc">Zaloguj się, aby uzyskać dostęp do danych wydatków</string>
     <string name="unlock">Odblokuj</string>
     <string name="biometric_unavailable_title">Uwierzytelnianie biometryczne niedostępne</string>

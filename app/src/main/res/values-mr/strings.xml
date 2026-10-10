@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">कामकाज जोडा</string>
     <string name="add_subscription">सदस्यता जोडा</string>
     <string name="add_transfer">स्थानांतरण जोडा</string>
@@ -281,7 +281,7 @@
     <string name="share">सामायिक करा</string>
     <string name="retry">पुन्हा प्रयत्न करा</string>
     <string name="share_csv">CSV सामायिक करा</string>
-    <string name="csv_export_subject">Cashiro व्यवहार निर्यात</string>
+    <string name="csv_export_subject">Hootbook व्यवहार निर्यात</string>
     <string name="edit_transaction">व्यवहार संपादित करा</string>
     <string name="transaction_details">व्यवहार तपशील</string>
     <string name="delete_transaction">व्यवहार हटवा</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" शी जुळणार्‍या कोणत्याही व्यवहार नाहीत</string>
     <string name="no_transactions_for_format">%1$s साठी कोणतेही व्यवहार नाहीत</string>
     <string name="about">बद्दल</string>
-    <string name="cashiro_logo_cd">Cashiro लोगो</string>
+    <string name="hootbook_logo_cd">Hootbook लोगो</string>
     <string name="version_format">आवृत्ती %1$s, db-v%2$d</string>
     <string name="website">वेबसाइट</string>
     <string name="github">GitHub</string>
@@ -344,9 +344,9 @@
     <string name="faq">वारंवार विचारले जाणारे प्रश्न</string>
     <string name="faq_desc">वारंवार विचारले जाणारे प्रश्न</string>
     <string name="guides">मार्गदर्शक</string>
-    <string name="guides_desc">Cashiro कसे वापरायचे</string>
+    <string name="guides_desc">Hootbook कसे वापरायचे</string>
     <string name="report_bug">बग रिपोर्ट करा</string>
-    <string name="report_bug_desc">Cashiro सुधारण्यात आम्हाला मदत करा</string>
+    <string name="report_bug_desc">Hootbook सुधारण्यात आम्हाला मदत करा</string>
     <string name="privacy_policy">गोपनीयता धोरण</string>
     <string name="privacy_policy_desc">आपल्या डेटाचा वापर आणि गोपनीयता</string>
     <string name="terms_of_service">सेवा अटी</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">व्यवहार किंवा सदस्यता जोडा</string>
     <string name="selected_cd">निवडलेले</string>
     <string name="net_worth_label">एकूण संपत्ती</string>
-    <string name="app_locked_title">Cashiro अनलॉक केलेले नाही</string>
+    <string name="app_locked_title">Hootbook अनलॉक केलेले नाही</string>
     <string name="authenticate_desc">आपला खर्च डेटा पाहण्यासाठी प्रमाणीकरण करा</string>
     <string name="unlock">अनलॉक करा</string>
     <string name="biometric_unavailable_title">बायोमेट्रिक प्रमाणीकरण उपलब्ध नाही</string>

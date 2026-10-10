@@ -108,17 +108,17 @@ jobs:
           shopt -s nullglob
           staged=0
           if [[ -f "$SRC/app-standard-universal-preview.apk" ]]; then
-            cp "$SRC/app-standard-universal-preview.apk" "$OUT/Cashiro-testing-c${COUNT}-${SHA}-universal.apk"
+            cp "$SRC/app-standard-universal-preview.apk" "$OUT/Hootbook-testing-c${COUNT}-${SHA}-universal.apk"
             staged=1
           fi
           for arch in armeabi-v7a arm64-v8a x86 x86_64; do
             if [[ -f "$SRC/app-standard-${arch}-preview.apk" ]]; then
-              cp "$SRC/app-standard-${arch}-preview.apk" "$OUT/Cashiro-testing-c${COUNT}-${SHA}-${arch}.apk"
+              cp "$SRC/app-standard-${arch}-preview.apk" "$OUT/Hootbook-testing-c${COUNT}-${SHA}-${arch}.apk"
               staged=1
             fi
           done
           if [[ "$staged" -eq 0 && -f "$SRC/app-standard-preview.apk" ]]; then
-            cp "$SRC/app-standard-preview.apk" "$OUT/Cashiro-testing-c${COUNT}-${SHA}-universal.apk"
+            cp "$SRC/app-standard-preview.apk" "$OUT/Hootbook-testing-c${COUNT}-${SHA}-universal.apk"
             staged=1
           fi
           if [[ "$staged" -eq 0 ]]; then
@@ -139,7 +139,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cashiro-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}
+          name: hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}
           path: |
             dist/testing/*.apk
             dist/testing/SHA256SUMS
@@ -174,8 +174,8 @@ jobs:
 
             - Version: ${{ steps.version.outputs.version }}-testing (${{ steps.version.outputs.commit_count }})
             - Commit count: ${{ steps.version.outputs.commit_count }}
-            - Package: `com.ritesh.cashiro`, same signing key as release
+            - Package: `io.github.hootkit_dev.hootbook`, same signing key as release
             - Minified release-class APK; not a debug build
             - Install over an existing release or testing install of this package
 
-            Install `Cashiro-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-arm64-v8a.apk` (or the universal APK).
+            Install `Hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-arm64-v8a.apk` (or the universal APK).

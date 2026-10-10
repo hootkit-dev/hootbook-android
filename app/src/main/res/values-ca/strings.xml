@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Afegir transacció</string>
     <string name="add_subscription">Afegir subscripció</string>
     <string name="add_transfer">Afegir transferència</string>
@@ -281,7 +281,7 @@
     <string name="share">Comparteix</string>
     <string name="retry">Torna-ho a provar</string>
     <string name="share_csv">Comparteix CSV</string>
-    <string name="csv_export_subject">Exportació de transaccions de Cashiro</string>
+    <string name="csv_export_subject">Exportació de transaccions de Hootbook</string>
     <string name="edit_transaction">Editar transacció</string>
     <string name="transaction_details">Detalls de la transacció</string>
     <string name="delete_transaction">Eliminar transacció</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Cap transacció coincideix amb "%1$s"</string>
     <string name="no_transactions_for_format">Cap transacció per a %1$s</string>
     <string name="about">Quant a</string>
-    <string name="cashiro_logo_cd">Logotip de Cashiro</string>
+    <string name="hootbook_logo_cd">Logotip de Hootbook</string>
     <string name="version_format">Versió %1$s, db-v%2$d</string>
     <string name="website">Lloc web</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">Preguntes freqüents</string>
     <string name="guides">Guies</string>
-    <string name="guides_desc">Com utilitzar Cashiro</string>
+    <string name="guides_desc">Com utilitzar Hootbook</string>
     <string name="report_bug">Reporta un error</string>
-    <string name="report_bug_desc">Ajuda\'ns a millorar Cashiro</string>
+    <string name="report_bug_desc">Ajuda\'ns a millorar Hootbook</string>
     <string name="privacy_policy">Política de privadesa</string>
     <string name="privacy_policy_desc">L\'ús i la privadesa de les teves dades</string>
     <string name="terms_of_service">Termes del servei</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Afegir transacció o subscripció</string>
     <string name="selected_cd">Seleccionat</string>
     <string name="net_worth_label">Net worth</string>
-    <string name="app_locked_title">Cashiro està bloquejat</string>
+    <string name="app_locked_title">Hootbook està bloquejat</string>
     <string name="authenticate_desc">Autentica\'t per accedir a les teves dades de despeses</string>
     <string name="unlock">Desbloquejar</string>
     <string name="biometric_unavailable_title">Autenticació biomètrica no disponible</string>

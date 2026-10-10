@@ -43,7 +43,7 @@
     <string name="sync_problem_network">无法连接服务器，联网后会自动重试。</string>
     <string name="sync_problem_permission">服务器拒绝访问，请退出登录后重新登录。</string>
     <string name="sync_problem_unreadable">部分记录无法解密：它们是用另一个同步密码写入的。</string>
-    <string name="sync_problem_newer">部分记录来自更新版本的 Cashiro，请更新应用后再读取。</string>
+    <string name="sync_problem_newer">部分记录来自更新版本的 Hootbook，请更新应用后再读取。</string>
     <string name="sync_problem_other">出了点问题，请稍后重试。</string>
     <string name="sync_retry">重试</string>
     <string name="sync_now">立即同步</string>

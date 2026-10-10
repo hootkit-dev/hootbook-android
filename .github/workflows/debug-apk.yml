@@ -112,7 +112,7 @@ jobs:
           mkdir -p "$OUT"
           COUNT="${{ steps.version.outputs.commit_count }}"
           SHA="${{ steps.version.outputs.short_sha }}"
-          TARGET="$OUT/Cashiro-debug-c${COUNT}-${SHA}-arm64-v8a.apk"
+          TARGET="$OUT/Hootbook-debug-c${COUNT}-${SHA}-arm64-v8a.apk"
           shopt -s nullglob
           if [[ -f "$SRC/app-standard-arm64-v8a-debug.apk" ]]; then
             cp "$SRC/app-standard-arm64-v8a-debug.apk" "$TARGET"
@@ -143,7 +143,7 @@ jobs:
             certs=$("$TOOLS/apksigner" verify --print-certs "$apk")
             echo "$certs"
             cert=$(echo "$certs" | grep -m1 'certificate SHA-256 digest:' | awk '{print $NF}')
-            if [ "$package" != "com.ritesh.cashiro" ] || [ "$cert" != "$RELEASE_CERT_SHA256" ]; then
+            if [ "$package" != "io.github.hootkit_dev.hootbook" ] || [ "$cert" != "$RELEASE_CERT_SHA256" ]; then
               echo "::error::Unexpected package or signer: $(echo "$package" | sed 's/\./ . /g') / $cert"
               exit 1
             fi
@@ -158,7 +158,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cashiro-debug-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}
+          name: hootbook-debug-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}
           path: |
             dist/debug/*.apk
             dist/debug/SHA256SUMS
@@ -199,7 +199,7 @@ jobs:
             - Commit count: ${{ steps.version.outputs.commit_count }}
             - ABI: arm64-v8a only
             - Native libs are zip-compressed; debug minify/shrink is on
-            - Package: `com.ritesh.cashiro`, the same app as testing and release; installs over either
+            - Package: `io.github.hootkit_dev.hootbook`, the same app as testing and release; installs over either
             - Signed with the release key; fingerprint included in SIGNING-CERTIFICATE.json
 
-            Install `Cashiro-debug-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-arm64-v8a.apk`.
+            Install `Hootbook-debug-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-arm64-v8a.apk`.

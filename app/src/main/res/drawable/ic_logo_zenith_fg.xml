@@ -1,25 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hootbook mark: an owl perched on an open book. Generated from one set of paths; keep them in sync. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="192"
     android:viewportHeight="192">
-    <group android:scaleX="0.7"
+    <group
+        android:scaleX="0.7"
         android:scaleY="0.7"
-        android:translateX="30"
-        android:translateY="30">
-    <path
-        android:fillColor="#FF1F1F1F"
-        android:strokeLineJoin="round"
-        android:fillType="nonZero"
-        android:strokeLineCap="round"
-        android:pathData="M123.02,96.00L152.74,120.77A59.45 59.45 -0.00 1 1 152.74,71.23L123.02,96.00z"/>
-    <path
-        android:fillColor="#FFE6E6E6"
-        android:strokeColor="#FFE6E6E6"
-        android:strokeWidth="7.5594616"
-        android:strokeLineJoin="round"
-        android:fillType="nonZero"
-        android:strokeLineCap="round"
-        android:pathData="M96.00,116.81L116.81,96.00L96.00,75.19L75.19,96.00L96.00,116.81z"/>
+        android:translateX="28.8"
+        android:translateY="28.8">
+        <path
+            android:fillColor="#FFFFB300"
+            android:pathData="M38,150C58,140 80,140 96,150C112,140 134,140 154,150L154,166C134,156 112,156 96,166C80,156 58,156 38,166Z" />
+        <path
+            android:fillColor="#FF1F1F1F"
+            android:fillType="evenOdd"
+            android:pathData="M54,28C61,38 69,45 78,49C90,45 102,45 114,49C123,45 131,38 138,28C148,46 152,66 150,92C148,120 128,138 96,138C64,138 44,120 42,92C40,66 44,46 54,28ZM54,84a20,20 0 1,0 40,0a20,20 0 1,0 -40,0ZM98,84a20,20 0 1,0 40,0a20,20 0 1,0 -40,0ZM89,100L103,100L96,112Z" />
+        <path
+            android:fillColor="#FFFFB300"
+            android:pathData="M67,86a9,9 0 1,0 18,0a9,9 0 1,0 -18,0ZM107,86a9,9 0 1,0 18,0a9,9 0 1,0 -18,0Z" />
     </group>
 </vector>

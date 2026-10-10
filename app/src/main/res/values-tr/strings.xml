@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">İşlem Ekle</string>
     <string name="add_subscription">Abonelik Ekle</string>
     <string name="add_transfer">Transfer Ekle</string>
@@ -281,7 +281,7 @@
     <string name="share">Paylaş</string>
     <string name="retry">Tekrar dene</string>
     <string name="share_csv">CSV olarak paylaş</string>
-    <string name="csv_export_subject">Cashiro İşlem Dışa Aktarımı</string>
+    <string name="csv_export_subject">Hootbook İşlem Dışa Aktarımı</string>
     <string name="edit_transaction">İşlemi Düzenle</string>
     <string name="transaction_details">İşlem Detayları</string>
     <string name="delete_transaction">İşlemi Sil</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" ile eşleşen işlem yok</string>
     <string name="no_transactions_for_format">%1$s için işlem yok</string>
     <string name="about">Hakkında</string>
-    <string name="cashiro_logo_cd">Cashiro Logosu</string>
+    <string name="hootbook_logo_cd">Hootbook Logosu</string>
     <string name="version_format">Sürüm %1$s, db-v%2$d</string>
     <string name="website">Web Sitesi</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">SSS</string>
     <string name="faq_desc">Sıkça sorulan sorular</string>
     <string name="guides">Kılavuzlar</string>
-    <string name="guides_desc">Cashiro nasıl kullanılır</string>
+    <string name="guides_desc">Hootbook nasıl kullanılır</string>
     <string name="report_bug">Hata Bildir</string>
-    <string name="report_bug_desc">Cashiro\'yu geliştirmemize yardımcı olun</string>
+    <string name="report_bug_desc">Hootbook\'yu geliştirmemize yardımcı olun</string>
     <string name="privacy_policy">Gizlilik Politikası</string>
     <string name="privacy_policy_desc">Veri kullanımı ve gizliliğiniz</string>
     <string name="terms_of_service">Hizmet Şartları</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">İşlem veya Abonelik Ekle</string>
     <string name="selected_cd">Seçili</string>
     <string name="net_worth_label">Net değer</string>
-    <string name="app_locked_title">Cashiro Kilitli</string>
+    <string name="app_locked_title">Hootbook Kilitli</string>
     <string name="authenticate_desc">Gider verilerinize erişmek için kimlik doğrulama yapın</string>
     <string name="unlock">Kilidini aç</string>
     <string name="biometric_unavailable_title">Biyometrik kimlik doğrulama mümkün değil</string>

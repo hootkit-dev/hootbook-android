@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Tambah Transaksi</string>
     <string name="add_subscription">Tambah Langganan</string>
     <string name="add_transfer">Tambah Transfer</string>
@@ -281,7 +281,7 @@
     <string name="share">Bagikan</string>
     <string name="retry">Coba Lagi</string>
     <string name="share_csv">Bagikan CSV</string>
-    <string name="csv_export_subject">Ekspor Transaksi Cashiro</string>
+    <string name="csv_export_subject">Ekspor Transaksi Hootbook</string>
     <string name="edit_transaction">Sunting Transaksi</string>
     <string name="transaction_details">Detail Transaksi</string>
     <string name="delete_transaction">Hapus Transaksi</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Tidak ada transaksi yang cocok dengan "%1$s"</string>
     <string name="no_transactions_for_format">Tidak ada transaksi untuk %1$s</string>
     <string name="about">Tentang</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Versi %1$s, db-v%2$d</string>
     <string name="website">Situs Web</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">Pertanyaan yang sering diajukan</string>
     <string name="guides">Panduan</string>
-    <string name="guides_desc">Cara menggunakan Cashiro</string>
+    <string name="guides_desc">Cara menggunakan Hootbook</string>
     <string name="report_bug">Laporkan Bug</string>
-    <string name="report_bug_desc">Bantu kami meningkatkan Cashiro</string>
+    <string name="report_bug_desc">Bantu kami meningkatkan Hootbook</string>
     <string name="privacy_policy">Kebijakan Privasi</string>
     <string name="privacy_policy_desc">Penggunaan data dan privasi Anda</string>
     <string name="terms_of_service">Ketentuan Layanan</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Tambahkan Transaksi atau Langganan</string>
     <string name="selected_cd">Terpilih</string>
     <string name="net_worth_label">Nilai bersih</string>
-    <string name="app_locked_title">Cashiro Terkunci</string>
+    <string name="app_locked_title">Hootbook Terkunci</string>
     <string name="authenticate_desc">Autentikasi untuk mengakses data pengeluaran Anda</string>
     <string name="unlock">Buka kunci</string>
     <string name="biometric_unavailable_title">Autentikasi biometrik tidak tersedia</string>

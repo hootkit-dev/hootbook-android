@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">लेन-देन जोड़ें</string>
     <string name="add_subscription">सदस्यता जोड़ें</string>
     <string name="add_transfer">स्थानांतरण जोड़ें</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" से मेल खाने वाला कोई लेनदेन नहीं</string>
     <string name="no_transactions_for_format">%1$s के लिए कोई लेनदेन नहीं</string>
     <string name="about">के बारे में</string>
-    <string name="cashiro_logo_cd">कैशिरो लोगो</string>
+    <string name="hootbook_logo_cd">कैशिरो लोगो</string>
     <string name="version_format">संस्करण %1$s, db-v%2$d</string>
     <string name="website">वेबसाइट</string>
     <string name="github">गिटहब</string>

@@ -26,7 +26,7 @@ Applied here:
 6. Native Compose fling/overscroll on the account page replaces the custom exponential fling plus nested overscroll wrapper.
 7. Compact list rows and static account-card surfaces eliminate per-card infinite tiled-background redraws.
 
-InstallerX also has a baseline-profile module. No generated profile was copied: profiles must be generated against Cashiro's own navigation and release build. No release-device frame-time improvement is claimed from source inspection or debug-emulator testing.
+InstallerX also has a baseline-profile module. No generated profile was copied: profiles must be generated against Hootbook's own navigation and release build. No release-device frame-time improvement is claimed from source inspection or debug-emulator testing.
 
 ## Verification commands
 
@@ -48,7 +48,7 @@ Device checklist: fresh start, cancel picker, invalid file/retry, JSON and ZIP r
 The old custom theme aliased primary/secondary/tertiary/error containers to saturated accent colors and hardcoded unrelated surfaces. Those aliases have been replaced, not merely recolored in the preview.
 
 - Every existing accent seed now generates 48 independent MD3 semantic roles for light and dark with Google's Material Color Utilities. `scripts/md3/seeds.json` preserves the accent choices; `npm ci && npm run generate` reproduces the checked-in Kotlin and role manifest. Generation uses the pinned standard tonal-spot specification at normal contrast. This is a valid MD3 palette for an Expressive UI; the separate MCU color variant named `SchemeExpressive` is not a requirement for Material 3 Expressive components.
-- Android 12+ dynamic color remains supported. The visible `ThemeStyle` selector is authoritative in the app: an old backup's contradictory legacy dynamic-color flag no longer suppresses a selected system palette. Explicit `CashiroTheme(dynamicColor = false)` still works for previews. System colors are read on recomposition rather than cached across wallpaper-resource changes. AMOLED remains a user-selected dark-mode override.
+- Android 12+ dynamic color remains supported. The visible `ThemeStyle` selector is authoritative in the app: an old backup's contradictory legacy dynamic-color flag no longer suppresses a selected system palette. Explicit `HootbookTheme(dynamicColor = false)` still works for previews. System colors are read on recomposition rather than cached across wallpaper-resource changes. AMOLED remains a user-selected dark-mode override.
 - `MaterialExpressiveTheme` uses the library's native shape defaults and explicitly selects `MotionScheme.expressive()`; no handcrafted timing curve replaces that scheme.
 - Home and Manage Accounts now use native `LargeFlexibleTopAppBar` with its scroll behavior and opaque tonal surfaces, replacing their custom translucent/gradient title bars. Home retains profile, notifications and More actions as native icon buttons. Its obsolete full-list Haze capture is removed with the old header; the separately configured banner effects remain. The extended FAB uses native shape, elevation and color roles, without the custom blur treatment.
 - Section toggles, the onboarding primary CTA and back/overflow icon buttons use the Expressive shape-morphing overloads. Summaries and the welcome headline use emphasized typography roles; backup processing uses the native Expressive `LoadingIndicator`.
@@ -59,7 +59,7 @@ Primary references: [MaterialExpressiveTheme](https://developer.android.com/refe
 
 ## Per-screen review gate
 
-The user requested a visual review before pushing. Changes remain local until the user explicitly approves the screenshot set. The review includes account sections, expansion states, add/edit sheets, first-run steps, import picker and failure state, major existing pages and fixed/system light/dark comparisons. Native `CashiroThemeTest` checks actual Android system roles in light/dark plus fixed colors and the preview opt-out; it complements the four account UI tests.
+The user requested a visual review before pushing. Changes remain local until the user explicitly approves the screenshot set. The review includes account sections, expansion states, add/edit sheets, first-run steps, import picker and failure state, major existing pages and fixed/system light/dark comparisons. Native `HootbookThemeTest` checks actual Android system roles in light/dark plus fixed colors and the preview opt-out; it complements the four account UI tests.
 
 
 ## All-account summary-only and elevation review revision

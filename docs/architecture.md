@@ -1,13 +1,13 @@
-# Cashiro Architecture
+# Hootbook Architecture
 
-Cashiro is a single-module Android app (`app`, package `com.ritesh.cashiro`) for manual,
+Hootbook is a single-module Android app (`app`, package `io.github.hootkit_dev.hootbook`) for manual,
 multi-currency bookkeeping. It uses MVVM with unidirectional data flow: Room is the source of
 truth, repositories write to it, ViewModels expose `StateFlow`s, and Compose renders them.
 
 ## Layers
 
 ```
-com.ritesh.cashiro
+io.github.hootkit_dev.hootbook
 ├── presentation   Compose screens, feature ViewModels, navigation, theme
 ├── domain         Use cases and pure models (budget periods, card cycles, net worth)
 ├── data           Room, repositories, preferences, backup, cloud, AI, brokerage, currency
@@ -22,8 +22,8 @@ com.ritesh.cashiro
   profile, onboarding and settings.
 - A ViewModel per screen exposes a UI state `StateFlow`. Screens send events back as
   ViewModel calls.
-- Navigation: type-safe routes in `presentation/navigation/CashiroDestinations.kt`, hosted by
-  `CashiroNavHost`.
+- Navigation: type-safe routes in `presentation/navigation/HootbookDestinations.kt`, hosted by
+  `HootbookNavHost`.
 - Adaptive layout in `presentation/ui/adaptive/WindowLayout.kt`:
   - Below 600 dp: bottom bar.
   - From 600 dp: navigation rail.
@@ -43,8 +43,8 @@ com.ritesh.cashiro
 
 ### Data
 
-- **Database**: `CashiroDatabase` (version 72).
-  - Migrations are in `data/database/Migrations.kt`, listed by `CashiroDatabase.MIGRATIONS`.
+- **Database**: `HootbookDatabase` (version 72).
+  - Migrations are in `data/database/Migrations.kt`, listed by `HootbookDatabase.MIGRATIONS`.
   - First-run seeding is in `DatabaseCallback.kt`.
   - Sync capture: synced tables carry `sync_id` / `sync_updated_at`, and SQLite triggers
     (`SyncTriggers`) queue every change in `sync_outbox`. See [sync.md](sync.md).

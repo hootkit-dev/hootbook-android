@@ -210,7 +210,7 @@ Enumerations (stored as their names):
 currency ("pocket"), holding the balance *after* it; an account's balance is its latest row
 (by `timestamp`). Receivers copy these rows verbatim and never recompute them. A client that
 adds, edits or deletes a transaction must therefore write (and upload) the balance rows itself,
-the way Cashiro's `balanceMoves`, `AddTransactionUseCase` and `TransactionEditor` do, including
+the way Hootbook's `balanceMoves`, `AddTransactionUseCase` and `TransactionEditor` do, including
 the rows after it that a back-dated change shifts.
 
 ### Tables and columns

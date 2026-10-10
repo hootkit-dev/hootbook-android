@@ -1,12 +1,12 @@
-# Cashiro Design System
+# Hootbook Design System
 
 ## Overview
-Cashiro follows Material 3 design principles with a focus on simplicity, clarity, and user-centric design. This document outlines the visual design system, theming approach, and layout guidelines.
+Hootbook follows Material 3 design principles with a focus on simplicity, clarity, and user-centric design. This document outlines the visual design system, theming approach, and layout guidelines.
 
 ## Theme System
 
 ### Material You Integration
-Cashiro leverages Android 12+ dynamic color system to create personalized experiences:
+Hootbook leverages Android 12+ dynamic color system to create personalized experiences:
 - **Dynamic Color**: Automatically derives colors from user's wallpaper
 - **Adaptive Theming**: Seamlessly adapts to system-wide theme preferences
 - **Fallback Colors**: Provides branded colors for older Android versions
@@ -90,7 +90,7 @@ val DarkColorScheme = darkColorScheme(
 ### Theme Implementation
 ```kotlin
 @Composable
-fun CashiroTheme(
+fun HootbookTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -351,7 +351,7 @@ object Animations {
 
 ### Common Icons
 ```kotlin
-object CashiroIcons {
+object HootbookIcons {
     val Home = Icons.Outlined.Home
     val Transactions = Icons.Outlined.Receipt
     val Analytics = Icons.Outlined.Analytics
@@ -430,7 +430,7 @@ fun EmptyTransactions() {
 @Preview(name = "Dark Theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun ComponentPreview() {
-    CashiroTheme {
+    HootbookTheme {
         // Component
     }
 }
@@ -472,13 +472,13 @@ re-styling Material ones per screen.
 | Back / icon-only actions | `NavigationContent`, `TooltipIconButton` | Standard icon buttons with a plain tooltip; never wrap them in a second clickable |
 | Main navigation | `ShortNavigationBar` / collapsed `WideNavigationRail` | Rail from 600 dp; content inset `NavigationRailWidth` (96 dp) |
 | One choice of a few | `GenericTypeSwitcher` | M3E connected button group (ToggleButtons, radio semantics); `SingleChoiceSegmentedButtonRow` with `icon = {}` in forms |
-| On/off setting | `PreferenceSwitch`, `CashiroSwitch` | Thumb icon; a row that is one setting toggles as a whole (`ListItem(toggled, onToggle)` / `toggleable`) |
-| Checkbox | `CashiroCheckbox` | Material 3 `Checkbox` |
+| On/off setting | `PreferenceSwitch`, `HootbookSwitch` | Thumb icon; a row that is one setting toggles as a whole (`ListItem(toggled, onToggle)` / `toggleable`) |
+| Checkbox | `HootbookCheckbox` | Material 3 `Checkbox` |
 | Search field | `SearchBarBox` | Pill on surfaceContainerHigh, onSurfaceVariant placeholder |
 | Buttons | Material buttons with `shapes = ButtonDefaults.shapes()` / `IconButtonDefaults.shapes()` | Shape morph on press; no hardcoded button shapes |
 | Loading | `LoadingIndicator`, `LinearWavyProgressIndicator` (`Loading.kt`) | Plain indicators only for meters (budget use, category share) |
 | Result + undo | Standard `Snackbar` with an action | No restyled snackbars, no persistent undo bars, no Toasts |
-| One FAB per screen | Add FAB in `CashiroNavHost` | Screen-specific actions (export) go in the top bar |
+| One FAB per screen | Add FAB in `HootbookNavHost` | Screen-specific actions (export) go in the top bar |
 | Amount colors | `transactionTypeColor()`, `successColor`, `warningColor` | Theme-aware via `isAppInDarkTheme`, never `isSystemInDarkTheme()` (the app theme can differ from the system's) |
 | Text | `MaterialTheme.typography` roles | No `fontSize = N.sp` on `Text` |
 
@@ -566,7 +566,7 @@ val ColorScheme.expense: Color
 
 ## Chinese localization and interface refinement
 
-The native Compose refinement draws design cues from [InstallerX Revived](https://github.com/wxxsfxyzm/InstallerX-Revived), specifically its Material 3 Expressive settings and `PreferredPage` segmented, titled groups. This is an independent implementation using Cashiro's existing components, with no additional UI framework or copied reference code.
+The native Compose refinement draws design cues from [InstallerX Revived](https://github.com/wxxsfxyzm/InstallerX-Revived), specifically its Material 3 Expressive settings and `PreferredPage` segmented, titled groups. This is an independent implementation using Hootbook's existing components, with no additional UI framework or copied reference code.
 
 - Settings use labeled groups for personalization, finances, automation, and app information. Existing rounded segmented rows remain, with tonal icon containers that follow dynamic, light, and dark themes.
 - Group titles expose heading semantics. Shared list rows have a 56dp minimum height, button roles when actionable, and merged text semantics. Supporting text uses the 14sp body scale and can wrap.

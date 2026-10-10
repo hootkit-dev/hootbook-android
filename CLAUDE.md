@@ -1,12 +1,13 @@
-# Cashiro Project Context
+# Hootbook Project Context
 
 ## Project Overview
 
-Cashiro is an Android expense tracker. This repository is a personal fork of
-[ritesh-kanwar/Cashiro](https://github.com/ritesh-kanwar/Cashiro), itself based on
-PennyWise AI.
+Hootbook (part of HootKit) is an Android expense tracker. It started as a personal fork of
+[ritesh-kanwar/Cashiro](https://github.com/ritesh-kanwar/Cashiro), itself based on PennyWise AI,
+and was renamed from Cashiro to Hootbook with a new applicationId: it installs next to Cashiro and
+does not update it; data moves over through a Cashiro backup.
 
-The fork is for personal, mostly **manual** bookkeeping: accounts, categories,
+The app is for personal, mostly **manual** bookkeeping: accounts, categories,
 budgets, and a Chinese / cross-border institution catalog. Upstream's SMS import
 has been removed entirely: the `parser-core` module, its settings and, in migration 69→70, the
 columns it filled (a subscription's notes, once kept in `sms_body`, are now `notes`). The lend/borrow
@@ -20,10 +21,10 @@ breaks updates of already-installed builds.
 
 | What | Value |
 |---|---|
-| Gradle project | `cashiro-beta` |
-| App namespace / applicationId | `com.ritesh.cashiro` |
-| App source root | `app/src/main/java/com/ritesh/cashiro/` |
-| Room schema path | `app/schemas/com.ritesh.cashiro.data.database.CashiroDatabase/` (database version 72) |
+| Gradle project | `hootbook` |
+| App namespace / applicationId | `io.github.hootkit_dev.hootbook` (renamed from `com.ritesh.cashiro`) |
+| App source root | `app/src/main/java/io/github/hootkit_dev/hootbook/` |
+| Room schema path | `app/schemas/io.github.hootkit_dev.hootbook.data.database.HootbookDatabase/` (database version 72) |
 | Historical Room schema paths | `app/schemas/com.pennywiseai.tracker.data.database.PennyWiseDatabase/`, `app/schemas/com.ritesh.cashiro.data.database.PennyWiseDatabase/` |
 | Version name | `2.1.63` |
 | Version code | `97` |
@@ -33,7 +34,15 @@ breaks updates of already-installed builds.
 | License | AGPL-3.0 |
 
 The historical schema directories keep the old PennyWise names. Leave those paths alone.
-Migrations live in `data/database/Migrations.kt`; `CashiroDatabase.MIGRATIONS` lists the manual
+
+The rename kept a few `cashiro` strings on purpose: wire and file formats shared with Cashiro
+builds and the iOS client (`cashiro-seed:` sync ids, `cashiro-sync-key-check-v1`, the backup
+format `Cashiro Backup v1.0`, the Drive folder `cashiro_backups`), the Firebase project
+`cashiro-7a585`, and internal storage names (database `pennywise_database`, `cashiro_*`
+preferences, the `cashiro_sync` work name). Backups are now written as `Hootbook_Backup_*`, and
+the cloud list also shows `Cashiro_Backup_*` files so old backups can be restored. Product names:
+the app is Hootbook; HootKit is the family name (and the core it will move to).
+Migrations live in `data/database/Migrations.kt`; `HootbookDatabase.MIGRATIONS` lists the manual
 ones, and `MigrationChainTest` opens every exported schema at the current version through them, so
 a new version needs its schema exported and its migration added there. First-run seeding is in
 `data/database/DatabaseCallback.kt`.
@@ -180,7 +189,7 @@ client, no provider SDKs, to keep the app small.
     when they have none. Password-protected PDFs are unlocked locally.
   - Text files are decoded as UTF-8, falling back to GB18030.
 - UI: `AiAssistantScreen`, opened from the ✨ button on Home or Settings → AI bookkeeping.
-  - Files shared to Cashiro (`SEND` / `SEND_MULTIPLE` on `MainActivity`) are copied into
+  - Files shared to Hootbook (`SEND` / `SEND_MULTIPLE` on `MainActivity`) are copied into
     `AiShareInbox` at once (the read permission ends with the activity). They stay there until
     used or removed. The screen opens only once the app-lock state is loaded and unlocked.
   - The review (`AiReview.kt`) shows proposed changes as transaction rows, grouped into new,
@@ -204,7 +213,7 @@ client, no provider SDKs, to keep the app small.
 - Edge-to-edge via the existing scaffold / TopAppBar pattern
 - Material 3 Expressive components through the shared wrappers (table in `docs/design.md` →
   "Material 3 Expressive conventions"): `CustomTitleTopAppBar` (flexible app bar), `TooltipIconButton`,
-  `GenericTypeSwitcher` (connected button group), `CashiroSwitch` / `PreferenceSwitch`, M3E loading
+  `GenericTypeSwitcher` (connected button group), `HootbookSwitch` / `PreferenceSwitch`, M3E loading
   indicators, standard snackbars with Undo. Theme-aware colors come from `isAppInDarkTheme`, not
   `isSystemInDarkTheme()`.
 - Chinese UI should avoid awkward letter-spacing and should use `9月1日` style dates
@@ -255,14 +264,14 @@ Bump `versionName` / `versionCode` in `app/build.gradle.kts` together.
 ## Module Structure
 
 ```
-app/            Android application (namespace com.ritesh.cashiro)
+app/            Android application (namespace io.github.hootkit_dev.hootbook)
 benchmark/      Macrobenchmark tests against app's `benchmark` build type
 ```
 
 ## Performance
 
 - `app` has a `benchmark` build type: release code (R8, `-dontobfuscate`), debug-signed,
-  `<profileable>`, applicationId `com.ritesh.cashiro.benchmark`.
+  `<profileable>`, applicationId `io.github.hootkit_dev.hootbook.benchmark`.
 - `app/src/benchmark` adds `SeedActivity`, which writes a fixed data set (4 CNY accounts,
   ~3,400 transactions) and skips onboarding. It exists only in benchmark builds.
 - `.github/workflows/perf-device.yml` runs `:benchmark` on a physical phone in Google Cloud's
@@ -270,7 +279,7 @@ benchmark/      Macrobenchmark tests against app's `benchmark` build type
   Firebase Test Lab, which shuts down on 2027-09-30; default Pixel 10 Pro, `blazer-36`).
   Needs the `DEVICE_RUN_SERVICE_ACCOUNT` secret, a service account key of a project with
   billing, the APIs and the roles the workflow header lists. Results are pulled from the test
-  APK's media directory (`/sdcard/Android/media/com.ritesh.cashiro.benchmark.tests`).
+  APK's media directory (`/sdcard/Android/media/io.github.hootkit_dev.hootbook.benchmark.tests`).
   Physical-device time is billed, so it only runs when started by hand (Actions → Performance
   (device) → Run workflow, on the branch to measure); nothing in a commit message triggers it.
   A cancelled job cancels its session.
@@ -304,7 +313,7 @@ benchmark/      Macrobenchmark tests against app's `benchmark` build type
   file (already filtered: no benchmark-only classes, and Kotlin `internal` names use the
   `app_standardRelease` module suffix). Regenerate after large UI changes. The `*WithProfile` tests compile each build with
   its own profile (`CompilationMode.Partial`), so base vs candidate shows what it wins.
-- `BenchmarkBackupGenerator` (unit test, skipped unless `CASHIRO_BENCHMARK_BACKUP` is set)
+- `BenchmarkBackupGenerator` (unit test, skipped unless `HOOTBOOK_BENCHMARK_BACKUP` is set)
   writes the same data set as an importable backup zip for testing on a real device.
 - Never compare numbers across separate runs or devices; only within one run.
 - Emulators were dropped: they render on the CPU, so frame times mostly measured
@@ -322,7 +331,7 @@ benchmark/      Macrobenchmark tests against app's `benchmark` build type
 App packages:
 
 ```
-com.ritesh.cashiro
+io.github.hootkit_dev.hootbook
 ├── data          Room, repositories, preferences, managers
 ├── domain        Use cases and models
 ├── presentation  Compose UI, feature ViewModels, navigation

@@ -77,7 +77,7 @@ if [ "$USE_CLAUDE" = true ] && [ -n "$LAST_TAG" ]; then
     COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)")
 
     # Create prompt for Claude
-    CLAUDE_PROMPT="Generate concise, user-friendly release notes for version $NEXT_VERSION of Cashiro (an Android expense tracker app that parses bank SMS messages).
+    CLAUDE_PROMPT="Generate concise, user-friendly release notes for version $NEXT_VERSION of Hootbook (an Android expense tracker app that parses bank SMS messages).
 
     Just return the release notes, don't include any other text. We will directly copy the release notes to the RELEASE_NOTES.md file.
 
@@ -131,7 +131,7 @@ if [ "$USE_CLAUDE" = false ]; then
     else
         echo "## Initial Release" >> RELEASE_NOTES.md
         echo "" >> RELEASE_NOTES.md
-        echo "First release of Cashiro" >> RELEASE_NOTES.md
+        echo "First release of Hootbook" >> RELEASE_NOTES.md
     fi
 
     echo "" >> RELEASE_NOTES.md
@@ -164,7 +164,7 @@ if [ "$USE_CLAUDE" = true ]; then
     echo -e "${YELLOW}🤖 Generating Play Store changelog with Claude...${NC}"
 
     # Create prompt for Play Store release notes (more concise)
-    PLAYSTORE_PROMPT="Generate very concise Play Store release notes for Cashiro version $NEXT_VERSION (max 500 characters).
+    PLAYSTORE_PROMPT="Generate very concise Play Store release notes for Hootbook version $NEXT_VERSION (max 500 characters).
 
 Based on these changes:
 $COMMITS
@@ -273,30 +273,30 @@ FDROID_PATH="app/build/outputs/apk/fdroid/release"
 # Rename universal APK
 if [ -f "$STANDARD_PATH/app-standard-universal-release.apk" ]; then
     mv "$STANDARD_PATH/app-standard-universal-release.apk" \
-       "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-universal.apk"
+       "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-universal.apk"
 fi
 
 # Rename architecture-specific APKs
 for arch in armeabi-v7a arm64-v8a x86 x86_64; do
     if [ -f "$STANDARD_PATH/app-standard-${arch}-release.apk" ]; then
         mv "$STANDARD_PATH/app-standard-${arch}-release.apk" \
-           "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-${arch}.apk"
+           "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-${arch}.apk"
     fi
 done
 
 if [ -f "$FDROID_PATH/app-fdroid-universal-release.apk" ]; then
     mv "$FDROID_PATH/app-fdroid-universal-release.apk" \
-       "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-universal.apk"
+       "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk"
 elif [ -f "$FDROID_PATH/app-fdroid-release.apk" ]; then
     # Splits disabled → single APK without -universal- suffix
     mv "$FDROID_PATH/app-fdroid-release.apk" \
-       "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-universal.apk"
+       "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk"
 fi
 
 for arch in armeabi-v7a arm64-v8a; do
     if [ -f "$FDROID_PATH/app-fdroid-${arch}-release.apk" ]; then
         mv "$FDROID_PATH/app-fdroid-${arch}-release.apk" \
-           "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-${arch}.apk"
+           "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-${arch}.apk"
     fi
 done
 
@@ -305,14 +305,14 @@ echo -e "${GREEN}✅ APKs renamed${NC}"
 # 8. Calculate SHA256
 ORIGINAL_DIR="$PWD"
 cd "$STANDARD_PATH"
-for apk in Cashiro-v${NEXT_VERSION}*.apk; do
+for apk in Hootbook-v${NEXT_VERSION}*.apk; do
     if [ -f "$apk" ]; then
         sha256sum "$apk" > "${apk}.sha256"
     fi
 done
 
 cd "$ORIGINAL_DIR/$FDROID_PATH"
-for apk in Cashiro-fdroid-v${NEXT_VERSION}*.apk; do
+for apk in Hootbook-fdroid-v${NEXT_VERSION}*.apk; do
     if [ -f "$apk" ]; then
         sha256sum "$apk" > "${apk}.sha256"
     fi
@@ -350,16 +350,16 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         gh release create "v$NEXT_VERSION" \
             --title "Release v$NEXT_VERSION" \
             --notes-file RELEASE_NOTES.md \
-            "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-universal.apk" \
-            "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-universal.apk.sha256" \
-            "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-arm64-v8a.apk" \
-            "$STANDARD_PATH/Cashiro-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-universal.apk" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-universal.apk.sha256" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-arm64-v8a.apk" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk" \
-            "$FDROID_PATH/Cashiro-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk.sha256"
+            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-universal.apk" \
+            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-universal.apk.sha256" \
+            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-arm64-v8a.apk" \
+            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk.sha256" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-arm64-v8a.apk" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk" \
+            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk.sha256"
         echo -e "${GREEN}✅ GitHub release created${NC}"
     else
         echo -e "${YELLOW}gh CLI not found. Create release manually at:${NC}"
@@ -379,20 +379,20 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     AAB_PATH="app/build/outputs/bundle/standardRelease"
     if [ -f "$AAB_PATH/app-standard-release.aab" ]; then
         mv "$AAB_PATH/app-standard-release.aab" \
-           "$AAB_PATH/Cashiro-v${NEXT_VERSION}.aab"
-        echo -e "${GREEN}✅ App Bundle created: $AAB_PATH/Cashiro-v${NEXT_VERSION}.aab${NC}"
+           "$AAB_PATH/Hootbook-v${NEXT_VERSION}.aab"
+        echo -e "${GREEN}✅ App Bundle created: $AAB_PATH/Hootbook-v${NEXT_VERSION}.aab${NC}"
         
         # Show file size
-        SIZE=$(du -h "$AAB_PATH/Cashiro-v${NEXT_VERSION}.aab" | cut -f1)
+        SIZE=$(du -h "$AAB_PATH/Hootbook-v${NEXT_VERSION}.aab" | cut -f1)
         echo "Size: $SIZE"
         
         echo ""
         echo -e "${YELLOW}📱 Play Store Upload Instructions:${NC}"
         echo "1. Go to https://play.google.com/console"
-        echo "2. Select Cashiro app"
+        echo "2. Select Hootbook app"
         echo "3. Go to Release > Production (or Testing)"
         echo "4. Create new release"
-        echo "5. Upload: $AAB_PATH/Cashiro-v${NEXT_VERSION}.aab"
+        echo "5. Upload: $AAB_PATH/Hootbook-v${NEXT_VERSION}.aab"
         echo "6. Add release notes from RELEASE_NOTES.md"
     fi
 fi

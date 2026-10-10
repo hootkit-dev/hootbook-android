@@ -44,7 +44,7 @@
     <string name="sync_problem_network">Could not reach the server. Sync retries when the device is online.</string>
     <string name="sync_problem_permission">The server refused access. Sign out and sign in again.</string>
     <string name="sync_problem_unreadable">Some records could not be decrypted: they were written with a different passphrase.</string>
-    <string name="sync_problem_newer">Some records come from a newer version of Cashiro. Update the app to read them.</string>
+    <string name="sync_problem_newer">Some records come from a newer version of Hootbook. Update the app to read them.</string>
     <string name="sync_problem_other">Something went wrong. Try again later.</string>
     <string name="sync_retry">Try again</string>
     <string name="sync_now">Sync now</string>

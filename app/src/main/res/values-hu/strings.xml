@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Tranzakció hozzáadása</string>
     <string name="add_subscription">Előfizetés hozzáadása</string>
     <string name="add_transfer">Átutalás hozzáadása</string>
@@ -281,7 +281,7 @@
     <string name="share">Megosztás</string>
     <string name="retry">Újrapróbálkozás</string>
     <string name="share_csv">CSV megosztása</string>
-    <string name="csv_export_subject">Cashiro tranzakciók exportálása</string>
+    <string name="csv_export_subject">Hootbook tranzakciók exportálása</string>
     <string name="edit_transaction">Tranzakció szerkesztése</string>
     <string name="transaction_details">Tranzakció részletei</string>
     <string name="delete_transaction">Tranzakció törlése</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s"-nak megfelelő tranzakciók nem találhatók</string>
     <string name="no_transactions_for_format">Nincs tranzakció %1$s számára</string>
     <string name="about">Névjegy</string>
-    <string name="cashiro_logo_cd">Cashiro Logó</string>
+    <string name="hootbook_logo_cd">Hootbook Logó</string>
     <string name="version_format">Verzió %1$s, db-v%2$d</string>
     <string name="website">Weboldal</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">GYIK</string>
     <string name="faq_desc">Gyakran ismételt kérdések</string>
     <string name="guides">Útmutatók</string>
-    <string name="guides_desc">Hogyan használd a Cashiro-t</string>
+    <string name="guides_desc">Hogyan használd a Hootbook-t</string>
     <string name="report_bug">Hibabejelentés</string>
-    <string name="report_bug_desc">Segíts fejleszteni a Cashiro-t</string>
+    <string name="report_bug_desc">Segíts fejleszteni a Hootbook-t</string>
     <string name="privacy_policy">Adatvédelmi irányelvek</string>
     <string name="privacy_policy_desc">Az adataid felhasználása és adatvédelem</string>
     <string name="terms_of_service">Szolgáltatási feltételek</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Tranzakció vagy előfizetés hozzáadása</string>
     <string name="selected_cd">Kiválasztott</string>
     <string name="net_worth_label">Nettó vagyon</string>
-    <string name="app_locked_title">A Cashiro zárolva van</string>
+    <string name="app_locked_title">A Hootbook zárolva van</string>
     <string name="authenticate_desc">Hitelesíts a költségadatok eléréséhez</string>
     <string name="unlock">Feloldás</string>
     <string name="biometric_unavailable_title">Biometrikus hitelesítés nem elérhető</string>

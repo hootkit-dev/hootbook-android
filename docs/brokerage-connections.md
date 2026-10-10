@@ -33,7 +33,7 @@
 4. 添加 **Cash Report**（按币种），勾选 Ending Cash / Ending Settled Cash。
    保证金账户的现金可为负，表示融资欠款；正数是账户里的闲置现金。
 5. 保存后记下 **Query ID**。在 Flex Web Service Configuration 中启用服务并生成 **Token**。
-6. 回到 Cashiro 填写连接名称、Token 和 Query ID，点击「连接并同步」。
+6. 回到 Hootbook 填写连接名称、Token 和 Query ID，点击「连接并同步」。
 
 界面内也有配置说明与 IBKR 官方文档链接。此版本严格接受 Open Positions 汇总节；
 如果你的空仓报表省略了该节，应用会提示调整查询，而不是把已有持仓错误清零。
@@ -53,18 +53,18 @@ Cash Report 可选：没有该节时仍能显示持仓，但不会显示现金�
 - 网络、Token、查询格式或磁盘写入失败时保留上一份有效缓存。较旧报表不覆盖同一账户较新的快照。
 - 刷新替换当前快照，已清仓标的从列表移除，不追加重复持仓。变更查询所包含的账户会改变此次连接的账户列表。
 - 同一提供方的重复凭据或重叠账户被拒绝，避免重复展示。
-- Token 过期后，在 IBKR 生成新 Token，在 Cashiro 断开旧连接再添加。断开会删除本机凭据及缓存，不关闭券商账户。
-  要撤销服务端 Token，应在 IBKR 重新生成 Token；Cashiro 的本地删除不等于远程撤销。
+- Token 过期后，在 IBKR 生成新 Token，在 Hootbook 断开旧连接再添加。断开会删除本机凭据及缓存，不关闭券商账户。
+  要撤销服务端 Token，应在 IBKR 重新生成 Token；Hootbook 的本地删除不等于远程撤销。
 
 ## 安全与隐私
 
-- 直接通过 HTTPS 请求 `ndcdyn.interactivebrokers.com` 的 SendRequest / GetStatement；没有 Cashiro 中转服务器，也没有交易、下单、转账接口。
+- 直接通过 HTTPS 请求 `ndcdyn.interactivebrokers.com` 的 SendRequest / GetStatement；没有 Hootbook 中转服务器，也没有交易、下单、转账接口。
 - 仅用户主动连接/刷新时向 IBKR 发送其 Flex Token、Query ID（后续请求使用报表引用码）、协议版本和 User-Agent。
 - Flex 协议使用 URL 查询参数传递 Token：此专用客户端不启用 HTTP 日志，不保留原始网络异常，不跟随重定向，也不采用服务端返回的 URL。
 - 不上传现有记账数据；IBKR 仍会看到连接来源 IP 并按自身政策处理 API 访问。
 - 连接、凭据、账户和持仓全部用 AES-GCM 加密，随机 nonce，密钥保存在 Android Keystore。
   原子写入 `noBackupFilesDir/brokerage-v1.enc`，不进入系统迁移/备份。
-- Cashiro 备份默认不含券商数据。导出备份时勾选“券商连接（含 Flex token）”，或云备份设置了端到端
+- Hootbook 备份默认不含券商数据。导出备份时勾选“券商连接（含 Flex token）”，或云备份设置了端到端
   加密密码时，连接、凭据、账户和持仓才写进备份 zip 的 `brokerage.json`（本地导出的文件不加密，界面
   会提示）。导入时只新增连接：同一券商下凭据相同或账户 ID 重叠的跳过；恢复失败不影响记账数据导入。
   设备间同步（sync）从不包含券商数据。
@@ -92,7 +92,7 @@ Cash Report 可选：没有该节时仍能显示持仓，但不会显示现金�
 ## 验证
 
 ```sh
-./gradlew :app:testStandardDebugUnitTest --tests 'com.ritesh.cashiro.data.brokerage.*' --no-configuration-cache
+./gradlew :app:testStandardDebugUnitTest --tests 'io.github.hootkit_dev.hootbook.data.brokerage.*' --no-configuration-cache
 ./gradlew :app:compileStandardDebugAndroidTestKotlin --no-configuration-cache
 ```
 

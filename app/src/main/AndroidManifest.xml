@@ -10,7 +10,7 @@
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
 
     <application
-        android:name=".CashiroApplication"
+        android:name=".HootbookApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -20,13 +20,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:localeConfig="@xml/locales_config"
-        android:theme="@style/Theme.CashiroCompose">
+        android:theme="@style/Theme.HootbookCompose">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Cashiro.SplashScreen"
+            android:theme="@style/Theme.Hootbook.SplashScreen"
             android:windowSoftInputMode="adjustResize">
-            <!-- Screenshots, statements and exports shared to Cashiro open AI bookkeeping -->
+            <!-- Screenshots, statements and exports shared to Hootbook open AI bookkeeping -->
             <intent-filter android:label="@string/ai_share_label">
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
@@ -47,7 +47,7 @@
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_original_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Cashiro.SplashScreen.Original">
+            android:theme="@style/Theme.Hootbook.SplashScreen.Original">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -65,7 +65,7 @@
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_anarchy_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Cashiro.SplashScreen.Anarchy">
+            android:theme="@style/Theme.Hootbook.SplashScreen.Anarchy">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -81,7 +81,7 @@
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_zenith_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Cashiro.SplashScreen.Zenith">
+            android:theme="@style/Theme.Hootbook.SplashScreen.Zenith">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -97,7 +97,7 @@
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_monochrome_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Cashiro.SplashScreen.Monochrome">
+            android:theme="@style/Theme.Hootbook.SplashScreen.Monochrome">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -113,7 +113,7 @@
             android:label="${appLabel}"
             android:roundIcon="@mipmap/ic_launcher_comic_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Cashiro.SplashScreen.Comic">
+            android:theme="@style/Theme.Hootbook.SplashScreen.Comic">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -124,7 +124,7 @@
         <activity
             android:name=".presentation.ui.screens.crash.CrashActivity"
             android:exported="false"
-            android:theme="@style/Theme.CashiroCompose"
+            android:theme="@style/Theme.HootbookCompose"
             android:process=":crash" />
 
         <provider

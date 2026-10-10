@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Addere Transactionem</string>
     <string name="add_subscription">Addere Subscriptionem</string>
     <string name="add_transfer">Addere Transferre</string>
@@ -281,7 +281,7 @@
     <string name="share">Communicare</string>
     <string name="retry">Iterum conare</string>
     <string name="share_csv">Communicare CSV</string>
-    <string name="csv_export_subject">Exportatio Transactionum Cashiro</string>
+    <string name="csv_export_subject">Exportatio Transactionum Hootbook</string>
     <string name="edit_transaction">Editare Transactionem</string>
     <string name="transaction_details">Details Transactionis</string>
     <string name="delete_transaction">Delere Transactionem</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Nullae transactiones congruentes "%1$s"</string>
     <string name="no_transactions_for_format">Nullae transactiones pro %1$s</string>
     <string name="about">fere</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Versio %1$s, db-v%2$d</string>
     <string name="website">SitusInterretialis</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Interrogationes Frequentes</string>
     <string name="faq_desc">Saepe rogata quaestiones</string>
     <string name="guides">Ductores</string>
-    <string name="guides_desc">Quomodo uti Cashiro</string>
+    <string name="guides_desc">Quomodo uti Hootbook</string>
     <string name="report_bug">Renuntia Insectum</string>
-    <string name="report_bug_desc">Adiuvate nos emendare Cashiro</string>
+    <string name="report_bug_desc">Adiuvate nos emendare Hootbook</string>
     <string name="privacy_policy">Politica Privatum</string>
     <string name="privacy_policy_desc">Usus tuus data et secretum</string>
     <string name="terms_of_service">Termini Servitii</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Addere Transactionem vel Subscriptio</string>
     <string name="selected_cd">Electa</string>
     <string name="net_worth_label">Capitale Netto</string>
-    <string name="app_locked_title">Cashiro claudit</string>
+    <string name="app_locked_title">Hootbook claudit</string>
     <string name="authenticate_desc">Authentica ut accessum ad tua expensa data</string>
     <string name="unlock">reserare</string>
     <string name="biometric_unavailable_title">Biometrica authentificatio non praesto est</string>

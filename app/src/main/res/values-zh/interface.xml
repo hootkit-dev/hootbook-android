@@ -338,7 +338,7 @@
     <string name="attachment_link">链接</string>
     <string name="app_logo">应用图标</string>
     <string name="share_backup">分享备份</string>
-    <string name="backup_file_subject">Cashiro 备份</string>
+    <string name="backup_file_subject">Hootbook 备份</string>
     <string name="settlement_title">结清</string>
     <string name="backup_ai_key">AI 记账的 API key</string>
     <string name="backup_ai_key_warning">此文件不加密：拿到文件的人可以用你的 AI key，费用算在你头上。</string>

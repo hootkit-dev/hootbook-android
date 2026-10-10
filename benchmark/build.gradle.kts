@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ritesh.cashiro.benchmark.tests"
+    namespace = "io.github.hootkit_dev.hootbook.benchmark.tests"
     compileSdk = 37
 
     defaultConfig {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Προσθήκη Συναλλαγής</string>
     <string name="add_subscription">Προσθήκη Συνδρομής</string>
     <string name="add_transfer">Προσθήκη Μεταφοράς</string>
@@ -281,7 +281,7 @@
     <string name="share">Κοινοποίηση</string>
     <string name="retry">Επανάληψη</string>
     <string name="share_csv">Κοινοποίηση CSV</string>
-    <string name="csv_export_subject">Εξαγωγή Συναλλαγών Cashiro</string>
+    <string name="csv_export_subject">Εξαγωγή Συναλλαγών Hootbook</string>
     <string name="edit_transaction">Επεξεργασία Συναλλαγής</string>
     <string name="transaction_details">Λεπτομέρειες Συναλλαγής</string>
     <string name="delete_transaction">Διαγραφή Συναλλαγής</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Καμία συναλλαγή που να ταιριάζει με "%1$s"</string>
     <string name="no_transactions_for_format">Καμία συναλλαγή για %1$s</string>
     <string name="about">Σχετικά</string>
-    <string name="cashiro_logo_cd">Λογότυπο Cashiro</string>
+    <string name="hootbook_logo_cd">Λογότυπο Hootbook</string>
     <string name="version_format">Έκδοση %1$s, db-v%2$d</string>
     <string name="website">Ιστότοπος</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Συχνές Ερωτήσεις</string>
     <string name="faq_desc">Συχνά ερωτώμενες ερωτήσεις</string>
     <string name="guides">Οδηγοί</string>
-    <string name="guides_desc">Πώς να χρησιμοποιήσετε το Cashiro</string>
+    <string name="guides_desc">Πώς να χρησιμοποιήσετε το Hootbook</string>
     <string name="report_bug">Αναφορά Σφάλματος</string>
-    <string name="report_bug_desc">Βοηθήστε μας να βελτιώσουμε το Cashiro</string>
+    <string name="report_bug_desc">Βοηθήστε μας να βελτιώσουμε το Hootbook</string>
     <string name="privacy_policy">Πολιτική Απορρήτου</string>
     <string name="privacy_policy_desc">Η χρήση των δεδομένων σας και το απόρρητό σας</string>
     <string name="terms_of_service">Όροι Υπηρεσίας</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Προσθήκη Συναλλαγής ή Συνδρομής</string>
     <string name="selected_cd">Επιλεγμένο</string>
     <string name="net_worth_label">Καθαρή αξία</string>
-    <string name="app_locked_title">Το Cashiro είναι Κλειδωμένο</string>
+    <string name="app_locked_title">Το Hootbook είναι Κλειδωμένο</string>
     <string name="authenticate_desc">Επιβεβαιώστε τα στοιχεία σας για να έχετε πρόσβαση στα δεδομένα εξόδων σας</string>
     <string name="unlock">Ξεκλείδωμα</string>
     <string name="biometric_unavailable_title">Η βιομετρική επαλήθευση δεν είναι διαθέσιμη</string>

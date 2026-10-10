@@ -144,7 +144,7 @@ async function main() {
             const strings = Array.isArray(parsed.resources.string) ? parsed.resources.string : [parsed.resources.string];
             for (let i = 0; i < strings.length; i++) {
                 const s = strings[i];
-                if (s && s.$ && s.$.name && s.$.name !== 'app_name' && s.$.name !== 'cashiro_title') {
+                if (s && s.$ && s.$.name && s.$.name !== 'app_name' && s.$.name !== 'hootbook_title') {
                     const name = s.$.name;
                     const enVal = enMap[name];
                     const currentVal = s._ || (typeof s === 'string' ? s : '');

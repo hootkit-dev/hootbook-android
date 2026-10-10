@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">ٹرانزیکشن کٔرِو شٲمِل</string>
     <string name="add_subscription">سبسکرپشن کٔرِو شٲمِل</string>
     <string name="add_transfer">اؠڈِٹ کَرنہٕ آمُت</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" سۭتۍ میچ گژھن وول کانٛہہ لین دین</string>
     <string name="no_transactions_for_format">%1$s خٲطرٕ چھُنہٕ کانٛہہ لین دین</string>
     <string name="about">مُتلِق</string>
-    <string name="cashiro_logo_cd">کیشیرو لوگو</string>
+    <string name="hootbook_logo_cd">کیشیرو لوگو</string>
     <string name="version_format">وْرجن %1$s, db-v%2$d</string>
     <string name="website">ویب سائٹ</string>
     <string name="github">گِتھب</string>

@@ -24,7 +24,7 @@
     <string name="investments_value">市值：%1$s %2$s</string>
     <string name="investments_pnl">浮动盈亏：%1$s %2$s</string>
     <string name="investments_setup">在 IBKR 网页端的「报表 → Flex Queries」创建 Activity Flex Query：\n\n• 格式：XML；日期格式：yyyyMMdd；期间：Last Business Day\n• 加入 Open Positions，选择 Summary（汇总），勾选全部字段，不选 Lots\n• 加入 Cash Report（按币种），以包含闲置现金和融资欠款\n• 保存 Query ID，启用 Flex Web Service 并生成 Token\n\n没有持仓或现金时也请保留空的 Open Positions 和 Cash Report 节。</string>
-    <string name="investments_privacy">Token 具有读取报表的权限，请勿分享。凭据及持仓在本机加密保存，不进入备份，也不经过 Cashiro 服务器。重新安装后需重新连接。</string>
+    <string name="investments_privacy">Token 具有读取报表的权限，请勿分享。凭据及持仓在本机加密保存，不进入备份，也不经过 Hootbook 服务器。重新安装后需重新连接。</string>
     <string name="investments_help">查看 IBKR 官方配置说明</string>
     <string name="investments_label">连接名称</string>
     <string name="investments_connect_sync">连接并同步</string>

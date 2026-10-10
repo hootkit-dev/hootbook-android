@@ -35,14 +35,14 @@ fun gitSha(): String {
 val slimDebug = project.hasProperty("slimDebug")
 
 android {
-    namespace = "com.ritesh.cashiro"
+    namespace = "io.github.hootkit_dev.hootbook"
     compileSdk = 37
     buildFeatures {
         buildConfig = true
         compose = true
     }
     defaultConfig {
-        applicationId = "com.ritesh.cashiro"
+        applicationId = "io.github.hootkit_dev.hootbook"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 36
@@ -152,7 +152,7 @@ android {
             // the candidate, so a device farm can measure both in one run.
             applicationIdSuffix = providers.gradleProperty("benchmarkIdSuffix").getOrElse(".benchmark")
             versionNameSuffix = "-benchmark"
-            manifestPlaceholders["appLabel"] = "Cashiro Benchmark"
+            manifestPlaceholders["appLabel"] = "Hootbook Benchmark"
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles("benchmark-rules.pro")
         }

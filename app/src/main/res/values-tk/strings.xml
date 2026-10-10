@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Öňüni alyş goşmak</string>
     <string name="add_subscription">Abuna goşmak</string>
     <string name="add_transfer">Ötkermek goşmak</string>
@@ -281,7 +281,7 @@
     <string name="share">Paýlaş</string>
     <string name="retry">Gaýtadan synanyş</string>
     <string name="share_csv">CSV paýlaş</string>
-    <string name="csv_export_subject">Cashiro amallaryny eksporta geçirmek</string>
+    <string name="csv_export_subject">Hootbook amallaryny eksporta geçirmek</string>
     <string name="edit_transaction">Amaly redaktirläň</string>
     <string name="transaction_details">Amal maglumatlary</string>
     <string name="delete_transaction">Amaly pozuň</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" bilen gabat gelýän amatlar ýok</string>
     <string name="no_transactions_for_format">%1$s üçin hiç hili amallar ýok</string>
     <string name="about">Hakynda</string>
-    <string name="cashiro_logo_cd">Kaşiro logosy</string>
+    <string name="hootbook_logo_cd">Kaşiro logosy</string>
     <string name="version_format">wersiýa %1$s, db-v%2$d</string>
     <string name="website">Web sahypa</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Ýygy-ýygydan soralýan soraglar</string>
     <string name="faq_desc">Köp soralýan soraglar</string>
     <string name="guides">Gollanmalar</string>
-    <string name="guides_desc">Cashiro-dan nädip peýdalanmaly</string>
+    <string name="guides_desc">Hootbook-dan nädip peýdalanmaly</string>
     <string name="report_bug">Käbir näsazlyklary habar beriň</string>
-    <string name="report_bug_desc">Cashiro-ny gowulandyrmaga kömek ediň</string>
+    <string name="report_bug_desc">Hootbook-ny gowulandyrmaga kömek ediň</string>
     <string name="privacy_policy">Gizlinlik syýasaty</string>
     <string name="privacy_policy_desc">Siziň maglumat ulanyşyňyz we gizlinligiňiz</string>
     <string name="terms_of_service">Hyzmat şertleri</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Tölegi ýa-da Abunalygy goş</string>
     <string name="selected_cd">Saýlanyldy</string>
     <string name="net_worth_label">Net bahasy</string>
-    <string name="app_locked_title">Cashiro Gysylly</string>
+    <string name="app_locked_title">Hootbook Gysylly</string>
     <string name="authenticate_desc">Çykdajy maglumatlaryňyza girmek üçin awtentifikasiýa ediň</string>
     <string name="unlock">Aç</string>
     <string name="biometric_unavailable_title">Biometrik awtentifikasiýa elýeterli däl</string>

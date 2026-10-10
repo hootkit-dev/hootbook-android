@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Касіро</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Додати транзакцію</string>
     <string name="add_subscription">Додати передплату</string>
     <string name="add_transfer">Додати переказ</string>
@@ -281,7 +281,7 @@
     <string name="share">Поділитись</string>
     <string name="retry">Повторити спробу</string>
     <string name="share_csv">Поділитись через CSV</string>
-    <string name="csv_export_subject">Експорт операцій Cashiro</string>
+    <string name="csv_export_subject">Експорт операцій Hootbook</string>
     <string name="edit_transaction">Редагувати транзакцію</string>
     <string name="transaction_details">Деталі операції</string>
     <string name="delete_transaction">Видалити транзакцію</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Немає транзакцій, що відповідають "%1$s"</string>
     <string name="no_transactions_for_format">Немає транзакцій для %1$s</string>
     <string name="about">Про програму</string>
-    <string name="cashiro_logo_cd">Логотип Касіро</string>
+    <string name="hootbook_logo_cd">Логотип Касіро</string>
     <string name="version_format">Версія %1$s, db-v%2$d</string>
     <string name="website">Вебсайт</string>
     <string name="github">Github</string>
@@ -346,7 +346,7 @@
     <string name="guides">Посібники</string>
     <string name="guides_desc">Як користуватися Касіро</string>
     <string name="report_bug">Повідомити про помилку</string>
-    <string name="report_bug_desc">Допоможіть нам покращити Cashiro</string>
+    <string name="report_bug_desc">Допоможіть нам покращити Hootbook</string>
     <string name="privacy_policy">Політика конфіденційності</string>
     <string name="privacy_policy_desc">Використання та конфіденційність даних</string>
     <string name="terms_of_service">Умови Використання</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Додати транзакцію або підписку</string>
     <string name="selected_cd">Вибрано</string>
     <string name="net_worth_label">Чистий капітал</string>
-    <string name="app_locked_title">Cashiro заблоковано</string>
+    <string name="app_locked_title">Hootbook заблоковано</string>
     <string name="authenticate_desc">Аутентифікуйтесь для доступу до даних витрат</string>
     <string name="unlock">Розблокувати</string>
     <string name="biometric_unavailable_title">Біометрична автентифікація недоступна</string>
