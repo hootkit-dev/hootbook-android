@@ -45,7 +45,9 @@ scripts/.env
 scripts/node_modules/
 
 reddit.md
-.claude
+# Local Claude Code state; the shared skills in .claude/skills are committed
+.claude/*
+!.claude/skills/
 
 # Personal notes (do not commit)
 docs/interview prep/
