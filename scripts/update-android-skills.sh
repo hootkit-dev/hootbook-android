@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Copies the Android skills Hootbook uses from https://github.com/android/skills (Apache-2.0)
-# into .claude/skills/, replacing what is there. Usage:
+# into .agents/skills/ (read by Codex, Gemini and the `android` CLI), replacing what is there, and
+# links each one from .claude/skills/ (Claude Code only reads skills there). Usage:
 #   scripts/update-android-skills.sh [ref]     # ref defaults to main
 set -euo pipefail
 
 REF="${1:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="$ROOT/.claude/skills"
+DEST="$ROOT/.agents/skills"
+LINKS="$ROOT/.claude/skills"
 
 # Skills that fit this app. Camera, Wear OS, TV, XR, Cast, Engage, Play Billing, on-device GenAI,
 # verified e-mail, restore credentials and XML-to-Compose migration are left out.
@@ -33,13 +35,15 @@ git clone --quiet --depth 1 --branch "$REF" https://github.com/android/skills "$
   || { git clone --quiet https://github.com/android/skills "$TMP/skills" && git -C "$TMP/skills" checkout --quiet "$REF"; }
 COMMIT="$(git -C "$TMP/skills" rev-parse HEAD)"
 
-mkdir -p "$DEST"
+mkdir -p "$DEST" "$LINKS"
 for path in "${SKILLS[@]}"; do
   name="$(basename "$path")"
   rm -rf "${DEST:?}/$name"
   cp -R "$TMP/skills/$path" "$DEST/$name"
   # Each SKILL.md points at LICENSE.txt next to it.
   cp "$TMP/skills/LICENSE.txt" "$DEST/$name/LICENSE.txt"
+  rm -rf "${LINKS:?}/$name"
+  ln -s "../../.agents/skills/$name" "$LINKS/$name"
 done
 
 {
@@ -48,6 +52,7 @@ done
   echo "Copied from [android/skills](https://github.com/android/skills) at \`$COMMIT\` by"
   echo "\`scripts/update-android-skills.sh\` (Apache License 2.0, see each skill's \`LICENSE.txt\`)."
   echo "Do not edit them here; rerun the script to update. The list of skills is in the script."
+  echo "Claude Code reads them through the symlinks in \`.claude/skills/\`."
   echo
   for path in "${SKILLS[@]}"; do echo "- \`$(basename "$path")\` ($path)"; done
 } > "$DEST/README.md"

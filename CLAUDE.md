@@ -60,11 +60,11 @@ of a synced table needs a kind there too, `SyncSchemaTest` checks). See `docs/sy
 - **Chinese experience**: `/docs/chinese-experience.md`
 - **Sync**: `/docs/sync.md`
 - **Validation**: `/docs/validation/chinese-experience/README.md`
-- **Android skills**: `.claude/skills/` holds skills copied from
+- **Android skills**: `.agents/skills/` holds skills copied from
   [android/skills](https://github.com/android/skills) (AGP 9 upgrade, adaptive layouts, edge-to-edge,
   Navigation 3, predictive back, R8, profiling, testing, intent and permission security, Play policy,
-  AppFunctions, Compose styles, Android CLI). Update or change the list with
-  `scripts/update-android-skills.sh`; do not edit the copies.
+  AppFunctions, Compose styles, Android CLI); `.claude/skills/` has a symlink per skill so Claude Code
+  finds them. Update or change the list with `scripts/update-android-skills.sh`; do not edit the copies.
 
 ## Key Technical Decisions
 

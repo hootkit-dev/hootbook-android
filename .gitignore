@@ -45,7 +45,7 @@ scripts/.env
 scripts/node_modules/
 
 reddit.md
-# Local Claude Code state; the shared skills in .claude/skills are committed
+# Local Claude Code state; .claude/skills (symlinks into .agents/skills) is committed
 .claude/*
 !.claude/skills/
 

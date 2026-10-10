@@ -3,6 +3,7 @@
 Copied from [android/skills](https://github.com/android/skills) at `42dc2270e96032bd860bb94511e440aa00a43125` by
 `scripts/update-android-skills.sh` (Apache License 2.0, see each skill's `LICENSE.txt`).
 Do not edit them here; rerun the script to update. The list of skills is in the script.
+Claude Code reads them through the symlinks in `.claude/skills/`.
 
 - `agp-9-upgrade` (build-system/agp/agp-9-upgrade)
 - `appfunctions` (device-ai/appfunctions)
