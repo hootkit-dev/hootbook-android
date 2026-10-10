@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Přidat transakci</string>
     <string name="add_subscription">Přidat odběr</string>
     <string name="add_transfer">Přidat převod</string>
@@ -281,7 +281,7 @@
     <string name="share">Sdílet</string>
     <string name="retry">Opakovat</string>
     <string name="share_csv">Sdílet CSV</string>
-    <string name="csv_export_subject">Export transakcí do Cashiro</string>
+    <string name="csv_export_subject">Export transakcí do Hootbook</string>
     <string name="edit_transaction">Upravit transakci</string>
     <string name="transaction_details">Podrobnosti transakce</string>
     <string name="delete_transaction">Odstranit transakci</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Žádné transakce odpovídající \"%1$s\"</string>
     <string name="no_transactions_for_format">Žádné transakce pro %1$s</string>
     <string name="about">O aplikaci</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Verze %1$s, db-v%2$d</string>
     <string name="website">Webová stránka</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Nejčastější dotazy</string>
     <string name="faq_desc">Často kladené otázky</string>
     <string name="guides">Návody</string>
-    <string name="guides_desc">Jak používat Cashiro</string>
+    <string name="guides_desc">Jak používat Hootbook</string>
     <string name="report_bug">Nahlásit chybu</string>
-    <string name="report_bug_desc">Pomozte nám zlepšit Cashiro</string>
+    <string name="report_bug_desc">Pomozte nám zlepšit Hootbook</string>
     <string name="privacy_policy">Ochrana osobních údajů</string>
     <string name="privacy_policy_desc">Vaše využití dat a soukromí</string>
     <string name="terms_of_service">Podmínky služby</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Přidat transakci nebo předplatné</string>
     <string name="selected_cd">Vybrané</string>
     <string name="net_worth_label">Čisté jmění</string>
-    <string name="app_locked_title">Cashiro je uzamčen</string>
+    <string name="app_locked_title">Hootbook je uzamčen</string>
     <string name="authenticate_desc">Ověřte se pro přístup k datům o výdajích</string>
     <string name="unlock">Odemknout</string>
     <string name="biometric_unavailable_title">Biometrické ověřování není dostupné</string>

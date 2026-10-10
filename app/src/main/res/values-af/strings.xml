@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Voeg Transaksie by</string>
     <string name="add_subscription">Voeg Subskripsie by</string>
     <string name="add_transfer">Voeg Oordrag by</string>
@@ -281,7 +281,7 @@
     <string name="share">Deel</string>
     <string name="retry">Probeer weer</string>
     <string name="share_csv">Deel CSV</string>
-    <string name="csv_export_subject">Cashiro Transaksies Uitvoer</string>
+    <string name="csv_export_subject">Hootbook Transaksies Uitvoer</string>
     <string name="edit_transaction">Wysig Transaksie</string>
     <string name="transaction_details">Transaksie Besonderhede</string>
     <string name="delete_transaction">Verwyder Transaksie</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Geen transaksies wat ooreenstem met "%1$s" nie</string>
     <string name="no_transactions_for_format">Geen transaksies vir %1$s nie</string>
     <string name="about">Oor</string>
-    <string name="cashiro_logo_cd">Cashiro Logo</string>
+    <string name="hootbook_logo_cd">Hootbook Logo</string>
     <string name="version_format">Weergawe %1$s, db-v%2$d</string>
     <string name="website">Webwerf</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Gereelde Vrae</string>
     <string name="faq_desc">Gereeld gevraagde vrae</string>
     <string name="guides">Gidse</string>
-    <string name="guides_desc">Hoe om Cashiro te gebruik</string>
+    <string name="guides_desc">Hoe om Hootbook te gebruik</string>
     <string name="report_bug">Rapporteer fout</string>
-    <string name="report_bug_desc">Help ons om Cashiro te verbeter</string>
+    <string name="report_bug_desc">Help ons om Hootbook te verbeter</string>
     <string name="privacy_policy">Privaatheidsbeleid</string>
     <string name="privacy_policy_desc">Jou data gebruik en privaatheid</string>
     <string name="terms_of_service">Diensvoorwaardes</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Voeg Transaksie of Subskripsie by</string>
     <string name="selected_cd">Gekies</string>
     <string name="net_worth_label">\nNetto waarde</string>
-    <string name="app_locked_title">Cashiro is Gesluit</string>
+    <string name="app_locked_title">Hootbook is Gesluit</string>
     <string name="authenticate_desc">Verifieer om toegang tot jou uitgawesdata te kry</string>
     <string name="unlock">Ontsluit</string>
     <string name="biometric_unavailable_title">Biometriese verifikasie nie beskikbaar nie</string>

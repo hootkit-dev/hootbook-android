@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const xml2js = require('xml2js');
 
-const resDir = '/home/ritesh/Applications/AndroidStudios-Projects/Projects/Cashiro AI Tracker/app/src/main/res';
+const resDir = '/home/ritesh/Applications/AndroidStudios-Projects/Projects/Hootbook AI Tracker/app/src/main/res';
 
 async function main() {
   const engContent = fs.readFileSync(path.join(resDir, 'values', 'strings.xml'), 'utf8');

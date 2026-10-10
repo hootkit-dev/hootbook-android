@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Dodaj transakciju</string>
     <string name="add_subscription">Dodaj pretplatu</string>
     <string name="add_transfer">Dodaj prijenos</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Nema transakcija koje odgovaraju "%1$s"</string>
     <string name="no_transactions_for_format">Nema transakcija za %1$s</string>
     <string name="about">O aplikaciji</string>
-    <string name="cashiro_logo_cd">Cashiro Logo</string>
+    <string name="hootbook_logo_cd">Hootbook Logo</string>
     <string name="version_format">Verzija %1$s, db-v%2$d</string>
     <string name="website">Web stranica</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">Često postavljana pitanja</string>
     <string name="guides">Vodiči</string>
-    <string name="guides_desc">Kako koristiti Cashiro</string>
+    <string name="guides_desc">Kako koristiti Hootbook</string>
     <string name="report_bug">Prijavi grešku</string>
-    <string name="report_bug_desc">Pomozite nam poboljšati Cashiro</string>
+    <string name="report_bug_desc">Pomozite nam poboljšati Hootbook</string>
     <string name="privacy_policy">Pravila privatnosti</string>
     <string name="privacy_policy_desc">Korištenje i zaštita vaših podataka</string>
     <string name="terms_of_service">Uvjeti korištenja</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Dodaj transakciju ili pretplatu</string>
     <string name="selected_cd">Odabrano</string>
     <string name="net_worth_label">Neto vrijednost</string>
-    <string name="app_locked_title">Cashiro je Zaključan</string>
+    <string name="app_locked_title">Hootbook je Zaključan</string>
     <string name="authenticate_desc">Autentificirajte se za pristup svojim podacima o troškovima</string>
     <string name="unlock">Otključaj</string>
     <string name="biometric_unavailable_title">Biometrijska autentifikacija nije dostupna</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Adaugă Tranzacție</string>
     <string name="add_subscription">Adaugă Abonament</string>
     <string name="add_transfer">Adaugă Transfer</string>
@@ -281,7 +281,7 @@
     <string name="share">Distribuie</string>
     <string name="retry">Reîncercați</string>
     <string name="share_csv">Distribuie CSV</string>
-    <string name="csv_export_subject">Export tranzacții Cashiro</string>
+    <string name="csv_export_subject">Export tranzacții Hootbook</string>
     <string name="edit_transaction">Editează Tranzacția</string>
     <string name="transaction_details">Detalii tranzacție</string>
     <string name="delete_transaction">Șterge Tranzacția</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Nicio tranzacție care se potrivește \"%1$s\"</string>
     <string name="no_transactions_for_format">Nicio tranzacție pentru %1$s</string>
     <string name="about">Despre</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Versiunea %1$s, db-v%2$d</string>
     <string name="website">Website</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Întrebări</string>
     <string name="faq_desc">Întrebări frecvente</string>
     <string name="guides">Ghiduri</string>
-    <string name="guides_desc">Cum să utilizaţi Cashiro</string>
+    <string name="guides_desc">Cum să utilizaţi Hootbook</string>
     <string name="report_bug">Raportează eroarea</string>
-    <string name="report_bug_desc">Ajutați-ne să îmbunătățim Cashiro</string>
+    <string name="report_bug_desc">Ajutați-ne să îmbunătățim Hootbook</string>
     <string name="privacy_policy">Politica de confidenţialitate</string>
     <string name="privacy_policy_desc">Utilizarea datelor și confidențialitatea datelor</string>
     <string name="terms_of_service">Condiții de utilizare</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Adaugă tranzacție sau abonament</string>
     <string name="selected_cd">Selectat</string>
     <string name="net_worth_label">Valoare netă</string>
-    <string name="app_locked_title">Cashiro este blocat</string>
+    <string name="app_locked_title">Hootbook este blocat</string>
     <string name="authenticate_desc">Autentifică-te pentru a accesa datele tale despre cheltuieli</string>
     <string name="unlock">Deblochează</string>
     <string name="biometric_unavailable_title">Autentificarea biometrică indisponibilă</string>

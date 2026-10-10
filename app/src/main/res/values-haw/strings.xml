@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Pākuʻi Kūʻai</string>
     <string name="add_subscription">Hoʻohui i ke kau inoa</string>
     <string name="add_transfer">Hoʻohui i ka hoʻoili</string>
@@ -281,7 +281,7 @@
     <string name="share">Kaʻana like</string>
     <string name="retry">E hoao hou</string>
     <string name="share_csv">Kaʻana like CSV</string>
-    <string name="csv_export_subject">Hoʻokuʻu aku i nā kālepa Cashiro</string>
+    <string name="csv_export_subject">Hoʻokuʻu aku i nā kālepa Hootbook</string>
     <string name="edit_transaction">Hoʻoponopono Kūʻai</string>
     <string name="transaction_details">Nā Kūlana Kūʻai</string>
     <string name="delete_transaction">Holoi i ka hana</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">ʻAʻohe hana e like me \'%1$s\'</string>
     <string name="no_transactions_for_format">ʻAʻohe hana no %1$s</string>
     <string name="about">E pili ana</string>
-    <string name="cashiro_logo_cd">Kāleka Kāleka</string>
+    <string name="hootbook_logo_cd">Kāleka Kāleka</string>
     <string name="version_format">Manaʻo %1$s, db-v%2$d</string>
     <string name="website">Pūnaewele</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">Nīnau pinepine</string>
     <string name="guides">Nā alakaʻi</string>
-    <string name="guides_desc">Pehea e hoʻohana ai iā Cashiro</string>
+    <string name="guides_desc">Pehea e hoʻohana ai iā Hootbook</string>
     <string name="report_bug">Hōʻike Bug</string>
-    <string name="report_bug_desc">E kōkua iā mākou e hoʻomaikaʻi iā Cashiro</string>
+    <string name="report_bug_desc">E kōkua iā mākou e hoʻomaikaʻi iā Hootbook</string>
     <string name="privacy_policy">Kulekele pilikino</string>
     <string name="privacy_policy_desc">ʻO kāu hoʻohana ʻikepili a pilikino</string>
     <string name="terms_of_service">Kūlana o ka lawelawe</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Hoʻohui i ka hana a i ʻole ke kau inoa</string>
     <string name="selected_cd">Koho ʻia</string>
     <string name="net_worth_label">Uuna waiwai</string>
-    <string name="app_locked_title">Ua Paʻa ʻo Cashiro</string>
+    <string name="app_locked_title">Ua Paʻa ʻo Hootbook</string>
     <string name="authenticate_desc">E hōʻoia no ke komo ʻana i kāu ʻikepili koina</string>
     <string name="unlock">Wehe</string>
     <string name="biometric_unavailable_title">ʻAʻole loaʻa ka hōʻoia biometric</string>

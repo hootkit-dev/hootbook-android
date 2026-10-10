@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Onjezani Transaction</string>
     <string name="add_subscription">Onjezani Kulembetsa</string>
     <string name="add_transfer">Onjezani Kusamutsa</string>
@@ -281,7 +281,7 @@
     <string name="share">Gawani</string>
     <string name="retry">Yesaninso</string>
     <string name="share_csv">Pezani CSV</string>
-    <string name="csv_export_subject">Cashiro Transactions Export</string>
+    <string name="csv_export_subject">Hootbook Transactions Export</string>
     <string name="edit_transaction">Sinthani Transaction</string>
     <string name="transaction_details">Tsatanetsatane wa Transaction</string>
     <string name="delete_transaction">Chotsani Transaction</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Palibe zofananira ndi \'%1$s\'</string>
     <string name="no_transactions_for_format">Palibe kusintha kwa %1$s</string>
     <string name="about">Za</string>
-    <string name="cashiro_logo_cd">Cashiro Logo</string>
+    <string name="hootbook_logo_cd">Hootbook Logo</string>
     <string name="version_format">Mtundu wa %1$s, db-v%2$d</string>
     <string name="website">Webusaiti</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">Mafunso omwe amafunsidwa pafupipafupi</string>
     <string name="guides">Atsogoleri</string>
-    <string name="guides_desc">Momwe mungagwiritsire ntchito Cashiro</string>
+    <string name="guides_desc">Momwe mungagwiritsire ntchito Hootbook</string>
     <string name="report_bug">Nenani Bug</string>
-    <string name="report_bug_desc">Tithandizeni kukonza Cashiro</string>
+    <string name="report_bug_desc">Tithandizeni kukonza Hootbook</string>
     <string name="privacy_policy">Mfundo Zazinsinsi</string>
     <string name="privacy_policy_desc">Kugwiritsa ntchito deta yanu komanso zachinsinsi</string>
     <string name="terms_of_service">Terms of Service</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Onjezani Transaction kapena Subscription</string>
     <string name="selected_cd">Zosankhidwa</string>
     <string name="net_worth_label">Ndalama zonse</string>
-    <string name="app_locked_title">Cashiro Yatsekedwa</string>
+    <string name="app_locked_title">Hootbook Yatsekedwa</string>
     <string name="authenticate_desc">Tsimikizirani kuti mupeze data yanu yandalama</string>
     <string name="unlock">Tsegulani</string>
     <string name="biometric_unavailable_title">Kutsimikizira kwa Biometric sikukupezeka</string>

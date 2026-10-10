@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Tranzaksiyani qo\'shish</string>
     <string name="add_subscription">Obunani qo\'shish</string>
     <string name="add_transfer">O\'tkazmani qo\'shish</string>
@@ -281,7 +281,7 @@
     <string name="share">Ulashish</string>
     <string name="retry">Qayta urinish</string>
     <string name="share_csv">CSV ni ulashish</string>
-    <string name="csv_export_subject">Cashiro tranzaksiyalari eksporti</string>
+    <string name="csv_export_subject">Hootbook tranzaksiyalari eksporti</string>
     <string name="edit_transaction">Tranzaksiyani tahrirlash</string>
     <string name="transaction_details">Tranzaksiya tafsilotlari</string>
     <string name="delete_transaction">Tranzaksiyani o\'chirish</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" ga mos keladigan tranzaksiyalar yo‘q</string>
     <string name="no_transactions_for_format">%1$s uchun tranzaksiyalar yo‘q</string>
     <string name="about">Haqida</string>
-    <string name="cashiro_logo_cd">Cashiro Logosi</string>
+    <string name="hootbook_logo_cd">Hootbook Logosi</string>
     <string name="version_format">Versiya %1$s, db-v%2$d</string>
     <string name="website">Veb-sayt</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Ko\'p so\'raladigan savollar</string>
     <string name="faq_desc">Ko‘p so‘raladigan savollar</string>
     <string name="guides">Qo‘llanmalar</string>
-    <string name="guides_desc">Cashironi qanday ishlatish</string>
+    <string name="guides_desc">Hootbookni qanday ishlatish</string>
     <string name="report_bug">Xatolik haqida xabar berish</string>
-    <string name="report_bug_desc">Cashironi yaxshilashga yordam bering</string>
+    <string name="report_bug_desc">Hootbookni yaxshilashga yordam bering</string>
     <string name="privacy_policy">Maxfiylik siyosati</string>
     <string name="privacy_policy_desc">Sizning ma’lumotlaringizdan foydalanish va maxfiylik</string>
     <string name="terms_of_service">Xizmat ko‘rsatish shartlari</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Tranzaksiya yoki obunani qo\'shish</string>
     <string name="selected_cd">Tanlangan</string>
     <string name="net_worth_label">Sof aktivlar</string>
-    <string name="app_locked_title">Cashiro qulflangan</string>
+    <string name="app_locked_title">Hootbook qulflangan</string>
     <string name="authenticate_desc">Xarajat maʼlumotlaringizga kirish uchun autentifikatsiya qiling</string>
     <string name="unlock">Qulfni ochish</string>
     <string name="biometric_unavailable_title">Biometrik autentifikatsiya mavjud emas</string>

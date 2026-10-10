@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">افزودن تراکنش</string>
     <string name="add_subscription">افزودن اشتراک</string>
     <string name="add_transfer">افزودن انتقال</string>
@@ -281,7 +281,7 @@
     <string name="share">به اشتراک گذاری</string>
     <string name="retry">تلاش مجدد</string>
     <string name="share_csv">اشتراک‌گذاری CSV</string>
-    <string name="csv_export_subject">صادرات تراکنش‌های Cashiro</string>
+    <string name="csv_export_subject">صادرات تراکنش‌های Hootbook</string>
     <string name="edit_transaction">ویرایش تراکنش</string>
     <string name="transaction_details">جزئیات تراکنش</string>
     <string name="delete_transaction">حذف تراکنش</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">هیچ تراکنشی مطابق با "%1$s" پیدا نشد</string>
     <string name="no_transactions_for_format">هیچ تراکنشی برای %1$s وجود ندارد</string>
     <string name="about">درباره</string>
-    <string name="cashiro_logo_cd">لوگوی Cashiro</string>
+    <string name="hootbook_logo_cd">لوگوی Hootbook</string>
     <string name="version_format">نسخه %1$s، db-v%2$d</string>
     <string name="website">وب‌سایت</string>
     <string name="github">گیت‌هاب</string>
@@ -344,9 +344,9 @@
     <string name="faq">سوالات متداول</string>
     <string name="faq_desc">پرسش‌های متداول</string>
     <string name="guides">راهنماها</string>
-    <string name="guides_desc">چگونه از Cashiro استفاده کنیم</string>
+    <string name="guides_desc">چگونه از Hootbook استفاده کنیم</string>
     <string name="report_bug">گزارش اشکال</string>
-    <string name="report_bug_desc">به ما کمک کنید تا Cashiro را بهبود دهیم</string>
+    <string name="report_bug_desc">به ما کمک کنید تا Hootbook را بهبود دهیم</string>
     <string name="privacy_policy">سیاست حفظ حریم خصوصی</string>
     <string name="privacy_policy_desc">استفاده از داده‌ها و حریم خصوصی شما</string>
     <string name="terms_of_service">شرایط خدمات</string>

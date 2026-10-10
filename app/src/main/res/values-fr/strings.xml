@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Ajouter une transaction</string>
     <string name="add_subscription">Ajouter un abonnement</string>
     <string name="add_transfer">Ajouter un transfert</string>
@@ -281,7 +281,7 @@
     <string name="share">Partager</string>
     <string name="retry">Réessayer</string>
     <string name="share_csv">Partager CSV</string>
-    <string name="csv_export_subject">Export des transactions en cashiro</string>
+    <string name="csv_export_subject">Export des transactions Hootbook</string>
     <string name="edit_transaction">Modifier la transaction</string>
     <string name="transaction_details">Détails de la transaction</string>
     <string name="delete_transaction">Supprimer la transaction</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Aucune transaction correspondant à «%1$s»</string>
     <string name="no_transactions_for_format">Aucune transaction pour %1$s</string>
     <string name="about">À propos de</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Version %1$s, db-v%2$d</string>
     <string name="website">Site Web</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Foire Aux Questions</string>
     <string name="faq_desc">Foire aux questions</string>
     <string name="guides">Tutoriels</string>
-    <string name="guides_desc">Comment utiliser Cashiro</string>
+    <string name="guides_desc">Comment utiliser Hootbook</string>
     <string name="report_bug">Signaler un bug</string>
-    <string name="report_bug_desc">Aidez-nous à améliorer Cashiro</string>
+    <string name="report_bug_desc">Aidez-nous à améliorer Hootbook</string>
     <string name="privacy_policy">Politique de confidentialité</string>
     <string name="privacy_policy_desc">Votre utilisation et votre confidentialité des données</string>
     <string name="terms_of_service">Conditions d\'utilisation</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Ajouter une transaction ou un abonnement</string>
     <string name="selected_cd">Sélectionné</string>
     <string name="net_worth_label">Valeur nette</string>
-    <string name="app_locked_title">Cashiro est verrouillé</string>
+    <string name="app_locked_title">Hootbook est verrouillé</string>
     <string name="authenticate_desc">Authentifiez-vous pour accéder à vos données de dépenses</string>
     <string name="unlock">Déverrouiller</string>
     <string name="biometric_unavailable_title">Authentification biométrique non disponible</string>

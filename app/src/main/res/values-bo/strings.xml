@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">ཉོ་འཚོང་ཁ་སྣོན་བྱས་པ།</string>
     <string name="add_subscription">མངག་ཉོ་ཁ་སྣོན་བྱས་པ།</string>
     <string name="add_transfer">སྤོ་སྒྱུར་ཁ་སྣོན་བྱས་པ།</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s"དང་མཐུན་པའི་ཉོ་ཚོང་མེད།</string>
     <string name="no_transactions_for_format">%1$s ལ་ཉོ་ཚོང་མེད་པ།</string>
     <string name="about">སྐོར་ལས།</string>
-    <string name="cashiro_logo_cd">ཁ་ཤི་རོ་ཡི་མཚོན་རྟགས།</string>
+    <string name="hootbook_logo_cd">ཁ་ཤི་རོ་ཡི་མཚོན་རྟགས།</string>
     <string name="version_format">ཐོན་རིམ་%1$s, db-v%2$d</string>
     <string name="website">དྲ་ཚིགས་</string>
     <string name="github">Github</string>
@@ -344,7 +344,7 @@
     <string name="faq">རྒྱུན་འདྲིའི་དྲི་བ།</string>
     <string name="faq_desc">རྒྱུན་པར་འདྲི་བའི་དྲི་བ།</string>
     <string name="guides">ཕྱོགས་སྟོན་པ་</string>
-    <string name="guides_desc">Cashiro ཇི་ལྟར་བཀོལ་སྤྱོད་བྱེད་རྒྱུ།</string>
+    <string name="guides_desc">Hootbook ཇི་ལྟར་བཀོལ་སྤྱོད་བྱེད་རྒྱུ།</string>
     <string name="report_bug">སྐྱོན་ཆ་སྙན་སེང་ཞུ་བ།</string>
     <string name="report_bug_desc">ང་ཚོར་ཁ་ཤི་རོ་ལེགས་བཅོས་བྱེད་རོགས་གནང་།</string>
     <string name="privacy_policy">གསང་བའི་སྲིད་ཇུས།</string>

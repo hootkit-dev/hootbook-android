@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Thêm Giao Dịch</string>
     <string name="add_subscription">Thêm Đăng Ký</string>
     <string name="add_transfer">Thêm Chuyển Khoản</string>
@@ -281,7 +281,7 @@
     <string name="share">Chia sẻ</string>
     <string name="retry">Thử lại</string>
     <string name="share_csv">Chia sẻ CSV</string>
-    <string name="csv_export_subject">Xuất giao dịch Cashiro</string>
+    <string name="csv_export_subject">Xuất giao dịch Hootbook</string>
     <string name="edit_transaction">Chỉnh sửa giao dịch</string>
     <string name="transaction_details">Chi tiết giao dịch</string>
     <string name="delete_transaction">Xóa giao dịch</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Không có giao dịch nào khớp với "%1$s"</string>
     <string name="no_transactions_for_format">Không có giao dịch nào cho %1$s</string>
     <string name="about">Giới thiệu</string>
-    <string name="cashiro_logo_cd">Logo Cashiro</string>
+    <string name="hootbook_logo_cd">Logo Hootbook</string>
     <string name="version_format">Phiên bản %1$s, db-v%2$d</string>
     <string name="website">Trang web</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Câu hỏi thường gặp</string>
     <string name="faq_desc">Các câu hỏi thường gặp</string>
     <string name="guides">Hướng dẫn</string>
-    <string name="guides_desc">Cách sử dụng Cashiro</string>
+    <string name="guides_desc">Cách sử dụng Hootbook</string>
     <string name="report_bug">Báo lỗi</string>
-    <string name="report_bug_desc">Giúp chúng tôi cải thiện Cashiro</string>
+    <string name="report_bug_desc">Giúp chúng tôi cải thiện Hootbook</string>
     <string name="privacy_policy">Chính sách quyền riêng tư</string>
     <string name="privacy_policy_desc">Việc sử dụng dữ liệu và quyền riêng tư của bạn</string>
     <string name="terms_of_service">Điều khoản dịch vụ</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Thêm Giao dịch hoặc Đăng ký</string>
     <string name="selected_cd">Đã chọn</string>
     <string name="net_worth_label">Tổng giá trị tài sản</string>
-    <string name="app_locked_title">Cashiro bị khóa</string>
+    <string name="app_locked_title">Hootbook bị khóa</string>
     <string name="authenticate_desc">Xác thực để truy cập dữ liệu chi tiêu của bạn</string>
     <string name="unlock">Mở khóa</string>
     <string name="biometric_unavailable_title">Xác thực sinh trắc học không khả dụng</string>

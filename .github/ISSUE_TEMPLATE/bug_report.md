@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a bug or issue with Cashiro
+about: Report a bug or issue with Hootbook
 title: '[BUG] '
 labels: bug
 assignees: 'ritesh-kanwar'

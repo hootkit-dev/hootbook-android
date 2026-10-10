@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">ವಿನಿಮಯ ಸೇರಿಸಿ</string>
     <string name="add_subscription">ಚಂದಾದಾರಿಕೆ ಸೇರಿಸಿ</string>
     <string name="add_transfer">ಸೋಂಪಣೆ ಸೇರಿಸಿ</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" ಗೆ ಹೊಂದಿಕೆಯಾಗುವ ಯಾವುದೇ ವ್ಯವಹಾರಗಳಿಲ್ಲ</string>
     <string name="no_transactions_for_format">%1$s ಗೆ ಯಾವುದೇ ವ್ಯವಹಾರಗಳಿಲ್ಲ</string>
     <string name="about">ಬಗ್ಗೆ</string>
-    <string name="cashiro_logo_cd">ಕ್ಯಾಶಿರೊ ಲೋಗೋ</string>
+    <string name="hootbook_logo_cd">ಕ್ಯಾಶಿರೊ ಲೋಗೋ</string>
     <string name="version_format">ಆವೃತ್ತಿ %1$s, db-v%2$d</string>
     <string name="website">ವೆಬ್‌ಸೈಟ್</string>
     <string name="github">ಗಿಟ್‌ಹಬ್</string>

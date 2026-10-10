@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for Cashiro
+about: Suggest an idea for Hootbook
 title: '[FEATURE] '
 labels: enhancement
 assignees: 'ritesh-kanwar'

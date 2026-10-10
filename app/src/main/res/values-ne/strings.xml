@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">लेनदेन थप्नुहोस्</string>
     <string name="add_subscription">सदस्यता थप्नुहोस्</string>
     <string name="add_transfer">स्थानान्तरण थप्नुहोस्</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" सँग मेल खाने कुनै कारोबार छैन</string>
     <string name="no_transactions_for_format">%1$s का लागि कुनै कारोबार छैन</string>
     <string name="about">बारेमा</string>
-    <string name="cashiro_logo_cd">Cashiro लोगो</string>
+    <string name="hootbook_logo_cd">Hootbook लोगो</string>
     <string name="version_format">संस्करण %1$s, db-v%2$d</string>
     <string name="website">वेबसाइट</string>
     <string name="github">गिटहब</string>
@@ -344,9 +344,9 @@
     <string name="faq">सोधिने प्रश्नहरू</string>
     <string name="faq_desc">बारम्बार सोधिने प्रश्नहरू</string>
     <string name="guides">मार्गदर्शकहरू</string>
-    <string name="guides_desc">Cashiro कसरी प्रयोग गर्ने</string>
+    <string name="guides_desc">Hootbook कसरी प्रयोग गर्ने</string>
     <string name="report_bug">Bug रिपोर्ट गर्नुहोस्</string>
-    <string name="report_bug_desc">हामीलाई Cashiro सुधार गर्न मद्दत गर्नुहोस्</string>
+    <string name="report_bug_desc">हामीलाई Hootbook सुधार गर्न मद्दत गर्नुहोस्</string>
     <string name="privacy_policy">गोपनीयता नीति</string>
     <string name="privacy_policy_desc">तपाईंको डाटा प्रयोग र गोपनीयता</string>
     <string name="terms_of_service">सेवा सर्तहरू</string>

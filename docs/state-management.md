@@ -1,7 +1,7 @@
-# Cashiro State Management Guide
+# Hootbook State Management Guide
 
 ## Overview
-Cashiro uses the modern Android state management approach with:
+Hootbook uses the modern Android state management approach with:
 - **ViewModel + StateFlow** for UI state
 - **DataStore** for persistent preferences
 - **Unidirectional Data Flow (UDF)** pattern
@@ -118,9 +118,9 @@ fun StatelessCounter(
 
 ### 3. App-Wide State Management
 ```kotlin
-// CashiroApp.kt
+// HootbookApp.kt
 @Composable
-fun CashiroApp() {
+fun HootbookApp() {
     val themeViewModel: ThemeViewModel = hiltViewModel()
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     
@@ -130,7 +130,7 @@ fun CashiroApp() {
         else -> themeUiState.isDarkTheme
     }
     
-    CashiroTheme(
+    HootbookTheme(
         darkTheme = darkTheme,
         dynamicColor = themeUiState.isDynamicColorEnabled
     ) {

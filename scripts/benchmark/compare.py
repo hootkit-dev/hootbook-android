@@ -25,7 +25,7 @@ import statistics
 import sys
 
 VARIANTS = ("base", "candidate")
-MARKER = "<!-- cashiro-perf -->"
+MARKER = "<!-- hootbook-perf -->"
 BOOTSTRAP = 2000
 
 # Test -> label, in report order. Unknown tests are listed after these under their name.

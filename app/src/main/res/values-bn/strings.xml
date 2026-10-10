@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">লেনদেন যোগ করুন</string>
     <string name="add_subscription">সাবস্ক্রিপশন যোগ করুন</string>
     <string name="add_transfer">স্থানান্তর যোগ করুন</string>
@@ -281,7 +281,7 @@
     <string name="share">শেয়ার</string>
     <string name="retry">পুনরায় চেষ্টা করুন</string>
     <string name="share_csv">CSV শেয়ার করুন</string>
-    <string name="csv_export_subject">Cashiro লেনদেন এক্সপোর্ট</string>
+    <string name="csv_export_subject">Hootbook লেনদেন এক্সপোর্ট</string>
     <string name="edit_transaction">লেনদেন সম্পাদনা করুন</string>
     <string name="transaction_details">লেনদেনের বিস্তারিত</string>
     <string name="delete_transaction">লেনদেন মুছে দিন</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" এর সাথে মিল নেই এমন কোনো লেনদেন নেই</string>
     <string name="no_transactions_for_format">%1$s-এর জন্য কোনো লেনদেন নেই</string>
     <string name="about">সম্পর্কিত</string>
-    <string name="cashiro_logo_cd">ক্যাশিরো লোগো</string>
+    <string name="hootbook_logo_cd">ক্যাশিরো লোগো</string>
     <string name="version_format">সংস্করণ %1$s, db-v%2$d</string>
     <string name="website">ওয়েবসাইট</string>
     <string name="github">গিটহাব</string>

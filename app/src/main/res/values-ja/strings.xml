@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">取引を追加</string>
     <string name="add_subscription">サブスクリプションを追加</string>
     <string name="add_transfer">送金を追加</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">\"%1$s\" に一致する取引はありません</string>
     <string name="no_transactions_for_format">%1$s の取引はありません</string>
     <string name="about">情報</string>
-    <string name="cashiro_logo_cd">Cashiro ロゴ</string>
+    <string name="hootbook_logo_cd">Hootbook ロゴ</string>
     <string name="version_format">バージョン %1$s, db-v%2$d</string>
     <string name="website">ウェブサイト</string>
     <string name="github">GitHub</string>
@@ -344,9 +344,9 @@
     <string name="faq">FAQ</string>
     <string name="faq_desc">よくある質問</string>
     <string name="guides">補助線</string>
-    <string name="guides_desc">Cashiro の使い方</string>
+    <string name="guides_desc">Hootbook の使い方</string>
     <string name="report_bug">バグの報告</string>
-    <string name="report_bug_desc">Cashiroの改善にご協力ください</string>
+    <string name="report_bug_desc">Hootbookの改善にご協力ください</string>
     <string name="privacy_policy">プライバシーポリシー</string>
     <string name="privacy_policy_desc">データ使用量とプライバシー</string>
     <string name="terms_of_service">利用規約</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">取引またはサブスクリプションを追加</string>
     <string name="selected_cd">選択済み</string>
     <string name="net_worth_label">総資産</string>
-    <string name="app_locked_title">Cashiro はロックされています</string>
+    <string name="app_locked_title">Hootbook はロックされています</string>
     <string name="authenticate_desc">支出データにアクセスするには認証してください</string>
     <string name="unlock">ロック解除</string>
     <string name="biometric_unavailable_title">生体認証は使用できません</string>

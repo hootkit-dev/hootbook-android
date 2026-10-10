@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">ଟ୍ରାଞ୍ଜାକସନ୍ ଯୋଡନ୍ତୁ</string>
     <string name="add_subscription">ସଦସ୍ୟତା ଯୋଡନ୍ତୁ</string>
     <string name="add_transfer">ସ୍ଥାନାନ୍ତରଣ ଯୋଡନ୍ତୁ</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">\'%1$s\' ସହ ମେଳକ ହେଉଥିବା କୌଣସି ଟ୍ରାଞ୍ଜାକସନସ୍ ନାହିଁ</string>
     <string name="no_transactions_for_format">%1$s ପାଇଁ କୌଣସି ଟ୍ରାଞ୍ଜାକସନସ୍ ନାହିଁ</string>
     <string name="about">ବିଷୟରେ</string>
-    <string name="cashiro_logo_cd">କାଶିରୋ ଲୋଗୋ</string>
+    <string name="hootbook_logo_cd">କାଶିରୋ ଲୋଗୋ</string>
     <string name="version_format">ସଂସ୍କରଣ %1$s, db-v%2$d</string>
     <string name="website">ୱେବସାଇଟ୍</string>
     <string name="github">ଗିଥବ୍</string>

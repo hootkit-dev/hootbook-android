@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Əməliyyat əlavə et</string>
     <string name="add_subscription">Abunəlik əlavə et</string>
     <string name="add_transfer">Transfer əlavə et</string>
@@ -281,7 +281,7 @@
     <string name="share">Paylaş</string>
     <string name="retry">Təkrar cəhd</string>
     <string name="share_csv">CSV-ni paylaş</string>
-    <string name="csv_export_subject">Cashiro Əməliyyatlarının İxracı</string>
+    <string name="csv_export_subject">Hootbook Əməliyyatlarının İxracı</string>
     <string name="edit_transaction">Əməliyyatı Redaktə Et</string>
     <string name="transaction_details">Əməliyyat Təfərrüatları</string>
     <string name="delete_transaction">Əməliyyatı Sil</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" ilə uyğun gələn əməliyyat yoxdur</string>
     <string name="no_transactions_for_format">%1$s üçün əməliyyat yoxdur</string>
     <string name="about">Haqqında</string>
-    <string name="cashiro_logo_cd">Cashiro Loqosu</string>
+    <string name="hootbook_logo_cd">Hootbook Loqosu</string>
     <string name="version_format">Versiya %1$s, db-v%2$d</string>
     <string name="website">Veb sayt</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">Tez-tez verilən suallar</string>
     <string name="faq_desc">Tez-tez verilən suallar</string>
     <string name="guides">Bələdçilər</string>
-    <string name="guides_desc">Cashiro-dan necə istifadə etmək olar</string>
+    <string name="guides_desc">Hootbook-dan necə istifadə etmək olar</string>
     <string name="report_bug">Səhvləri bildirin</string>
-    <string name="report_bug_desc">Cashiro-nu inkişaf etdirməyimizə kömək edin</string>
+    <string name="report_bug_desc">Hootbook-nu inkişaf etdirməyimizə kömək edin</string>
     <string name="privacy_policy">Məxfilik Siyasəti</string>
     <string name="privacy_policy_desc">Verilərinizin istifadəsi və məxfiliyi</string>
     <string name="terms_of_service">Xidmət Şərtləri</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Əməliyyat və ya Abunəliyi əlavə et</string>
     <string name="selected_cd">Seçilmiş</string>
     <string name="net_worth_label">Net worth</string>
-    <string name="app_locked_title">Cashiro bloklanıb</string>
+    <string name="app_locked_title">Hootbook bloklanıb</string>
     <string name="authenticate_desc">Xərclər məlumatlarınıza daxil olmaq üçün təsdiqləyin</string>
     <string name="unlock">Aç</string>
     <string name="biometric_unavailable_title">Biometrik autentifikasiya mövcud deyil</string>

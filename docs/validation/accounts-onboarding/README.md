@@ -8,8 +8,9 @@
 - Tile totals convert into the Net Worth display currency using a checked exchange rate. Converted figures have an approximation mark; missing rates lead to source-currency details instead of relabeling the original number.
 - Summaries include all **visible** group members, including collapsed rows; currencies stay separate. Credit-card balances are outstanding debt, not asset totals. Hidden wallets now obey the same visibility rules as bank accounts and credit cards.
 - Main account, detail navigation, history, balance editing, merge, visibility, delete, linked-card and orphan-card actions remain available.
-- First run offers **Import old backup** or **Start fresh**. Import uses the existing ZIP / legacy JSON reader and merge strategy. Success completes setup directly (including backups with no accounts); cancellation leaves the current screen intact. Errors keep setup open for retry, and repeated taps are blocked during import.
+- First run offers **Turn on sync** (standard build only), **Import old backup** or **Start fresh**. Import uses the existing ZIP / legacy JSON reader and merge strategy. Success completes setup directly (including backups with no accounts); cancellation leaves the current screen intact. Errors keep setup open for retry, and repeated taps are blocked during import.
 - Manual setup is Welcome → Account → Profile → optional Notifications. SMS requests, scanning and tracking screens are no longer part of onboarding. Notification denial/skip still completes setup.
+- Turn on sync is Welcome → Sync → Profile → optional Notifications: the Sync step (step 2, in the account step's place) is the sync page's own sign-in, passphrase and first-sync choice (`SyncSetupSection`). Once sync is on it shows what came down and asks the main currency, since preferences do not sync. Continue skips the account step when the device then holds accounts; with none (an empty cloud, the first device) the account step follows and its account syncs. Back from Profile returns to Sync; back is blocked while sign-in or the first sync runs.
 - The backup's old setup-complete preference is deliberately not restored during onboarding, so navigation happens only after the importer reports success. Settings imports retain their existing default behavior.
 
 ## Performance rationale
@@ -25,7 +26,7 @@ Applied here:
 6. Native Compose fling/overscroll on the account page replaces the custom exponential fling plus nested overscroll wrapper.
 7. Compact list rows and static account-card surfaces eliminate per-card infinite tiled-background redraws.
 
-InstallerX also has a baseline-profile module. No generated profile was copied: profiles must be generated against Cashiro's own navigation and release build. No release-device frame-time improvement is claimed from source inspection or debug-emulator testing.
+InstallerX also has a baseline-profile module. No generated profile was copied: profiles must be generated against Hootbook's own navigation and release build. No release-device frame-time improvement is claimed from source inspection or debug-emulator testing.
 
 ## Verification commands
 
@@ -37,7 +38,7 @@ Use the project's Android SDK/JDK setup and Gradle wrapper:
 
 `--no-configuration-cache` avoids the existing `gitCommitCount` / `gitSha` configuration-time process warning becoming a cache-storage failure. No Gradle version, signing, application ID, database schema or Android runtime dependency versions were changed. The optional palette-generation tooling pins MCU 0.4.0 and esbuild 0.25.10.
 
-Unit tests: `AccountSectionsTest` covers grouping, mixed currencies, exact decimal math, hidden wallets, collapse/expand, empty/small sections and stable identities. `OnboardingStateTest` covers the first-run state, validation and the SMS-free step set.
+Unit tests: `AccountSectionsTest` covers grouping, mixed currencies, exact decimal math, hidden wallets, collapse/expand, empty/small sections and stable identities. `OnboardingStateTest` covers the first-run state, validation, the SMS-free step set and the sync path's steps.
 
 Device checklist: fresh start, cancel picker, invalid file/retry, JSON and ZIP restore, empty-account backup, cold restart, manual entry, notification denial, per-section expansion, hidden accounts, mixed currencies, scrolling, light/dark, larger font.
 
@@ -47,7 +48,7 @@ Device checklist: fresh start, cancel picker, invalid file/retry, JSON and ZIP r
 The old custom theme aliased primary/secondary/tertiary/error containers to saturated accent colors and hardcoded unrelated surfaces. Those aliases have been replaced, not merely recolored in the preview.
 
 - Every existing accent seed now generates 48 independent MD3 semantic roles for light and dark with Google's Material Color Utilities. `scripts/md3/seeds.json` preserves the accent choices; `npm ci && npm run generate` reproduces the checked-in Kotlin and role manifest. Generation uses the pinned standard tonal-spot specification at normal contrast. This is a valid MD3 palette for an Expressive UI; the separate MCU color variant named `SchemeExpressive` is not a requirement for Material 3 Expressive components.
-- Android 12+ dynamic color remains supported. The visible `ThemeStyle` selector is authoritative in the app: an old backup's contradictory legacy dynamic-color flag no longer suppresses a selected system palette. Explicit `CashiroTheme(dynamicColor = false)` still works for previews. System colors are read on recomposition rather than cached across wallpaper-resource changes. AMOLED remains a user-selected dark-mode override.
+- Android 12+ dynamic color remains supported. The visible `ThemeStyle` selector is authoritative in the app: an old backup's contradictory legacy dynamic-color flag no longer suppresses a selected system palette. Explicit `HootbookTheme(dynamicColor = false)` still works for previews. System colors are read on recomposition rather than cached across wallpaper-resource changes. AMOLED remains a user-selected dark-mode override.
 - `MaterialExpressiveTheme` uses the library's native shape defaults and explicitly selects `MotionScheme.expressive()`; no handcrafted timing curve replaces that scheme.
 - Home and Manage Accounts now use native `LargeFlexibleTopAppBar` with its scroll behavior and opaque tonal surfaces, replacing their custom translucent/gradient title bars. Home retains profile, notifications and More actions as native icon buttons. Its obsolete full-list Haze capture is removed with the old header; the separately configured banner effects remain. The extended FAB uses native shape, elevation and color roles, without the custom blur treatment.
 - Section toggles, the onboarding primary CTA and back/overflow icon buttons use the Expressive shape-morphing overloads. Summaries and the welcome headline use emphasized typography roles; backup processing uses the native Expressive `LoadingIndicator`.
@@ -58,7 +59,7 @@ Primary references: [MaterialExpressiveTheme](https://developer.android.com/refe
 
 ## Per-screen review gate
 
-The user requested a visual review before pushing. Changes remain local until the user explicitly approves the screenshot set. The review includes account sections, expansion states, add/edit sheets, first-run steps, import picker and failure state, major existing pages and fixed/system light/dark comparisons. Native `CashiroThemeTest` checks actual Android system roles in light/dark plus fixed colors and the preview opt-out; it complements the four account UI tests.
+The user requested a visual review before pushing. Changes remain local until the user explicitly approves the screenshot set. The review includes account sections, expansion states, add/edit sheets, first-run steps, import picker and failure state, major existing pages and fixed/system light/dark comparisons. Native `HootbookThemeTest` checks actual Android system roles in light/dark plus fixed colors and the preview opt-out; it complements the four account UI tests.
 
 
 ## All-account summary-only and elevation review revision

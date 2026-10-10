@@ -4,13 +4,13 @@
 
 ## Our Commitment to Privacy
 
-Cashiro is built with privacy as the core principle. We believe your financial data should remain yours alone.
+Hootbook is built with privacy as the core principle. We believe your financial data should remain yours alone.
 
 ## Local Processing and Optional Connections
 
 **Core bookkeeping happens locally. Optional connections make network requests as described below.**
 
-- ✅ **Local by default** - Core bookkeeping does not require a Cashiro server
+- ✅ **Local by default** - Core bookkeeping does not require a Hootbook server
 - ✅ **User-directed sharing** - Optional integrations transmit the data needed for the features you enable
 - ✅ **No tracking** - No analytics, no telemetry, no user tracking
 - ✅ **No ads** - No advertising networks or tracking pixels
@@ -26,7 +26,7 @@ Cashiro is built with privacy as the core principle. We believe your financial d
 - Bookkeeping data is stored in a local SQLite database; preferences use local app storage
 - Optional brokerage credentials and holdings use a separate encrypted, backup-excluded file
 - Database is protected by Android's app sandboxing
-- Data is only accessible to Cashiro app
+- Data is only accessible to Hootbook app
 
 ### Data Deletion
 - Uninstalling the app completely removes all data
@@ -51,16 +51,16 @@ Cashiro is built with privacy as the core principle. We believe your financial d
 
 ## Optional IBKR Brokerage Connection
 
-When you explicitly connect or refresh a brokerage account, Cashiro sends your Flex Token,
+When you explicitly connect or refresh a brokerage account, Hootbook sends your Flex Token,
 Query ID / report reference, protocol version and User-Agent directly over HTTPS to
-`ndcdyn.interactivebrokers.com`. IBKR can see your source IP. Cashiro retrieves the report
+`ndcdyn.interactivebrokers.com`. IBKR can see your source IP. Hootbook retrieves the report
 and parses holdings locally; it does not upload your bookkeeping transactions or route
-brokerage credentials through a Cashiro server. IBKR processes access under its own policies.
+brokerage credentials through a Hootbook server. IBKR processes access under its own policies.
 
 The connection is read-only: no orders, trades or transfers. Tokens grant access to reports
 and should be kept private. Credentials, account IDs and holdings are encrypted with
 AES-GCM using an Android Keystore key and stored in `noBackupFilesDir`, outside system
-backup/device transfer and existing Cashiro exports/cloud backups. There is no plaintext
+backup/device transfer and existing Hootbook exports/cloud backups. There is no plaintext
 fallback. Token entry is masked and its dialog blocks screenshots. Raw API URLs, responses
 and credentials are not logged by this integration.
 
@@ -70,7 +70,7 @@ another device requires reconnecting. See [setup and security details](docs/brok
 
 ## Third-Party Services
 
-Cashiro does **NOT** use analytics or advertising services. Network integrations are listed separately:
+Hootbook does **NOT** use analytics or advertising services. Network integrations are listed separately:
 - Optional APIs include updates, exchange rates, user-configured backups/webhooks and IBKR Flex. These are separate from analytics or advertising.
 - ❌ Analytics services (Google Analytics, Firebase, etc.)
 - ❌ Crash reporting services
@@ -90,14 +90,14 @@ When you export your data:
 
 ## Open Source Transparency
 
-Cashiro is fully open source:
-- Review our code at [GitHub](https://github.com/ritesh-kanwar/Cashiro)
+Hootbook is fully open source:
+- Review our code at [GitHub](https://github.com/hootkit-dev/hootbook-android)
 - Verify our privacy claims yourself
 - Contribute to make it even better
 
 ## Children's Privacy
 
-Cashiro is not directed at children under 13. We do not knowingly collect information from children.
+Hootbook is not directed at children under 13. We do not knowingly collect information from children.
 
 ## Changes to Privacy Policy
 
@@ -109,13 +109,13 @@ Any changes to this privacy policy will be:
 ## Contact
 
 For privacy concerns or questions:
-- Open an issue on [GitHub](https://github.com/ritesh-kanwar/Cashiro/issues)
+- Open an issue on [GitHub](https://github.com/hootkit-dev/hootbook-android/issues)
 
 ## Summary
 
 **Core records stay local; optional connections share only when enabled or requested.**
 
-- No Cashiro server needed for IBKR sync
+- No Hootbook server needed for IBKR sync
 - User-controlled connections and exports
 - No tracking
 - No ads
@@ -123,4 +123,4 @@ For privacy concerns or questions:
 
 ---
 
-*Cashiro - Privacy-first expense tracking*
+*Hootbook - Privacy-first expense tracking*

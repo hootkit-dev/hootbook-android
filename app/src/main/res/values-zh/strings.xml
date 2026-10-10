@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">添加交易</string>
     <string name="add_subscription">添加订阅</string>
     <string name="add_transfer">添加转账</string>
@@ -283,7 +283,7 @@
     <string name="share">分享</string>
     <string name="retry">重试</string>
     <string name="share_csv">分享 CSV</string>
-    <string name="csv_export_subject">Cashiro 交易导出</string>
+    <string name="csv_export_subject">Hootbook 交易导出</string>
     <string name="edit_transaction">编辑交易</string>
     <string name="transaction_details">交易详情</string>
     <string name="delete_transaction">删除交易</string>
@@ -337,7 +337,7 @@
     <string name="no_transactions_matching_format">"没有匹配 "%1$s" 的交易"</string>
     <string name="no_transactions_for_format">%1$s 没有交易</string>
     <string name="about">关于</string>
-    <string name="cashiro_logo_cd">Cashiro 标志</string>
+    <string name="hootbook_logo_cd">Hootbook 标志</string>
     <string name="version_format">版本 %1$s，db-v%2$d</string>
     <string name="website">网站</string>
     <string name="github">Github</string>
@@ -346,9 +346,9 @@
     <string name="faq">常见问题</string>
     <string name="faq_desc">常见问题解答</string>
     <string name="guides">指南</string>
-    <string name="guides_desc">如何使用 Cashiro</string>
+    <string name="guides_desc">如何使用 Hootbook</string>
     <string name="report_bug">报告漏洞</string>
-    <string name="report_bug_desc">帮助我们改进 Cashiro</string>
+    <string name="report_bug_desc">帮助我们改进 Hootbook</string>
     <string name="privacy_policy">隐私政策</string>
     <string name="privacy_policy_desc">您的数据使用和隐私</string>
     <string name="terms_of_service">服务条款</string>
@@ -495,7 +495,7 @@
     <string name="add_transaction_subscription_cd">添加交易或订阅</string>
     <string name="selected_cd">已选择</string>
     <string name="net_worth_label">净资产</string>
-    <string name="app_locked_title">Cashiro 已锁定</string>
+    <string name="app_locked_title">Hootbook 已锁定</string>
     <string name="authenticate_desc">身份验证以访问您的支出数据</string>
     <string name="unlock">解锁</string>
     <string name="biometric_unavailable_title">生物识别身份验证不可用</string>

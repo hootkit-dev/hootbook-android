@@ -347,7 +347,7 @@
     <string name="attachment_link">Link</string>
     <string name="app_logo">App icon</string>
     <string name="share_backup">Share backup</string>
-    <string name="backup_file_subject">Cashiro backup</string>
+    <string name="backup_file_subject">Hootbook backup</string>
     <string name="settlement_title">Settlement</string>
     <string name="backup_ai_key">AI bookkeeping key</string>
     <string name="backup_ai_key_warning">This file is not encrypted: whoever gets it can use your AI key, at your cost.</string>

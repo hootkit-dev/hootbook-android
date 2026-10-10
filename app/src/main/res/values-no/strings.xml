@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Konstruksjon</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">Legge til transaksjonen</string>
     <string name="add_subscription">Legg til abonnement</string>
     <string name="add_transfer">Legg til overføring</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">Ingen transaksjoner matcher \"%1$s\"</string>
     <string name="no_transactions_for_format">Ingen transaksjoner for %1$s</string>
     <string name="about">Om</string>
-    <string name="cashiro_logo_cd">Kontantiro logo</string>
+    <string name="hootbook_logo_cd">Kontantiro logo</string>
     <string name="version_format">Versjon %1$s, db-v%2$d</string>
     <string name="website">Nettside</string>
     <string name="github">Github</string>
@@ -344,9 +344,9 @@
     <string name="faq">OSS</string>
     <string name="faq_desc">Ofte stilte spørsmål</string>
     <string name="guides">Veiledninger</string>
-    <string name="guides_desc">Hvordan du bruker Cashiro</string>
+    <string name="guides_desc">Hvordan du bruker Hootbook</string>
     <string name="report_bug">Rapporter feil</string>
-    <string name="report_bug_desc">Hjelp oss med å forbedre Cashiro</string>
+    <string name="report_bug_desc">Hjelp oss med å forbedre Hootbook</string>
     <string name="privacy_policy">Retningslinjer for personvern</string>
     <string name="privacy_policy_desc">Bruk av data og personvern</string>
     <string name="terms_of_service">Vilkår for bruk</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">Legg til transaksjon eller abonnement</string>
     <string name="selected_cd">Valgt</string>
     <string name="net_worth_label">Nettoverdi</string>
-    <string name="app_locked_title">Cashiro er låst</string>
+    <string name="app_locked_title">Hootbook er låst</string>
     <string name="authenticate_desc">Autentiser for å få tilgang til utgiftsdataene dine</string>
     <string name="unlock">Lås opp</string>
     <string name="biometric_unavailable_title">Biometrisk autentisering utilgjengelig</string>

@@ -25,7 +25,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
-    base = args.root / "app/src/main/java/com/ritesh/cashiro"
+    base = args.root / "app/src/main/java/io/github/hootkit_dev/hootbook"
 
     def read(path):
         return (base / path).read_text()

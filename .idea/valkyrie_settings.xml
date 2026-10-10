@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Valkyrie.Settings">
-    <option name="iconPackDestination" value="$PROJECT_DIR$/app/src/main/java/com/ritesh/cashiro/presentation/ui/icons" />
+    <option name="iconPackDestination" value="$PROJECT_DIR$/app/src/main/java/io/github/hootkit_dev/hootbook/presentation/ui/icons" />
     <option name="iconPackName" value="Iconax" />
     <option name="mode" value="IconPack" />
-    <option name="packageName" value="com.ritesh.cashiro.presentation.ui.icons" />
+    <option name="packageName" value="io.github.hootkit_dev.hootbook.presentation.ui.icons" />
   </component>
 </project>

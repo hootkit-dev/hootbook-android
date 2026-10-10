@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">લેનદેન ઉમેરો</string>
     <string name="add_subscription">સબ્સ્ક્રિપ્શન ઉમેરો</string>
     <string name="add_transfer">સ્થાનાંતરણ ઉમેરો</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">"%1$s" સાથે મેળ ખાતા કોઈ લેણદેણ નથી</string>
     <string name="no_transactions_for_format">%1$s માટે કોઈ લેણદેણ નથી</string>
     <string name="about">વિશે</string>
-    <string name="cashiro_logo_cd">Cashiro લોગો</string>
+    <string name="hootbook_logo_cd">Hootbook લોગો</string>
     <string name="version_format">આવૃત્તિ %1$s, db-v%2$d</string>
     <string name="website">વેબસાઈટ</string>
     <string name="github">GitHub</string>
@@ -344,9 +344,9 @@
     <string name="faq">વારંવાર પૂછાતા પ્રશ્નો</string>
     <string name="faq_desc">વારંવાર પૂછાતા પ્રશ્નો</string>
     <string name="guides">માર્ગદર્શિકા</string>
-    <string name="guides_desc">Cashiro કેવી રીતે ઉપયોગ કરવું</string>
+    <string name="guides_desc">Hootbook કેવી રીતે ઉપયોગ કરવું</string>
     <string name="report_bug">બગ રિપોર્ટ કરો</string>
-    <string name="report_bug_desc">Cashiroને સુધારવામાં અમારી મદદ કરો</string>
+    <string name="report_bug_desc">Hootbookને સુધારવામાં અમારી મદદ કરો</string>
     <string name="privacy_policy">પ્રાયવસી નીતિ</string>
     <string name="privacy_policy_desc">તમારા ડેટા ઉપયોગ અને ખાનગીપણું</string>
     <string name="terms_of_service">સર્વિસની શરતો</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">ટ્રાન્ઝેક્શન અથવા સબ્સ્ક્રિપ્શન ઉમેરો</string>
     <string name="selected_cd">ચૉન્યો</string>
     <string name="net_worth_label">નેટ મૂલ્ય</string>
-    <string name="app_locked_title">Cashiro લૉક છે</string>
+    <string name="app_locked_title">Hootbook લૉક છે</string>
     <string name="authenticate_desc">તમારા ખર્ચાના ડેટા મેળવવા માટે પ્રમાણીત કરો</string>
     <string name="unlock">અનલૉક કરો</string>
     <string name="biometric_unavailable_title">બાયോമેટ્રિક પ્રમાણિકરણ ઉપલબ્ધ નથી</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">הוסף עסקה</string>
     <string name="add_subscription">הוסף מנוי</string>
     <string name="add_transfer">הוסף העברה</string>
@@ -281,7 +281,7 @@
     <string name="share">שתף</string>
     <string name="retry">נסה שוב</string>
     <string name="share_csv">שתף CSV</string>
-    <string name="csv_export_subject">ייצוא עסקאות Cashiro</string>
+    <string name="csv_export_subject">ייצוא עסקאות Hootbook</string>
     <string name="edit_transaction">ערוך עסקה</string>
     <string name="transaction_details">פרטי העסקה</string>
     <string name="delete_transaction">מחק עסקה</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">אין עסקאות תואמות ל"%1$s"</string>
     <string name="no_transactions_for_format">אין עסקאות עבור %1$s</string>
     <string name="about">אודות</string>
-    <string name="cashiro_logo_cd">לוגו Cashiro</string>
+    <string name="hootbook_logo_cd">לוגו Hootbook</string>
     <string name="version_format">גרסה %1$s, db-v%2$d</string>
     <string name="website">אתר אינטרנט</string>
     <string name="github">GitHub</string>
@@ -344,9 +344,9 @@
     <string name="faq">שאלות נפוצות</string>
     <string name="faq_desc">שאלות שנשאלות לעיתים קרובות</string>
     <string name="guides">מדריכים</string>
-    <string name="guides_desc">איך להשתמש ב-Cashiro</string>
+    <string name="guides_desc">איך להשתמש ב-Hootbook</string>
     <string name="report_bug">דווח על תקלה</string>
-    <string name="report_bug_desc">עזור לנו לשפר את Cashiro</string>
+    <string name="report_bug_desc">עזור לנו לשפר את Hootbook</string>
     <string name="privacy_policy">מדיניות פרטיות</string>
     <string name="privacy_policy_desc">שימוש בנתונים ופרטיות</string>
     <string name="terms_of_service">תנאי שירות</string>

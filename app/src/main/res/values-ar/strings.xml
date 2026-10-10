@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cashiro</string>
+    <string name="app_name">Hootbook</string>
     <string name="add_transaction">إضافة عملية</string>
     <string name="add_subscription">إضافة اشتراك</string>
     <string name="add_transfer">إضافة تحويل</string>
@@ -335,7 +335,7 @@
     <string name="no_transactions_matching_format">لا توجد معاملات تطابق "%1$s"</string>
     <string name="no_transactions_for_format">لا توجد معاملات لـ %1$s</string>
     <string name="about">حول</string>
-    <string name="cashiro_logo_cd">شعار كاشيرو</string>
+    <string name="hootbook_logo_cd">شعار كاشيرو</string>
     <string name="version_format">الإصدار %1$s، قاعدة البيانات v%2$d</string>
     <string name="website">الموقع الإلكتروني</string>
     <string name="github">جيت هاب</string>
@@ -493,7 +493,7 @@
     <string name="add_transaction_subscription_cd">إضافة معاملة أو اشتراك</string>
     <string name="selected_cd">المحدد</string>
     <string name="net_worth_label">صافي الثروة</string>
-    <string name="app_locked_title">Cashiro مغلق</string>
+    <string name="app_locked_title">Hootbook مغلق</string>
     <string name="authenticate_desc">قم بالمصادقة للوصول إلى بيانات نفقاتك</string>
     <string name="unlock">افتح القفل</string>
     <string name="biometric_unavailable_title">المصادقة البيومترية غير متوفرة</string>

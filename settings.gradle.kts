@@ -26,6 +26,6 @@ buildCache {
     }
 }
 
-rootProject.name = "cashiro-beta"
+rootProject.name = "hootbook"
 include(":app")
 include(":benchmark")

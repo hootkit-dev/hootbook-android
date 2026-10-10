@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to create releases for Cashiro.
+This document describes how to create releases for Hootbook.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ This document describes how to create releases for Cashiro.
 If you don't have a keystore yet:
 ```bash
 keytool -genkey -v -keystore release.keystore \
-  -alias cashiro -keyalg RSA -keysize 2048 -validity 10000
+  -alias hootbook -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 ### 2. Add GitHub Secrets
@@ -21,7 +21,7 @@ Add these secrets:
   base64 release.keystore | xclip -selection clipboard  # Linux
   ```
 - `KEYSTORE_PASSWORD`: Password for your keystore
-- `KEY_ALIAS`: Key alias (e.g., "cashiro")
+- `KEY_ALIAS`: Key alias (e.g., "hootbook")
 - `KEY_PASSWORD`: Password for the key
 
 ## Release Workflow

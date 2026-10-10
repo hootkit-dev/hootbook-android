@@ -6,9 +6,9 @@
         android:icon="@drawable/ic_shortcut_add_transaction"
         android:shortcutShortLabel="@string/add_transaction">
         <intent
-            android:action="com.ritesh.cashiro.action.ADD_TRANSACTION"
-            android:targetPackage="com.ritesh.cashiro"
-            android:targetClass="com.ritesh.cashiro.MainActivity" />
+            android:action="io.github.hootkit_dev.hootbook.action.ADD_TRANSACTION"
+            android:targetPackage="io.github.hootkit_dev.hootbook"
+            android:targetClass="io.github.hootkit_dev.hootbook.MainActivity" />
     </shortcut>
     <!-- Quick templates, transfer and subscription are dynamic shortcuts (QuickEntryPublisher):
          launchers show about four, manifest ones first, so only "Add" stays static. -->
