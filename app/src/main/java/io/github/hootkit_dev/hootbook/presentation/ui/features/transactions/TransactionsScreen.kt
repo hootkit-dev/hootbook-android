@@ -841,7 +841,6 @@ fun TransactionsScreen(
             },
             onDismiss = { showDeleteConfirmation = false },
             selectedTransactionIds = selectedTransactionIds,
-            permanent = uiState.filter.deleted == dev.hootkit.core.DeletedFilter.ONLY,
             blurEffects = blurEffects,
             hazeState = hazeState
         )

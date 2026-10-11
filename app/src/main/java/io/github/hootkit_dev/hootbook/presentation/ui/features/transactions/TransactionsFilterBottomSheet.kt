@@ -92,17 +92,6 @@ fun TransactionsFilterBottomSheet(
                         .animateContentSize()
                 ) {
                     Spacer(modifier = Modifier.height(Spacing.xl))
-                    LazyRow(contentPadding = PaddingValues(horizontal = Dimensions.Padding.content), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        items(dev.hootkit.core.DeletedFilter.entries) { deleted ->
-                            FilterChip(selected = state.filter.deleted == deleted,
-                                onClick = { viewModel.setDeletedFilter(deleted) },
-                                label = { Text(stringResource(when (deleted) {
-                                    dev.hootkit.core.DeletedFilter.EXCLUDE -> R.string.core_full_label_49
-                                    dev.hootkit.core.DeletedFilter.ONLY -> R.string.core_full_label_50
-                                    dev.hootkit.core.DeletedFilter.INCLUDE -> R.string.core_full_label_51
-                                })) })
-                        }
-                    }
                     //Transaction Types
                     LazyRow(
                         contentPadding = PaddingValues(

@@ -269,7 +269,7 @@ constructor(
     fun applyFilter(filter: TransactionFilter) {
         mutableState.update {
             it.copy(
-                filter = filter,
+                filter = filter.copy(deleted = DeletedFilter.EXCLUDE),
                 transactions = emptyList(),
                 summary = null,
                 selectedIds = emptySet(),
@@ -288,8 +288,6 @@ constructor(
     fun selectSortOption(option: SortOption) =
         applyFilter(uiState.value.filter.copy(sort = option.core))
 
-    fun setDeletedFilter(deleted: DeletedFilter) =
-        applyFilter(uiState.value.filter.copy(deleted = deleted))
 
     fun setCategoryFilter(id: String) {
         val ids = uiState.value.filter.categoryIds
@@ -340,8 +338,10 @@ constructor(
     }
 
     fun resetFilters() {
-        mutableState.update { it.copy(period = TimePeriod.ALL, customDateRange = null) }
-        applyFilter(emptyTransactionFilter())
+        val currency = uiState.value.filter.currency
+        mutableState.update { it.copy(customDateRange = null) }
+        applyFilter(emptyTransactionFilter().copy(currency = currency))
+        selectPeriod(TimePeriod.THIS_MONTH)
     }
 
     fun initialize(filter: TransactionFilter) {
@@ -449,10 +449,7 @@ constructor(
             val token =
                 session.withCore { core ->
                     core.ledger().use {
-                        if (before.filter.deleted == DeletedFilter.ONLY) {
-                            it.purge(before.selectedIds.toList())
-                            null
-                        } else it.delete(before.selectedIds.toList())
+                        it.delete(before.selectedIds.toList())
                     }
                 }
             mutableState.update {

@@ -17,6 +17,21 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class, sdk = [28])
 class TransactionsViewModelTest : CoreViewModelTest() {
     @Test
+    fun resetReturnsToInitialMonthSortAndPreservesCurrency() = runTest {
+        val core = FakeLedgerCore()
+        val vm = keep(TransactionsViewModel(session(core), ChangeBus(), preferences))
+        awaitState { !vm.uiState.value.isLoading }
+        val initial = vm.uiState.value.filter
+        vm.applyFilter(initial.copy(currency = "USD", text = "Alice", accountIds = listOf("account"),
+            kinds = listOf(TransactionKind.INCOME), sort = SortOrder.OLDEST_FIRST))
+        vm.selectPeriod(io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.ALL)
+        vm.resetFilters()
+        assertEquals(io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.THIS_MONTH, vm.uiState.value.period)
+        assertEquals(initial.copy(currency = "USD"), vm.uiState.value.filter)
+        awaitState { !vm.uiState.value.isLoading }
+    }
+
+    @Test
     fun listLoadsCoreSummaryPagesAndRecoversOnChangeAfterQueryError() = runTest {
         val core = FakeLedgerCore()
         val changes = ChangeBus()
@@ -101,11 +116,9 @@ class TransactionsViewModelTest : CoreViewModelTest() {
         awaitState { !vm.uiState.value.writing }
         assertEquals("opaque-core-token", core.undoneToken)
         assertNull(vm.uiState.value.undoToken)
-        vm.setDeletedFilter(DeletedFilter.ONLY)
-        vm.selectTransactionSet(setOf("gone"))
-        vm.deleteSelectedTransactions()
-        awaitState { !vm.uiState.value.writing }
-        assertEquals(listOf("gone"), core.purgedIds)
+        vm.applyFilter(vm.uiState.value.filter.copy(deleted = DeletedFilter.ONLY))
+        assertEquals(DeletedFilter.EXCLUDE, vm.uiState.value.filter.deleted)
+        assertTrue(core.purgedIds.isEmpty())
         vm.batchUpdateTransactions(setOf("x"), null, null, "cat", null, BigDecimal("77"), "")
         awaitState { !vm.uiState.value.writing }
         assertEquals(BigDecimal("77"), core.lastBulk!!.second.amount)

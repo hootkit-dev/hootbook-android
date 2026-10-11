@@ -1,3 +1,5 @@
 <resources>
-    <string name="restore_transaction_delete_confirm">将所选交易移入回收站？删除后可立即撤销。</string>
+    <plurals name="restore_transaction_delete_confirm">
+        <item quantity="other">删除所选交易？删除后可立即撤销。</item>
+    </plurals>
 </resources>

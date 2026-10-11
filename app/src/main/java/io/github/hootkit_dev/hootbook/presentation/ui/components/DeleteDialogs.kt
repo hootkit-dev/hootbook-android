@@ -77,7 +77,8 @@ fun DeleteTransactionDialog(
         title = { Text(stringResource(R.string.delete_transaction_title)) },
         text = {
             Text(
-                text = stringResource(if (permanent) R.string.delete_multiple_transactions_confirm else R.string.restore_transaction_delete_confirm),
+                text = if (permanent) stringResource(R.string.delete_multiple_transactions_confirm)
+                    else pluralStringResource(R.plurals.restore_transaction_delete_confirm, 1),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -122,7 +123,8 @@ fun DeleteMultipleTransactionsDialog(
         },
         text = {
             Text(
-                text = stringResource(if (permanent) R.string.delete_multiple_transactions_confirm else R.string.restore_transaction_delete_confirm),
+                text = if (permanent) stringResource(R.string.delete_multiple_transactions_confirm)
+                    else pluralStringResource(R.plurals.restore_transaction_delete_confirm, selectedTransactionIds.size),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
