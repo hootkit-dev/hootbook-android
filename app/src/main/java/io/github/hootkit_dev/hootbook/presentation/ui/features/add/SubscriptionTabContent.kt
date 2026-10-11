@@ -93,7 +93,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoPlay
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import dev.chrisbanes.haze.HazeState
 import java.time.ZoneId
 import java.time.Instant
@@ -209,7 +209,7 @@ fun SubscriptionTabContent(
             // Amount Input
             AmountInput(
                 amount = state.subscriptionAmount.ifEmpty { "0" },
-                currencySymbol = CurrencyFormatter.getCurrencySymbol(
+                currencySymbol = CoreMoneyPresentation.getCurrencySymbol(
                     draft.amount.currency
                 ),
                 onClick = {

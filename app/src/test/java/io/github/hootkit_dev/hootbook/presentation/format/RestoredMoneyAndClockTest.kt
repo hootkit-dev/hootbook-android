@@ -13,7 +13,7 @@ class RestoredMoneyAndClockTest {
 
     @Test
     fun restoredCardsUseCompactCurrencyLabels() {
-        val text = EntryMoneyPresentation.formatCurrency(BigDecimal("25"), "CNY")
+        val text = CoreMoneyPresentation.formatCurrency(BigDecimal("25"), "CNY")
         assertTrue(text, text.startsWith("¥"))
         assertFalse(text, text.contains("CNY"))
         assertFalse(text, text.contains("·"))

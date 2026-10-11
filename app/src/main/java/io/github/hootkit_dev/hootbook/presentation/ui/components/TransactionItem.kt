@@ -58,7 +58,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.format.formatAmount
 import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import java.math.BigDecimal
@@ -150,7 +150,7 @@ fun TransactionItem(
         amountOverride ?: transaction?.let {
              // The receiving side of a transfer between currencies shows what arrived there
              val received = it.toAmount?.takeIf { effectiveSign == "+" }
-             val formatted = if (received != null) CurrencyFormatter.formatCurrency(received, it.toCurrency ?: it.currency)
+             val formatted = if (received != null) CoreMoneyPresentation.formatCurrency(received, it.toCurrency ?: it.currency)
                  else it.formatAmount()
              if (effectiveSign != null) "$effectiveSign $formatted" else formatted
         } ?: finalAmount.toString()
@@ -471,7 +471,7 @@ fun TransactionItem(
                     val foreign = mainCurrency != null && transaction?.currency?.equals(mainCurrency, ignoreCase = true) != true
                     val convertedText = when {
                         !foreign -> null
-                        convertedAmount != null -> "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, mainCurrency!!)}"
+                        convertedAmount != null -> "≈ ${CoreMoneyPresentation.formatCurrency(convertedAmount, mainCurrency!!)}"
                         transaction == null -> null
                         rateLoading -> stringResource(R.string.rate_loading)
                         else -> stringResource(R.string.rate_unavailable)

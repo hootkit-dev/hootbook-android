@@ -35,7 +35,7 @@ import io.github.hootkit_dev.hootbook.R
 import dev.hootkit.core.Account
 import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 
 // One way to show an account everywhere: icon, name, "<type> · •••• 1234", balance.
 
@@ -55,7 +55,7 @@ fun List<Account>.groupedForDisplay(): List<Pair<AccountKind, List<Account>>> =
     sortedWith(compareBy<Account>({ !it.isDefault }, { it.institutionKey ?: it.name }, { it.name }))
         .groupBy { it.kind }.toList()
 @Composable
-fun accountBalanceText(account: Account): String = CurrencyFormatter.formatCurrency(account.total.amount, account.total.currency)
+fun accountBalanceText(account: Account): String = CoreMoneyPresentation.formatCurrency(account.total.amount, account.total.currency)
 @Composable
 fun accountCurrenciesText(account: Account): String? = if (account.pockets.size > 1)
     stringResource(R.string.account_holds_currencies, account.pockets.joinToString(stringResource(R.string.list_separator)) { it.currency }) else null
@@ -89,7 +89,7 @@ fun AccountCurrencyPills(account: Account, modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        CurrencyFormatter.formatCurrency(pocket.balance, pocket.currency),
+                        CoreMoneyPresentation.formatCurrency(pocket.balance, pocket.currency),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface

@@ -28,7 +28,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_light
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import java.math.BigDecimal
 
 @Composable
@@ -96,9 +96,9 @@ fun TransactionTotalsCard(
                         contentAlignment = Alignment.Center
                     ) {
                         val formattedIncome = if (isEstimated) {
-                            stringResource(R.string.estimated_amount_format, CurrencyFormatter.formatCurrency(income, currency))
+                            stringResource(R.string.estimated_amount_format, CoreMoneyPresentation.formatCurrency(income, currency))
                         } else {
-                            CurrencyFormatter.formatCurrency(income, currency)
+                            CoreMoneyPresentation.formatCurrency(income, currency)
                         }
                         TotalColumn(
                             icon = {
@@ -143,9 +143,9 @@ fun TransactionTotalsCard(
                         contentAlignment = Alignment.Center
                     ) {
                         val formattedExpenses = if (isEstimated) {
-                            stringResource(R.string.estimated_amount_format, CurrencyFormatter.formatCurrency(expenses, currency))
+                            stringResource(R.string.estimated_amount_format, CoreMoneyPresentation.formatCurrency(expenses, currency))
                         } else {
-                            CurrencyFormatter.formatCurrency(expenses, currency)
+                            CoreMoneyPresentation.formatCurrency(expenses, currency)
                         }
                         TotalColumn(
                             icon = {
@@ -199,9 +199,9 @@ fun TransactionTotalsCard(
                         contentAlignment = Alignment.Center
                     ) {
                         val formattedNet = if (isEstimated) {
-                            stringResource(R.string.estimated_amount_format, "$netPrefix${CurrencyFormatter.formatCurrency(netBalance, currency)}")
+                            stringResource(R.string.estimated_amount_format, "$netPrefix${CoreMoneyPresentation.formatCurrency(netBalance, currency)}")
                         } else {
-                            "$netPrefix${CurrencyFormatter.formatCurrency(netBalance, currency)}"
+                            "$netPrefix${CoreMoneyPresentation.formatCurrency(netBalance, currency)}"
                         }
                         TotalColumn(
                             icon = {

@@ -97,7 +97,6 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Deselect
-import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.BottomSheetDefaults
@@ -254,7 +253,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import io.github.hootkit_dev.hootbook.presentation.format.formatAmount
 import dev.chrisbanes.haze.HazeInputScale
@@ -1172,7 +1171,7 @@ private fun EditableTransactionHeader(
             // Amount Input
             AmountInput(
                 amount = transaction.amount.stripTrailingZeros().toPlainString(),
-                currencySymbol = CurrencyFormatter.getCurrencySymbol(transaction.currency),
+                currencySymbol = CoreMoneyPresentation.getCurrencySymbol(transaction.currency),
                 onClick = onAmountClick,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -2372,7 +2371,7 @@ private fun TransactionReceipt(
                 if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, primaryCurrency)}",
+                        text = "≈ ${CoreMoneyPresentation.formatCurrency(convertedAmount, primaryCurrency)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Normal

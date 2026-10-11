@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -95,7 +95,7 @@ fun BalanceChart(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = CurrencyFormatter.formatCurrency(paddedMax, primaryCurrency),
+                    text = CoreMoneyPresentation.formatCurrency(paddedMax, primaryCurrency),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -259,7 +259,7 @@ fun BalanceChart(
             
             // Min balance label
             Text(
-                text = CurrencyFormatter.formatCurrency(paddedMin, primaryCurrency),
+                text = CoreMoneyPresentation.formatCurrency(paddedMin, primaryCurrency),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

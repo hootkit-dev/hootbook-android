@@ -135,7 +135,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Shop
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import io.github.hootkit_dev.hootbook.utils.horizontalFadingEdge
 import dev.chrisbanes.haze.HazeState
@@ -216,7 +216,7 @@ fun TransactionTabContent(
             // Amount Input
             AmountInput(
                 amount = state.amount.ifEmpty { "0" },
-                currencySymbol = CurrencyFormatter.getCurrencySymbol(draft.currency.orEmpty()),
+                currencySymbol = CoreMoneyPresentation.getCurrencySymbol(draft.currency.orEmpty()),
                 onClick = {
                     showNumberPad = true
                 },

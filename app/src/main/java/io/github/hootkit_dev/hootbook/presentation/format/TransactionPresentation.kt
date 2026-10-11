@@ -2,13 +2,13 @@ package io.github.hootkit_dev.hootbook.presentation.format
 
 import dev.hootkit.core.Transaction
 import dev.hootkit.core.LocalDateTime
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 
 fun LocalDateTime.toJavaDateTime(): java.time.LocalDateTime = java.time.LocalDateTime.of(
     year, month.toInt(), day.toInt(), hour.toInt(), minute.toInt(), second.toInt(), nanosecond.toInt(),
 )
 fun Transaction.displayTitle(categoryName: String? = null): String = merchant.takeIf { it.isNotBlank() } ?: notes?.takeIf { it.isNotBlank() } ?: categoryName.orEmpty()
-fun Transaction.formatAmount(): String = CurrencyFormatter.formatCurrency(amount, currency)
+fun Transaction.formatAmount(): String = CoreMoneyPresentation.formatCurrency(amount, currency)
 
 fun dev.hootkit.core.TransactionKind.transactionKindLabelRes(): Int = when (this) {
     dev.hootkit.core.TransactionKind.EXPENSE -> io.github.hootkit_dev.hootbook.R.string.type_expense

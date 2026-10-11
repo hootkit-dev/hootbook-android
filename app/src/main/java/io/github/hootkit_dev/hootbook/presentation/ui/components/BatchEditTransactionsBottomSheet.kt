@@ -66,7 +66,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.ReceiptItem
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoTime
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import dev.chrisbanes.haze.HazeState
 import java.math.BigDecimal
 import java.time.Instant
@@ -326,7 +326,7 @@ fun BatchEditTransactionsBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = selectedAmount?.let { CurrencyFormatter.formatAmount(it) }
+                                text = selectedAmount?.let { CoreMoneyPresentation.formatAmount(it) }
                                     ?: "0.00",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,

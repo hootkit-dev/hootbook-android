@@ -43,7 +43,7 @@ import dev.hootkit.core.Category
 import dev.hootkit.core.QuickTemplate
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 
 /**
  * Saved templates, then templates suggested from history (marked with a sparkle). A tap
@@ -132,7 +132,7 @@ private fun TemplateChip(
                 categoryEntity = categories.find { it.id == categoryId },
             )
             val amountText = amount
-                ?.let { " · " + CurrencyFormatter.formatCurrency(it, currency ?: "CNY") }
+                ?.let { " · " + CoreMoneyPresentation.formatCurrency(it, currency ?: "CNY") }
                 ?: ""
             Text(
                 text = name + amountText,

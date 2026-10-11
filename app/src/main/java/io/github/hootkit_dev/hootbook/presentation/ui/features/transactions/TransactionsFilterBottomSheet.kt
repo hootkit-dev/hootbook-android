@@ -42,7 +42,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPa
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TypeFilterIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
