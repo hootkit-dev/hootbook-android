@@ -58,6 +58,7 @@ internal fun TransactionSummarySheet(
             categories[transaction.categoryId]?.displayName?.let { SummaryField(stringResource(R.string.category), it) }
             SummaryField(stringResource(R.string.account),
                 listOfNotNull(accounts[transaction.accountId]?.name, accounts[transaction.accountId]?.last4).filter { it.isNotBlank() }.joinToString(" · "))
+            accounts[transaction.toAccountId]?.let { SummaryField(stringResource(R.string.to_destination), listOfNotNull(it.name, it.last4).filter { text -> text.isNotBlank() }.joinToString(" · ")) }
             transaction.notes?.takeIf { it.isNotBlank() }?.let {
                 SummaryField(stringResource(R.string.description_label), it)
             }

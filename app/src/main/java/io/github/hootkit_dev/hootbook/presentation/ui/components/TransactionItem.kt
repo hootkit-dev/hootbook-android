@@ -402,7 +402,6 @@ fun TransactionItem(
 
                         // Description Indicator
                         if (transaction?.notes?.isNotBlank() == true) {
-                            TagSeparator()
                             Icon(
                                 imageVector = Iconax.DocumentText2,
                                 contentDescription = stringResource(R.string.description_indicator_desc),
@@ -414,7 +413,6 @@ fun TransactionItem(
 
                         // Attachments Indicator
                         if (transaction?.attachments?.isNotEmpty() == true) {
-                            TagSeparator()
                             Icon(
                                 imageVector = Iconax.Paperclip2,
                                 contentDescription = stringResource(R.string.attachments_indicator_desc),

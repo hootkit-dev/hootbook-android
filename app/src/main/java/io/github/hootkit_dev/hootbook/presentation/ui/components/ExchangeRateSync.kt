@@ -95,9 +95,9 @@ private fun CurrencyPicker(selected: String, currencies: List<String>, onSelect:
 @Composable
 private fun providerLabel(provider: RateProvider): String = when (provider) {
     RateProvider.AUTO -> stringResource(R.string.rate_server_auto)
-    RateProvider.ER_API -> "ExchangeRate-API"
-    RateProvider.FRANKFURTER -> "Frankfurter"
-    RateProvider.CURRENCY_API -> "CurrencyAPI"
+    RateProvider.ER_API -> rateSourceName("er_api")
+    RateProvider.FRANKFURTER -> rateSourceName("frankfurter")
+    RateProvider.CURRENCY_API -> rateSourceName("currency_api")
 }
 
 @Composable
@@ -109,7 +109,7 @@ fun RateSyncCard(storedRates: List<ExchangeRate>, provider: RateProvider?, outco
         Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Text(stringResource(R.string.rate_sync_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             val last = storedRates.filter { !it.custom }.maxByOrNull { it.updatedAt.coreDateText() }
-            if (last != null) Text(stringResource(R.string.rate_sync_updated, last.updatedAt.coreDateText(dateFormat)) + " · " + stringResource(R.string.rate_sync_source, last.provider),
+            if (last != null) Text(stringResource(R.string.rate_sync_updated, last.updatedAt.coreDateText(dateFormat)) + " · " + stringResource(R.string.rate_sync_source, rateSourceName(last.provider)),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             else Text(stringResource(R.string.rate_sync_never), style = MaterialTheme.typography.bodySmall)
             if (isSyncing) {

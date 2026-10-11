@@ -68,6 +68,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -2767,7 +2768,7 @@ private fun ReceiptInfoRow(
                                         icon()
                                     }
                                     Text(
-                                        text = value,
+                                        text = value, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 96.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
