@@ -68,6 +68,9 @@ internal fun ManageAccountsList(state: CoreAccountsUiState, initialKind: Account
     onAdd: (AccountKind?) -> Unit, modifier: Modifier = Modifier) {
     val accounts = state.overview?.accounts.orEmpty()
     LazyColumn(modifier, contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
+        // Nothing until the first load: a list that starts with only the (always shown) investments
+        // group keeps that group anchored at the top when the groups above it arrive.
+        if (state.overview == null) return@LazyColumn
         if (accounts.isEmpty() && !state.loading) item(key = "empty") {
             Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stringResource(R.string.no_accounts_yet), style = MaterialTheme.typography.titleMedium)
