@@ -31,6 +31,10 @@ fun CoreAppLockGate(controller:CoreAppLockController,content: @Composable () -> 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP){controller.onBackground()}
     io.github.hootkit_dev.hootbook.core.ui.CoreSecureWindow(enabled = state.enabled || !state.loaded)
     if(state.allowContent){contentState.SaveableStateProvider("private_core_content"){content()};return}
+    if (state.loaded && state.foreground) {
+        io.github.hootkit_dev.hootbook.presentation.ui.features.settings.applock.AppLockScreen(onUnlocked = {})
+        return
+    }
     Surface(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp,Alignment.CenterVertically),horizontalAlignment=Alignment.CenterHorizontally) {
             Text(stringResource(R.string.core_ui_locked),style=MaterialTheme.typography.headlineMedium)

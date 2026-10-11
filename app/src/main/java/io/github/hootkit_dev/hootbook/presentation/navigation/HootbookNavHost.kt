@@ -59,22 +59,22 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.*
 import io.github.hootkit_dev.hootbook.presentation.ui.features.contacts.ContactsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.ai.AiAssistantScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.AnalyticsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
-import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesScreen
-import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.home.HomeScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.AddAccountWithBrokerAutoSync
 import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.appearance.AppearanceScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.applock.AppLockSettingsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy.DataPrivacyScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.currency.CurrencySettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
-import io.github.hootkit_dev.hootbook.presentation.core.notifications.CoreNotificationPreferencesScreen
-import io.github.hootkit_dev.hootbook.presentation.core.onboarding.CoreOnboardingScreen
-import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIconsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreProfileScreen
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreSettingsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.notifications.NotificationScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.onboarding.OnBoardingScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.MerchantIconsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.ProfileScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.SettingsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.*
 import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AddScreen
 import androidx.activity.compose.BackHandler
@@ -192,10 +192,9 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.noneExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until onboarding is migrated
-                                    CoreOnboardingScreen(session, preferences, ::coreScreen) {
+                                    OnBoardingScreen(onOnBoardingComplete = {
                                         navController.navigate(Home) { popUpTo<OnBoarding> { inclusive = true } }
-                                    }
+                                    })
                                 }
                             }
                             composable<Home>(
@@ -526,9 +525,13 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until settings is migrated
-                                    CoreSettingsScreen(back, { go(CurrencySettings()) }, { go(DataPrivacy) },
-                                        onRoute = ::coreScreen, coreSchemaVersion = schema)
+                                    SettingsScreen(onNavigateBack = back, onNavigateToCategories = { go(Categories) },
+                                        onNavigateToManageAccounts = { go(ManageAccounts) }, onNavigateToQuickTemplates = { go(QuickTemplates) },
+                                        onNavigateToAiAssistant = { go(AiAssistant) }, onNavigateToAppearance = { go(Appearance) },
+                                        onNavigateToProfile = { go(Profile) }, onNavigateToNotifications = { go(NotificationSettings) },
+                                        onNavigateToBudgets = { go(Budgets()) }, onNavigateToLendBorrow = { go(LendBorrow()) },
+                                        onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToCloudBackup = { go(DataPrivacy) },
+                                        onNavigateToAbout = { go(About) }, onNavigateToCurrency = { go(CurrencySettings()) }, blurEffects = prefs.blur)
                                 }
                             }
                             composable<CurrencySettings>(
@@ -538,8 +541,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until currency settings is migrated
-                                    CoreCurrenciesScreen(back, entry.toRoute<CurrencySettings>().currency)
+                                    CurrencySettingsScreen(back, entry.toRoute<CurrencySettings>().currency)
                                 }
                             }
                             composable<DataPrivacy>(
@@ -549,8 +551,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until data and privacy is migrated
-                                    CoreBackupScreen(back)
+                                    DataPrivacyScreen(back, onNavigateToAccounts = { go(ManageAccounts) }, onNavigateToSync = { go(CloudSync) }, blurEffects = prefs.blur)
                                 }
                             }
                             composable<CloudSync>(
@@ -560,8 +561,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until sync is migrated
-                                    CoreSyncScreen(back, { go(DataPrivacy) }, ::record)
+                                    SyncScreen(back)
                                 }
                             }
                             composable<Profile>(
@@ -571,14 +571,12 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until profile is migrated
-                                    CoreProfileScreen(back, { go(Contacts()) }, { go(MerchantIcons()) })
+                                    SharedTransitionLayout { ProfileScreen(back, { go(Contacts()) }, { id -> go(PersonDetail(id, "person_avatar_$id")) }, animatedContentScope = this@composable) }
                                 }
                             }
                             composable<MerchantIcons> { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until merchant icons is migrated
-                                    CoreMerchantIconsScreen(back, entry.toRoute<MerchantIcons>().name)
+                                    MerchantIconsScreen(back, entry.toRoute<MerchantIcons>().name)
                                 }
                             }
                             composable<Appearance>(
@@ -588,14 +586,12 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until appearance is migrated
-                                    CoreAppearanceScreen(back, { go(AppLockSettings) })
+                                    AppearanceScreen(onNavigateBack = back)
                                 }
                             }
                             composable<AppLockSettings> { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until app-lock settings is migrated
-                                    CoreAppLockSettingsScreen(back)
+                                    AppLockSettingsScreen(back)
                                 }
                             }
                             composable<NotificationSettings>(
@@ -605,8 +601,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until notification settings is migrated
-                                    CoreNotificationPreferencesScreen(back)
+                                    NotificationScreen(back, blurEffects = prefs.blur)
                                 }
                             }
                             composable<About>(

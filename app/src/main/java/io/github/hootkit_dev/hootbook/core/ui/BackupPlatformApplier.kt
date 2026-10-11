@@ -37,7 +37,7 @@ class BackupPlatformApplier internal constructor(
         val json=JSONObject(preferences.exportJson()).put("locale",locale.selection())
         return PlatformBackupSnapshot(json.toString(),assets.exportFiles())
     }
-    suspend fun apply(operation: BackupOperation) = applyMutex.withLock {
+    suspend fun apply(operation: BackupOperation, onboardingFinished: Boolean? = null) = applyMutex.withLock {
         val before=preferences.ready()
         val restored=withContext(Dispatchers.IO) {
             val directory=java.io.File(operation.source.file.parentFile,"platform")
@@ -82,7 +82,8 @@ class BackupPlatformApplier internal constructor(
             }
             val installed=wanted.associateWith { name -> assets.installImage(files.getValue(name)) }
             decoded=decoded.copy(avatar=avatar?.let{installed[it]?:it},banner=banner?.let{installed[it]?:it},
-                mutedSubscriptionIds=before.mutedSubscriptionIds,appLockEnabled=before.appLockEnabled)
+                mutedSubscriptionIds=before.mutedSubscriptionIds,appLockEnabled=before.appLockEnabled,
+                onboardingFinished=onboardingFinished ?: decoded.onboardingFinished)
             if(index!=null)assets.restoreMerchantIndex(files.getValue("merchant_icons/index.json"),installed,operation.legacy)
             decoded
         }
