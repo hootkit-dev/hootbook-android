@@ -623,4 +623,7 @@
         <item quantity="other">Xóa %1$d bản ghi?</item>
     </plurals>
     <string name="turkmençe">Turkmen</string>
+    <plurals name="days_remaining">
+        <item quantity="other">Còn %1$d ngày</item>
+    </plurals>
 </resources>

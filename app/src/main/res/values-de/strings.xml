@@ -626,4 +626,7 @@
         <item quantity="other">%1$d Datensätze löschen?</item>
     </plurals>
     <string name="turkmençe">Turkmenisch</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Tage verbleibend</item>
+    </plurals>
 </resources>

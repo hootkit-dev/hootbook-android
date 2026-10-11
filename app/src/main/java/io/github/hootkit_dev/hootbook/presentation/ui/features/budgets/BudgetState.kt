@@ -3,7 +3,6 @@ package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 import dev.hootkit.core.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.time.format.TextStyle
 import java.util.Locale
 
 data class BudgetUiState(
@@ -47,15 +46,7 @@ fun defaultBudgetName(period: BudgetPeriod, locale: Locale = Locale.getDefault()
     }
 }
 
-fun budgetDisplayName(name: String, period: BudgetPeriod, locale: Locale = Locale.getDefault()): String {
-    if (period != BudgetPeriod.MONTHLY) return name
-    val parts = name.trim().split(' ')
-    if (parts.size != 2 || parts[1].length != 4 || parts[1].toIntOrNull() == null) return name
-    val months = java.time.Month.entries.flatMap { m ->
-        listOf(Locale.ENGLISH, Locale.CHINESE, locale).map { m.getDisplayName(TextStyle.FULL, it) }
-    }
-    return if (parts[0] in months) defaultBudgetName(period, locale) else name
-}
+fun budgetDisplayName(name: String, period: BudgetPeriod, locale: Locale = Locale.getDefault()): String = name
 
 // Visual ratio only; never used to derive monetary/business values.
 internal fun budgetProgressFraction(spent: BigDecimal, amount: BigDecimal): Float =

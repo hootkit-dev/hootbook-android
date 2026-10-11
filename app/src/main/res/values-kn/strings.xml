@@ -626,4 +626,7 @@
         <item quantity="other">%1$d ದಾಖಲೆಗಳನ್ನು ಅಳಿಸುವುದೇ?</item>
     </plurals>
     <string name="turkmençe">ತುರ್ಕ್ಮನ್</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d ದಿನಗಳು ಉಳಿದಿವೆ</item>
+    </plurals>
 </resources>

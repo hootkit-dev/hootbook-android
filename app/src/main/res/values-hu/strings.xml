@@ -626,4 +626,7 @@
         <item quantity="other">%1$d rekord törlése?</item>
     </plurals>
     <string name="turkmençe">Türkmen</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d nap maradt</item>
+    </plurals>
 </resources>

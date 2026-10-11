@@ -626,4 +626,7 @@
         <item quantity="other">Slette %1$d poster?</item>
     </plurals>
     <string name="turkmençe">Turkmensk</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d dager gjenstår</item>
+    </plurals>
 </resources>

@@ -5,6 +5,7 @@ import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
 
 import io.github.hootkit_dev.hootbook.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.ripple
 import androidx.compose.animation.core.tween
@@ -288,7 +289,7 @@ fun SharedTransitionScope.BudgetCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(R.string.days_remaining_format, budget.current.daysLeft.toInt()),
+                text = pluralStringResource(R.plurals.days_remaining, budget.current.daysLeft.toInt(), budget.current.daysLeft.toInt()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.align(Alignment.CenterHorizontally)

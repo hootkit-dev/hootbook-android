@@ -626,4 +626,7 @@
         <item quantity="other">Eyða %1$d skráningum?</item>
     </plurals>
     <string name="turkmençe">Turkmenska</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d dagar eftir</item>
+    </plurals>
 </resources>

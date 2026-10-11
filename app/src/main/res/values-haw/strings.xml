@@ -626,4 +626,7 @@
         <item quantity="other">Holoi i nā moʻolelo %1$d?</item>
     </plurals>
     <string name="turkmençe">Türkmençe</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Nā lā i koe</item>
+    </plurals>
 </resources>

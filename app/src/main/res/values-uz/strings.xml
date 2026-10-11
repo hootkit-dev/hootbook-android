@@ -626,4 +626,7 @@
         <item quantity="other">%1$d yozuvni o‘chirish?</item>
     </plurals>
     <string name="turkmençe">Turkmancha</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d kun qoldi</item>
+    </plurals>
 </resources>

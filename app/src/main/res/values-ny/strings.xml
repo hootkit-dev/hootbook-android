@@ -626,4 +626,7 @@
         <item quantity="other">Chotsani %1$d zolemba?</item>
     </plurals>
     <string name="turkmençe">Türkmençe</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Masiku atsala</item>
+    </plurals>
 </resources>

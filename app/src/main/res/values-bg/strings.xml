@@ -626,4 +626,7 @@
         <item quantity="other">Изтриване на %1$d записа?</item>
     </plurals>
     <string name="turkmençe">туркменски</string>
+    <plurals name="days_remaining">
+        <item quantity="other">Остават %1$d дни</item>
+    </plurals>
 </resources>

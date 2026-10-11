@@ -626,4 +626,7 @@
         <item quantity="other">%1$d રેકોર્ડ્સ મટાડવા?</item>
     </plurals>
     <string name="turkmençe">તુર્કમેન</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d દિવસ બાકી</item>
+    </plurals>
 </resources>

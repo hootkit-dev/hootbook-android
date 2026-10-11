@@ -623,4 +623,7 @@
         <item quantity="other">%1$d ཟིན་ཐོ་བསུབ་དགོས་སམ།</item>
     </plurals>
     <string name="turkmençe">ཐུའུ་ཁུའུ་མན་</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d ལྷག་པའི་ཉིན་གྲངས་</item>
+    </plurals>
 </resources>

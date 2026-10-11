@@ -632,4 +632,7 @@
         <item quantity="other">Izbrisati %1$d zapisov?</item>
     </plurals>
     <string name="turkmençe">Türkmençe</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d dni preostalo</item>
+    </plurals>
 </resources>

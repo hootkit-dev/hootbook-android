@@ -626,4 +626,7 @@
         <item quantity="other">Delere %1$d registri?</item>
     </plurals>
     <string name="turkmençe">Turcomenica</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Dies relinquent</item>
+    </plurals>
 </resources>

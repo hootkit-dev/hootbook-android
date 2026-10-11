@@ -626,4 +626,7 @@
         <item quantity="other">%1$d രേഖകൾ ഇല്ലാതാക്കണോ?</item>
     </plurals>
     <string name="turkmençe">തുർക്ക്മെൻ</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d ദിവസം ശേഷിക്കുന്നു</item>
+    </plurals>
 </resources>

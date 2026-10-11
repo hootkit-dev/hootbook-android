@@ -638,4 +638,7 @@
         <item quantity="other">حذف %1$d سجلات؟</item>
     </plurals>
     <string name="turkmençe">التركمانية</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d أيام متبقية</item>
+    </plurals>
 </resources>

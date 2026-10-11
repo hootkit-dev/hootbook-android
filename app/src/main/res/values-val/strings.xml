@@ -626,4 +626,7 @@
         <item quantity="other">Eliminar %1$d registres?</item>
     </plurals>
     <string name="turkmençe">Turcomè</string>
+    <plurals name="days_remaining">
+        <item quantity="other">Queden %1$d dies</item>
+    </plurals>
 </resources>

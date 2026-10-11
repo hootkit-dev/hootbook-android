@@ -626,4 +626,7 @@
         <item quantity="other">%1$d ਰੇਕਾਰਡ ਮਿਟਾਉਣਾ?</item>
     </plurals>
     <string name="turkmençe">ਤੁਰਕੀਮੇਨ</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d ਦਿਨ ਬਾਕੀ ਹਨ</item>
+    </plurals>
 </resources>

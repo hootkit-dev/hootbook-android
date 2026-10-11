@@ -626,4 +626,7 @@
         <item quantity="other">%1$d ରେକର୍ଡଗୁଡିକୁ ଡିଲିଟ୍ କରିବେ?</item>
     </plurals>
     <string name="turkmençe">ତୁର୍କମେନ୍</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d ଦିନ ବାକୀ</item>
+    </plurals>
 </resources>

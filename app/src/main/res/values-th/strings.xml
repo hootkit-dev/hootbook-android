@@ -623,4 +623,7 @@
         <item quantity="other">ลบ %1$d ระเบียน?</item>
     </plurals>
     <string name="turkmençe">เติร์กเมนิสถาน</string>
+    <plurals name="days_remaining">
+        <item quantity="other">เหลือ %1$d วัน</item>
+    </plurals>
 </resources>

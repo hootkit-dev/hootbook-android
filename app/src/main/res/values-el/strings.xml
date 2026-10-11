@@ -626,4 +626,7 @@
         <item quantity="other">Διαγραφή %1$d εγγραφών;</item>
     </plurals>
     <string name="turkmençe">Τουρκμενικά</string>
+    <plurals name="days_remaining">
+        <item quantity="other">Απομένουν %1$d ημέρες</item>
+    </plurals>
 </resources>

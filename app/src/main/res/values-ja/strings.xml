@@ -623,4 +623,7 @@
         <item quantity="other">%1$d 件の記録を削除しますか？</item>
     </plurals>
     <string name="turkmençe">トルクメン語</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d 日以内</item>
+    </plurals>
 </resources>

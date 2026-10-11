@@ -564,4 +564,7 @@
         <item quantity="one">Delete record?</item>
         <item quantity="other">Delete %1$d records?</item>
     </plurals>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d days remaining</item>
+    </plurals>
 </resources>

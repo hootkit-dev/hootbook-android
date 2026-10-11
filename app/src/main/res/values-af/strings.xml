@@ -626,4 +626,7 @@
         <item quantity="other">Verwyder %1$d rekords?</item>
     </plurals>
     <string name="turkmençe">Turkmeens</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Dae oor</item>
+    </plurals>
 </resources>

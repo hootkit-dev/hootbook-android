@@ -626,4 +626,7 @@
         <item quantity="other">%1$d qeydi sil?</item>
     </plurals>
     <string name="turkmençe">Türkmən</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Gün qalıb</item>
+    </plurals>
 </resources>

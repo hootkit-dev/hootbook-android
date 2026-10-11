@@ -629,4 +629,7 @@
         <item quantity="other">Șterge %1$d înregistrări?</item>
     </plurals>
     <string name="turkmençe">Turkmenă</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Zile rămase</item>
+    </plurals>
 </resources>

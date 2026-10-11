@@ -626,4 +626,7 @@
         <item quantity="other">٪1$d ریکارڈ کْریو ڈیلیٹ؟</item>
     </plurals>
     <string name="turkmençe">تُرکمان</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d دۄہ باقٕے</item>
+    </plurals>
 </resources>

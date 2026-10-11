@@ -629,4 +629,7 @@
         <item quantity="other">Obrisati %1$d zapisa?</item>
     </plurals>
     <string name="turkmençe">Turkmenski</string>
+    <plurals name="days_remaining">
+        <item quantity="other">%1$d Dana preostalo</item>
+    </plurals>
 </resources>
