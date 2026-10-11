@@ -92,13 +92,10 @@ cd pennywiseai-tracker
 
 ```
 app/
-├── src/main/java/com/pennywiseai/tracker/
-│   ├── data/
-│   │   ├── database/      # Room database
-│   │   ├── parser/        # SMS parsers
-│   │   └── repository/    # Data repositories
-│   ├── domain/            # Business logic
-│   └── ui/               # Compose UI
+├── src/main/java/io/github/hootkit_dev/hootbook/
+│   ├── core/              # Core platform integration
+│   ├── data/              # UI preferences, icons and updates
+│   └── presentation/      # Original Compose UI and Core-native state
 └── build.gradle.kts
 ```
 
