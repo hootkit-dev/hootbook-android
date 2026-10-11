@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.hootkit.core.*
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.backup.*
+import io.github.hootkit_dev.hootbook.core.CoreCurrencyRefreshCoordinator
 import io.github.hootkit_dev.hootbook.core.ui.BackupPlatformApplier
 import io.github.hootkit_dev.hootbook.R
 import java.io.File
@@ -43,10 +44,11 @@ class CoreBackupViewModel private constructor(
     private val workflow: CoreBackupWorkflow,
     private val platform: BackupPlatformApplier? = null,
 ) : ViewModel() {
-    @Inject constructor(@ApplicationContext context: Context, session: CoreSession, platform: BackupPlatformApplier) : this(context,
+    @Inject constructor(@ApplicationContext context: Context, session: CoreSession, platform: BackupPlatformApplier,
+        currencies: CoreCurrencyRefreshCoordinator) : this(context,
         File(context.noBackupFilesDir, "hootkit-core/backup-ui").let { root ->
             val files = CoreBackupFiles(root)
-            CoreBackupWorkflow(SessionBackupAccess(session), files, BackupOperationJournal(files), root) { operation ->
+            CoreBackupWorkflow(SessionBackupAccess(session, currencies::importCommitted), files, BackupOperationJournal(files), root) { operation ->
                 try { platform.apply(operation) } catch(cancelled: CancellationException) { throw cancelled }
                 catch(failure: Exception) { throw CoreBackupUiException(R.string.core_ui_backup_platform_failed, failure) }
             }

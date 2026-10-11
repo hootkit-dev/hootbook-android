@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transaction_discard_title">放棄變更？</string>
+    <string name="transaction_discard_body">這筆交易尚未儲存。</string>
+    <string name="transaction_discard_action">放棄</string>
+    <string name="transaction_continue_editing">繼續編輯</string>
+</resources>

@@ -37,6 +37,7 @@ fun CoreTransactionsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var routedNew by rememberSaveable { mutableStateOf(false) }
     var enteredForm by rememberSaveable { mutableStateOf(false) }
+    var pendingLeave by rememberSaveable { mutableStateOf<String?>(null) }
     val merchantUnsupportedMessage = stringResource(R.string.transaction_unsupported_merchant)
     val externalEntry = initialNewKind != null || subscriptionId != null || templateId != null
     val externalDetail = initialTransactionId != null
@@ -47,13 +48,21 @@ fun CoreTransactionsScreen(
         if (initialMerchant != null) viewModel.reportUnsupportedMerchantFilter(merchantUnsupportedMessage)
         if (initialNewKind != null && !routedNew) { routedNew = true; if (viewModel.state.value.form == null) viewModel.newTransaction(initialNewKind) }
     }
-    val back: () -> Unit = {
-        if (!state.writing) {
-            if (externalEntry) { viewModel.back(); onBack() }
-            else if (externalDetail && state.form == null) onBack()
+    val leave: (String) -> Unit = { destination ->
+        val current = viewModel.state.value
+        if (!current.writing && !current.importingAttachment) {
+            if (destination == "subscription") { viewModel.back(); onNewSubscription?.invoke() }
+            else if (externalEntry) { viewModel.back(); onBack() }
+            else if (externalDetail && current.form == null) onBack()
             else if (!viewModel.back()) onBack()
         }
     }
+    val requestLeave: (String) -> Unit = { destination ->
+        if (!viewModel.state.value.writing && !viewModel.state.value.importingAttachment) {
+            if (viewModel.hasUnsavedDraft()) pendingLeave = destination else leave(destination)
+        }
+    }
+    val back: () -> Unit = { requestLeave("back") }
     BackHandler(enabled = state.detailId != null || state.form != null || state.writing) { back() }
     LaunchedEffect(state.form != null, state.writing, state.detailId) {
         if (state.form != null) enteredForm = true
@@ -61,7 +70,8 @@ fun CoreTransactionsScreen(
     }
     val actions: @Composable () -> Unit = { CoreTransactionFullActions(state, viewModel, onManageSubscriptions, onManageMerchantIcon) }
     when {
-        state.form != null -> AddScreen(state, viewModel::updateForm, viewModel::save, back, viewModel::addTargetCurrency, onNewSubscription, actions)
+        state.form != null -> AddScreen(state, viewModel::updateForm, viewModel::save, back, viewModel::addTargetCurrency,
+            onNewSubscription?.let { { requestLeave("subscription") } }, actions)
         else -> BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 720.dp && !externalDetail
             val detail: @Composable () -> Unit = {
@@ -77,6 +87,23 @@ fun CoreTransactionsScreen(
             }
         }
     }
+    pendingLeave?.let { destination ->
+        TransactionDiscardDialog(
+            onContinue = { pendingLeave = null },
+            onDiscard = { pendingLeave = null; leave(destination) },
+        )
+    }
+}
+
+@Composable
+internal fun TransactionDiscardDialog(onContinue: () -> Unit, onDiscard: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onContinue,
+        title = { Text(stringResource(R.string.transaction_discard_title)) },
+        text = { Text(stringResource(R.string.transaction_discard_body)) },
+        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.transaction_discard_action)) } },
+        dismissButton = { TextButton(onClick = onContinue) { Text(stringResource(R.string.transaction_continue_editing)) } },
+    )
 }
 
 @Composable

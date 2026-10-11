@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package io.github.hootkit_dev.hootbook.presentation.ui.features.add
 
 import androidx.compose.foundation.clickable
@@ -14,9 +14,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.unit.dp
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
@@ -38,6 +42,8 @@ fun AddScreen(state: CoreTransactionsUiState, update: (CoreTransactionForm) -> U
     val enabled = !state.writing && !state.loadingSource
     var picker by rememberSaveable { mutableStateOf<String?>(null) }
     var amountPad by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var addCurrencyText by rememberSaveable { mutableStateOf("") }
     var pendingCurrency by rememberSaveable { mutableStateOf<String?>(null) }
     var newCurrency by rememberSaveable { mutableStateOf(false) }
@@ -63,7 +69,11 @@ fun AddScreen(state: CoreTransactionsUiState, update: (CoreTransactionForm) -> U
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     TextButton(onClick = { picker = "kind" }, enabled = enabled) { Text(if (form.kind in primaryKinds) stringResource(R.string.more_options) else form.kind.displayLabel()) }
                 }
-                AmountInput(form.amount, form.currency, { amountPad = true }, enabled = enabled)
+                AmountInput(form.amount, form.currency, {
+                    focusManager.clearFocus()
+                    keyboard?.hide()
+                    amountPad = true
+                }, enabled = enabled)
                 AccountCurrencyChoice((source?.pockets?.map { it.currency }.orEmpty() + form.currency).distinct(), form.currency,
                     { if (enabled) update(form.copy(currency = it, toAmount = "")) })
                 if (source == null) OutlinedTextField(form.currency, { update(form.copy(currency = it.uppercase())) }, enabled = enabled,
@@ -127,12 +137,25 @@ fun AddScreen(state: CoreTransactionsUiState, update: (CoreTransactionForm) -> U
             }
         }
     }
-    if (amountPad) HootbookModalBottomSheet(onDismissRequest = { amountPad = false }) {
-        Column(Modifier.fillMaxWidth().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    if (amountPad) HootbookModalBottomSheet(
+        onDismissRequest = { amountPad = false },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        val finishAmount: () -> Unit = {
+            focusManager.clearFocus()
+            keyboard?.hide()
+            amountPad = false
+        }
+        // ModalBottomSheet handles the IME insets. Keep the remaining content scrollable,
+        // and show exactly one keypad so its confirmation stays reachable on small screens.
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             OutlinedTextField(form.amount, { update(form.copy(amount = it)) }, label = { Text(stringResource(R.string.amount)) },
-                singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth().testTag("amount_editor"))
-            DecimalAmountPad(form.amount, { update(form.copy(amount = it)) })
-            Button(onClick = { amountPad = false }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.done)) }
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { finishAmount() }),
+                modifier = Modifier.fillMaxWidth().testTag("amount_editor"))
+            if (!WindowInsets.isImeVisible) DecimalAmountPad(form.amount, { update(form.copy(amount = it)) }, Modifier.testTag("amount_keypad"))
+            Button(onClick = finishAmount, modifier = Modifier.fillMaxWidth().testTag("amount_done")) { Text(stringResource(R.string.done)) }
         }
     }
     when (picker) {

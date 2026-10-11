@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="net_worth_history_title">Net-worth trend</string>
+    <string name="net_worth_history_estimate">Estimated at current exchange rates</string>
+    <string name="net_worth_history_about">About this estimate</string>
+    <string name="net_worth_history_month">1M</string>
+    <string name="net_worth_history_quarter">3M</string>
+    <string name="net_worth_history_half_year">6M</string>
+    <string name="net_worth_history_year">1Y</string>
+    <string name="net_worth_history_all">All</string>
+    <string name="net_worth_history_current">Current</string>
+    <string name="net_worth_history_no_past">No earlier balance history</string>
+    <string name="net_worth_history_incomplete">Missing rates or valuations. A complete trend is not available yet.</string>
+    <string name="net_worth_history_empty">No trend to display yet</string>
+    <string name="net_worth_history_failed">Could not load the trend</string>
+    <string name="net_worth_history_stale">Refresh failed. Showing the previous result.</string>
+    <string name="net_worth_history_retry">Retry</string>
+    <string name="net_worth_history_accessibility">Estimated trend from %1$s: %2$s. Current: %3$s. Tap the chart to inspect a point.</string>
+    <string name="net_worth_history_explanation">Past points use Core’s reconstructed day-end pocket balances and current exchange rates. Securities and unlinked brokerage contributions stay at their current valuation, so this is not a history of market prices.\n\nArchived accounts are included. Edited or deleted entries and changes to account type can change the reconstructed past. Balances before an opening or calibration follow Core’s rules, rather than being set to zero.\n\nThe dotted final segment leads to Current, the same native net-worth total shown on Home. It may include future-dated entries and anchors; it is not today’s closing balance. Longer ranges sample real day-end values across the full period without averaging them.</string>
+</resources>

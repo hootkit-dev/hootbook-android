@@ -13,8 +13,9 @@ The following original capabilities cannot be faithfully represented by the curr
 Their controls are explicitly unavailable rather than filtering a single page or calculating a
 second financial model in Android:
 
-- Home's combined net-worth history and account-kind monetary aggregates. Per-account/pocket native
-  history and Core account totals remain available.
+- Exact historical net-worth valuation and account-kind monetary aggregates. Home now has an explicitly
+  estimated current-rate history, using the read-only presentation aggregation described below; this
+  does not supply historical exchange rates or historical securities valuations.
 - Transaction subcategory and amount-range filters, a selected set of multiple currencies, exact
   merchant matching and unsupported sort modes. Existing text/date/account/category/kind/single
   currency filters and Core all-currency totals remain available.
@@ -23,6 +24,24 @@ second financial model in Android:
 - Legacy quick templates and the default-account preference are not represented by the frozen importer.
   Their exact local counts are shown before a supported-data upgrade; the original values remain in
   the retained recovery snapshot.
+
+## Home refresh and estimated history
+
+Home retains its last successful content during refresh instead of temporarily replacing populated
+cards with empty states. Currency refresh is scheduled after Core becomes ready, when the app
+returns to the foreground and after a confirmed restore. Concurrent requests share one flight;
+Core's `refresh(false)` still decides cache expiry, providers and rate precedence. Isolated import
+previews never use this network path.
+
+The estimated net-worth chart is an explicitly approved presentation-only exception to simple
+formatting: Core supplies pocket balance series, the current net-worth amount and every currency
+conversion; Android adds/subtracts these read-only results without changing any ledger value.
+The chart identifies current-rate estimation and discloses that securities use their current value,
+not historical market prices. The independently returned current Core value is labelled separately
+from historical end-of-day samples. Missing conversions or incomplete Core totals are surfaced,
+never filled with invented zeroes. This restores a useful view of imported history without claiming
+that the frozen Core exposes an authoritative historical aggregate API. The native API gap is tracked
+in [Core Spec issue #84](https://github.com/hootkit-dev/hootkit-core-spec/issues/84).
 
 ## Platform integration limits
 

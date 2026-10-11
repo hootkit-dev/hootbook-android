@@ -28,7 +28,6 @@ import io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets
 import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeUiState
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.common.icons.BrandIcons
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.javaDate
@@ -73,7 +72,8 @@ internal fun AccountCategoryList(state: CoreHomeUiState, onOpen: (AccountKind) -
 
 @Composable
 internal fun RecentTransactionsCard(transactions: List<Transaction>, accounts: List<Account>, categories: List<Category>, converted: Map<String, CoreDisplayedMoney>, symbols: Map<String, String>, assets: CorePlatformAssets,
-    loading: Boolean, onTransaction: (String) -> Unit, onViewAll: () -> Unit, modifier: Modifier = Modifier) {
+    loading: Boolean, onTransaction: (String) -> Unit, onViewAll: () -> Unit, modifier: Modifier = Modifier,
+    loadFailed: Boolean = false, referenceCurrency: String? = null) {
     val locale = LocalConfiguration.current.locales[0]
     val today = JavaDate.now()
     Column(modifier.fillMaxWidth()) {
@@ -81,6 +81,7 @@ internal fun RecentTransactionsCard(transactions: List<Transaction>, accounts: L
         Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
             when {
                 loading && transactions.isEmpty() -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(40.dp)) }
+                loadFailed && transactions.isEmpty() -> Text(stringResource(R.string.home_recent_unavailable), Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 transactions.isEmpty() -> Text(stringResource(R.string.home_recent_empty), Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else -> Column(Modifier.padding(bottom = 8.dp)) {
                     transactions.groupBy { JavaDate.of(it.dateTime.year, it.dateTime.month.toInt(), it.dateTime.day.toInt()) }.forEach { (day, rows) ->
@@ -101,9 +102,9 @@ internal fun RecentTransactionsCard(transactions: List<Transaction>, accounts: L
                                     }
                                     val income = transaction.kind == TransactionKind.INCOME || transaction.kind == TransactionKind.LOAN_IN
                                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 160.dp)) {
-                                        Text((if (income) "+" else if (transaction.kind == TransactionKind.TRANSFER) "" else "−") + CoreMoneyPresentation.format(transaction.amount, transaction.currency, symbols), style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"), color = if (income) moneyColors.income else if (transaction.kind == TransactionKind.TRANSFER) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-                                        if (transaction.kind == TransactionKind.TRANSFER && transaction.toAmount != null) Text(stringResource(R.string.home_received, CoreMoneyPresentation.format(transaction.toAmount, transaction.toCurrency ?: transaction.currency, symbols)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        else converted[transaction.id]?.let { Text(CoreMoneyPresentation.format(it.amount, it.currency, symbols), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                        Text((if (income) "+" else if (transaction.kind == TransactionKind.TRANSFER) "" else "−") + HomeMoneyPresentation.format(transaction.amount, transaction.currency, symbols, useCode = transaction.currency != referenceCurrency), style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"), color = if (income) moneyColors.income else if (transaction.kind == TransactionKind.TRANSFER) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
+                                        if (transaction.kind == TransactionKind.TRANSFER && transaction.toAmount != null) Text(stringResource(R.string.home_received, HomeMoneyPresentation.format(transaction.toAmount, transaction.toCurrency ?: transaction.currency, symbols, useCode = (transaction.toCurrency ?: transaction.currency) != referenceCurrency)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        else converted[transaction.id]?.let { Text(HomeMoneyPresentation.format(it.amount, it.currency, symbols), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                     }
                                 }
                             }
@@ -124,7 +125,7 @@ internal fun UpcomingSubscriptionsCard(rows: List<Subscription>, summary: Subscr
                 Text(stringResource(R.string.subscriptions_count_format, rows.size), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                     summary?.let {
-                        Text(CoreMoneyPresentation.format(it.monthly, it.currency, symbols), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(HomeMoneyPresentation.format(it.monthly, it.currency, symbols), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(stringResource(R.string.per_month).uppercase(), style = MaterialTheme.typography.bodySmall, fontStyle = FontStyle.Italic,
                             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), modifier = Modifier.padding(bottom = 2.dp))
                     }

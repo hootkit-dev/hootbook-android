@@ -80,7 +80,7 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     item {
                         SearchBarBox(searchQuery = TextFieldValue(search), onSearchQueryChange = { search = it.text },
-                            label = { Text(stringResource(R.string.search_fruits)) },
+                            label = { Text(stringResource(R.string.search_categories)) },
                             trailingIcon = { if (search.isNotEmpty()) IconButton(onClick = { search = "" }) { Icon(Icons.Rounded.Close, stringResource(R.string.clear_search)) } })
                     }
                     if (!state.loading && state.categories.isEmpty()) item { Text(stringResource(R.string.core_categories_7)) }

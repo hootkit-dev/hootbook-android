@@ -1,6 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.core.home
 
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -25,5 +28,6 @@ fun CoreHomeScreen(
     HomeScreen(state, prefs, platform.assets, viewModel::refresh, onSettings, onAi, onAccounts,
         onAccountCategory, onCurrencies, onAnalytics, onTransactions, onTransaction, onBudgets,
         onBudget, onSubscriptions, onSubscription, onDebts, platform::setWidgetVisible,
-        platform::reorderWidgets, platform::resetLayout, platform::toggleBanner)
+        platform::reorderWidgets, platform::resetLayout, platform::toggleBanner,
+        netWorthHistory = { CoreNetWorthHistoryCard(symbols = state.customSymbols, modifier = Modifier.padding(horizontal = 16.dp)) })
 }

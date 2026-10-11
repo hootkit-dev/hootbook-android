@@ -85,7 +85,7 @@ Firebase fixture 用 demo emulator 与真实 SDK anonymousAuth；两个 App v2 b
 
 - 精确计入预算的交易 ID 分页（不是普通 ledger 查询）。
 - 全局子分类/金额范围/多币种高级筛选、Smallest/Merchant 排序；当前 SortOrder 仅 Newest/Oldest/Largest。
-- merchant 金融排行、金融日均、旧投资/借贷特殊合计等专门统计，以及全局历史净资产；已支持单账户/口袋 balanceSeries，不混为全局能力。
+- merchant 金融排行、金融日均、旧投资/借贷特殊合计等专门统计，以及精确历史估值的全局净资产 API；首页按用户明确批准，读取 Core balanceSeries/convert 做展示用加减，提供标注“按当前汇率估算”的走势，证券沿用当前估值，不把它声称为历史当天的真实总资产。
 - Cashew 第三方 SQLite/CSV 专门导入；Core legacy 是已有旧备份格式。
 - 原子清账但保留分类/汇率/设置；不删除数据库或伪造空备份。
 - durable import operation receipt/query/resume、uncertain 自动恢复；原源/安全副本/导出保持，uncertain 不自动重放。

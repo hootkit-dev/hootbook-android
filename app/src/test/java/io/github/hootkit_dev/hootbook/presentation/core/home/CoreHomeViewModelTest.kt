@@ -31,7 +31,8 @@ class CoreHomeViewModelTest {
 
     @Test fun homeUsesCoreOverviewAndSummaryIncludingIncompleteFlags() = runTest {
         val core = FakeLedgerCore()
-        val vm = CoreHomeViewModel(CoreSession(backgroundScope) { core }, ChangeBus())
+        val changes = ChangeBus()
+        val vm = CoreHomeViewModel(CoreSession(backgroundScope) { core }, changes)
         stores += ViewModelStore().also { it.put("vm", vm) }
         runCurrent()
         assertSame(core.overview, vm.state.value.overview)
@@ -60,14 +61,15 @@ class CoreHomeViewModelTest {
     }
 
     @Test fun staleHomeSummaryNeverReplacesMoreRecentData() = runTest {
-        val core = FakeLedgerCore(); val gate = CompletableDeferred<Unit>(); var first = true
+        val core = FakeLedgerCore(); val changes = ChangeBus(); val gate = CompletableDeferred<Unit>(); var first = true
         core.onSubscriptionSummary = {
             if (first) { first = false; withContext(NonCancellable) { gate.await() }; core.subscriptionSummary.copy(count = 99u) }
             else core.subscriptionSummary.copy(count = 2u)
         }
-        val vm = CoreHomeViewModel(CoreSession(backgroundScope) { core }, ChangeBus())
+        val vm = CoreHomeViewModel(CoreSession(backgroundScope) { core }, changes)
         stores += ViewModelStore().also { it.put("vm", vm) }; runCurrent()
-        vm.refresh(); runCurrent(); assertEquals(2u, vm.state.value.subscriptions!!.count)
+        changes.onChange(ChangeSet(listOf(Table.SUBSCRIPTIONS), emptyList(), ChangeOrigin.LOCAL))
+        runCurrent(); assertEquals(2u, vm.state.value.subscriptions!!.count)
         gate.complete(Unit); runCurrent(); assertEquals(2u, vm.state.value.subscriptions!!.count)
         assertFalse(vm.state.value.loading); core.assertHandlesReleased()
     }

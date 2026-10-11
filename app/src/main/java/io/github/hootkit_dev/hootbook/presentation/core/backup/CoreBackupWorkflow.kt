@@ -13,10 +13,13 @@ import kotlinx.coroutines.withContext
 internal interface CoreBackupAccess {
     suspend fun <T> backup(block: suspend (BackupInterface) -> T): T
     suspend fun <T> legacy(block: suspend (LegacyInterface) -> T): T
+    fun importCommitted() {}
 }
-internal class SessionBackupAccess(private val session: CoreSession) : CoreBackupAccess {
+internal class SessionBackupAccess(private val session: CoreSession,
+    private val onImportCommitted: () -> Unit = {}) : CoreBackupAccess {
     override suspend fun <T> backup(block: suspend (BackupInterface) -> T): T = session.awaitCore().backup().use { block(it) }
     override suspend fun <T> legacy(block: suspend (LegacyInterface) -> T): T = session.awaitCore().legacy().use { block(it) }
+    override fun importCommitted() = onImportCommitted()
 }
 
 /** Core remains the sole implementation of import rules, encryption and safety backups. */
@@ -68,6 +71,9 @@ internal class CoreBackupWorkflow(
                     importSummary = access.backup { it.importBackup(source.file.path, ImportOptions(mode, password, files.platform(source.operationId).path)) })
                 returned = true
                 withContext(Dispatchers.IO) { journal.write(operation) }
+                // A best-effort app refresh is independent of the committed ledger and UI files.
+                // Isolated previews and guarded migration handles use the default no-op callback.
+                runCatching { access.importCommitted() }
                 finishPlatform(operation)
             } catch (failure: Throwable) {
                 // A typed error is not a commit receipt: the database writer's await/panic/closed

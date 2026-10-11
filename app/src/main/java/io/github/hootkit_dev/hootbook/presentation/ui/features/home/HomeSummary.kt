@@ -26,7 +26,6 @@ import dev.hootkit.core.AccountsOverview
 import dev.hootkit.core.LedgerSummary
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.moneyColors
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -60,15 +59,13 @@ internal fun NetWorthSection(
                 Icon(if (breakdownShown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, null, Modifier.size(18.dp))
             }
         }
-        Text(CoreMoneyPresentation.format(overview.netWorth.amount, overview.netWorth.currency, symbols),
+        Text(HomeMoneyPresentation.format(overview.netWorth.amount, overview.netWorth.currency, symbols),
             style = MaterialTheme.typography.displaySmall.copy(fontFeatureSettings = "tnum"),
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 4.dp).clickable(onClick = onOpenAccounts))
         if (!overview.netWorthComplete) Text(stringResource(R.string.core_complete_incomplete), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        Text(stringResource(R.string.home_trend_unavailable), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, top = 12.dp))
         display?.let {
-            Text(if (it.complete) CoreMoneyPresentation.format(it.amount, it.currency, symbols)
+            Text(if (it.complete) HomeMoneyPresentation.format(it.amount, it.currency, symbols, useCode = true)
                 else stringResource(R.string.core_complete_display_missing, it.currency),
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
@@ -85,7 +82,7 @@ internal fun MonthCard(summary: LedgerSummary, previous: LedgerSummary?, symbols
     val empty = summary.income.signum() == 0 && summary.expense.signum() == 0
     // Chart scale only. Ledger amounts and net are never recomputed in the presentation layer.
     val scale = listOfNotNull(summary.income.abs(), summary.expense.abs(), previous?.income?.abs(), previous?.expense?.abs()).maxOrNull()?.toFloat()?.takeIf { it > 0f } ?: 1f
-    fun money(value: BigDecimal) = CoreMoneyPresentation.format(value, summary.currency, symbols)
+    fun money(value: BigDecimal) = HomeMoneyPresentation.format(value, summary.currency, symbols)
     Surface(onClick = onClick, shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth().testTag("home_month_summary")) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -106,10 +103,12 @@ internal fun MonthCard(summary: LedgerSummary, previous: LedgerSummary?, symbols
                     previous?.expense?.abs()?.toFloat()?.div(scale), colors.expense, colors.expenseContainer, colors.onExpenseContainer)
             }
             if (previous != null && (previous.income.signum() != 0 || previous.expense.signum() != 0)) {
-                HorizontalDivider(Modifier.padding(top = 14.dp, bottom = 10.dp))
-                Text(stringResource(R.string.home_last_month_note, money(previous.income), money(previous.expense),
-                    if (previous.net.signum() >= 0) stringResource(R.string.home_last_net_income, money(previous.net))
-                    else stringResource(R.string.home_last_net_spending, money(previous.net.abs()))), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!empty) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.size(width = 2.dp, height = 12.dp).background(MaterialTheme.colorScheme.onSurfaceVariant))
+                    Text(stringResource(R.string.home_previous_month_marker), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 if (!previous.complete) Text(stringResource(R.string.core_complete_missing, previous.missingCurrencies.joinToString()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
         }

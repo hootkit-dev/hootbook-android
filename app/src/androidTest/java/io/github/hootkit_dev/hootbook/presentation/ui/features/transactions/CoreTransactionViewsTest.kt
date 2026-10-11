@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionForm
+import io.github.hootkit_dev.hootbook.presentation.core.transactions.TransactionDiscardDialog
 import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionsUiState
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AddScreen
@@ -60,12 +61,26 @@ class CoreTransactionViewsTest {
             AddScreen(state.value, { state.value = state.value.copy(form = it) }, { saved = state.value.form }, {})
         } }
         rule.onNodeWithTag("transaction_amount").performClick()
+        rule.onNodeWithTag("amount_done").assertIsDisplayed()
         rule.onNodeWithTag("amount_editor").performTextReplacement("987654321.123456789")
         restoration.emulateSavedInstanceStateRestore()
         rule.onNodeWithTag("amount_editor").assertTextContains("987654321.123456789")
         rule.onNodeWithText(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getString(io.github.hootkit_dev.hootbook.R.string.done)).performClick()
         rule.onNodeWithTag("save_transaction").performScrollTo().performClick()
         rule.runOnIdle { assertEquals(BigDecimal("987654321.123456789"), saved!!.toDraft().amount) }
+    }
+
+    @Test fun draftDiscardDialogKeepsEditingUntilExplicitDiscard() {
+        var kept = 0
+        var discarded = 0
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        rule.setContent { HootbookTheme(dynamicColor = false) {
+            TransactionDiscardDialog(onContinue = { kept++ }, onDiscard = { discarded++ })
+        } }
+        rule.onNodeWithText(context.getString(io.github.hootkit_dev.hootbook.R.string.transaction_continue_editing)).performClick()
+        rule.runOnIdle { assertEquals(1, kept); assertEquals(0, discarded) }
+        rule.onNodeWithText(context.getString(io.github.hootkit_dev.hootbook.R.string.transaction_discard_action)).performClick()
+        rule.runOnIdle { assertEquals(1, kept); assertEquals(1, discarded) }
     }
 
     @Test fun receivedAmountIsExplicitAndNeverReplacedByEstimate() {

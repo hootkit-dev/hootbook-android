@@ -2,6 +2,7 @@ package io.github.hootkit_dev.hootbook.presentation.core.transactions
 
 import android.app.Application
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.SavedStateHandle
 import dev.hootkit.core.*
 import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
@@ -29,11 +30,65 @@ class CoreTransactionsViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { stores.forEach(ViewModelStore::clear); Dispatchers.resetMain() }
 
-    private fun TestScope.model(core: FakeLedgerCore, changes: ChangeBus = ChangeBus()): CoreTransactionsViewModel {
+    private fun TestScope.model(core: FakeLedgerCore, changes: ChangeBus = ChangeBus(), savedState: SavedStateHandle? = null): CoreTransactionsViewModel {
         val session = CoreSession(backgroundScope) { core }
-        return CoreTransactionsViewModel(session, changes).also { vm ->
+        return CoreTransactionsViewModel(session, changes, savedState).also { vm ->
             stores += ViewModelStore().also { it.put("vm", vm) }
         }
+    }
+
+    @Test fun unchangedNewFormLeavesFreelyButTypedDraftRequiresExplicitDiscard() = runTest {
+        val savedState = SavedStateHandle()
+        val core = FakeLedgerCore(); val vm = model(core, savedState = savedState)
+        runCurrent(); vm.newTransaction(); runCurrent()
+        val initial = vm.state.value.form!!
+        assertFalse(vm.hasUnsavedDraft())
+        vm.updateForm(initial.copy(amount = "12.500000001", notes = "keep me"))
+        assertTrue(vm.hasUnsavedDraft())
+        // Merely checking navigation safety must not erase either live or saved edit state.
+        assertEquals("keep me", vm.state.value.form!!.notes)
+        assertEquals("12.500000001", restoreTransactionForm(savedState["transaction_draft"])!!.amount)
+        vm.updateForm(initial)
+        assertFalse(vm.hasUnsavedDraft())
+        vm.updateForm(initial.copy(merchant = "QA merchant"))
+        assertTrue(vm.hasUnsavedDraft())
+        assertTrue(vm.back()) // Invoked by UI only after explicit confirmation.
+        assertNull(vm.state.value.form)
+        assertNull(savedState.get<android.os.Bundle>("transaction_draft"))
+        assertNull(savedState.get<android.os.Bundle>("transaction_draft_baseline"))
+        assertFalse(vm.hasUnsavedDraft())
+        assertEquals(0, core.addCalls)
+    }
+
+    @Test fun restoredDraftStillRequiresConfirmationAndRetainsExactInput() = runTest {
+        val savedState = SavedStateHandle()
+        val core = FakeLedgerCore(); val first = model(core, savedState = savedState)
+        runCurrent(); first.newTransaction(); runCurrent()
+        first.updateForm(first.state.value.form!!.copy(amount = "123456789.123456789", merchant = "restored"))
+        val restored = model(core, savedState = savedState)
+        restored.initialize(null, null); runCurrent()
+        assertTrue(restored.hasUnsavedDraft())
+        assertEquals("123456789.123456789", restored.state.value.form!!.amount)
+        assertEquals("restored", restored.state.value.form!!.merchant)
+    }
+
+    @Test fun unchangedExistingTransactionIsCleanAndUndoingEditsRestoresCleanState() = runTest {
+        val core = FakeLedgerCore(); val vm = model(core)
+        vm.initialize(null, "existing-string-id"); runCurrent(); vm.editTransaction()
+        val original = vm.state.value.form!!
+        assertFalse(vm.hasUnsavedDraft())
+        vm.updateForm(original.copy(notes = original.notes + " changed"))
+        assertTrue(vm.hasUnsavedDraft())
+        vm.updateForm(original)
+        assertFalse(vm.hasUnsavedDraft())
+        assertEquals(0, core.addCalls)
+    }
+
+    @Test fun legacySavedDraftWithoutBaselineIsProtectedRatherThanAssumedEmpty() = runTest {
+        val form = CoreTransactionForm(amount = "1", notes = "old saved state")
+        val vm = model(FakeLedgerCore(), savedState = SavedStateHandle(mapOf("transaction_draft" to saveTransactionForm(form))))
+        assertTrue(vm.hasUnsavedDraft())
+        assertEquals(form, vm.state.value.form)
     }
 
     @Test fun firstTemplateNavigationResolvesActualCoreDefaultsBeforeNullPrefill() = runTest {

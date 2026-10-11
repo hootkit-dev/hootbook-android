@@ -80,6 +80,7 @@ class CoreTransactionsViewModel @Inject constructor(
     val platformAssets: io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets? = null,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(CoreTransactionsUiState(form = restoreTransactionForm(savedState?.get("transaction_draft"))))
+    private var draftBaseline = restoreTransactionForm(savedState?.get("transaction_draft_baseline"))
     val state = mutableState.asStateFlow()
     private var queryJob: Job? = null
     private var version = 0L
@@ -238,6 +239,7 @@ class CoreTransactionsViewModel @Inject constructor(
                 currency = entryCurrency ?: current.accounts.find { account -> account.id == selectedAccount }?.mainCurrency ?: current.mainCurrency,
             ))
         }
+        draftBaseline = state.value.form
         persistDraft()
         // Re-query references against detailId=null; an old non-cancellable detail must not refill it.
         refresh()
@@ -257,7 +259,12 @@ class CoreTransactionsViewModel @Inject constructor(
         ++editorIdentity
         invalidateSource()
         draftDefaultsReady = true
-        state.value.detail?.let { transaction -> mutableState.update { it.copy(form = CoreTransactionForm.from(transaction), error = null) }; persistDraft() }
+        state.value.detail?.let { transaction ->
+            val form = CoreTransactionForm.from(transaction)
+            draftBaseline = form
+            mutableState.update { it.copy(form = form, error = null) }
+            persistDraft()
+        }
     }
 
     fun updateForm(form: CoreTransactionForm) {
@@ -299,7 +306,10 @@ class CoreTransactionsViewModel @Inject constructor(
 
     fun dismissNotice() { mutableState.update { it.copy(notice = null) } }
 
-    /** Returns true when the inner detail/editor consumed Back. */
+    /** Compare edit state only; no monetary validation or mutation happens on navigation. */
+    fun hasUnsavedDraft(): Boolean = state.value.form?.let { it != draftBaseline } ?: false
+
+    /** Returns true when the inner editor consumed Back. UI must confirm [hasUnsavedDraft] first. */
     fun back(): Boolean {
         val current = state.value
         if (current.writing) return true
@@ -414,6 +424,7 @@ class CoreTransactionsViewModel @Inject constructor(
                 val form = prefill(base)
                 if (mine == sourceVersion) {
                     draftDefaultsReady = true
+                    if (draftBaseline == base) draftBaseline = form
                     mutableState.update { it.copy(form = form, loadingSource = false) }
                     persistDraft()
                 }
@@ -424,7 +435,10 @@ class CoreTransactionsViewModel @Inject constructor(
         }
     }
 
-    private fun persistDraft() { savedState?.set("transaction_draft", state.value.form?.let(::saveTransactionForm)) }
+    private fun persistDraft() {
+        savedState?.set("transaction_draft", state.value.form?.let(::saveTransactionForm))
+        savedState?.set("transaction_draft_baseline", state.value.form?.let { draftBaseline?.let(::saveTransactionForm) })
+    }
 
     fun toggleSelected(id: String) {
         if (state.value.writing) return

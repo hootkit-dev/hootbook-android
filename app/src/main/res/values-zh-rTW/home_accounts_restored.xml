@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="home_trend_unavailable">暫不支援淨資產歷史趨勢。開啟帳戶可查看各幣別的餘額歷史。</string>
+    <string name="home_previous_month_marker">上月</string>
+    <string name="home_recent_unavailable">暫時無法載入最近交易</string>
 </resources>

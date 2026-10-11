@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,6 @@ import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferences
 import io.github.hootkit_dev.hootbook.data.preferences.HomeWidget
 import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeUiState
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.javaDate
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.ui.components.GreetingCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HeatmapWidget
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HomeContentList
@@ -51,6 +51,7 @@ fun HomeScreen(
     onSubscription: (String) -> Unit, onDebts: () -> Unit,
     onWidgetVisibility: (HomeWidget, Boolean) -> Unit, onReorder: (List<HomeWidget>) -> Unit,
     onResetLayout: () -> Unit, onToggleBanner: () -> Unit,
+    netWorthHistory: (@Composable () -> Unit)? = null,
 ) {
     var showBreakdown by rememberSaveable { mutableStateOf(false) }
     var showEditor by rememberSaveable { mutableStateOf(false) }
@@ -68,7 +69,6 @@ fun HomeScreen(
                 else Image(painterResource(R.drawable.banner_bg_image), stringResource(R.string.banner), modifier, contentScale = ContentScale.Crop)
             }
             val widgetItems: LazyListScope.(List<HomeWidget>) -> Unit = { widgets ->
-                if (state.loading || state.widgetsLoading) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
                 (state.errorResource ?: state.widgetError)?.let { message -> item(key = "error") {
                     Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(message), Modifier.weight(1f), color = MaterialTheme.colorScheme.error)
@@ -78,6 +78,7 @@ fun HomeScreen(
                 widgets.filterNot { it in prefs.hiddenHomeWidgets }.forEach { widget -> when (widget) {
                     HomeWidget.NETWORTH_SUMMARY -> {
                         item(key = "net_worth") { state.overview?.let { NetWorthSection(it, state.customSymbols, state.displayNetWorth, onCurrencies, onAccounts, showBreakdown, { showBreakdown = !showBreakdown }, Modifier.padding(horizontal = 16.dp)) } }
+                        if (netWorthHistory != null) item(key = "net_worth_history") { netWorthHistory() }
                         if (showBreakdown) item(key = "account_categories") { AccountCategoryList(state, onAccountCategory, Modifier.padding(horizontal = 16.dp)) }
                         item(key = "this_month") { state.summary?.let { MonthCard(it, state.previousSummary, state.customSymbols, onAnalytics, Modifier.padding(horizontal = 16.dp)) } }
                     }
@@ -85,8 +86,8 @@ fun HomeScreen(
                     HomeWidget.LOANS -> state.debts?.takeIf { it.receivable.signum() != 0 || it.payable.signum() != 0 }?.let { debt -> item(key = "loans") {
                         Surface(onClick = onDebts, shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
                             Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                                Column(Modifier.weight(1f)) { Text(stringResource(R.string.lend_borrow_you_get), style = MaterialTheme.typography.labelMedium); Text(CoreMoneyPresentation.format(debt.receivable, debt.currency, state.customSymbols), style = MaterialTheme.typography.titleLarge) }
-                                Column(Modifier.weight(1f)) { Text(stringResource(R.string.lend_borrow_you_owe), style = MaterialTheme.typography.labelMedium); Text(CoreMoneyPresentation.format(debt.payable, debt.currency, state.customSymbols), style = MaterialTheme.typography.titleLarge) }
+                                Column(Modifier.weight(1f)) { Text(stringResource(R.string.lend_borrow_you_get), style = MaterialTheme.typography.labelMedium); Text(HomeMoneyPresentation.format(debt.receivable, debt.currency, state.customSymbols), style = MaterialTheme.typography.titleLarge) }
+                                Column(Modifier.weight(1f)) { Text(stringResource(R.string.lend_borrow_you_owe), style = MaterialTheme.typography.labelMedium); Text(HomeMoneyPresentation.format(debt.payable, debt.currency, state.customSymbols), style = MaterialTheme.typography.titleLarge) }
                             }
                         }
                     } }
@@ -106,12 +107,14 @@ fun HomeScreen(
                         }
                     }
                     HomeWidget.UPCOMING_SUBSCRIPTIONS -> if (state.upcoming.isNotEmpty()) item(key = "subscriptions") { UpcomingSubscriptionsCard(state.upcoming, state.subscriptions, state.customSymbols, assets, onSubscriptions, Modifier.padding(horizontal = 16.dp)) }
-                    HomeWidget.RECENT_TRANSACTIONS -> item(key = "recent") { RecentTransactionsCard(state.recent, state.overview?.accounts.orEmpty(), state.categories, state.recentDisplay, state.customSymbols, assets, state.loading, onTransaction, onTransactions, Modifier.padding(horizontal = 16.dp)) }
+                    HomeWidget.RECENT_TRANSACTIONS -> item(key = "recent") { RecentTransactionsCard(state.recent, state.overview?.accounts.orEmpty(), state.categories, state.recentDisplay, state.customSymbols, assets,
+                        state.loading || state.widgetsLoading, onTransaction, onTransactions, Modifier.padding(horizontal = 16.dp),
+                        loadFailed = !state.widgetsLoaded && (state.errorResource != null || state.widgetError != null), referenceCurrency = state.overview?.netWorth?.currency) }
                 } }
             }
             val visibleWidgets = prefs.homeOrder
             if (maxWidth < 720.dp) {
-                HomeContentList(rememberLazyListState(), Modifier.fillMaxSize(), PaddingValues(top = 16.dp, bottom = 112.dp)) {
+                HomeContentList(rememberLazyListState(), Modifier.fillMaxSize().testTag("home_content"), PaddingValues(top = 16.dp, bottom = 112.dp)) {
                     widgetItems(visibleWidgets)
                     item(key = "customize") { CustomizeHomeButton { showEditor = true } }
                 }
@@ -119,12 +122,17 @@ fun HomeScreen(
                 val activity = setOf(HomeWidget.RECENT_TRANSACTIONS, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP)
                 Row(Modifier.fillMaxSize()) {
                     listOf(visibleWidgets.filterNot { it in activity }, visibleWidgets.filter { it in activity }).forEachIndexed { index, widgets ->
-                        HomeContentList(rememberLazyListState(), Modifier.weight(1f).fillMaxHeight(), PaddingValues(top = 16.dp, bottom = 112.dp)) {
+                        HomeContentList(rememberLazyListState(), Modifier.weight(1f).fillMaxHeight().testTag("home_content_$index"), PaddingValues(top = 16.dp, bottom = 112.dp)) {
                             widgetItems(widgets)
                             if (index == 0) item(key = "customize") { CustomizeHomeButton { showEditor = true } }
                         }
                     }
                 }
+            }
+            // Progress is an overlay, never an inserted list item that changes scroll geometry.
+            if (state.loading || state.refreshing || state.widgetsLoading || state.heatmapLoading) {
+                LinearProgressIndicator(Modifier.align(Alignment.TopCenter).fillMaxWidth()
+                    .padding(horizontal = 16.dp).testTag("home_refresh_progress"))
             }
         }
     }

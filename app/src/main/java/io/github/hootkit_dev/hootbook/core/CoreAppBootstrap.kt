@@ -24,6 +24,7 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
     val legacyUpgrade: io.github.hootkit_dev.hootbook.core.migration.LegacyUpgradeGuard,
     private val startup: CoreStartupCoordinator, private val lock: Provider<CoreAppLockController>,
     private val sync: Provider<CoreSyncCoordinator>, private val system: Provider<CoreSystemCoordinator>,
+    private val currencies: Provider<CoreCurrencyRefreshCoordinator>,
     @ApplicationScope private val scope: CoroutineScope) {
     private val mutable = MutableStateFlow(CoreBootstrapState.PREFERENCES); val state = mutable.asStateFlow()
     private var job: Job? = null
@@ -51,6 +52,7 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
             } catch (_: Throwable) { }
             lock.get().retryLoading(); sync.get().start(); system.get().start()
             mutable.value = CoreBootstrapState.READY
+            currencies.get().coreReady()
             if (foreground) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh() }
         }
     }
@@ -61,7 +63,7 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
             return
         }
         if (state.value != CoreBootstrapState.READY || CoreProcess.isCrashProcess(context)) return
-        if (value) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh() }
+        if (value) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh(); currencies.get().foregrounded() }
         else { lock.get().onBackground(); sync.get().backgrounded() }
     }
 }
