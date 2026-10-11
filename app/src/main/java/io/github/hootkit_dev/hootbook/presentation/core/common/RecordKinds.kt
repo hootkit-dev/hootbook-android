@@ -25,20 +25,32 @@ fun recordKindLabel(table: Table): String = stringResource(when (table) {
     Table.BROKERAGE -> R.string.record_kind_brokerage
 })
 
-/** The same for the item names an older backup reports; an unknown name is shown as it is. */
+/** A kind of record an older (Cashiro) database or backup reports, as the app names it; unknown kinds keep their own name. */
 @Composable
-fun recordKindLabel(item: String): String = when (item) {
-    "accounts" -> recordKindLabel(Table.ACCOUNTS)
-    "anchors", "balance_anchors" -> recordKindLabel(Table.BALANCE_ANCHORS)
-    "transactions" -> recordKindLabel(Table.TRANSACTIONS)
-    "categories" -> recordKindLabel(Table.CATEGORIES)
-    "subcategories" -> recordKindLabel(Table.SUBCATEGORIES)
-    "budgets" -> recordKindLabel(Table.BUDGETS)
-    "budget_limits" -> recordKindLabel(Table.BUDGET_LIMITS)
-    "subscriptions" -> recordKindLabel(Table.SUBSCRIPTIONS)
-    "templates", "quick_templates" -> recordKindLabel(Table.QUICK_TEMPLATES)
-    "people" -> recordKindLabel(Table.PEOPLE)
-    "debts" -> recordKindLabel(Table.DEBTS)
-    "rates", "exchange_rates", "downloaded_rates" -> recordKindLabel(Table.EXCHANGE_RATES)
-    else -> item
+fun legacyItemLabel(item: String): String {
+    val resource = when (item) {
+        "accounts" -> R.string.legacy_upgrade_count_accounts
+        "anchors" -> R.string.legacy_upgrade_count_anchors
+        "categories" -> R.string.legacy_upgrade_count_categories
+        "subcategories" -> R.string.legacy_upgrade_count_subcategories
+        "transactions" -> R.string.legacy_upgrade_count_transactions
+        "budgets" -> R.string.legacy_upgrade_count_budgets
+        "budget_limits" -> R.string.legacy_upgrade_count_budget_limits
+        "subscriptions" -> R.string.legacy_upgrade_count_subscriptions
+        "people" -> R.string.legacy_upgrade_count_people
+        "debts" -> R.string.legacy_upgrade_count_debts
+        "custom_rates" -> R.string.legacy_upgrade_count_custom_rates
+        "attachments" -> R.string.legacy_upgrade_count_attachments
+        "cards" -> R.string.legacy_upgrade_count_cards
+        "balance_updates" -> R.string.legacy_upgrade_count_balance_updates
+        "unknown_transactions" -> R.string.legacy_upgrade_count_unknown_transactions
+        "deleted_transactions" -> R.string.legacy_upgrade_count_deleted_transactions
+        "deleted_debts" -> R.string.legacy_upgrade_count_deleted_debts
+        "invalid_records" -> R.string.legacy_upgrade_count_invalid_records
+        "brokerage_connections" -> R.string.legacy_upgrade_count_brokerage_connections
+        "loan_transactions_without_account" -> R.string.legacy_upgrade_count_unlinked_loans
+        "downloaded_rates" -> R.string.legacy_upgrade_count_downloaded_rates
+        else -> null
+    }
+    return resource?.let { stringResource(it) } ?: item
 }

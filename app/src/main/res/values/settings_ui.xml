@@ -26,4 +26,5 @@
     <string name="settings_currencies_help">Custom currencies and exchange rates</string>
     <string name="settings_subscriptions_help">Recurring payments and their reminders</string>
     <string name="settings_investments_help">Connect brokers and see holdings</string>
+    <string name="lock_body">Unlock with your fingerprint, face or screen lock.</string>
 </resources>

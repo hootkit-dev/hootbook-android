@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.core.navigation
 
+import io.github.hootkit_dev.hootbook.presentation.ui.components.LoadingCircle
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -63,8 +64,8 @@ internal fun CoreLocaleGate(session: CoreSession, content: @Composable () -> Uni
                     Text(stringResource(R.string.core_locale_failed))
                     Button(onClick = { retry++ }) { Text(stringResource(R.string.core_host_retry)) }
                 } else {
-                    CircularProgressIndicator()
-                    Text(stringResource(R.string.core_locale_syncing))
+                    LoadingCircle(Modifier.size(48.dp))
+                    Text(stringResource(R.string.core_locale_syncing), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

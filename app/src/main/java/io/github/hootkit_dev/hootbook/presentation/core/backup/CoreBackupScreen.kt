@@ -32,7 +32,7 @@ import dev.hootkit.core.Table
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.backup.BackupOperation
 import io.github.hootkit_dev.hootbook.core.backup.BackupPhase
-import io.github.hootkit_dev.hootbook.presentation.core.common.recordKindLabel
+import io.github.hootkit_dev.hootbook.presentation.core.common.legacyItemLabel
 import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CheckboxRow
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
@@ -296,8 +296,8 @@ private fun LastRestore(operation: BackupOperation, enabled: Boolean, onSavePref
             summary.safetyBackup?.let { detailRow(stringResource(R.string.backup_safety), it.substringAfterLast('/')) }
         }
         operation.legacySummary?.let { summary ->
-            summaryRows(R.string.backup_imported) { summary.imported.map { "${recordKindLabel(it.item)} ${it.count}" }.joinToString(" · ") }
-            if (summary.dropped.isNotEmpty()) summaryRows(R.string.backup_dropped) { summary.dropped.map { "${recordKindLabel(it.item)} ${it.count}" }.joinToString(" · ") }
+            summaryRows(R.string.backup_imported) { summary.imported.map { "${legacyItemLabel(it.item)} ${it.count}" }.joinToString(" · ") }
+            if (summary.dropped.isNotEmpty()) summaryRows(R.string.backup_dropped) { summary.dropped.map { "${legacyItemLabel(it.item)} ${it.count}" }.joinToString(" · ") }
             if (summary.renamedCurrencies.isNotEmpty())
                 summaryRows(R.string.backup_renamed) { summary.renamedCurrencies.entries.joinToString { "${it.key} → ${it.value}" } }
         }

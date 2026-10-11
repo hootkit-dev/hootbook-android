@@ -26,4 +26,6 @@
     <string name="settings_currencies_help">自定义货币与汇率</string>
     <string name="settings_subscriptions_help">定期扣款与到期提醒</string>
     <string name="settings_investments_help">连接券商，查看持仓</string>
+    <string name="lock_body">使用指纹、面容或锁屏密码解锁。</string>
+    <string name="core_locale_syncing">正在应用语言…</string>
 </resources>
