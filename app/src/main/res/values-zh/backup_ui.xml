@@ -82,16 +82,4 @@
     <string name="backup_err_upgrade">备份来自更新的版本，请更新应用后再恢复。</string>
     <string name="backup_err_storage">文件写入失败，请检查可用空间与访问权限。</string>
     <string name="backup_err_interrupted">操作已中断。请先查看恢复状态，再决定是否重新恢复。</string>
-    <string name="backup_item_accounts">账户</string>
-    <string name="backup_item_anchors">余额校准</string>
-    <string name="backup_item_transactions">交易</string>
-    <string name="backup_item_categories">分类</string>
-    <string name="backup_item_subcategories">子分类</string>
-    <string name="backup_item_budgets">预算</string>
-    <string name="backup_item_budget_limits">预算额度</string>
-    <string name="backup_item_subscriptions">订阅</string>
-    <string name="backup_item_templates">模板</string>
-    <string name="backup_item_people">联系人</string>
-    <string name="backup_item_debts">借贷记录</string>
-    <string name="backup_item_rates">汇率</string>
 </resources>

@@ -82,16 +82,4 @@
     <string name="backup_err_upgrade">The backup is from a newer version. Update the app, then restore.</string>
     <string name="backup_err_storage">Could not write the file. Check free space and access.</string>
     <string name="backup_err_interrupted">Interrupted. Check the restore status before restoring again.</string>
-    <string name="backup_item_accounts">Accounts</string>
-    <string name="backup_item_anchors">Balance adjustments</string>
-    <string name="backup_item_transactions">Transactions</string>
-    <string name="backup_item_categories">Categories</string>
-    <string name="backup_item_subcategories">Subcategories</string>
-    <string name="backup_item_budgets">Budgets</string>
-    <string name="backup_item_budget_limits">Budget limits</string>
-    <string name="backup_item_subscriptions">Subscriptions</string>
-    <string name="backup_item_templates">Templates</string>
-    <string name="backup_item_people">People</string>
-    <string name="backup_item_debts">Lend &amp; borrow records</string>
-    <string name="backup_item_rates">Exchange rates</string>
 </resources>

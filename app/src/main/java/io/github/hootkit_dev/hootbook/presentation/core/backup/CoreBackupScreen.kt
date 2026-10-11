@@ -32,12 +32,14 @@ import dev.hootkit.core.Table
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.backup.BackupOperation
 import io.github.hootkit_dev.hootbook.core.backup.BackupPhase
+import io.github.hootkit_dev.hootbook.presentation.core.common.recordKindLabel
 import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CheckboxRow
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
 import io.github.hootkit_dev.hootbook.presentation.ui.components.FormSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSectionScope
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NoticeCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.PasswordField
 import io.github.hootkit_dev.hootbook.presentation.ui.components.RadioRow
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
@@ -137,9 +139,9 @@ private fun syncSummary(phase: SyncPhase?, email: String) = when (phase) {
     SyncPhase.PAUSED -> stringResource(R.string.sync_entry_paused, email)
     SyncPhase.IDLE, SyncPhase.SYNCING -> stringResource(R.string.sync_entry_on, email)
     SyncPhase.NEEDS_PASSPHRASE, SyncPhase.NEEDS_ACCOUNT_CHOICE -> stringResource(R.string.sync_entry_setup, email)
-    SyncPhase.FAILED -> stringResource(R.string.core_sync_phase_failed)
-    SyncPhase.UPGRADE_REQUIRED -> stringResource(R.string.core_sync_phase_upgrade)
-    null -> stringResource(R.string.core_sync_loading)
+    SyncPhase.FAILED -> stringResource(R.string.sync_result_failed)
+    SyncPhase.UPGRADE_REQUIRED -> stringResource(R.string.sync_phase_upgrade)
+    null -> stringResource(R.string.sync_checking)
 }
 
 /** Export options, then, once the file is made, save and share. */
@@ -272,18 +274,11 @@ private fun PendingRestore(operation: BackupOperation, enabled: Boolean, onApply
     val committed = operation.phase == BackupPhase.CORE_COMMITTED
     Column {
         SectionTitle(stringResource(R.string.backup_pending))
-        Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
-            color = if (committed) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer) {
-            Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 8.dp, bottom = 4.dp)) {
-                Text(stringResource(if (committed) R.string.backup_pending_committed else R.string.backup_pending_uncertain),
-                    Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodyMedium)
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp, androidx.compose.ui.Alignment.End)) {
-                    TextButton(onClick = onSaveSource, enabled = enabled) { Text(stringResource(R.string.backup_save_source)) }
-                    if (committed) {
-                        TextButton(onClick = onSkip, enabled = enabled) { Text(stringResource(R.string.backup_skip_rest)) }
-                        TextButton(onClick = onApply, enabled = enabled) { Text(stringResource(R.string.backup_apply_rest)) }
-                    }
-                }
+        NoticeCard(stringResource(if (committed) R.string.backup_pending_committed else R.string.backup_pending_uncertain), error = !committed) {
+            TextButton(onClick = onSaveSource, enabled = enabled) { Text(stringResource(R.string.backup_save_source)) }
+            if (committed) {
+                TextButton(onClick = onSkip, enabled = enabled) { Text(stringResource(R.string.backup_skip_rest)) }
+                TextButton(onClick = onApply, enabled = enabled) { Text(stringResource(R.string.backup_apply_rest)) }
             }
         }
     }
@@ -301,8 +296,8 @@ private fun LastRestore(operation: BackupOperation, enabled: Boolean, onSavePref
             summary.safetyBackup?.let { detailRow(stringResource(R.string.backup_safety), it.substringAfterLast('/')) }
         }
         operation.legacySummary?.let { summary ->
-            summaryRows(R.string.backup_imported) { summary.imported.map { "${legacyItemLabel(it.item)} ${it.count}" }.joinToString(" · ") }
-            if (summary.dropped.isNotEmpty()) summaryRows(R.string.backup_dropped) { summary.dropped.map { "${legacyItemLabel(it.item)} ${it.count}" }.joinToString(" · ") }
+            summaryRows(R.string.backup_imported) { summary.imported.map { "${recordKindLabel(it.item)} ${it.count}" }.joinToString(" · ") }
+            if (summary.dropped.isNotEmpty()) summaryRows(R.string.backup_dropped) { summary.dropped.map { "${recordKindLabel(it.item)} ${it.count}" }.joinToString(" · ") }
             if (summary.renamedCurrencies.isNotEmpty())
                 summaryRows(R.string.backup_renamed) { summary.renamedCurrencies.entries.joinToString { "${it.key} → ${it.value}" } }
         }
@@ -314,24 +309,6 @@ private fun LastRestore(operation: BackupOperation, enabled: Boolean, onSavePref
 
 private fun ListSectionScope.summaryRows(label: Int, value: @Composable () -> String) =
     item(headline = { Text(stringResource(label), color = MaterialTheme.colorScheme.onSurfaceVariant) }, supporting = { Text(value()) })
-
-/** A kind of record an older backup holds, as the app names it; unknown kinds keep their own name. */
-@Composable
-private fun legacyItemLabel(item: String): String = when (item) {
-    "accounts" -> stringResource(R.string.backup_item_accounts)
-    "anchors" -> stringResource(R.string.backup_item_anchors)
-    "transactions" -> stringResource(R.string.backup_item_transactions)
-    "categories" -> stringResource(R.string.backup_item_categories)
-    "subcategories" -> stringResource(R.string.backup_item_subcategories)
-    "budgets" -> stringResource(R.string.backup_item_budgets)
-    "budget_limits" -> stringResource(R.string.backup_item_budget_limits)
-    "subscriptions" -> stringResource(R.string.backup_item_subscriptions)
-    "templates", "quick_templates" -> stringResource(R.string.backup_item_templates)
-    "people" -> stringResource(R.string.backup_item_people)
-    "debts" -> stringResource(R.string.backup_item_debts)
-    "rates", "exchange_rates", "downloaded_rates" -> stringResource(R.string.backup_item_rates)
-    else -> item
-}
 
 private fun dev.hootkit.core.LocalDateTime.toJava(): java.time.LocalDateTime =
     java.time.LocalDateTime.of(year, month.toInt(), day.toInt(), hour.toInt(), minute.toInt())

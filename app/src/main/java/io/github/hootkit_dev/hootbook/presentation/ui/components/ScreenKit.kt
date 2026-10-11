@@ -101,14 +101,31 @@ fun ErrorBanner(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
-    Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
-        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 8.dp, bottom = 4.dp)) {
-            Text(message, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                if (actionLabel != null && onAction != null) TextButton(onClick = onAction, shapes = ButtonDefaults.shapes()) { Text(actionLabel) }
-                TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.close)) }
-            }
+    NoticeCard(message, modifier, error = true) {
+        if (actionLabel != null && onAction != null) TextButton(onClick = onAction, shapes = ButtonDefaults.shapes()) { Text(actionLabel) }
+        TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.close)) }
+    }
+}
+
+/**
+ * A message that needs attention, in a tonal card with its actions at the bottom end: a state
+ * the user can act on (secondary), or a problem (error).
+ */
+@Composable
+fun NoticeCard(
+    text: String,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    error: Boolean = false,
+    actions: (@Composable RowScope.() -> Unit)? = null,
+) {
+    val content = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+        color = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer, contentColor = content) {
+        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 8.dp, bottom = if (actions == null) 16.dp else 4.dp)) {
+            title?.let { Text(it, Modifier.padding(end = 8.dp, bottom = 4.dp), style = MaterialTheme.typography.titleMedium) }
+            Text(text, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodyMedium)
+            if (actions != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically, content = actions)
         }
     }
 }

@@ -9,4 +9,19 @@
     <string name="appearance_other">其他</string>
     <string name="ui_show_password">显示密码</string>
     <string name="ui_hide_password">隐藏密码</string>
+    <string name="record_kind_accounts">账户</string>
+    <string name="record_kind_account_currencies">账户币种</string>
+    <string name="record_kind_anchors">余额校准</string>
+    <string name="record_kind_transactions">交易</string>
+    <string name="record_kind_categories">分类</string>
+    <string name="record_kind_subcategories">子分类</string>
+    <string name="record_kind_budgets">预算</string>
+    <string name="record_kind_budget_limits">预算额度</string>
+    <string name="record_kind_subscriptions">订阅</string>
+    <string name="record_kind_templates">模板</string>
+    <string name="record_kind_people">联系人</string>
+    <string name="record_kind_debts">借贷记录</string>
+    <string name="record_kind_rates">汇率</string>
+    <string name="record_kind_settings">设置</string>
+    <string name="record_kind_brokerage">券商连接</string>
 </resources>

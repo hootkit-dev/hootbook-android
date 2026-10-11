@@ -33,6 +33,7 @@ import io.github.hootkit_dev.hootbook.core.system.notificationPermission
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NoticeCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SecondaryScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionSpacing
@@ -130,15 +131,10 @@ fun CoreNotificationPreferencesScreen(onBack: () -> Unit, viewModel: CoreNotific
 
 /** Notifications are off at the system level: say so and offer to turn them on. */
 @Composable
-private fun PermissionCard(onAllow: () -> Unit) {
-    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.secondaryContainer) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.notif_permission_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            Text(stringResource(R.string.notif_permission_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            Button(onClick = onAllow) { Text(stringResource(R.string.notif_allow)) }
-        }
+private fun PermissionCard(onAllow: () -> Unit) =
+    NoticeCard(stringResource(R.string.notif_permission_text), title = stringResource(R.string.notif_permission_title)) {
+        TextButton(onClick = onAllow) { Text(stringResource(R.string.notif_allow)) }
     }
-}
 
 private fun io.github.hootkit_dev.hootbook.presentation.ui.components.ListSectionScope.switchRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector, title: Int, help: Int, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit,
