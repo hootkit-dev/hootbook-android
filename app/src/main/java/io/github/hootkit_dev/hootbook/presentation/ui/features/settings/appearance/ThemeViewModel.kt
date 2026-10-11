@@ -24,7 +24,7 @@ class ThemeViewModel @Inject constructor(
     val themeUiState = preferences.state
     private val mutableBusy = MutableStateFlow(false)
     val busy = mutableBusy.asStateFlow()
-    private val mutableError = MutableStateFlow<String?>(null)
+    private val mutableError = MutableStateFlow<Int?>(null)
     val error = mutableError.asStateFlow()
     init { command { preferences.ready() } }
     fun updateDarkTheme(value: Boolean?) = update { it.copy(darkTheme = value) }

@@ -17,7 +17,7 @@ data class ProfileScreenState(
     val contacts: List<Person> = emptyList(),
     val isLoading: Boolean = true,
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
     val isEditSheetOpen: Boolean = false,
     val isAddPersonSheetOpen: Boolean = false,
     val editState: EditProfileState = EditProfileState(),

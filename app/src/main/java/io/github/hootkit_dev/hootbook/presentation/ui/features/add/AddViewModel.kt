@@ -75,7 +75,7 @@ data class AddUiState(
     val loadingSource: Boolean = false,
     val writing: Boolean = false,
     val importing: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
     val amountPadRequested: Boolean = false,
     val saved: Boolean = false,
     // A completed ledger command must not be replayed if an optional follow-up fails.
@@ -149,7 +149,7 @@ constructor(
                         val rows =
                             result.getOrElse { failure ->
                                 mutableState.update {
-                                    it.copy(loading = false, error = failure.message)
+                                    it.copy(loading = false, error = coreFailureText(failure))
                                 }
                                 return@collect
                             }
@@ -309,7 +309,7 @@ constructor(
                 } catch (failure: Exception) {
                     if (mine == sourceVersion)
                         mutableState.update {
-                            it.copy(loadingSource = false, error = failure.message)
+                            it.copy(loadingSource = false, error = coreFailureText(failure))
                         }
                 }
             }
@@ -589,6 +589,7 @@ constructor(
         color: String,
         avatar: String?,
         relation: PersonRelation?,
+        onSaved: () -> Unit = {},
     ) = command {
         attachmentStore.retainForCore(listOfNotNull(avatar))
         val id =
@@ -599,6 +600,7 @@ constructor(
             }
         mutableState.update { it.copy(personId = id) }
         persist()
+        onSaved()
     }
 
     fun addTransactionAttachment(uri: Uri) {
@@ -624,7 +626,7 @@ constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableState.update { it.copy(error = failure.message) }
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
             } finally {
                 mutableState.update { it.copy(importing = false) }
             }
@@ -836,7 +838,7 @@ constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableState.update { it.copy(error = failure.message) }
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
             } finally {
                 mutableState.update { it.copy(writing = false) }
                 refresh()

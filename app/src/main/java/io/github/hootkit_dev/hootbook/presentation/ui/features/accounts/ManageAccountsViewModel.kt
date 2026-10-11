@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,8 +24,8 @@ data class ManageAccountsUiState(
     val defaultCurrency: String = "CNY",
     val isLoading: Boolean = true,
     val isSavingAccount: Boolean = false,
-    val accountSaveError: String? = null,
-    val errorMessage: String? = null,
+    val accountSaveError: Int? = null,
+    val errorMessage: Int? = null,
     val commandRevision: Long = 0,
 )
 
@@ -50,7 +51,7 @@ class ManageAccountsViewModel @Inject constructor(
                     onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview,
                         institutions = snapshot.institutions, customCurrencies = snapshot.customCurrencies,
                         defaultCurrency = snapshot.defaultCurrency, isLoading = false) } },
-                    onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = failure.message) } },
+                    onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = coreFailureText(failure)) } },
                 )
             }
         }
@@ -96,7 +97,7 @@ class ManageAccountsViewModel @Inject constructor(
                 mutable.update { it.copy(commandRevision = it.commandRevision + 1) }
                 onSuccess()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(accountSaveError = failure.message, errorMessage = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(accountSaveError = coreFailureText(failure), errorMessage = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(isSavingAccount = false) } }
         }
     }

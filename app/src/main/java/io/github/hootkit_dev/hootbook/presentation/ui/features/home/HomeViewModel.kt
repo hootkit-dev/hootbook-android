@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +48,7 @@ class HomeViewModel @Inject constructor(
                     } }
                 }.collect { result -> result.fold(
                     onSuccess = { next -> mutable.update { next.copy(submitting = it.submitting) } },
-                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = failure.message) } },
+                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } },
                 ) }
         }
     }
@@ -121,7 +122,7 @@ class HomeViewModel @Inject constructor(
             preferencesMutex.withLock {
                 coreQuery { preferences.update(transform) }.fold(
                     onSuccess = { mutable.update { it.copy(error = null) } },
-                    onFailure = { failure -> mutable.update { it.copy(error = failure.message) } },
+                    onFailure = { failure -> mutable.update { it.copy(error = coreFailureText(failure)) } },
                 )
             }
         }
@@ -130,7 +131,7 @@ class HomeViewModel @Inject constructor(
         if (mutable.value.submitting) return
         mutable.update { it.copy(submitting = true, error = null) }
         viewModelScope.launch {
-            try { coreQuery { preferencesMutex.withLock { preferences.update(transform) } }.onFailure { failure -> mutable.update { it.copy(error = failure.message) } } }
+            try { coreQuery { preferencesMutex.withLock { preferences.update(transform) } }.onFailure { failure -> mutable.update { it.copy(error = coreFailureText(failure)) } } }
             finally { mutable.update { it.copy(submitting = false) } }
         }
     }

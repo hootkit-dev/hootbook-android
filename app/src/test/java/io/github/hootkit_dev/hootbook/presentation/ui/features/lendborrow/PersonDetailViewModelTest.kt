@@ -30,7 +30,7 @@ class PersonDetailViewModelTest : CoreViewModelTest() {
         awaitState { !vm.uiState.value.isLoading }; vm.showSettleSheet(true)
         val full = SettleDraft(null, core.account.id, "Settlement", core.now)
         vm.settle(full); vm.settle(full); awaitState { core.commandCalls == 1 }; gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertEquals("invalid", vm.uiState.value.error); assertTrue(vm.uiState.value.showSettleSheet)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error); assertTrue(vm.uiState.value.showSettleSheet)
         assertNull(core.settleDraft!!.amount); core.onCommand = {}; vm.settle(full)
         awaitState { !vm.uiState.value.saving }; assertFalse(vm.uiState.value.showSettleSheet)
         val draft = DebtDraft(core.person.id, DebtKind.BORROWED, core.debt.amount.amount, "EUR", core.now, null, "Standalone", null, emptyList())

@@ -58,7 +58,7 @@ fun ExchangeRatesBottomSheet(viewModel: CurrencyViewModel, onDismiss: () -> Unit
             RateSyncCard(state.storedRates, state.provider, state.outcome, state.refreshing, viewModel::selectProvider, viewModel::syncNow, Modifier.padding(bottom = 12.dp))
             SearchBarBox(searchQuery = search, onSearchQueryChange = { search = it }, label = { Text(stringResource(R.string.search_currencies)) },
                 leadingIcon = { Icon(Iconax.Search, "Search", tint = MaterialTheme.colorScheme.onSurface.copy(0.5f)) }, modifier = Modifier.padding(bottom = 12.dp))
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)) {
                 item { Text(stringResource(R.string.rates_relative_to, state.base) + "\n" + stringResource(R.string.rate_custom_hint),
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.6f),

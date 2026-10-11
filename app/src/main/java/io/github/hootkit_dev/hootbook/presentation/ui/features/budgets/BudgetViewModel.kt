@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,14 +39,14 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
                 } }
             }.collect { result -> result.fold(
                 onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
-                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = failure.message) } }) }
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
     fun selectBudget(id: String, start: String? = null, end: String? = null) {
         val next = runCatching { Triple(id,
             start?.let { java.time.LocalDate.parse(it).coreBudgetDate() },
             end?.let { java.time.LocalDate.parse(it).coreBudgetDate() }) }.getOrElse { failure ->
-            mutable.update { it.copy(isLoading = false, error = failure.message) }; return
+            mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) }; return
         }
         if (selection.value == next) return
         mutable.update { it.copy(isLoading = true, selectedBudget = null, error = null) }
@@ -99,7 +100,7 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
         viewModelScope.launch {
             try { session.withCore(block); onSuccess() }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) }; onError() }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) }; onError() }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

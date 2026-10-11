@@ -134,8 +134,9 @@ fun ManageAccountsScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val lazyListState = rememberLazyListState()
     val showFloatingLabel by remember { derivedStateOf { lazyListState.firstVisibleItemIndex == 0 } }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { snackbarHostState.showSnackbar(it); manageAccountsViewModel.clearError() }
+        uiState.errorMessage?.let { snackbarHostState.showSnackbar(operationFailed); manageAccountsViewModel.clearError() }
     }
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

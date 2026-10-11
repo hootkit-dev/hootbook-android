@@ -101,7 +101,7 @@ fun BudgetHistoryScreen(
                 LoadingCircle(modifier = Modifier.align(Alignment.Center))
             } else if (uiState.error != null) {
                 Text(
-                    text = uiState.error!!,
+                    text = stringResource(uiState.error!!),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.align(Alignment.Center)
                 )

@@ -91,7 +91,7 @@ internal fun aiFailureText(error: Throwable): String =
                 else ->
                     "Provider network error (${error.status ?: "connection"}). Retry explicitly."
             }
-        is CoreException.Invalid -> "Check ${error.field}: ${error.reason}."
+        is CoreException.Invalid -> "Something went wrong. Please try again."
         is CoreException.NotFound ->
             "This record or undo token is no longer available. Refresh and review again."
         is CoreException.Cancelled -> "Request cancelled. No proposals saved."

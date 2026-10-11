@@ -407,7 +407,6 @@ fun TransactionTabContent(
                     draft.kind == TransactionKind.LOAN_IN
             ) {
                 var showAddPersonSheet by remember { mutableStateOf(false) }
-                var lastAddedPersonName by remember { mutableStateOf<String?>(null) }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -524,23 +523,14 @@ fun TransactionTabContent(
                 if (showAddPersonSheet) {
                     AddEditPersonSheet(
                         attachmentStore = viewModel.attachmentStore,
-                        onDismiss = { showAddPersonSheet = false },
+                        saving = state.writing, error = state.error,
+                        onDismiss = { if (!state.writing) showAddPersonSheet = false },
                         onSave = { name, phone, notes, color, avatar, category ->
-                            lastAddedPersonName = name
-                            viewModel.addPerson(name, phone, notes, color, avatar, category)
-                            showAddPersonSheet = false
+                            viewModel.addPerson(name, phone, notes, color, avatar, category) {
+                                showAddPersonSheet = false
+                            }
                         }
                     )
-                }
-
-                LaunchedEffect(persons) {
-                    val lastAdded = lastAddedPersonName
-                    if (lastAdded != null) {
-                        persons.firstOrNull { it.name == lastAdded }?.let {
-                            viewModel.updateTransactionPersonId(it.id)
-                        }
-                        lastAddedPersonName = null
-                    }
                 }
             }
 
@@ -1029,7 +1019,7 @@ fun TransactionTabContent(
             )
 
             state.error?.let { message ->
-                Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium,
+                Text(stringResource(message), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm))
             }
             // Bottom padding for keyboard

@@ -14,7 +14,7 @@ data class BudgetUiState(
     val categories: Map<String, Category> = emptyMap(),
     val baseCurrency: String = "CNY",
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
 )
 
 /** Editable inputs only. Amounts/progress in BudgetUiState always come from Core. */

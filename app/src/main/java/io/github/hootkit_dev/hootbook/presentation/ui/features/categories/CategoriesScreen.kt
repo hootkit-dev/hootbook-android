@@ -150,6 +150,7 @@ fun CategoriesScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.firstVisibleItemIndex }.collect { firstVisibleItem ->
             // Show the label only when the list is scrolled to the top
@@ -160,7 +161,7 @@ fun CategoriesScreen(
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
             scope.launch {
-                snackbarHostState.showSnackbar(it)
+                snackbarHostState.showSnackbar(operationFailed)
                 categoriesViewModel.clearSnackbarMessage()
             }
         }

@@ -42,7 +42,7 @@ class TransactionDetailViewModelTest : CoreViewModelTest() {
         assertEquals("latest", vm.uiState.value.transaction!!.id)
         core.onGet = { error("read failed") }
         changes.changed(Table.TRANSACTIONS)
-        awaitState { vm.uiState.value.errorMessage == "read failed" }
+        awaitState { vm.uiState.value.errorMessage == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onGet = { core.transaction.copy(id = it, merchant = "changed") }
         changes.changed(Table.TRANSACTIONS)
         awaitState { vm.uiState.value.transaction?.merchant == "changed" }
@@ -71,7 +71,7 @@ class TransactionDetailViewModelTest : CoreViewModelTest() {
         core.onAdd = { error("cannot add") }
         vm.duplicateTransaction()
         awaitState { !vm.uiState.value.isSaving }
-        assertEquals("cannot add", vm.uiState.value.errorMessage)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.errorMessage)
         core.onAdd = { "copy" }
         vm.duplicateTransaction()
         vm.duplicateTransaction()

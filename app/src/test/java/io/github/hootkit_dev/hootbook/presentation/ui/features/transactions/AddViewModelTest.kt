@@ -19,6 +19,38 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class, sdk = [28])
 class AddViewModelTest : CoreViewModelTest() {
     @Test
+    fun inlinePersonUsesRgbPaletteKeepsFailureAndClosesOnlyAfterSuccess() = runTest {
+        val core = FakeLedgerCore()
+        val vm = keep(AddViewModel(session(core), ChangeBus(), SavedStateHandle(), files, preferences))
+        awaitState { !vm.uiState.value.loading }
+        val gate = CompletableDeferred<Unit>()
+        core.onCreatePerson = {
+            gate.await()
+            throw CoreException.Invalid("color", InvalidReason.BAD_FORMAT)
+        }
+        var closed = 0
+        val color = io.github.hootkit_dev.hootbook.presentation.ui.components.AVATAR_COLORS.first()
+        assertTrue(color.matches(Regex("#[0-9a-fA-F]{6}")))
+        vm.addPerson("Alice", null, null, color, null, PersonRelation.FRIEND) { closed++ }
+        vm.addPerson("Alice", null, null, color, null, PersonRelation.FRIEND) { closed++ }
+        awaitState { core.createPersonCalls == 1 }
+        assertEquals(0, closed)
+        gate.complete(Unit)
+        awaitState { !vm.uiState.value.writing }
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error)
+        assertNull(vm.uiState.value.personId)
+        assertEquals(0, closed)
+        core.onCreatePerson = { "alice" }
+        vm.addPerson("Alice", "123", "Friend", color, null, PersonRelation.FRIEND) { closed++ }
+        awaitState { !vm.uiState.value.writing }
+        assertEquals(1, closed)
+        assertEquals("alice", vm.uiState.value.personId)
+        assertEquals(color, core.createdPerson!!.color)
+        assertEquals(PersonRelation.FRIEND, core.createdPerson!!.relation)
+        assertNull(vm.uiState.value.error)
+    }
+
+    @Test
     fun addInitialDefaultsPaymentPrefillAndSingleLedgerSubmission() = runTest {
         val core = FakeLedgerCore()
         val vm =
@@ -74,7 +106,7 @@ class AddViewModelTest : CoreViewModelTest() {
         val changes = ChangeBus()
         core.onTemplates = { error("lookup failed") }
         val vm = keep(AddViewModel(session(core), changes, SavedStateHandle(), files, preferences))
-        awaitState { vm.uiState.value.error == "lookup failed" }
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onTemplates = { emptyList() }
         changes.changed(Table.QUICK_TEMPLATES)
         awaitState { !vm.uiState.value.loading }
@@ -83,7 +115,7 @@ class AddViewModelTest : CoreViewModelTest() {
         core.onCreateTemplate = { error("template failed") }
         vm.saveTransaction {}
         vm.saveTransaction {}
-        awaitState { vm.uiState.value.error == "template failed" }
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         assertEquals(1, core.addCalls)
         assertEquals("tx", vm.uiState.value.createdTransactionId)
         core.onCreateTemplate = { "new-template" }

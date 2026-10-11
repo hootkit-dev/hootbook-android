@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,7 +13,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-data class AccountOverviewUiState(val overview: AccountsOverview? = null, val loading: Boolean = true, val error: String? = null)
+data class AccountOverviewUiState(val overview: AccountsOverview? = null, val loading: Boolean = true, val error: Int? = null)
 
 @HiltViewModel
 class AccountOverviewViewModel @Inject constructor(session: CoreSession, changes: ChangeBus) : ViewModel() {
@@ -23,7 +24,7 @@ class AccountOverviewViewModel @Inject constructor(session: CoreSession, changes
             session.observe(changes, accountTables) { core -> coreQuery { core.accounts().use { it.overview() } } }
                 .collect { result -> result.fold(
                     onSuccess = { overview -> mutable.value = AccountOverviewUiState(overview, false) },
-                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = failure.message) } },
+                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } },
                 ) }
         }
     }

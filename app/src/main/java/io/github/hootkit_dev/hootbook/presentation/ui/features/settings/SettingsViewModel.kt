@@ -29,7 +29,7 @@ class SettingsViewModel internal constructor(
     val totalTransactions = count.asStateFlow()
     private val working = MutableStateFlow(false)
     val busy = working.asStateFlow()
-    private val failure = MutableStateFlow<String?>(null)
+    private val failure = MutableStateFlow<Int?>(null)
     val error = failure.asStateFlow()
     init {
         viewModelScope.launch { session.observe(changes, setOf(Table.TRANSACTIONS)) { core -> coreQuery {

@@ -18,7 +18,7 @@ data class TransactionDetailUiState(
     val isEditMode: Boolean = false,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: Int? = null,
     val showDeleteDialog: Boolean = false,
     val deleteSuccess: Boolean = false,
     val duplicateSuccess: Boolean = false,

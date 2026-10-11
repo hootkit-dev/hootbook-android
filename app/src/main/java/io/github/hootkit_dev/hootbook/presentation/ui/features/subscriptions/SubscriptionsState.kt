@@ -14,5 +14,5 @@ data class SubscriptionsUiState(
     val selectedSubscription: Subscription? = null,
     val convertedMonthlyAmounts: Map<String, BigDecimal> = emptyMap(),
     val convertedAmounts: Map<String, BigDecimal> = emptyMap(),
-    val error: String? = null,
+    val error: Int? = null,
 )

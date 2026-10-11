@@ -33,7 +33,7 @@ class BudgetViewModelTest : CoreViewModelTest() {
         val vm = keep(BudgetViewModel(CoreSession(backgroundScope) { core }, ChangeBus()))
         awaitState { !vm.uiState.value.isLoading }; vm.initNewBudget(); vm.updateBudgetAmount(BigDecimal("12")); vm.addCategoryLimit("cat/中文", BigDecimal("5"))
         vm.saveBudget(); vm.saveBudget(); awaitState { core.commandCalls == 1 }; gate.complete(Unit)
-        awaitState { !vm.uiState.value.saving }; assertEquals("invalid", vm.uiState.value.error)
+        awaitState { !vm.uiState.value.saving }; assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error)
         assertEquals(BigDecimal("12"), vm.editBudgetState.value.amount)
         assertEquals("cat/中文", core.newBudget!!.limits.single().categoryId)
         core.onCommand = {}; var success = false; vm.saveBudget(onSuccess = { success = true })

@@ -40,7 +40,7 @@ class ExportViewModelTest : CoreViewModelTest() {
         core.onList = { _, _ -> error("export failed") }
         vm.exportTransactions(emptyTransactionFilter())
         awaitState { vm.state.value is ExportState.Error }
-        assertEquals("export failed", (vm.state.value as ExportState.Error).message)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, (vm.state.value as ExportState.Error).message)
     }
 
     @Test
@@ -67,7 +67,7 @@ class ExportViewModelTest : CoreViewModelTest() {
         assertEquals("latest", vm.preview.value.oldest!!.merchant)
         core.onList = { _, _ -> error("preview failed") }
         changes.changed(Table.TRANSACTIONS)
-        awaitState { vm.preview.value.error == "preview failed" }
+        awaitState { vm.preview.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onList = { _, _ -> TransactionPage(listOf(core.transaction), 1u) }
         changes.changed(Table.TRANSACTIONS)
         awaitState { vm.preview.value.newest?.id == "tx" }

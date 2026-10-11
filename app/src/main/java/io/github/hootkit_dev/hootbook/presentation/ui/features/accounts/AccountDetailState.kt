@@ -22,7 +22,7 @@ data class AccountDetailUiState(
     val isLoading: Boolean = true,
     val loadingMore: Boolean = false,
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
     val commandRevision: Long = 0,
 )
 

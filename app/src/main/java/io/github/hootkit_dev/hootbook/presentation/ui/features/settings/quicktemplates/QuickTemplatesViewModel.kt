@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.quicktemplates
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,7 @@ data class QuickTemplatesUiState(
     val subcategories: Map<String, Subcategory> = emptyMap(),
     val loading: Boolean = true,
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
 )
 
 @HiltViewModel
@@ -36,7 +37,7 @@ class QuickTemplatesViewModel @Inject constructor(private val session: CoreSessi
                 }
             } }.collect { result -> result.fold(
                 onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
-                onFailure = { failure -> mutable.update { it.copy(loading = false, error = failure.message) } }) }
+                onFailure = { failure -> mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } }) }
         }
         // Drag events coalesce, then the newest order is persisted after the current command.
         viewModelScope.launch {
@@ -60,7 +61,7 @@ class QuickTemplatesViewModel @Inject constructor(private val session: CoreSessi
         viewModelScope.launch {
             try { session.withCore { core -> core.plans().use { block(it) } }; onSuccess() }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

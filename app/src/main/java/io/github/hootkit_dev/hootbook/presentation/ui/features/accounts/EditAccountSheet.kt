@@ -111,7 +111,7 @@ fun EditAccountSheet(
     defaultCurrency: String = "CNY",
     initialCategory: AccountCategory? = null,
     isSaving: Boolean = false,
-    saveError: String? = null,
+    saveError: Int? = null,
     onClearSaveError: () -> Unit = {},
     showHeading: Boolean = true,
     onDismiss: () -> Unit,
@@ -833,7 +833,7 @@ fun EditAccountSheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val error = when {
-                    else -> saveError
+                    else -> saveError?.let { stringResource(it) }
                 }
                 if (error != null) {
                     Text(

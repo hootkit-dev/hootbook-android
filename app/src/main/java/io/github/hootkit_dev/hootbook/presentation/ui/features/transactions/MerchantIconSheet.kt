@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,7 +67,7 @@ import kotlinx.coroutines.launch
 data class MerchantIconSearchState(
     val loading: Boolean = false,
     val results: List<AppIconCandidate>? = null,
-    val error: String? = null,
+    val error: Int? = null,
     // The candidate being downloaded and saved
     val saving: AppIconCandidate? = null,
 )
@@ -100,7 +101,7 @@ constructor(val store: CorePlatformAssets, private val search: AppStoreIconSearc
                     throw cancelled
                 } catch (failure: Exception) {
                     if (mine == searchVersion)
-                        _state.update { it.copy(loading = false, error = failure.message) }
+                        _state.update { it.copy(loading = false, error = coreFailureText(failure)) }
                 }
             }
     }
@@ -121,7 +122,7 @@ constructor(val store: CorePlatformAssets, private val search: AppStoreIconSearc
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
-                _state.update { it.copy(saving = null, error = e.message) }
+                _state.update { it.copy(saving = null, error = coreFailureText(e)) }
             }
         }
     }
@@ -134,7 +135,7 @@ constructor(val store: CorePlatformAssets, private val search: AppStoreIconSearc
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                _state.update { it.copy(error = failure.message) }
+                _state.update { it.copy(error = coreFailureText(failure)) }
             }
         }
     }
@@ -198,7 +199,7 @@ fun MerchantIconSheet(
             )
             state.error?.let {
                 Text(
-                    stringResource(R.string.merchant_icon_error, it),
+                    stringResource(it),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )

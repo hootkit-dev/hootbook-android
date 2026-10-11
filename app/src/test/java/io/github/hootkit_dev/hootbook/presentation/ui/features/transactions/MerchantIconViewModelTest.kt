@@ -73,7 +73,7 @@ class MerchantIconViewModelTest : CoreViewModelTest() {
             gate.complete(Unit)
             vm.search("fail")
             awaitState { vm.state.value.error != null }
-            assertEquals("HTTP 503", vm.state.value.error)
+            assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.state.value.error)
             val candidate =
                 io.github.hootkit_dev.hootbook.data.icons.AppIconCandidate(
                     "Coffee",
@@ -85,7 +85,7 @@ class MerchantIconViewModelTest : CoreViewModelTest() {
             vm.choose("Coffee", candidate) { completed++ }
             vm.choose("Coffee", candidate) { completed++ }
             awaitState { vm.state.value.saving == null }
-            assertEquals(vm.state.value.error, 1, completed)
+            assertEquals(1, completed)
             assertEquals(1, downloads)
             assertNotNull(assets.merchantIcon("Coffee"))
             vm.reset("Coffee")

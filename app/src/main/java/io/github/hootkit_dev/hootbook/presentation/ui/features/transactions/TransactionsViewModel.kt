@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -165,7 +166,7 @@ constructor(
                                         it.copy(
                                             isLoading = false,
                                             loadingMore = false,
-                                            error = failure.message,
+                                            error = coreFailureText(failure),
                                         )
                                     }
                                 return@collect
@@ -257,7 +258,7 @@ constructor(
                 } catch (failure: Exception) {
                     if (mine == generation)
                         mutableState.update {
-                            it.copy(error = failure.message, loadingMore = false)
+                            it.copy(error = coreFailureText(failure), loadingMore = false)
                         }
                 } finally {
                     if (mine == generation) mutableState.update { it.copy(loadingMore = false) }
@@ -509,7 +510,7 @@ constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableState.update { it.copy(error = failure.message) }
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
             } finally {
                 mutableState.update { it.copy(writing = false) }
                 refresh()

@@ -127,10 +127,10 @@ internal fun backupFailureText(failure: Throwable): String = when (failure) {
         failure.field == "password" && failure.reason == InvalidReason.REQUIRED -> "备份需要口令，请输入后重新检查"
         failure.field == "password" -> "口令错误或加密文件损坏，请核对原始文件和口令"
         failure.reason == InvalidReason.UNKNOWN_VALUE -> "备份协议版本不受当前 Core 支持，请更新 App 或选择兼容备份"
-        else -> "备份格式或参数无效：${failure.field} / ${failure.reason}"
+        else -> "备份格式或参数无效，请检查文件后重试"
     }
     is CoreException.Conflict -> if (failure.reason == ConflictReason.NOT_EMPTY)
-        "旧备份只接受空账本；请保留原文件，先导出当前新账本，不会自动清空数据" else "备份操作冲突：${failure.reason}"
+        "旧备份只接受空账本；请保留原文件，先导出当前新账本，不会自动清空数据" else "备份操作冲突，请检查后重试"
     is CoreException.Storage -> if (failure.kind == StorageErrorKind.SCHEMA_TOO_NEW)
         "备份数据库版本较新，请升级 App 后恢复" else "存储操作失败（${failure.kind}），保留原备份并检查可用空间"
     is CoreException.Platform -> "平台存储或密钥操作失败，请保留原备份后重试"

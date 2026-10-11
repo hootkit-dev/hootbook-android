@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -102,7 +103,7 @@ class AccountDetailViewModel @Inject constructor(
                 result.fold(onSuccess = { snapshot ->
                     more?.cancel()
                     mutable.update { snapshot.copy(saving = it.saving, commandRevision = it.commandRevision) }
-                }, onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = failure.message) } })
+                }, onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = coreFailureText(failure)) } })
             }
         }
     }
@@ -127,7 +128,7 @@ class AccountDetailViewModel @Inject constructor(
                         convertedAmounts = state.convertedAmounts + result.second, loadingMore = false) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { if (mine == generation) mutable.update { it.copy(loadingMore = false, error = failure.message) } }
+            catch (failure: Exception) { if (mine == generation) mutable.update { it.copy(loadingMore = false, error = coreFailureText(failure)) } }
             finally { if (mine == generation) mutable.update { it.copy(loadingMore = false) } }
         }
     }
@@ -147,7 +148,7 @@ class AccountDetailViewModel @Inject constructor(
                 mutable.update { it.copy(commandRevision = it.commandRevision + 1) }
                 onSuccess()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

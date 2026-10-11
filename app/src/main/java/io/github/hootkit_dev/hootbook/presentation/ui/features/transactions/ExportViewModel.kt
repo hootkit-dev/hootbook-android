@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import android.content.Context
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -26,7 +27,7 @@ data class ExportPreview(
     val oldest: Transaction? = null,
     val newest: Transaction? = null,
     val total: UInt = 0u,
-    val error: String? = null,
+    val error: Int? = null,
 )
 
 @HiltViewModel
@@ -73,7 +74,7 @@ constructor(
                     }
                     .collect { result ->
                         mutablePreview.value =
-                            result.getOrElse { ExportPreview(error = it.message) }
+                            result.getOrElse { ExportPreview(error = coreFailureText(it)) }
                     }
             }
     }
@@ -129,7 +130,7 @@ constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableState.value = ExportState.Error(failure.message.orEmpty())
+                mutableState.value = ExportState.Error(coreFailureText(failure))
             } finally {
                 if (!complete) file?.delete()
             }

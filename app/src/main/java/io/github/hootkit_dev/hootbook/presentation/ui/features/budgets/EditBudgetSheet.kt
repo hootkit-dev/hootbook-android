@@ -120,7 +120,7 @@ import java.util.Locale
 fun EditBudgetSheet(
     budgetState: EditBudgetState,
     saving: Boolean = false,
-    error: String? = null,
+    error: Int? = null,
     categories: List<Category>,
     subcategoriesMap: Map<String, List<Subcategory>> = emptyMap(),
     allAccounts: List<Account> = emptyList(),
@@ -351,7 +351,7 @@ fun EditBudgetSheet(
                 fontWeight = FontWeight.Bold
             )
 
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             // Budget Preview Card
             BudgetPreviewCard(
                 name = budgetState.name.ifBlank { budgetState.getDefaultName() },

@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.accounts
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +19,7 @@ data class CurrencyUiState(
     val storedRates: List<ExchangeRate> = emptyList(),
     val accountCurrencies: Set<String> = emptySet(),
     val provider: RateProvider? = null, val outcome: RefreshOutcome? = null,
-    val error: String? = null, val commandRevision: Long = 0,
+    val error: Int? = null, val commandRevision: Long = 0,
     val converted: BigDecimal? = null, val conversionRate: ResolvedRate? = null,
     val converting: Boolean = false, val refreshing: Boolean = false,
 )
@@ -54,7 +55,7 @@ class CurrencyViewModel @Inject constructor(private val session: CoreSession, pr
                 result.fold(onSuccess = { snapshot -> mutable.update { it.copy(loading = false,
                     customCurrencies = snapshot.customCurrencies, storedRates = snapshot.storedRates,
                     accountCurrencies = snapshot.accountCurrencies, provider = snapshot.provider, rates = snapshot.rates) } },
-                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = failure.message) } })
+                    onFailure = { failure -> mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } })
             }
         }
     }
@@ -79,7 +80,7 @@ class CurrencyViewModel @Inject constructor(private val session: CoreSession, pr
                 val result = if (parsed == null) null else session.withCore { core -> core.currency().use { api -> api.convert(parsed, from, to) to api.rate(from, to) } }
                 if (mine == conversionGeneration) mutable.update { it.copy(converted = result?.first, conversionRate = result?.second, converting = false) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { if (mine == conversionGeneration) mutable.update { it.copy(converting = false, error = failure.message) } }
+            catch (failure: Exception) { if (mine == conversionGeneration) mutable.update { it.copy(converting = false, error = coreFailureText(failure)) } }
         }
     }
     private fun command(onSuccess: () -> Unit = {}, block: suspend (CurrencyInterface) -> Unit) {
@@ -91,7 +92,7 @@ class CurrencyViewModel @Inject constructor(private val session: CoreSession, pr
                 mutable.update { it.copy(commandRevision = it.commandRevision + 1) }
                 onSuccess()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

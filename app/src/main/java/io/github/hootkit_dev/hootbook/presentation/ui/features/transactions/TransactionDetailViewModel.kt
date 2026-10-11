@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -125,7 +126,7 @@ constructor(
                         val value =
                             result.getOrElse { failure ->
                                 if (mine == generation)
-                                    mutableState.update { it.copy(errorMessage = failure.message) }
+                                    mutableState.update { it.copy(errorMessage = coreFailureText(failure)) }
                                 return@collect
                             }
                         if (mine == generation)
@@ -437,6 +438,7 @@ constructor(
         color: String,
         avatar: String?,
         relation: PersonRelation?,
+        onSaved: () -> Unit = {},
     ) = write {
         attachmentStore.retainForCore(listOfNotNull(avatar))
         session.withCore {
@@ -444,6 +446,7 @@ constructor(
                 plans.createPerson(PersonDraft(name, phone, notes, color, avatar, relation))
             }
         }
+        onSaved()
     }
 
     fun clearSaveSuccess() {
@@ -493,7 +496,7 @@ constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableState.update { it.copy(errorMessage = failure.message) }
+                mutableState.update { it.copy(errorMessage = coreFailureText(failure)) }
             } finally {
                 mutableState.update { it.copy(isSaving = false) }
                 if (!uiState.value.deleteSuccess) observeTransaction()

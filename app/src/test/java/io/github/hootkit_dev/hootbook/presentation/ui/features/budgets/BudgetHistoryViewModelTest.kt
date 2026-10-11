@@ -36,7 +36,7 @@ class BudgetHistoryViewModelTest : CoreViewModelTest() {
         core.onHistory = { entered = true; withContext(NonCancellable) { gate.await() }; history(it) }
         vm.loadBudgetHistory("old"); awaitState { entered }; vm.loadBudgetHistory("new"); gate.complete(Unit)
         awaitState { vm.uiState.value.budget?.id == "new" }; assertEquals("new", vm.uiState.value.budget!!.id)
-        core.onHistory = { error("offline") }; vm.loadMore(); awaitState { vm.uiState.value.error == "offline" }
+        core.onHistory = { error("offline") }; vm.loadMore(); awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onHistory = history; vm.loadMore(); awaitState { !vm.uiState.value.loadingMore }
         val previous = core.historyRequests.size; bus.changed(Table.TRANSACTIONS)
         awaitState { core.historyRequests.size > previous && !vm.uiState.value.loadingMore }

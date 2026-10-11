@@ -17,8 +17,8 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.*
 /** The original link form's person carousel. Core owns amount, kind, date and title on linking. */
 @Composable
 internal fun LoanPersonSheet(
-    people: List<Person>, attachmentStore: CoreAttachmentStore, busy: Boolean,
-    onAddPerson: (String, String?, String?, String, String?, PersonRelation?) -> Unit,
+    people: List<Person>, attachmentStore: CoreAttachmentStore, busy: Boolean, error: Int?,
+    onAddPerson: (String, String?, String?, String, String?, PersonRelation?, () -> Unit) -> Unit,
     onDismiss: () -> Unit, onSelect: (Person) -> Unit,
 ) {
     var selectedId by remember { mutableStateOf(people.firstOrNull()?.id) }
@@ -34,8 +34,7 @@ internal fun LoanPersonSheet(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) { Text(stringResource(R.string.save)) }
         }
     }
-    if (addPerson) AddEditPersonSheet(attachmentStore = attachmentStore, onDismiss = { addPerson = false }, onSave = { name, phone, notes, color, avatar, relation ->
-        onAddPerson(name, phone, notes, color, avatar, relation)
-        addPerson = false
+    if (addPerson) AddEditPersonSheet(attachmentStore = attachmentStore, saving = busy, error = error, onDismiss = { if (!busy) addPerson = false }, onSave = { name, phone, notes, color, avatar, relation ->
+        onAddPerson(name, phone, notes, color, avatar, relation) { addPerson = false }
     })
 }

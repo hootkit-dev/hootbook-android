@@ -31,7 +31,7 @@ class SubscriptionsViewModelTest : CoreViewModelTest() {
         val vm = keep(SubscriptionsViewModel(CoreSession(backgroundScope) { core }, ChangeBus()))
         awaitState { !vm.uiState.value.isLoading }; vm.hideSubscription(core.subscription.id); vm.hideSubscription(core.subscription.id)
         awaitState { core.commandCalls == 1 }; gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertEquals("save error", vm.uiState.value.error); assertNull(vm.uiState.value.lastHiddenSubscription)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error); assertNull(vm.uiState.value.lastHiddenSubscription)
         core.onCommand = {}; vm.hideSubscription(core.subscription.id); awaitState { !vm.uiState.value.saving }
         assertEquals(core.subscription.id, vm.uiState.value.lastHiddenSubscription!!.id)
         vm.undoHide(); awaitState { !vm.uiState.value.saving }; assertNull(vm.uiState.value.lastHiddenSubscription)

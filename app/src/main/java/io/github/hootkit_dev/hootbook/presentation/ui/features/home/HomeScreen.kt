@@ -168,9 +168,10 @@ fun SharedTransitionScope.HomeScreen(
     var showAccountBreakdown by rememberSaveable { mutableStateOf(false) }
 
 
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(Unit) { homeViewModel.refreshDate() }
     LaunchedEffect(uiState.error) {
-        uiState.error?.let { snackbarHostState.showSnackbar(it) }
+        uiState.error?.let { snackbarHostState.showSnackbar(operationFailed) }
     }
     // Clear snackbar when navigating away
     DisposableEffect(Unit) { onDispose { snackbarHostState.currentSnackbarData?.dismiss() } }

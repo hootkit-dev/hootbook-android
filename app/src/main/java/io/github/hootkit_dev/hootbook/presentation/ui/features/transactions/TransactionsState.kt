@@ -39,7 +39,7 @@ data class TransactionsUiState(
     val selectionMode: Boolean = false,
     val selectedIds: Set<String> = emptySet(),
     val undoToken: String? = null,
-    val error: String? = null,
+    val error: Int? = null,
 )
 
 enum class DateGroup(@StringRes val labelRes: Int) {

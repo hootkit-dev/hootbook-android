@@ -252,7 +252,7 @@ fun SharedTransitionScope.ContactsScreen(
             }
         }
     ) { paddingValues ->
-        uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
+        uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier

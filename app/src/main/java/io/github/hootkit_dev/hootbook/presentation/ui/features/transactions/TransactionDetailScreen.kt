@@ -388,6 +388,7 @@ fun SharedTransitionScope.TransactionDetailScreen(
     }
 
     // Show success snackbar
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
             scope.launch {
@@ -401,7 +402,7 @@ fun SharedTransitionScope.TransactionDetailScreen(
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             scope.launch {
-                snackbarHostState.showSnackbar(it)
+                snackbarHostState.showSnackbar(operationFailed)
             }
         }
     }
@@ -837,7 +838,7 @@ fun SharedTransitionScope.TransactionDetailScreen(
             people = uiState.people.values.toList(),
             attachmentStore = transactionDetailViewModel.attachmentStore,
             onAddPerson = transactionDetailViewModel::addPerson,
-            busy = uiState.isSaving,
+            busy = uiState.isSaving, error = uiState.errorMessage,
             onDismiss = transactionDetailViewModel::hideMarkAsLoanSheet,
             onSelect = { person -> transactionDetailViewModel.markAsLoan(person.id, if (transaction?.kind == TransactionKind.LOAN_OUT) DebtKind.LENT else DebtKind.BORROWED) },
         )

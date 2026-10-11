@@ -133,7 +133,7 @@ class CoreSyncCoordinator private constructor(private val session: (() -> CoreSe
 }
 fun syncFailureText(error: Throwable): String = when (error) {
     is CoreException.Sync -> "Sync: ${error.kind}."
-    is CoreException.Invalid -> "Check ${error.field}: ${error.reason}."
+    is CoreException.Invalid -> "Sync operation failed. Please try again."
     is CoreException.NotFound -> "This conflict or record has changed. Refresh before deciding."
     else -> "Sync operation failed. Private remote data and credentials are not included in diagnostics."
 }

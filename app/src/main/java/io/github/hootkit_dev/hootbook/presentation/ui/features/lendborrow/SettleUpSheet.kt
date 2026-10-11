@@ -69,7 +69,7 @@ fun SettleUpSheet(
     accounts: List<Account> = emptyList(),
     defaultAccountId: String? = null,
     saving: Boolean = false,
-    error: String? = null,
+    error: Int? = null,
     onDismiss: () -> Unit,
     onSettle: (SettleDraft) -> Unit
 ) {
@@ -109,7 +109,7 @@ fun SettleUpSheet(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 if (!person.totals.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error)
                 // Full / Partial Tabs
                 GenericTypeSwitcher(

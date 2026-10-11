@@ -200,8 +200,9 @@ fun TransactionsScreen(
     val selectedTransactionIds = uiState.selectedIds
     val groupedTransactions = remember(uiState.transactions) { groupTransactionsByDate(uiState.transactions) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(uiState.error) {
-        uiState.error?.let { snackbarHostState.showSnackbar(it); transactionsViewModel.clearError() }
+        uiState.error?.let { snackbarHostState.showSnackbar(operationFailed); transactionsViewModel.clearError() }
     }
     LaunchedEffect(uiState.undoToken) {
         uiState.undoToken?.let { token ->
@@ -833,7 +834,6 @@ fun TransactionsScreen(
     // Delete confirmation dialog
     if (showDeleteConfirmation) {
         DeleteMultipleTransactionsDialog(
-            permanent = uiState.filter.deleted == dev.hootkit.core.DeletedFilter.ONLY,
             busy = uiState.writing,
             onDelete = {
                 transactionsViewModel.deleteSelectedTransactions()
@@ -841,6 +841,7 @@ fun TransactionsScreen(
             },
             onDismiss = { showDeleteConfirmation = false },
             selectedTransactionIds = selectedTransactionIds,
+            permanent = uiState.filter.deleted == dev.hootkit.core.DeletedFilter.ONLY,
             blurEffects = blurEffects,
             hazeState = hazeState
         )

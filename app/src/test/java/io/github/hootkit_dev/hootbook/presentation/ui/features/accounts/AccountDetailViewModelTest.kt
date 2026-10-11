@@ -21,7 +21,7 @@ class AccountDetailViewModelTest : CoreViewModelTest() {
         assertSame(core.summary, vm.uiState.value.summary)
         assertEquals(BigDecimal("555"), vm.uiState.value.balanceSeries.single().balance)
         core.onGet = { error("offline") }; changes.changed(Table.ACCOUNTS)
-        awaitState { vm.uiState.value.error == "offline" }
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.account = core.account.copy(name = "Updated"); core.onGet = { core.account }; changes.changed(Table.ACCOUNTS)
         awaitState { vm.uiState.value.account?.name == "Updated" && vm.uiState.value.error == null }
         assertEquals(core.opened.get(), core.closed.get())
@@ -48,7 +48,7 @@ class AccountDetailViewModelTest : CoreViewModelTest() {
         core.onCommand = { gate.await(); error("cannot save") }
         vm.calibrate(BigDecimal("25"), "USD") { completed++ }; vm.calibrate(BigDecimal("25"), "USD") { completed++ }
         awaitState { core.calibrations == 1 }; gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertEquals("cannot save", vm.uiState.value.error); assertEquals(0, completed)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error); assertEquals(0, completed)
         core.onCommand = {}; vm.calibrate(BigDecimal("25"), "USD") { completed++ }
         awaitState { !vm.uiState.value.saving }; assertEquals(1, completed)
         assertEquals(Triple(core.account.id, "USD", BigDecimal("25")), core.lastCalibration)

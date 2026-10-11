@@ -23,18 +23,20 @@ class LendBorrowViewModelTest : CoreViewModelTest() {
         vm.onSearchQueryChanged("Alice"); vm.onCategorySelected(PersonRelation.FRIEND); gate.complete(Unit)
         awaitState { core.opened.get() == core.closed.get() }; assertEquals(core.person.id, vm.uiState.value.filteredPersons.single().id)
         assertEquals("Alice", saved.get<String>("searchQuery")); assertFalse(vm.uiState.value.summary!!.complete)
-        core.onPeople = { error("offline") }; bus.changed(Table.PEOPLE); awaitState { vm.uiState.value.error == "offline" }
+        core.onPeople = { error("offline") }; bus.changed(Table.PEOPLE); awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onPeople = { core.people }; bus.changed(Table.PEOPLE); awaitState { vm.uiState.value.error == null }
     }
     @Test fun personAndDebtCommandsAreGuardedAndFailuresKeepSheetsForRetry() = runTest {
         val core = FakePlansCore(); val gate = CompletableDeferred<Unit>(); core.onCommand = { gate.await(); error("save error") }
         val vm = keep(LendBorrowViewModel(CoreSession(backgroundScope) { core }, ChangeBus(), files, SavedStateHandle()))
         awaitState { !vm.uiState.value.isLoading }; vm.showAddPersonSheet(true)
-        vm.addPerson("Alice", null, null, "#4CAF50", null, PersonRelation.FRIEND); vm.addPerson("Alice", null, null, "#4CAF50", null, PersonRelation.FRIEND)
+        vm.addPerson("Alice", null, null, io.github.hootkit_dev.hootbook.presentation.ui.components.AVATAR_COLORS.first(), null, PersonRelation.FRIEND); vm.addPerson("Alice", null, null, io.github.hootkit_dev.hootbook.presentation.ui.components.AVATAR_COLORS.first(), null, PersonRelation.FRIEND)
         awaitState { core.commandCalls == 1 }; gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertTrue(vm.uiState.value.showAddPersonSheet); assertEquals("save error", vm.uiState.value.error)
-        core.onCommand = {}; vm.addPerson("Alice", null, null, "#4CAF50", null, PersonRelation.FRIEND)
+        assertTrue(vm.uiState.value.showAddPersonSheet); assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error)
+        core.onCommand = {}; vm.addPerson("Alice", null, null, io.github.hootkit_dev.hootbook.presentation.ui.components.AVATAR_COLORS.first(), null, PersonRelation.FRIEND)
         awaitState { !vm.uiState.value.saving }; assertFalse(vm.uiState.value.showAddPersonSheet)
+        assertEquals("#8E81FF", core.personDraft!!.color)
+        assertEquals(PersonRelation.FRIEND, core.personDraft!!.relation)
         val draft = DebtDraft(core.person.id, DebtKind.LENT, core.debt.amount.amount, "EUR", core.now, null, "Debt", null, emptyList())
         vm.showAddTransactionSheet(true); vm.addTransaction(draft); vm.addTransaction(draft)
         awaitState { !vm.uiState.value.saving }; assertSame(draft, core.debtDraft); assertEquals(3, core.commandCalls)

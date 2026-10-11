@@ -500,7 +500,7 @@ class AiAssistantViewModelTest {
         assertEquals(AiPhase.REVIEW, vm.state.value.phase)
         assertFalse(vm.state.value.decisions.getValue(vm.state.value.items.single().index).keep)
         assertNull(vm.state.value.applied)
-        assertTrue(vm.state.value.error!!.contains("decisions[1].amount"))
+        assertEquals("Something went wrong. Please try again.", vm.state.value.error)
         vm.undo()
         runCurrent()
         assertEquals(0, ai.undos)

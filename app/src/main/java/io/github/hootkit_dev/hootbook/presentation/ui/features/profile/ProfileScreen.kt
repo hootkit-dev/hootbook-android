@@ -123,7 +123,8 @@ fun SharedTransitionScope.ProfileScreen(
     val hazeState = remember { HazeState() }
 
     val errorSnackbar = remember { SnackbarHostState() }
-    LaunchedEffect(state.error) { state.error?.let { errorSnackbar.showSnackbar(it) } }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    LaunchedEffect(state.error) { state.error?.let { errorSnackbar.showSnackbar(operationFailed) } }
     Scaffold(
         snackbarHost = { SnackbarHost(errorSnackbar) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

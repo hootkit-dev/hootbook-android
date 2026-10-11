@@ -173,7 +173,7 @@ fun SubscriptionTabContent(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = errorMessage,
+                            text = stringResource(errorMessage),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )

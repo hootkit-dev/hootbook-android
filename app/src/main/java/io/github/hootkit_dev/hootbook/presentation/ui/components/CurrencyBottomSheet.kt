@@ -91,7 +91,7 @@ fun CurrencyBottomSheet(
                             Icon(Iconax.Information, "Info", tint = MaterialTheme.colorScheme.onSurface.copy(0.5f), modifier = Modifier.size(24.dp))
                         }
                     }, modifier = Modifier.padding(horizontal = Spacing.md).padding(bottom = 16.dp))
-                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 if (filtered.isEmpty()) Text(stringResource(R.string.currency_not_available), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {

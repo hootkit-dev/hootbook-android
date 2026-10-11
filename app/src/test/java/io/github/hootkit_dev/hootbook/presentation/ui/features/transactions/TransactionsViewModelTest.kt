@@ -45,7 +45,7 @@ class TransactionsViewModelTest : CoreViewModelTest() {
         assertEquals(listOf(0u, 50u), requested.map { it.offset })
         core.onList = { _, _ -> error("offline") }
         changes.changed(Table.TRANSACTIONS)
-        awaitState { vm.uiState.value.error == "offline" }
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.onList = { _, _ -> TransactionPage(listOf(core.transaction.copy(id = "updated")), 1u) }
         changes.changed(Table.TRANSACTIONS)
         awaitState { vm.uiState.value.transactions.singleOrNull()?.id == "updated" }
@@ -95,7 +95,7 @@ class TransactionsViewModelTest : CoreViewModelTest() {
         core.onUndo = { error("expired") }
         vm.undoDelete("opaque-core-token")
         awaitState { !vm.uiState.value.writing }
-        assertEquals("expired", vm.uiState.value.error)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error)
         core.onUndo = {}
         vm.undoDelete("opaque-core-token")
         awaitState { !vm.uiState.value.writing }

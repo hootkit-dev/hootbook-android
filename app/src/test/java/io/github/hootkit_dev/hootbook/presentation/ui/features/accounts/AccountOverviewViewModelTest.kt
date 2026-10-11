@@ -17,7 +17,7 @@ class AccountOverviewViewModelTest : CoreViewModelTest() {
         assertSame(core.overview, vm.uiState.value.overview)
         assertFalse(vm.uiState.value.overview!!.netWorthComplete)
         core.onOverview = { error("offline") }; changes.changed(Table.EXCHANGE_RATES)
-        awaitState { vm.uiState.value.error == "offline" }
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.overview = core.overview.copy(netWorth = Money(BigDecimal("999"), "GBP"))
         core.onOverview = { core.overview }; changes.changed(Table.BROKERAGE)
         awaitState { vm.uiState.value.overview?.netWorth?.amount == BigDecimal("999") }

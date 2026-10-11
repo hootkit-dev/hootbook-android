@@ -189,7 +189,7 @@ fun ExportTransactionsDialog(
                                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
-                                preview.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                                preview.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
 
 
                             }
@@ -259,7 +259,7 @@ fun ExportTransactionsDialog(
 
                     is ExportState.Error -> {
                         Text(
-                            text = state.message,
+                            text = stringResource(state.message),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -326,7 +326,7 @@ sealed class ExportState {
         val transactionCount: Int,
         val fileSizeBytes: Long
     ) : ExportState()
-    data class Error(val message: String) : ExportState()
+    data class Error(val message: Int) : ExportState()
 }
 
 private fun formatFileSize(bytes: Long): String {

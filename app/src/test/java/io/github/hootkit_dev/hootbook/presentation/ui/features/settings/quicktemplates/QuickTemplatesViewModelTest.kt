@@ -17,7 +17,7 @@ class QuickTemplatesViewModelTest : CoreViewModelTest() {
         val vm = keep(QuickTemplatesViewModel(CoreSession(backgroundScope) { core }, bus))
         awaitState { !vm.uiState.value.loading }; assertSame(core.rows, vm.uiState.value.templates)
         core.onTemplates = { error("offline") }; bus.changed(Table.QUICK_TEMPLATES)
-        awaitState { vm.uiState.value.error == "offline" }; core.onTemplates = { core.rows }; bus.changed(Table.QUICK_TEMPLATES)
+        awaitState { vm.uiState.value.error == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }; core.onTemplates = { core.rows }; bus.changed(Table.QUICK_TEMPLATES)
         awaitState { vm.uiState.value.error == null }
         val gate = CompletableDeferred<Unit>(); core.onCommand = { gate.await() }
         vm.reorder(core.rows.reversed()); awaitState { core.reorderWrites.size == 1 }
@@ -33,7 +33,7 @@ class QuickTemplatesViewModelTest : CoreViewModelTest() {
         vm.update(core.template, "New", BigDecimal("34"), true) { successes++ }
         vm.update(core.template, "New", BigDecimal("34"), true) { successes++ }
         awaitState { core.commandCalls == 1 }; gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertEquals("bad amount", vm.uiState.value.error); assertEquals(0, successes)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error); assertEquals(0, successes)
         assertEquals(core.template.accountId, core.templateDraft!!.accountId); assertEquals(core.template.merchant, core.templateDraft!!.merchant)
         core.onCommand = {}; vm.update(core.template, "New", BigDecimal("34"), true) { successes++ }
         awaitState { !vm.uiState.value.saving }; assertEquals(1, successes)

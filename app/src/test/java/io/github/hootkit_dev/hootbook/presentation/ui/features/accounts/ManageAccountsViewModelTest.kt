@@ -21,7 +21,7 @@ class ManageAccountsViewModelTest : CoreViewModelTest() {
         assertSame(core.institutions, vm.uiState.value.institutions)
         assertEquals("GBP", vm.uiState.value.defaultCurrency)
         core.onOverview = { error("offline") }; changes.changed(Table.ACCOUNTS)
-        awaitState { vm.uiState.value.errorMessage == "offline" }
+        awaitState { vm.uiState.value.errorMessage == io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed }
         core.overview = core.overview.copy(netWorth = Money(BigDecimal("777"), "GBP"))
         core.onOverview = { core.overview }; changes.changed(Table.BALANCE_ANCHORS)
         awaitState { vm.uiState.value.overview?.netWorth?.amount == BigDecimal("777") }
@@ -34,7 +34,7 @@ class ManageAccountsViewModelTest : CoreViewModelTest() {
         vm.addAccount(input()) { saved++ }; vm.addAccount(input()) { saved++ }
         awaitState { core.creates == 1 }; assertTrue(vm.uiState.value.isSavingAccount)
         gate.complete(Unit); awaitState { !vm.uiState.value.isSavingAccount }
-        assertEquals("save error", vm.uiState.value.accountSaveError); assertEquals(0, saved)
+        assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.accountSaveError); assertEquals(0, saved)
         core.onCommand = {}; vm.addAccount(input()) { saved++ }
         awaitState { !vm.uiState.value.isSavingAccount }
         assertEquals(input(), core.newAccount); assertEquals(1, saved)

@@ -100,7 +100,7 @@ fun NotificationScreen(
                     ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                uiState.error?.let { androidx.compose.material3.Text(it, color = MaterialTheme.colorScheme.error) }
+                uiState.error?.let { androidx.compose.material3.Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 // Upcoming Settings
                 SectionHeader(title = stringResource(R.string.upcoming_transactions_section), modifier = Modifier.padding(start = Spacing.md))
                 Column(

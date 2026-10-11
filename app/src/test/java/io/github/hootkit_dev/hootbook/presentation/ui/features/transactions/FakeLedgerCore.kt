@@ -133,6 +133,9 @@ class FakeLedgerCore : HootKitCore(NoPointer) {
     var hiddenSubscription: Pair<String, Boolean>? = null
     var onDelete: suspend () -> Unit = {}
     var onPeople: suspend () -> List<Person> = { emptyList() }
+    var onCreatePerson: suspend (PersonDraft) -> String = { "created-person" }
+    var createdPerson: PersonDraft? = null
+    var createPersonCalls = 0
     var onDebts: suspend (String) -> List<DebtEntry> = { emptyList() }
     var unlinkedDebt: String? = null
     var categoryRows: List<Category> = emptyList()
@@ -312,6 +315,11 @@ class FakeLedgerCore : HootKitCore(NoPointer) {
         opened.incrementAndGet()
         return object : Plans(NoPointer) {
             override suspend fun people(includeArchived: Boolean, today: LocalDate) = onPeople()
+            override suspend fun createPerson(draft: PersonDraft): String {
+                createPersonCalls++
+                createdPerson = draft
+                return onCreatePerson(draft)
+            }
 
             override suspend fun templates() = onTemplates()
 

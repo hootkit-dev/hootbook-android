@@ -20,7 +20,7 @@ data class NotificationUiState(
     val subcategories: Map<String, Subcategory> = emptyMap(),
     val loading: Boolean = true,
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
 )
 @HiltViewModel
 class NotificationViewModel internal constructor(

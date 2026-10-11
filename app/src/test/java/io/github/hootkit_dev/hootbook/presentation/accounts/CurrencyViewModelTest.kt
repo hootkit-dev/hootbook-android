@@ -62,7 +62,7 @@ class CurrencyViewModelTest : CoreViewModelTest() {
         val vm = keep(CurrencyViewModel(CoreSession(backgroundScope) { core }, ChangeBus()))
         vm.saveCustomRate("USD", BigDecimal("3")); vm.saveCustomRate("USD", BigDecimal("3"))
         awaitState { core.customRateCalls == 1 }; assertTrue(vm.uiState.value.saving)
-        gate.complete(Unit); awaitState { !vm.uiState.value.saving }; assertEquals("rate error", vm.uiState.value.error)
+        gate.complete(Unit); awaitState { !vm.uiState.value.saving }; assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.error)
         core.onCurrencyCommand = {}; vm.selectProvider(RateProvider.FRANKFURTER)
         awaitState { !vm.uiState.value.saving }; assertEquals(RateProvider.FRANKFURTER, core.selectedProvider)
         vm.syncNow(); vm.syncNow(); awaitState { !vm.uiState.value.saving }; assertEquals(1, core.refreshCalls)

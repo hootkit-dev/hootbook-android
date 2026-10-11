@@ -273,7 +273,7 @@ fun SharedTransitionScope.BudgetsScreen(
             modifier = Modifier.fillMaxSize()
                 .hazeSource(state = hazeState)
         ) {
-            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
+            uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
             when {
                 uiState.isLoading -> {
                     Box(

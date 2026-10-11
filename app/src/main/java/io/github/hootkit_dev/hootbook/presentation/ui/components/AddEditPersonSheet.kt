@@ -2,6 +2,7 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import android.net.Uri
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,7 +70,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 
 val AVATAR_COLORS = listOf(
-    "#ff8e81ff", "#2196F3", "#9C27B0", "#FF9800",
+    "#8E81FF", "#2196F3", "#9C27B0", "#FF9800",
     "#E91E63", "#00BCD4", "#3F51B5", "#795548"
 )
 
@@ -79,7 +80,7 @@ fun AddEditPersonSheet(
     personToEdit: Person? = null,
     attachmentStore: CoreAttachmentStore,
     saving: Boolean = false,
-    error: String? = null,
+    error: Int? = null,
     onDismiss: () -> Unit,
     onSave: (name: String, phone: String?, notes: String?, color: String, avatar: String?, category: PersonRelation?) -> Unit
 ) {
@@ -115,7 +116,7 @@ fun AddEditPersonSheet(
 
     val platformContext = LocalContext.current.applicationContext
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var importError by remember { mutableStateOf<String?>(null) }
+    var importError by remember { mutableStateOf<Int?>(null) }
     var importing by remember { mutableStateOf(false) }
     fun importAvatar(uri: Uri) {
         if (importing) return
@@ -126,7 +127,7 @@ fun AddEditPersonSheet(
                     platformContext.contentResolver.openInputStream(uri)?.use { attachmentStore.importStream(it, "png") }
                 } else attachmentStore.importFrom(uri)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-            catch (failure: Exception) { importError = failure.message }
+            catch (failure: Exception) { importError = coreFailureText(failure) }
             finally { importing = false }
         }
     }
@@ -164,8 +165,8 @@ fun AddEditPersonSheet(
                     fontWeight = FontWeight.Bold
                 )
 
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                importError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+                importError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 // Avatar preview
                 val colorInt = try {
                     selectedColor.toColorInt()

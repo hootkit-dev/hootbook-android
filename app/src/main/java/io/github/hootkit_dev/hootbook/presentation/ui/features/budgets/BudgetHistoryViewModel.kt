@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,7 @@ data class BudgetHistoryUiState(
     val periods: List<BudgetPeriodSummary> = emptyList(),
     val cursor: LocalDate? = null,
     val loadingMore: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,7 +42,7 @@ class BudgetHistoryViewModel @Inject constructor(private val session: CoreSessio
                 }
             }.collect { result -> result.fold(
                 onSuccess = { mutable.value = it },
-                onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = failure.message) } }) }
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = coreFailureText(failure)) } }) }
         }
     }
     fun loadBudgetHistory(id: String) {
@@ -61,7 +62,7 @@ class BudgetHistoryViewModel @Inject constructor(private val session: CoreSessio
                 val window = appendBudgetHistory(before.periods, rows, budget.anchor, cursor)
                 if (mine == generation.get()) mutable.update { it.copy(loadingMore = false, periods = window.rows, cursor = window.nextCursor) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { if (mine == generation.get()) mutable.update { it.copy(loadingMore = false, error = failure.message) } }
+            catch (failure: Exception) { if (mine == generation.get()) mutable.update { it.copy(loadingMore = false, error = coreFailureText(failure)) } }
         }
     }
 }

@@ -245,7 +245,7 @@ fun SubscriptionsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            uiState.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
+            uiState.error?.let { error -> item { Text(stringResource(error), color = MaterialTheme.colorScheme.error) } }
             // Total Monthly & Yearly Subscriptions Summary
             uiState.summary?.let { summary -> item {
                 TotalSubscriptionsSummary(

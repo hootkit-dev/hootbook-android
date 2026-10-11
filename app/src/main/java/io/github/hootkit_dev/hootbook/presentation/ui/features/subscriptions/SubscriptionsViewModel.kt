@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,7 +36,7 @@ class SubscriptionsViewModel @Inject constructor(private val session: CoreSessio
             } }.collect { result -> result.fold(
                 onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving, lastHiddenSubscription = it.lastHiddenSubscription,
                     selectedSubscription = snapshot.activeSubscriptions.find { row -> row.id == selectedId }) } },
-                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = failure.message) } }) }
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
     fun selectId(id: String?) { selectedId = id; mutable.update { it.copy(selectedSubscription = it.activeSubscriptions.find { row -> row.id == id }) } }
@@ -59,7 +60,7 @@ class SubscriptionsViewModel @Inject constructor(private val session: CoreSessio
         viewModelScope.launch {
             try { session.withCore { core -> core.plans().use { block(it) } } }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

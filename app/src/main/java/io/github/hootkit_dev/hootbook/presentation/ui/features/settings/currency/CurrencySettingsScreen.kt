@@ -222,7 +222,7 @@ fun CurrencySettingsScreen(
                 }
             }
 
-            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             Spacer(modifier = Modifier.height(Spacing.xl))
         }
     }

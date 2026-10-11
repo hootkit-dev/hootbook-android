@@ -72,6 +72,7 @@ private constructor(
     private val testLookups: (suspend () -> Pair<List<Account>, List<Category>>)?,
     private val nativeDispatcher: CoroutineDispatcher,
     private val testDuplicates: (suspend (AiReview) -> Map<String, Transaction>)?,
+    private val invalidMessage: () -> String,
 ) : ViewModel() {
     @Inject
     constructor(
@@ -79,6 +80,7 @@ private constructor(
         changes: ChangeBus,
         inbox: CoreAiInbox,
         reader: CoreAiAttachmentReader,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context,
     ) : this(
         core,
         changes,
@@ -88,6 +90,7 @@ private constructor(
         null,
         CoreAiNativeDispatcher,
         null,
+        { context.getString(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed) },
     )
 
     internal constructor(
@@ -103,7 +106,10 @@ private constructor(
         nativeDispatcher: CoroutineDispatcher = CoreAiNativeDispatcher,
         duplicates: suspend (AiReview) -> Map<String, Transaction> = { emptyMap() },
         ai: suspend () -> AiInterface,
-    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates)
+    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." })
+
+    private fun failureText(error: Throwable): String =
+        if (error is CoreException.Invalid) invalidMessage() else aiFailureText(error)
 
     private val mutable = MutableStateFlow(AiAssistantUiState())
     val state = mutable.asStateFlow()
@@ -202,7 +208,7 @@ private constructor(
                             },
                             onFailure = { error ->
                                 mutable.update {
-                                    it.copy(loading = false, error = aiFailureText(error))
+                                    it.copy(loading = false, error = failureText(error))
                                 }
                             },
                         )
@@ -248,7 +254,7 @@ private constructor(
                     it.copy(protocol = protocol, baseUrl = defaults.baseUrl, model = defaults.model)
                 }
             } catch (error: Throwable) {
-                mutable.update { it.copy(error = aiFailureText(error)) }
+                mutable.update { it.copy(error = failureText(error)) }
             }
         }
     }
@@ -284,7 +290,7 @@ private constructor(
                 }
             } catch (error: Throwable) {
                 mutable.update {
-                    it.copy(error = aiFailureText(error), config = it.config.copy(apiKey = ""))
+                    it.copy(error = failureText(error), config = it.config.copy(apiKey = ""))
                 }
             } finally {
                 mutable.update { it.copy(configBusy = false, navigationBlocked = false) }
@@ -319,8 +325,8 @@ private constructor(
                         mutable.update {
                             it.copy(
                                 modelLoading = false,
-                                error = aiFailureText(error),
-                                modelError = aiFailureText(error),
+                                error = failureText(error),
+                                modelError = failureText(error),
                             )
                         }
                 }
@@ -526,7 +532,7 @@ private constructor(
                                 error =
                                     if (current.phase == AiPhase.PREPARING)
                                         "File preparation failed. Check file size (20 MB), PDF password, image readability, and long screenshots (up to 12 tiles). No request was sent."
-                                    else aiFailureText(error),
+                                    else failureText(error),
                             )
                         }
                 } finally {
@@ -608,7 +614,7 @@ private constructor(
                     mutable.update { it.copy(phase = AiPhase.SAVED, applied = applied) }
                 }
             } catch (error: Throwable) {
-                mutable.update { it.copy(error = aiFailureText(error)) }
+                mutable.update { it.copy(error = failureText(error)) }
             } finally {
                 mutable.update { it.copy(saving = false, navigationBlocked = false) }
                 if (cleared) releaseSession()
@@ -628,7 +634,7 @@ private constructor(
                     mutable.update { it.copy(phase = AiPhase.REVIEW, applied = null) }
                 }
             } catch (error: Throwable) {
-                mutable.update { it.copy(error = aiFailureText(error)) }
+                mutable.update { it.copy(error = failureText(error)) }
             } finally {
                 mutable.update { it.copy(saving = false, navigationBlocked = false) }
                 if (cleared) releaseSession()

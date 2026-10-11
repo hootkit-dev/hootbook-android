@@ -111,6 +111,7 @@ fun SharedTransitionScope.AccountDetailScreen(
 ) {
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
     val manageState by manageViewModel.uiState.collectAsStateWithLifecycle()
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(accountId) { accountDetailViewModel.initialize(accountId) }
     val selectedDateRange = uiState.selectedDateRange
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -124,7 +125,7 @@ fun SharedTransitionScope.AccountDetailScreen(
     var active by remember { mutableStateOf(true) }
     DisposableEffect(Unit) { active = true; onDispose { active = false } }
     LaunchedEffect(uiState.error, manageState.errorMessage) {
-        (uiState.error ?: manageState.errorMessage)?.let { snackbar.showSnackbar(it); accountDetailViewModel.clearError(); manageViewModel.clearError() }
+        (uiState.error ?: manageState.errorMessage)?.let { snackbar.showSnackbar(operationFailed); accountDetailViewModel.clearError(); manageViewModel.clearError() }
     }
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index to lazyListState.layoutInfo.totalItemsCount }

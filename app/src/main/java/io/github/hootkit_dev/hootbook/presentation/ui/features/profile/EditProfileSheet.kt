@@ -72,7 +72,7 @@ fun EditProfileSheet(
         onSave: () -> Unit,
         onCancel: () -> Unit,
         saving: Boolean = false,
-        error: String? = null
+        error: Int? = null
 ) {
 
     // Launchers for image picking
@@ -107,7 +107,7 @@ fun EditProfileSheet(
                 modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
             )
 
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             // Preview Card
             ProfileCardPreview(
                 profileImageUri = state.editedProfileImageUri,

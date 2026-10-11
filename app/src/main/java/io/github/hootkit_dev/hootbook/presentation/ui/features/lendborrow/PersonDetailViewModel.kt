@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,7 +33,7 @@ data class PersonDetailUiState(
     val accounts: Map<String, Account> = emptyMap(),
     val categories: Map<String, Category> = emptyMap(),
     val saving: Boolean = false,
-    val error: String? = null,
+    val error: Int? = null,
     val linkedTransactions: Map<String, Transaction> = emptyMap()
 )
 
@@ -65,7 +66,7 @@ class PersonDetailViewModel @Inject constructor(
                 onSuccess = { snapshot -> mutable.update { it.copy(person = snapshot.person, transactions = snapshot.transactions,
                     accounts = snapshot.accounts, categories = snapshot.categories, linkedTransactions = snapshot.linkedTransactions,
                     baseCurrency = snapshot.baseCurrency, isLoading = false, error = null) } },
-                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = failure.message) } }) }
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
     fun updatePerson(name: String, phone: String?, notes: String?, color: String, avatar: String?, category: PersonRelation?) = command {
@@ -176,7 +177,7 @@ class PersonDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try { session.withCore { core -> core.plans().use { block(it) } }; onSuccess() }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

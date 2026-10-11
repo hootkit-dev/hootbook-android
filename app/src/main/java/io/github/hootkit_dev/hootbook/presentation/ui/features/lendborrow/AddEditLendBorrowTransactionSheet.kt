@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
@@ -116,7 +117,7 @@ fun AddEditLendBorrowTransactionSheet(
     attachmentStore: CoreAttachmentStore,
     mainCurrency: String,
     saving: Boolean = false,
-    error: String? = null,
+    error: Int? = null,
     showPersonSelection: Boolean = true,
     transactionToEdit: DebtEntry? = null,
     initialType: DebtKind? = null,
@@ -211,7 +212,7 @@ fun AddEditLendBorrowTransactionSheet(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                 )
 
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 // Type Switcher
                 if (selectedType == DebtKind.LENT || selectedType == DebtKind.BORROWED) GenericTypeSwitcher(
                     selectedIndex = if (selectedType == DebtKind.LENT) 0 else 1,
@@ -576,15 +577,15 @@ fun AddEditLendBorrowTransactionSheet(
                     )
                 )
 
-                var importError by remember { mutableStateOf<String?>(null) }
-                importError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                var importError by remember { mutableStateOf<Int?>(null) }
+                importError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 AttachmentSection(
                     attachments = attachments,
                     attachmentStore = attachmentStore,
                     onAddAttachment = { uri -> scope.launch {
                         try { attachments = attachments + attachmentStore.importFrom(uri) }
                         catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-                        catch (failure: Exception) { importError = failure.message }
+                        catch (failure: Exception) { importError = coreFailureText(failure) }
                     } },
                     onRemoveAttachment = { path -> attachments = attachments - path }
                 )

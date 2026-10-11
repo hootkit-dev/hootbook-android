@@ -187,7 +187,8 @@ fun SettingsScreen(
     val hazeState = remember { HazeState() }
 
     val errorSnackbar = remember { androidx.compose.material3.SnackbarHostState() }
-    androidx.compose.runtime.LaunchedEffect(operationError) { operationError?.let { errorSnackbar.showSnackbar(it) } }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    androidx.compose.runtime.LaunchedEffect(operationError) { operationError?.let { errorSnackbar.showSnackbar(operationFailed) } }
     Scaffold(
         snackbarHost = { androidx.compose.material3.SnackbarHost(errorSnackbar) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

@@ -171,7 +171,7 @@ internal fun SyncMessagesEffect(viewModel: SyncViewModel, snackbar: SnackbarHost
     val state by viewModel.state.collectAsStateWithLifecycle()
     val failed = stringResource(R.string.sync_failed)
     val done = stringResource(R.string.sync_done)
-    val message = state.error ?: state.control?.error ?: state.outcome?.let { if (it.ok) done else failed }
+    val message = (state.error ?: state.control?.error)?.let { stringResource(R.string.onboarding_operation_failed) } ?: state.outcome?.let { if (it.ok) done else failed }
     LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); viewModel.clearError() } }
 
 }
@@ -231,7 +231,7 @@ internal fun SyncSetupSection(
                 SyncPhase.NEEDS_ACCOUNT_CHOICE -> SyncRow(
                     icon = Icons.Rounded.ErrorOutline,
                     title = stringResource(R.string.sync_problem_title),
-                    supporting = state.control?.error ?: stringResource(R.string.sync_problem_other),
+                    supporting = state.control?.error?.let { stringResource(R.string.onboarding_operation_failed) } ?: stringResource(R.string.sync_problem_other),
                     position = ListItemPosition.Single, error = true
                 )
                 else -> active()

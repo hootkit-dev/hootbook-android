@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.categories
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,7 @@ data class CategoriesUiState(
     val categories: Map<String, Category> = emptyMap(),
     val isLoading: Boolean = true,
     val saving: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: Int? = null,
     val searchQuery: String = "",
     val showAddEditDialog: Boolean = false,
     val editingCategory: Category? = null,
@@ -47,7 +48,7 @@ class CategoriesViewModel @Inject constructor(
             }.collect { result ->
                 result.fold(
                     onSuccess = { rows -> mutable.update { it.copy(categories = rows, isLoading = false) } },
-                    onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = failure.message) } },
+                    onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = coreFailureText(failure)) } },
                 )
             }
         }
@@ -98,7 +99,7 @@ class CategoriesViewModel @Inject constructor(
             if (generation != deletionGeneration) return@launch
             result.fold(
                 onSuccess = { count -> mutable.update { it.copy(categoryToDelete = category, hasTransactions = count > 0u, showDeleteConfirmation = true) } },
-                onFailure = { failure -> mutable.update { it.copy(errorMessage = failure.message) } },
+                onFailure = { failure -> mutable.update { it.copy(errorMessage = coreFailureText(failure)) } },
             )
         }
     }
@@ -127,7 +128,7 @@ class CategoriesViewModel @Inject constructor(
         viewModelScope.launch {
             try { session.withCore { core -> core.categories().use { block(it) } } }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(errorMessage = failure.message) } }
+            catch (failure: Exception) { mutable.update { it.copy(errorMessage = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false) } }
         }
     }

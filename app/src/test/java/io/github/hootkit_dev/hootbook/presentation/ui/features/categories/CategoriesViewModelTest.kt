@@ -45,7 +45,7 @@ class CategoriesViewModelTest : CoreViewModelTest() {
         vm.showAddDialog(); vm.saveCategory("Food", "#123456", "food", false); vm.saveCategory("Food", "#123456", "food", false)
         awaitState { core.creates == 1 }; assertTrue(vm.uiState.value.saving)
         gate.complete(Unit); awaitState { !vm.uiState.value.saving }
-        assertTrue(vm.uiState.value.showAddEditDialog); assertEquals("save failed", vm.uiState.value.errorMessage)
+        assertTrue(vm.uiState.value.showAddEditDialog); assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.uiState.value.errorMessage)
         core.onCreate = {}; vm.saveCategory("Food", "#123456", "food", false)
         awaitState { !vm.uiState.value.saving }; assertFalse(vm.uiState.value.showAddEditDialog)
     }

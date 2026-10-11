@@ -20,7 +20,7 @@ data class HomeUiState(
     val recentConversions: Map<String, ConvertedMoney> = emptyMap(),
     val availableCurrencies: List<String> = emptyList(),
     val loading: Boolean = true,
-    val error: String? = null,
+    val error: Int? = null,
     val displayTotals: Map<String, ConvertedMoney> = emptyMap(),
     val customSymbols: Map<String, String> = emptyMap(),
     val submitting: Boolean = false,
