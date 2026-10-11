@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="core_visual_icon">选择图标</string>
-    <string name="core_visual_color">选择颜色</string>
+    <string name="core_visual_icon">图标</string>
+    <string name="core_visual_color">颜色</string>
     <string name="core_full_conversion_missing">换算值缺失，原币金额保留</string>
     <string name="core_full_open_broker">查看关联券商 %1$s</string>
     <string name="core_full_cash_history">现金余额历史</string>

@@ -208,9 +208,9 @@ class RealMainJourneys {
         awaitCondition{nodes().any{it.contentDescription?.toString()==f.text(R.string.edit_transaction)&&it.isEnabled}}
     }
     private fun categoryDetails(name:String) {
-        click(R.string.filters);click(R.string.expense)
-        field(R.string.search_fruits,name)
-        click(R.string.core_categories_19);click(R.string.core_categories_19)
+        click(R.string.expense)
+        field(R.string.search_categories,name)
+        clickText(name)
         showText(name)
     }
     private fun shot(name:String){
@@ -223,13 +223,13 @@ class RealMainJourneys {
     private fun typed(entry:QuickEntry.Entry){activityRule.scenario.onActivity{it.startActivity(QuickEntry.intent(f.context,entry).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP))};Thread.sleep(850)}
     @Test fun uiCategoryAndChildCreateRenameHideRestore()=runBlocking{
         val c=f.core();home();click(R.string.core_complete_categories);click(R.string.add_category)
-        val name="${f.tag} Category";field(R.string.core_categories_20,name);click(R.string.save)
+        val name="${f.tag} Category";field(R.string.cat_name,name);click(R.string.save)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).any{row->row.displayName==name}}}}
-        clickText(name);val edited="$name Edited";field(R.string.core_categories_20,edited);click(R.string.save)
+        clickText(name);val edited="$name Edited";field(R.string.cat_name,edited);click(R.string.save)
         val id=c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.displayName==edited}.id}
-        categoryDetails(edited);click(R.string.core_categories_12);awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
-        click(R.string.core_categories_11);awaitCondition{runBlocking{!c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
-        click(R.string.add_subcategory);field(R.string.core_categories_20,"${f.tag} Child");click(R.string.save)
+        categoryDetails(edited);click(R.string.more_options);click(R.string.cat_hide);awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
+        click(R.string.more_options);click(R.string.cat_show);awaitCondition{runBlocking{!c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
+        click(R.string.add_subcategory);field(R.string.cat_name,"${f.tag} Child");click(R.string.save)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.subcategories.any{child->child.displayName=="${f.tag} Child"}}}}
         shot("ui-category-child-restored");f.note("ui-category","real category create/rename/hide/unhide + child create confirmed native id=$id")
     }
@@ -438,9 +438,9 @@ class RealMainJourneys {
     @Test fun uiOwnedCategoryChildDeletionAndProtectedBuiltinSurface()=runBlocking{
         val c=f.core();val category=c.categories().use{it.list(CategoryKind.EXPENSE,true).first{row->row.builtinKey==null&&row.displayName.startsWith("Acceptance-")&&row.subcategories.isNotEmpty()}}
         home();click(R.string.core_complete_categories);categoryDetails(category.displayName)
-        val child=category.subcategories.first();clickBelow(child.displayName,R.string.core_categories_18);click(R.string.core_categories_18)
+        val child=category.subcategories.first();clickBelow(child.displayName,R.string.more_options);click(R.string.delete);click(R.string.delete)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==category.id}.subcategories.none{row->row.id==child.id}}}}
-        click(R.string.delete);click(R.string.core_categories_28)
+        click(R.string.more_options);click(R.string.delete);click(R.string.cat_delete_confirm)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).none{row->row.id==category.id}}}}
         val builtin=c.categories().use{it.list(CategoryKind.EXPENSE,false).first{row->row.builtinKey!=null}};categoryDetails(builtin.displayName)
         assertFalse(nodes().any{it.text?.toString()==f.text(R.string.delete)&&it.isEnabled});shot("ui-category-builtin-protected")

@@ -10,7 +10,7 @@
     <string name="common_categories">常用分类</string>
     <string name="all_categories">全部</string>
     <string name="recently_used">最近使用</string>
-    <string name="search_categories">搜索分类</string>
+    <string name="search_categories">搜索类别</string>
     <string name="template_suggested_pin">固定为模板</string>
     <string name="template_suggested_dismiss">不再推荐</string>
     <string name="template_suggested_desc">根据最近 %1$d 笔记录推荐</string>

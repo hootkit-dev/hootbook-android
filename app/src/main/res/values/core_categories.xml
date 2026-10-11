@@ -1,32 +1,24 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="core_categories_1">Categories</string>
-    <string name="core_categories_2">Back</string>
-    <string name="core_categories_3">Refresh</string>
-    <string name="core_categories_4">Close</string>
-    <string name="core_categories_5">Expense</string>
-    <string name="core_categories_6">Income</string>
-    <string name="core_categories_7">No categories; press + to add</string>
-    <string name="core_categories_8">Move up</string>
-    <string name="core_categories_9">Move down</string>
-    <string name="core_categories_10">Hidden: existing transactions and references remain</string>
-    <string name="core_categories_11">Show</string>
-    <string name="core_categories_12">Hide</string>
-    <string name="core_categories_13">Reset defaults</string>
-    <string name="core_categories_14">The fallback category is always retained and visible</string>
-    <string name="core_categories_15">Subcategories</string>
-    <string name="core_categories_16">No subcategories; press + to add</string>
-    <string name="core_categories_17">Edit</string>
-    <string name="core_categories_18">Delete</string>
-    <string name="core_categories_19">Category</string>
-    <string name="core_categories_20">Name</string>
-    <string name="core_categories_21">Icon identifier</string>
-    <string name="core_categories_22">Color #RRGGBB</string>
-    <string name="core_categories_23">Kind is inherited from the parent or current list; existing category kind stays unchanged.</string>
-    <string name="core_categories_24">Transactions, subscriptions and templates keep their parent category; subcategory references are cleared.</string>
-    <string name="core_categories_25">Cancel</string>
-    <string name="core_categories_26">Transfer target</string>
-    <string name="core_categories_27">Default fallback category</string>
-    <string name="core_categories_28">Delete and transfer</string>
-    <string name="core_categories_saving_navigation">Saving; wait before leaving or switching.</string>
+    <string name="cat_all">All</string>
+    <string name="cat_empty">No categories yet</string>
+    <string name="cat_hidden">Hidden</string>
+    <string name="cat_builtin">Built-in</string>
+    <string name="cat_custom">Custom</string>
+    <string name="cat_hide">Hide</string>
+    <string name="cat_show">Show</string>
+    <string name="cat_reset">Reset to default</string>
+    <string name="cat_fallback_note">Transactions that fit nowhere else go here, so it can\'t be hidden.</string>
+    <string name="cat_subcategories">Subcategories</string>
+    <string name="cat_no_subcategories">No subcategories</string>
+    <string name="cat_transactions">%1$s transactions, including the recycle bin</string>
+    <string name="cat_name">Name</string>
+    <string name="cat_edit">Edit category</string>
+    <string name="cat_edit_sub">Edit subcategory</string>
+    <string name="cat_delete_note">%1$s transactions (including the recycle bin), subscriptions and templates move to the category you choose. Its budget limits and subcategories are deleted.</string>
+    <string name="cat_move_to">Move them to</string>
+    <string name="cat_fallback_target">Other (default)</string>
+    <string name="cat_delete_confirm">Delete and move</string>
+    <string name="cat_sub_delete_note">Transactions, subscriptions and templates keep the parent category; only the subcategory is cleared.</string>
+    <string name="cat_saving">Saving; wait before leaving or switching.</string>
 </resources>

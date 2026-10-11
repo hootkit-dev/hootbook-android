@@ -2,4 +2,6 @@
 <resources>
     <string name="ui_clear">Clear</string>
     <string name="home_activity">Activity</string>
+    <string name="ui_move_up">Move up</string>
+    <string name="ui_move_down">Move down</string>
 </resources>

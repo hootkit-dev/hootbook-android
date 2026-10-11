@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="core_visual_icon">Choose icon</string>
-    <string name="core_visual_color">Choose color</string>
+    <string name="core_visual_icon">Icon</string>
+    <string name="core_visual_color">Color</string>
     <string name="core_full_conversion_missing">Conversion unavailable; original currency value is retained</string>
     <string name="core_full_open_broker">Open linked broker %1$s</string>
     <string name="core_full_cash_history">Cash balance history</string>
