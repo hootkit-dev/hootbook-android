@@ -182,7 +182,7 @@
     <string name="account_other_currencies">Other currencies</string>
     <string name="account_add_currency">Add currency</string>
     <string name="account_add_currency_title">Add %1$s to this account?</string>
-    <string name="account_add_currency_text">A currency can’t be removed once added. It keeps its own balance and transactions.</string>
+    <string name="account_add_currency_text">It keeps its own balance, and can be removed later only while no transactions use it.</string>
     <string name="account_add_currency_confirm">Add</string>
     <string name="account_add_named_currency">Add %1$s</string>
     <string name="transfer_target_lacks_currency">%1$s has no %2$s: add it, or send to one of its currencies and enter the amount received.</string>

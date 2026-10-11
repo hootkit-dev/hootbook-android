@@ -553,7 +553,7 @@ class CoreTransactionsViewModel @Inject constructor(
         val store = attachmentStore ?: return
         if (state.value.exporting) return
         val snapshot = state.value; val revision = changes.revisions.value
-        mutableState.update { it.copy(exporting = true, error = null) }
+        mutableState.update { it.copy(exporting = true, error = null, exportFile = null) }
         exportJob = viewModelScope.launch {
             var file: File? = null
             var completed = false

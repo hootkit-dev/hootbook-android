@@ -45,6 +45,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.MenuAction
 import io.github.hootkit_dev.hootbook.presentation.ui.components.OverflowMenu
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionSpacing
+import io.github.hootkit_dev.hootbook.presentation.ui.components.StatusLabel
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TooltipIconButton
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.utils.DateFormats
@@ -152,15 +153,6 @@ private fun AccountSummary(state: CoreAccountsUiState, account: Account) {
             if (account.isDefault) StatusLabel(stringResource(R.string.account_status_default))
             if (account.archived) StatusLabel(stringResource(R.string.account_status_archived))
         }
-    }
-}
-
-/** A non-interactive status, such as Default or Archived. */
-@Composable
-internal fun StatusLabel(text: String) {
-    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
-        Text(text, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }
 

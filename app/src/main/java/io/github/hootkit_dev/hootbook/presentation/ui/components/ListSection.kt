@@ -30,9 +30,9 @@ fun ListSection(
     modifier: Modifier = Modifier,
     title: String? = null,
     action: (@Composable () -> Unit)? = null,
-    content: ListSectionScope.() -> Unit,
+    content: @Composable ListSectionScope.() -> Unit,
 ) {
-    val rows = ListSectionScope().apply(content).rows
+    val rows = ListSectionScope().also { it.content() }.rows
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (title != null) SectionTitle(title, action = action)
         rows.forEachIndexed { index, row -> row(ListItemPosition.from(index, rows.size).toShape()) }

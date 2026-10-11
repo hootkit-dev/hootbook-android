@@ -52,16 +52,20 @@ val ScreenContentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp,
 val SectionSpacing = 24.dp
 
 /**
- * A secondary screen: a large flexible app bar that collapses as the content scrolls, a back
- * button, the screen's actions, and at most one FAB. [content] receives the scaffold padding.
+ * A screen with a large flexible app bar that collapses as the content scrolls, the screen's
+ * actions, and at most one FAB. [onBack] null means a top-level tab without a back button;
+ * [backIcon] replaces the back arrow (a close ✕ to leave selection mode, for example).
  */
 @Composable
 fun SecondaryScreen(
     title: String,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    backIcon: ImageVector? = null,
+    backLabel: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val large = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -72,12 +76,18 @@ fun SecondaryScreen(
                 title = title,
                 scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(),
                 scrollBehaviorLarge = large,
-                hasBackButton = true,
-                navigationContent = { NavigationContent(onBack) },
+                hasBackButton = onBack != null,
+                navigationContent = {
+                    if (onBack != null) {
+                        if (backIcon != null) TooltipIconButton(backIcon, backLabel ?: stringResource(R.string.cd_navigate_back), onBack)
+                        else NavigationContent(onBack)
+                    }
+                },
                 actionContent = { Row(verticalAlignment = Alignment.CenterVertically) { actions() } },
             )
         },
         floatingActionButton = floatingActionButton,
+        snackbarHost = snackbarHost,
         content = content,
     )
 }
@@ -167,13 +177,17 @@ fun FormSheet(
     confirmEnabled: Boolean = true,
     confirmLabel: String = stringResource(R.string.save),
     error: String? = null,
+    titleAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     HootbookModalBottomSheet(
         onDismissRequest = { if (!busy) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
-        Text(title, Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp), style = MaterialTheme.typography.headlineSmall)
+        Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp).padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall)
+            titleAction?.invoke()
+        }
         Column(
             Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -188,5 +202,15 @@ fun FormSheet(
             TextButton(onClick = onDismiss, enabled = !busy, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.cancel)) }
             Button(onClick = onConfirm, enabled = !busy && confirmEnabled, shapes = ButtonDefaults.shapes()) { Text(confirmLabel) }
         }
+    }
+}
+
+/** A non-interactive status, such as Default, Archived or Deleted. */
+@Composable
+fun StatusLabel(text: String, modifier: Modifier = Modifier, error: Boolean = false) {
+    Surface(modifier, shape = MaterialTheme.shapes.small,
+        color = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer) {
+        Text(text, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelLarge,
+            color = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }

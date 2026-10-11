@@ -173,7 +173,7 @@
     <string name="account_other_currencies">其他币种</string>
     <string name="account_add_currency">添加币种</string>
     <string name="account_add_currency_title">为这个账户添加 %1$s？</string>
-    <string name="account_add_currency_text">币种添加后不能删除。它有自己的余额和交易记录。</string>
+    <string name="account_add_currency_text">它有自己的余额；之后只有在没有交易使用时才能移除。</string>
     <string name="account_add_currency_confirm">添加</string>
     <string name="account_add_named_currency">添加 %1$s</string>
     <string name="transfer_target_lacks_currency">%1$s 没有 %2$s：可以为它添加 %2$s，或转入它已有的币种并填写到账金额。</string>

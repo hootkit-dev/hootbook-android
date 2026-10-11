@@ -31,7 +31,7 @@ class CoreTransactionViewsTest {
         rule.setContent { HootbookTheme(dynamicColor = false) {
             TransactionItem(row, currentAccountId = "target/id")
         } }
-        rule.onNodeWithText("+ " + CoreMoneyPresentation.format(row.toAmount, "USD")).assertIsDisplayed()
+        rule.onNodeWithText("+" + CoreMoneyPresentation.format(row.toAmount, "USD")).assertIsDisplayed()
         rule.onNodeWithText(CoreMoneyPresentation.format(row.amount, "CNY"), substring = true).assertDoesNotExist()
     }
 

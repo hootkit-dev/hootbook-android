@@ -86,6 +86,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
     val current by nav.currentBackStackEntryAsState()
     val windowLayout = rememberWindowLayout()
     val view = LocalView.current
+    val hostChrome = remember { HostChromeState() }
     val start = remember { if (prefs.onboardingFinished) "home" else "onboarding" }
     var recordHint by rememberSaveable { mutableStateOf<String?>(null) }
     var schema by remember(session) { mutableStateOf<UInt?>(null) }
@@ -120,15 +121,15 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
             }
             go(route); ingress.consumed(entry.token)
         }
-        CompositionLocalProvider(LocalWindowLayout provides windowLayout) {
+        CompositionLocalProvider(LocalWindowLayout provides windowLayout, LocalHostChrome provides hostChrome) {
             val route = current?.destination?.route.orEmpty().substringBefore('?')
             val entryScreen = current?.arguments?.let { args ->
                 listOf("newKind", "transactionId", "subscriptionId", "templateId").any { args.getString(it) != null }
             } == true
             val mainScreen = route in setOf("home", "analytics", "transactions") && !entryScreen
             val showRail = windowLayout.useNavigationRail && route != "onboarding" && !entryScreen
-            val showBottomBar = !windowLayout.useNavigationRail && mainScreen
-            val showAdd = !entryScreen && (route in setOf("home", "transactions", "subscriptions") ||
+            val showBottomBar = !windowLayout.useNavigationRail && mainScreen && hostChrome.suppressed == 0
+            val showAdd = !entryScreen && hostChrome.suppressed == 0 && (route in setOf("home", "transactions", "subscriptions") ||
                 (route == "budgets" && current?.arguments?.getString("id") != null))
             Row(Modifier.fillMaxSize()) {
                 if (showRail) HootbookNavigationRail(navController = nav, currentDestination = current?.destination, visible = true)
