@@ -145,7 +145,7 @@ fun DeleteMultipleTransactionsDialog(
 fun DeleteMultiplePersonsDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
-    selectedPersonIds: Set<Long>,
+    selectedPersonIds: Set<String>,
     blurEffects: Boolean = LocalBlurEffects.current,
     hazeState: HazeState = remember { HazeState() },
 ) {
@@ -187,7 +187,7 @@ fun DeleteMultiplePersonsDialog(
 fun DeleteMultipleRecordsDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
-    selectedRecordIds: Set<Long>,
+    selectedRecordIds: Set<String>,
     blurEffects: Boolean = LocalBlurEffects.current,
     hazeState: HazeState = remember { HazeState() },
 ) {

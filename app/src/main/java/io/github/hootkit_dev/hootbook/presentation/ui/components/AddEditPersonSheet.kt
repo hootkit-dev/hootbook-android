@@ -78,6 +78,8 @@ val AVATAR_COLORS = listOf(
 fun AddEditPersonSheet(
     personToEdit: Person? = null,
     attachmentStore: CoreAttachmentStore,
+    saving: Boolean = false,
+    error: String? = null,
     onDismiss: () -> Unit,
     onSave: (name: String, phone: String?, notes: String?, color: String, avatar: String?, category: PersonRelation?) -> Unit
 ) {
@@ -141,7 +143,7 @@ fun AddEditPersonSheet(
         }
 
     HootbookModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!saving) onDismiss() },
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
@@ -162,6 +164,7 @@ fun AddEditPersonSheet(
                     fontWeight = FontWeight.Bold
                 )
 
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 importError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 // Avatar preview
                 val colorInt = try {
@@ -319,6 +322,7 @@ fun AddEditPersonSheet(
                 contentAlignment = Alignment.BottomCenter
             ) {
                 Button(
+                    enabled = !saving && !importing,
                     onClick = {
                         if (name.isBlank()) {
                             nameError = true
