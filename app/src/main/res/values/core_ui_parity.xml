@@ -3,5 +3,5 @@
     <string name="core_parity_subscription_attachments">This Core version doesn’t support attachments on subscriptions. You can attach files when recording a payment.</string>
     <string name="core_parity_category_description">Category descriptions aren’t supported by this Core version.</string>
     <string name="core_parity_investment_total">Core provides each account value separately; a combined investment-only total isn’t available.</string>
-    <string name="core_parity_debt_bulk">Selected items are deleted separately using Core. If a deletion fails, earlier deletions remain and the remaining items stay selected. This cannot be undone.</string>
+    <string name="core_parity_debt_bulk">The selected items are deleted one by one. If one fails, those already deleted stay deleted and the rest stay selected. This can\'t be undone.</string>
 </resources>

@@ -12,9 +12,9 @@
   <string name="core_detail_choose_date">Choose date</string>
   <string name="core_detail_choose_time">Choose time</string>
   <string name="core_detail_clear">Clear</string>
-  <string name="core_detail_contact">Choose phone contact</string>
+  <string name="core_detail_contact">Pick from contacts</string>
   <string name="core_detail_dial">Dial phone number</string>
-  <string name="core_detail_avatar">Choose person avatar</string>
+  <string name="core_detail_avatar">Choose photo</string>
   <string name="core_detail_attachments">Add attachment</string>
   <string name="core_detail_open_attachment">Open attachment</string>
   <string name="core_detail_remove_attachment">Remove attachment</string>

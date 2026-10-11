@@ -165,3 +165,30 @@ private fun PickerField(
             .clickable(enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick))
     }
 }
+
+/** One choice from a short list: a read-only outlined field with the Material exposed dropdown. */
+@Composable
+fun <T> SelectField(
+    label: String,
+    value: String,
+    options: List<Pair<T, String>>,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    supporting: String? = null,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    androidx.compose.material3.ExposedDropdownMenuBox(expanded = expanded && enabled, onExpandedChange = { if (enabled) expanded = it }, modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value, onValueChange = {}, readOnly = true, enabled = enabled, singleLine = true,
+            label = { Text(label) }, supportingText = supporting?.let { { Text(it) } },
+            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (option, text) ->
+                androidx.compose.material3.DropdownMenuItem(text = { Text(text) }, onClick = { expanded = false; onSelect(option) })
+            }
+        }
+    }
+}
