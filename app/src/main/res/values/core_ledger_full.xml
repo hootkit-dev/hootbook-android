@@ -37,14 +37,6 @@
     <string name="core_full_delete_note">Core soft-deletes the selected IDs and returns an undo token. Account balances update in Core.</string>
     <string name="core_full_purge_note">Permanently delete the selected recycled transactions? This cannot be undone. Core rejects non-deleted transactions.</string>
     <string name="core_full_purge_all_note">Delete ALL recycled transactions, not just this page or current filter? This has no undo.</string>
-    <string name="core_full_confirm">Confirm</string>
-    <string name="core_full_bulk_note">Blank date/time/amount keeps each original. Date preserves time; time preserves date. Core scales cross-currency transfer destination amounts and validates categories for every selected row.</string>
-    <string name="core_full_bulk_date">Replace date YYYY-MM-DD</string>
-    <string name="core_full_bulk_time">Replace time HH:MM:SS</string>
-    <string name="core_full_bulk_amount">Replace amount</string>
-    <string name="core_full_bulk_category">Replace category (setting parent clears old subcategory)</string>
-    <string name="core_full_keep_category">Keep each original category</string>
-    <string name="core_full_replace_notes">Replace notes, including clearing when blank</string>
     <string name="core_full_notes">Notes</string>
     <string name="core_full_cycle_every">Repeat every N units</string>
     <string name="core_full_day">Day</string>

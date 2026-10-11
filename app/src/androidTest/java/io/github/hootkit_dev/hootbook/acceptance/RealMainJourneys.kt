@@ -406,7 +406,7 @@ class RealMainJourneys {
         val c=f.core();val seed=f.seed();val ids=mutableListOf<String>()
         c.ledger().use{api->for(index in 0 until 206)ids+=api.add(f.draft(null,seed.category,"${f.tag} Page $index"))}
         home();click(R.string.core_complete_transactions);field(R.string.search_transactions,"${f.tag} Page")
-        click(R.string.more_options);click(R.string.select_all);click(R.string.core_full_bulk_edit);click(R.string.core_full_bulk_edit);field(R.string.core_full_bulk_amount,"1.25");click(R.string.core_full_confirm)
+        click(R.string.more_options);click(R.string.select_all);click(R.string.core_full_bulk_edit);click(R.string.core_full_bulk_edit);field(R.string.bulk_amount,"1.25");click(R.string.save)
         awaitCondition{runBlocking{c.ledger().use{api->ids.all{api.get(it).amount.compareTo(BigDecimal("1.25"))==0}}}}
         click(R.string.core_full_export_all_pages)
         awaitCondition{nodes().any{it.text?.toString()==f.context.getString(R.string.core_full_export_count,"206")}}

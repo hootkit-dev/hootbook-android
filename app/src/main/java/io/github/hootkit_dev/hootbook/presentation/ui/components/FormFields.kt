@@ -174,20 +174,43 @@ fun DateTimeField(
     )
     if (pickingDate) DayPicker(dateTime?.toLocalDate(), { pickingDate = false }) { pickedDay = it }
     pickedDay?.let { day ->
-        val initial = dateTime?.toLocalTime() ?: LocalTime.now()
-        val clock = rememberTimePickerState(initialHour = initial.hour, initialMinute = initial.minute, is24Hour = true)
-        AlertDialog(
-            onDismissRequest = { pickedDay = null },
-            containerColor = HootbookDialogDefaults.containerColor,
-            text = { TimePicker(clock) },
-            dismissButton = { DialogDismissButton(stringResource(R.string.cancel), { pickedDay = null }) },
-            confirmButton = {
-                DialogConfirmButton(stringResource(R.string.ok), {
-                    onValueChange(day.atTime(clock.hour, clock.minute).toString()); pickedDay = null
-                })
-            },
-        )
+        ClockPicker(dateTime?.toLocalTime(), { pickedDay = null }) { onValueChange(day.atTime(it).toString()) }
     }
+}
+
+/** A time of day from the time picker. [value] is HH:mm (or HH:mm:ss) or blank. */
+@Composable
+fun TimeField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    allowClear: Boolean = true,
+    emptyText: String = "",
+) {
+    val time = runCatching { LocalTime.parse(value) }.getOrNull()
+    var picking by remember { mutableStateOf(false) }
+    PickerField(
+        text = time?.let { DateFormats.time(it) } ?: emptyText, label = label, enabled = enabled,
+        icon = { Icon(Icons.Rounded.Schedule, null) },
+        onClear = if (allowClear && time != null) ({ onValueChange("") }) else null,
+        onClick = { picking = true }, modifier = modifier,
+    )
+    if (picking) ClockPicker(time, { picking = false }) { onValueChange(it.toString()) }
+}
+
+@Composable
+private fun ClockPicker(initial: LocalTime?, onDismiss: () -> Unit, onPicked: (LocalTime) -> Unit) {
+    val start = initial ?: LocalTime.now()
+    val clock = rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = HootbookDialogDefaults.containerColor,
+        text = { TimePicker(clock) },
+        dismissButton = { DialogDismissButton(stringResource(R.string.cancel), onDismiss) },
+        confirmButton = { DialogConfirmButton(stringResource(R.string.ok), { onPicked(LocalTime.of(clock.hour, clock.minute)); onDismiss() }) },
+    )
 }
 
 @Composable

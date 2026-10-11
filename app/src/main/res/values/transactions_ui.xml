@@ -88,4 +88,15 @@
     <string name="txn_subscription_payment">Pays a subscription</string>
     <string name="txn_cancel_saving">Stop saving</string>
     <string name="txn_currency_add">Add currency…</string>
+    <string name="bulk_keep">Keep as is</string>
+    <string name="bulk_note">Fields left as they are keep each transaction’s own value.</string>
+    <string name="bulk_date">Date</string>
+    <string name="bulk_time">Time</string>
+    <string name="bulk_amount">Amount</string>
+    <string name="bulk_empty_keeps">Leave empty to keep each amount</string>
+    <string name="bulk_category">Category</string>
+    <string name="bulk_subcategory">Subcategory</string>
+    <string name="bulk_no_subcategory">None</string>
+    <string name="bulk_replace_notes">Replace notes</string>
+    <string name="bulk_notes_help">Leave empty to clear the notes</string>
 </resources>

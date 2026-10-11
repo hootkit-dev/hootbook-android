@@ -88,4 +88,15 @@
     <string name="txn_subscription_payment">这是一笔订阅付款</string>
     <string name="txn_cancel_saving">停止保存</string>
     <string name="txn_currency_add">添加货币…</string>
+    <string name="bulk_keep">保持不变</string>
+    <string name="bulk_note">未修改的项保留每笔交易原来的值。</string>
+    <string name="bulk_date">日期</string>
+    <string name="bulk_time">时间</string>
+    <string name="bulk_amount">金额</string>
+    <string name="bulk_empty_keeps">留空则保留各自的金额</string>
+    <string name="bulk_category">分类</string>
+    <string name="bulk_subcategory">子分类</string>
+    <string name="bulk_no_subcategory">无</string>
+    <string name="bulk_replace_notes">替换备注</string>
+    <string name="bulk_notes_help">留空则清除备注</string>
 </resources>

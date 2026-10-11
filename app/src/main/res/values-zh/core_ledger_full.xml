@@ -37,14 +37,6 @@
     <string name="core_full_delete_note">Core 软删除所选 ID 并返回撤销凭据；账户余额由 Core 更新。</string>
     <string name="core_full_purge_note">永久删除所选回收站交易？此操作没有撤销。Core 会拒绝未软删除的交易。</string>
     <string name="core_full_purge_all_note">永久删除全部回收站交易，而不只是当前页或筛选结果？此操作没有撤销。</string>
-    <string name="core_full_confirm">确认</string>
-    <string name="core_full_bulk_note">日期、时间、金额留空保留原值。改日期保留时刻，改时刻保留日期。跨币转账到账金额的比例调整与所有分类校验都由 Core 完成。</string>
-    <string name="core_full_bulk_date">替换日期 YYYY-MM-DD</string>
-    <string name="core_full_bulk_time">替换时刻 HH:MM:SS</string>
-    <string name="core_full_bulk_amount">替换金额</string>
-    <string name="core_full_bulk_category">替换分类（指定父分类会清空原子分类）</string>
-    <string name="core_full_keep_category">保留各自原分类</string>
-    <string name="core_full_replace_notes">替换备注，包括留空清除</string>
     <string name="core_full_notes">备注</string>
     <string name="core_full_cycle_every">每 N 个单位重复</string>
     <string name="core_full_day">日</string>
