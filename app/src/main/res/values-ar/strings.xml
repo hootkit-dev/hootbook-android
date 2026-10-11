@@ -11,14 +11,8 @@
     <string name="security_section">الأمان</string>
     <string name="app_lock">قفل التطبيق</string>
     <string name="app_lock_biometric_sub">حافظ على بياناتك باستخدام المصادقة البيومترية</string>
-    <string name="lock_timeout">مهلة القفل</string>
-    <string name="lock_timeout_immediate">القفل فورًا عند انتقال التطبيق إلى الخلفية</string>
-    <string name="lock_timeout_1min">القفل بعد دقيقة واحدة في الخلفية</string>
-    <string name="lock_timeout_minutes">القفل بعد %1$d دقائق في الخلفية</string>
     <string name="export_data">تصدير البيانات</string>
-    <string name="immediately">فورًا</string>
     <string name="one_minute">1 دقيقة</string>
-    <string name="minutes_format">%1$d دقائق</string>
     <string name="cancel">إلغاء</string>
     <string name="export">تصدير</string>
     <string name="select_data_to_backup">حدد البيانات للنسخ الاحتياطي:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">النظام</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">المعاملات القادمة</string>
-    <string name="upcoming_transactions_desc">احصل على تذكيرات بالمدفوعات القادمة</string>
     <string name="home_title">الرئيسية</string>
     <string name="add_transaction_subscription_cd">إضافة معاملة أو اشتراك</string>
     <string name="selected_cd">المحدد</string>

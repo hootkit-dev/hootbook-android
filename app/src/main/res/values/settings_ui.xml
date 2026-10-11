@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_time">Reminder time</string>
+    <string name="notif_time_help">Reminders go out at this time each day</string>
+    <string name="notif_inexact">Android may deliver reminders a little late.</string>
+    <string name="notif_exact_settings">Allow exact alarms</string>
+    <string name="notif_subscriptions">Subscriptions</string>
+    <string name="notif_due">Due reminders</string>
+    <string name="notif_due_help">Remind me of subscriptions due today or tomorrow</string>
+    <string name="notif_next_due">Next due %1$s</string>
+    <string name="notif_daily">Daily</string>
+    <string name="notif_daily_record">Recording reminder</string>
+    <string name="notif_daily_record_help">When nothing is due, remind me to record the day</string>
+    <string name="notif_permission_title">Notifications are off</string>
+    <string name="notif_permission_text">Allow Hootbook to send notifications so reminders can reach you.</string>
+    <string name="notif_allow">Allow notifications</string>
+    <string name="notif_settings_unavailable">This device does not offer that system setting.</string>
+    <string name="privacy_lock_after">Lock after</string>
+    <string name="privacy_lock_immediately">Immediately on leaving the app</string>
+    <string name="privacy_lock_minutes">%1$d min after leaving the app</string>
+</resources>

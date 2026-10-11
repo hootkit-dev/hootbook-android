@@ -11,14 +11,8 @@
     <string name="security_section">امنیت</string>
     <string name="app_lock">قفل برنامه</string>
     <string name="app_lock_biometric_sub">از داده‌های خود با احراز هویت بیومتریک محافظت کنید</string>
-    <string name="lock_timeout">زمان‌بندی قفل</string>
-    <string name="lock_timeout_immediate">همین حالا هنگام رفتن برنامه به پس‌زمینه قفل شود</string>
-    <string name="lock_timeout_1min">بعد از ۱ دقیقه در پس‌زمینه قفل شود</string>
-    <string name="lock_timeout_minutes">بعد از %1$d دقیقه در پس‌زمینه قفل شود</string>
     <string name="export_data">صدور داده‌ها</string>
-    <string name="immediately">همین حالا</string>
     <string name="one_minute">۱ دقیقه</string>
-    <string name="minutes_format">%1$d دقیقه</string>
     <string name="cancel">لغو</string>
     <string name="export">خروجی گرفتن</string>
     <string name="select_data_to_backup">انتخاب داده برای پشتیبان‌گیری:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">سیستم</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">مدرن مونو</string>
-    <string name="upcoming_transactions_section">تراکنش‌های آینده</string>
-    <string name="upcoming_transactions_desc">یادآوری برای پرداخت‌های آینده دریافت کنید</string>
     <string name="home_title">خانه</string>
     <string name="add_transaction_subscription_cd">اضافه کردن تراکنش یا اشتراک</string>
     <string name="selected_cd">انتخاب‌شده</string>

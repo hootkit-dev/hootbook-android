@@ -11,14 +11,8 @@
     <string name="security_section">Безпека</string>
     <string name="app_lock">Блокування програм</string>
     <string name="app_lock_biometric_sub">Захистіть свої дані біометричною аутентифікацією</string>
-    <string name="lock_timeout">Час блокування</string>
-    <string name="lock_timeout_immediate">Блокувати одразу коли додаток переходить у фон</string>
-    <string name="lock_timeout_1min">Блокувати після 1 хвилини у фоновому режимі</string>
-    <string name="lock_timeout_minutes">Блокувати після %1$d хвилин у фоновому режимі</string>
     <string name="export_data">Експорт даних</string>
-    <string name="immediately">Негайно</string>
     <string name="one_minute">1 хвилина</string>
-    <string name="minutes_format">%1$d хвилин</string>
     <string name="cancel">Скасувати</string>
     <string name="export">Експорт</string>
     <string name="select_data_to_backup">Виберіть дані для резервного копіювання:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Системний</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Майбутні транзакції</string>
-    <string name="upcoming_transactions_desc">Отримуйте нагадування про майбутні платежі</string>
     <string name="home_title">Головна</string>
     <string name="add_transaction_subscription_cd">Додати транзакцію або підписку</string>
     <string name="selected_cd">Вибрано</string>

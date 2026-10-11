@@ -6,4 +6,5 @@
     <string name="ui_move_down">Move down</string>
     <string name="ui_yes">Yes</string>
     <string name="ui_no">No</string>
+    <string name="appearance_other">Other</string>
 </resources>

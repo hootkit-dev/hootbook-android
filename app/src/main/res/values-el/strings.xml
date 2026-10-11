@@ -11,14 +11,8 @@
     <string name="security_section">Ασφάλεια</string>
     <string name="app_lock">Κλείδωμα Εφαρμογής</string>
     <string name="app_lock_biometric_sub">Προστατέψτε τα δεδομένα σας με βιομετρική αυθεντικοποίηση</string>
-    <string name="lock_timeout">Χρονικό Όριο Κλειδώματος</string>
-    <string name="lock_timeout_immediate">Κλείδωμα αμέσως όταν η εφαρμογή πηγαίνει στο παρασκήνιο</string>
-    <string name="lock_timeout_1min">Κλείδωμα μετά από 1 λεπτό στο παρασκήνιο</string>
-    <string name="lock_timeout_minutes">Κλείδωμα μετά από %1$d λεπτά στο παρασκήνιο</string>
     <string name="export_data">Εξαγωγή Δεδομένων</string>
-    <string name="immediately">Αμέσως</string>
     <string name="one_minute">1 λεπτό</string>
-    <string name="minutes_format">%1$d λεπτά</string>
     <string name="cancel">Ακύρωση</string>
     <string name="export">Εξαγωγή</string>
     <string name="select_data_to_backup">Επιλέξτε δεδομένα για δημιουργία αντιγράφου ασφαλείας:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Σύστημα</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Μοντέρνο Μονό</string>
-    <string name="upcoming_transactions_section">Επερχόμενες Συναλλαγές</string>
-    <string name="upcoming_transactions_desc">Λάβετε υπενθυμίσεις για μελλοντικές πληρωμές</string>
     <string name="home_title">Αρχική</string>
     <string name="add_transaction_subscription_cd">Προσθήκη Συναλλαγής ή Συνδρομής</string>
     <string name="selected_cd">Επιλεγμένο</string>

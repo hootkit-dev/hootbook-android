@@ -11,14 +11,8 @@
     <string name="security_section">Sikkerhed</string>
     <string name="app_lock">App Lås</string>
     <string name="app_lock_biometric_sub">Beskyt dine data med biometrisk godkendelse</string>
-    <string name="lock_timeout">Lås Timeout</string>
-    <string name="lock_timeout_immediate">Lås med det samme, når appen går i baggrunden</string>
-    <string name="lock_timeout_1min">Lås efter 1 minut i baggrunden</string>
-    <string name="lock_timeout_minutes">Lås efter %1$d minutter i baggrunden</string>
     <string name="export_data">Eksporter Data</string>
-    <string name="immediately">Straks</string>
     <string name="one_minute">1 minut</string>
-    <string name="minutes_format">%1$d minutter</string>
     <string name="cancel">Annuller</string>
     <string name="export">Eksporter</string>
     <string name="select_data_to_backup">Vælg data at sikkerhedskopiere:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">System</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Kommende transaktioner</string>
-    <string name="upcoming_transactions_desc">Få påmindelser om kommende betalinger</string>
     <string name="home_title">Hjem</string>
     <string name="add_transaction_subscription_cd">Tilføj transaktion eller abonnement</string>
     <string name="selected_cd">Valgt</string>

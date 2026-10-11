@@ -11,14 +11,8 @@
     <string name="security_section">Sigurnost</string>
     <string name="app_lock">Zaključavanje aplikacije</string>
     <string name="app_lock_biometric_sub">Zaštitite svoje podatke biometrijskom autentifikacijom</string>
-    <string name="lock_timeout">Vrijeme zaključavanja</string>
-    <string name="lock_timeout_immediate">Zaključaj odmah kada aplikacija ode u pozadinu</string>
-    <string name="lock_timeout_1min">Zaključaj nakon 1 minute u pozadini</string>
-    <string name="lock_timeout_minutes">Zaključaj nakon %1$d minuta u pozadini</string>
     <string name="export_data">Izvezi podatke</string>
-    <string name="immediately">Odmah</string>
     <string name="one_minute">1 minuta</string>
-    <string name="minutes_format">%1$d minuta</string>
     <string name="cancel">Otkaži</string>
     <string name="export">Izvoz</string>
     <string name="select_data_to_backup">Odaberite podatke za izradu sigurnosne kopije:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sustav</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Moderno Mono</string>
-    <string name="upcoming_transactions_section">Nadolazeće transakcije</string>
-    <string name="upcoming_transactions_desc">Primajte podsjetnike za nadolazeće uplate</string>
     <string name="home_title">Početna</string>
     <string name="add_transaction_subscription_cd">Dodaj transakciju ili pretplatu</string>
     <string name="selected_cd">Odabrano</string>

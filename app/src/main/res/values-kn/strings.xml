@@ -11,14 +11,8 @@
     <string name="security_section">ಸುರಕ್ಷತೆ</string>
     <string name="app_lock">ಆಪ್ ಲಾಕ್</string>
     <string name="app_lock_biometric_sub">ಜೈವೀಕ ಪರಿಶೀಲನೆಯಿಂದ ನಿಮ್ಮ ದತ್ತಾಂಶವನ್ನು ರಕ್ಷಿಸಿ</string>
-    <string name="lock_timeout">ಲಾಕ್ ಸಮಯ ಮೀರಿದಾಗ</string>
-    <string name="lock_timeout_immediate">ಆಪ್ ಹಿನ್ನೆಲೆಗೆ ಹೋಗಿದಂತೆ ತಕ್ಷಣ ಲಾಕ್ ಮಾಡಿ</string>
-    <string name="lock_timeout_1min">ಹಿನ್ನೆಲೆ ವೇಳೆಯಲ್ಲಿ 1 ನಿಮಿಷದ ನಂತರ ಲಾಕ್ ಮಾಡಿ</string>
-    <string name="lock_timeout_minutes">ಹಿನ್ನೆಲೆ ವೇಳೆಯಲ್ಲಿ %1$d ನಿಮಿಷಗಳ ನಂತರ ಲಾಕ್ ಮಾಡಿ</string>
     <string name="export_data">ದತ್ತಾಂಶ ರಫ್ತು ಮಾಡಿ</string>
-    <string name="immediately">ತಕ್ಷಣ</string>
     <string name="one_minute">1 ನಿಮಿಷ</string>
-    <string name="minutes_format">%1$d ನಿಮಿಷಗಳು</string>
     <string name="cancel">ರದ್ದುಗೊಳಿಸಿ</string>
     <string name="export">ರಫ್ತು</string>
     <string name="select_data_to_backup">ಬ್ಯಾಕಪ್ ಮಾಡಲು ಡೇಟಾವನ್ನು ಆಯ್ಕೆಮಾಡಿ:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">ಸಿಸ್ಟಂ</string>
     <string name="font_snpro">SN ಪ್ರೋ</string>
     <string name="font_snpro_sub">ಆಧುನಿಕ ಮೋನೋ</string>
-    <string name="upcoming_transactions_section">ಬರುವವು ವ್ಯವಹಾರಗಳು</string>
-    <string name="upcoming_transactions_desc">ಬರುವ ಪಾವತಿಗಳಿಗೆ ನೆನಪಿನ ಸೂಚನೆಗಳನ್ನು ಪಡೆಯಿರಿ</string>
     <string name="home_title">ಮನೆ</string>
     <string name="add_transaction_subscription_cd">ವಹಿವाटक ಅಥವಾ ಚಂದಾದಾರಿಕೆಯನ್ನು ಸೇರಿಸಿ</string>
     <string name="selected_cd">ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ</string>

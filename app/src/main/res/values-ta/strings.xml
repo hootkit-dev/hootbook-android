@@ -11,14 +11,8 @@
     <string name="security_section">பாதுகாப்பு</string>
     <string name="app_lock">ஆப் பூட்டு</string>
     <string name="app_lock_biometric_sub">உங்கள் தரவை உயிர்மெய் அங்கீகாரம் மூலம் பாதுகாக்கவும்</string>
-    <string name="lock_timeout">பூட்டு நேரம் முடிவுக்கு</string>
-    <string name="lock_timeout_immediate">ஆப் பின்னணி நிலைக்கு சென்றவுடன் உடனடியாக பூட்டு</string>
-    <string name="lock_timeout_1min">பின்னணியில் 1 நிமிடம் கழித்து பூட்டு</string>
-    <string name="lock_timeout_minutes">பின் %1$d நிமிடங்களில் பூட்டு</string>
     <string name="export_data">தரவை ஏற்றுமதி செய்யவும்</string>
-    <string name="immediately">உடனடியாக</string>
     <string name="one_minute">1 நிமிடம்</string>
-    <string name="minutes_format">%1$d நிமிடங்கள்</string>
     <string name="cancel">ரத்து</string>
     <string name="export">ரஞ்சியம்</string>
     <string name="select_data_to_backup">பேக்கப் செய்ய தரவுகளைத் தேர்ந்தெடுக்கவும்:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">சிஸ்டம்</string>
     <string name="font_snpro">எஸ்என் ப்ரோ</string>
     <string name="font_snpro_sub">நவீன மோனோ</string>
-    <string name="upcoming_transactions_section">வரவிருக்கும் பரிவர்த்தனைகள்</string>
-    <string name="upcoming_transactions_desc">வரவிருக்கும் கட்டணங்களுக்கான நினைவூட்டல்களைப் பெறவும்</string>
     <string name="home_title">முகப்பு</string>
     <string name="add_transaction_subscription_cd">பரிவர்த்தனை அல்லது சந்தாவைச் சேர்க்கவும்</string>
     <string name="selected_cd">தேர்ந்தெடுக்கப்பட்டது</string>

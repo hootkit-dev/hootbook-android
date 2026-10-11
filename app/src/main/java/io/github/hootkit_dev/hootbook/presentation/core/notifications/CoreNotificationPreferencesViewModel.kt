@@ -39,5 +39,6 @@ class CoreNotificationPreferencesViewModel @Inject constructor(val prefs:CoreUiP
         finally{working.value=false}
     }}
     fun mute(id:String,muted:Boolean)=update{it.copy(mutedSubscriptionIds=if(muted)it.mutedSubscriptionIds+id else it.mutedSubscriptionIds-id)}
+    fun clearError(){failure.value=null}
     fun refreshPlatform(){coordinator.refresh()}
 }

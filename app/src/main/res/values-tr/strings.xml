@@ -11,14 +11,8 @@
     <string name="security_section">Güvenlik</string>
     <string name="app_lock">Uygulama Kilidi</string>
     <string name="app_lock_biometric_sub">Verilerinizi biyometrik doğrulama ile koruyun</string>
-    <string name="lock_timeout">Kilit Zaman Aşımı</string>
-    <string name="lock_timeout_immediate">Uygulama arka plana geçtiğinde hemen kilitle</string>
-    <string name="lock_timeout_1min">Arka planda 1 dakika sonra kilitle</string>
-    <string name="lock_timeout_minutes">Arka planda %1$d dakika sonra kilitle</string>
     <string name="export_data">Veriyi Dışa Aktar</string>
-    <string name="immediately">Hemen</string>
     <string name="one_minute">1 dakika</string>
-    <string name="minutes_format">%1$d dakika</string>
     <string name="cancel">İptal</string>
     <string name="export">Dışa Aktar</string>
     <string name="select_data_to_backup">Yedeklenecek verileri seçin:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sistem</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Gelecek İşlemler</string>
-    <string name="upcoming_transactions_desc">Yaklaşan ödemeler için hatırlatmalar alın</string>
     <string name="home_title">Ev</string>
     <string name="add_transaction_subscription_cd">İşlem veya Abonelik Ekle</string>
     <string name="selected_cd">Seçili</string>

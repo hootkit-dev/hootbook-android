@@ -11,14 +11,8 @@
     <string name="security_section">സുരക്ഷ</string>
     <string name="app_lock">ആപ്പ് ലോക്ക്</string>
     <string name="app_lock_biometric_sub">ബയോമെട്രിക് സാക്ഷ്യപ്പെടുത്തലിലൂടെ നിങ്ങളുടെ ഡാറ്റ സംരക്ഷിക്കുക</string>
-    <string name="lock_timeout">ലോക്ക് ടൈംഔട്ട്</string>
-    <string name="lock_timeout_immediate">ആപ്പ് പിന്നിലെ കണ്ടംങ്ങൾക്കു പോകുമ്പോൾ ഉടൻ ലോക്ക് ചെയ്യുക</string>
-    <string name="lock_timeout_1min">പിന്നിൽ 1 മിനിറ്റ് കഴിഞ്ഞാൽ ലോക്ക് ചെയ്യുക</string>
-    <string name="lock_timeout_minutes">പിന്നിൽ %1$d മിനിറ്റ് കഴിഞ്ഞാൽ ലോക്ക് ചെയ്യുക</string>
     <string name="export_data">ഡാറ്റ എക്സ്പോർട്ട് ചെയ്യുക</string>
-    <string name="immediately">ഉടൻ</string>
     <string name="one_minute">1 മിനിറ്റ്</string>
-    <string name="minutes_format">%1$d മിനിറ്റ്</string>
     <string name="cancel">റദ്ദാക്കുക</string>
     <string name="export">കയറ്റുമതി</string>
     <string name="select_data_to_backup">ബാക്കപ്പ് എടുക്കാൻ ഡാറ്റ തിരഞ്ഞെടുക്കുക:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">സിസ്റ്റം</string>
     <string name="font_snpro">SN പ്രോ</string>
     <string name="font_snpro_sub">ആധുനിക മോണോ</string>
-    <string name="upcoming_transactions_section">ഭാവിയിലെ ട്രാൻസാക്ഷനുകൾ</string>
-    <string name="upcoming_transactions_desc">ഭാവിയിലെ പെയ്മെന്റുകൾക്ക് ഓർമ്മപ്പെടുത്തലുകൾ ലഭിക്കുക</string>
     <string name="home_title">ഹോം</string>
     <string name="add_transaction_subscription_cd">ട്രാൻസാക്ഷൻ അല്ലെങ്കിൽ സബ്സ്ക്രിപ്ഷൻ ചേർക്കുക</string>
     <string name="selected_cd">തിരഞ്ഞെടുത്തത്</string>

@@ -314,9 +314,9 @@ class RealMainJourneys {
     @Test fun uiNotificationPermissionDenyAllowAndReminderTime()=runBlocking{
         home();click(R.string.core_complete_settings);click(R.string.core_shell_notifications)
         if(androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
-            click(R.string.core_system_allow_notifications);clickResource("com.android.permissioncontroller:id/permission_deny_button")
+            click(R.string.notif_allow);clickResource("com.android.permissioncontroller:id/permission_deny_button")
             assertEquals(android.content.pm.PackageManager.PERMISSION_DENIED,androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS))
-            click(R.string.core_system_allow_notifications);clickResource("com.android.permissioncontroller:id/permission_allow_button")
+            click(R.string.notif_allow);clickResource("com.android.permissioncontroller:id/permission_allow_button")
         }
         assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS))
         field(R.string.core_system_hour,"22");field(R.string.core_system_minute,"42");click(R.string.core_ui_save)

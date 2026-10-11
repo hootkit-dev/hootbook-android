@@ -11,14 +11,8 @@
     <string name="security_section">Howpsuzlyk</string>
     <string name="app_lock">Täjirçilik Gapysy</string>
     <string name="app_lock_biometric_sub">Maglumatlaryňyzy biologik tassyk bilen goranyň</string>
-    <string name="lock_timeout">Gapyny tygşyt wagt bilen ýapmak</string>
-    <string name="lock_timeout_immediate">Programma fon ýagdaýyna geçende derrew gapyny ýap</string>
-    <string name="lock_timeout_1min">Fon ýagdaýynda 1 minut soň gapyny ýap</string>
-    <string name="lock_timeout_minutes">Fon ýagdaýynda %1$d minut soň gapyny ýap</string>
     <string name="export_data">Maglumatlary eksport etmek</string>
-    <string name="immediately">Derrew</string>
     <string name="one_minute">1 minut</string>
-    <string name="minutes_format">%1$d minut</string>
     <string name="cancel">Iýmit etmek</string>
     <string name="export">Eksport</string>
     <string name="select_data_to_backup">Ehtiyat nusgasyny almak üçin maglumatlary saýlaň:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Ulgam</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Zamana laýyk Mono</string>
-    <string name="upcoming_transactions_section">Geljekki Geçirimler</string>
-    <string name="upcoming_transactions_desc">Geljekki tölegler üçin ýatlatmalar alyň</string>
     <string name="home_title">Baş sahypa</string>
     <string name="add_transaction_subscription_cd">Tölegi ýa-da Abunalygy goş</string>
     <string name="selected_cd">Saýlanyldy</string>

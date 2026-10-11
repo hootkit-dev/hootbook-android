@@ -11,14 +11,8 @@
     <string name="security_section">Securitate</string>
     <string name="app_lock">Blocare aplicație</string>
     <string name="app_lock_biometric_sub">Protejează-ți datele prin autentificare biometrică</string>
-    <string name="lock_timeout">Timp de blocare</string>
-    <string name="lock_timeout_immediate">Blochează imediat când aplicația merge în fundal</string>
-    <string name="lock_timeout_1min">Blochează după 1 minut în fundal</string>
-    <string name="lock_timeout_minutes">Blochează după %1$d minute în fundal</string>
     <string name="export_data">Exportă Datele</string>
-    <string name="immediately">Imediat</string>
     <string name="one_minute">1 minut</string>
-    <string name="minutes_format">%1$d minute</string>
     <string name="cancel">Anulează</string>
     <string name="export">Exportă</string>
     <string name="select_data_to_backup">Selectați datele pentru copia de rezervă:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sistem</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Mono Modern</string>
-    <string name="upcoming_transactions_section">Tranzacții Viitoare</string>
-    <string name="upcoming_transactions_desc">Primește mementouri pentru plățile viitoare</string>
     <string name="home_title">Acasă</string>
     <string name="add_transaction_subscription_cd">Adaugă tranzacție sau abonament</string>
     <string name="selected_cd">Selectat</string>

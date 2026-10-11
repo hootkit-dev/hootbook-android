@@ -11,14 +11,8 @@
     <string name="security_section">حِفٲظتی</string>
     <string name="app_lock">ایپ لاک</string>
     <string name="app_lock_biometric_sub">پَنُن ڈاٹا کٔرِو بایومیٹرِک تصدیقہٕ سیتی بَچاو</string>
-    <string name="lock_timeout">ٹایِم آوٹ لاک کَرُن</string>
-    <string name="lock_timeout_immediate">فوراً لاک ییلہ ایپ بیک گراونڈس منز گژھان</string>
-    <string name="lock_timeout_1min">1 مِنٹَس پَتہٕ کٔرِو لاک کَرنہٕ آمُت</string>
-    <string name="lock_timeout_minutes">بیک گراونڈ مَنٛز %1$d مِنٹَن پَتہٕ لاک کَرنہٕ</string>
     <string name="export_data">برآمَد کَرنہٕ آمُت ڈیٹا</string>
-    <string name="immediately">فوراً</string>
     <string name="one_minute">1 مِنٹ</string>
-    <string name="minutes_format">%1$d منٹ</string>
     <string name="cancel">ختم</string>
     <string name="export">برآمد</string>
     <string name="select_data_to_backup">بیک اپ خٲطرٕ کٔرِو ڈیٹا سلیکٹ:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">سسٹم</string>
     <string name="font_snpro">ایس این پرو</string>
     <string name="font_snpro_sub">جدید مونو</string>
-    <string name="upcoming_transactions_section">یِنہٕ وول لین دین</string>
-    <string name="upcoming_transactions_desc">یِنہٕ واجنہِ ادٲیگین باپتھ گَژھ ریمنانڑر</string>
     <string name="home_title">گَرٕ</string>
     <string name="add_transaction_subscription_cd">لین دین یا سبسکرپشن کٔرِو ایڈ</string>
     <string name="selected_cd">ژارنہٕ آمُت</string>

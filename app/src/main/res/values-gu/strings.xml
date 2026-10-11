@@ -11,14 +11,8 @@
     <string name="security_section">સુરક્ષા</string>
     <string name="app_lock">એપ લૉક</string>
     <string name="app_lock_biometric_sub">બાયોમેટ્રિક ઓથેન્ટિકેશન સાથે તમારા ડેટાને સુરક્ષિત કરો</string>
-    <string name="lock_timeout">લૉક સમયમર્યાદા</string>
-    <string name="lock_timeout_immediate">એપ બેકગ્રાઉન્ડમાં ગયા પછી તરત જ લૉક કરો</string>
-    <string name="lock_timeout_1min">બેકગ્રાઉન્ડમાં 1 મિનિટ પછી લૉક કરો</string>
-    <string name="lock_timeout_minutes">બેકગ્રાઉન્ડમાં %1$d મિનિટ પછી લૉક કરો</string>
     <string name="export_data">ડેટા નિકાસ કરો</string>
-    <string name="immediately">તાત્કાલિક</string>
     <string name="one_minute">1 મિનિટ</string>
-    <string name="minutes_format">%1$d મિનિટ</string>
     <string name="cancel">રદ કરો</string>
     <string name="export">નિકાસ</string>
     <string name="select_data_to_backup">બૅકઅપ માટે ડેટા પસંદ કરો:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">સિસ્ટમ</string>
     <string name="font_snpro">SN પ્રો</string>
     <string name="font_snpro_sub">આધુનિક મનો</string>
-    <string name="upcoming_transactions_section">આગામી ટ્રાન્ઝેક્શન્સ</string>
-    <string name="upcoming_transactions_desc">આગામી ચુકવણીઓ માટે યાદ અપાવો</string>
     <string name="home_title">હોમ</string>
     <string name="add_transaction_subscription_cd">ટ્રાન્ઝેક્શન અથવા સબ્સ્ક્રિપ્શન ઉમેરો</string>
     <string name="selected_cd">ચૉન્યો</string>

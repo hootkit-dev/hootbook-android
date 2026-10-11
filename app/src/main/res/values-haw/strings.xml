@@ -11,14 +11,8 @@
     <string name="security_section">Palekana</string>
     <string name="app_lock">Laka App</string>
     <string name="app_lock_biometric_sub">E pale i kāu ʻikepili me ka hōʻoia biometric</string>
-    <string name="lock_timeout">Laka manawa pau</string>
-    <string name="lock_timeout_immediate">Laka koke i ka hele ʻana o ka app i hope</string>
-    <string name="lock_timeout_1min">Laka ma hope o 1 minuke ma hope</string>
-    <string name="lock_timeout_minutes">Laka ma hope o %1$d mau minuke ma hope</string>
     <string name="export_data">Hoʻokuʻu i ka ʻikepili</string>
-    <string name="immediately">Koke koke</string>
     <string name="one_minute">1 minuke</string>
-    <string name="minutes_format">%1$d minuke</string>
     <string name="cancel">Hoʻopau</string>
     <string name="export">Hoʻokuʻu aku</string>
     <string name="select_data_to_backup">E koho i ka ʻikepili e hoʻihoʻi:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Pūnaehana</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Mono hou</string>
-    <string name="upcoming_transactions_section">Nā hana e hiki mai ana</string>
-    <string name="upcoming_transactions_desc">E kiʻi i nā hoʻomanaʻo no nā uku e hiki mai ana</string>
     <string name="home_title">Home</string>
     <string name="add_transaction_subscription_cd">Hoʻohui i ka hana a i ʻole ke kau inoa</string>
     <string name="selected_cd">Koho ʻia</string>

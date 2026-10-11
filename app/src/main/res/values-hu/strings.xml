@@ -11,14 +11,8 @@
     <string name="security_section">Biztonság</string>
     <string name="app_lock">Alkalmazás zárolása</string>
     <string name="app_lock_biometric_sub">Védd az adataidat biometrikus hitelesítéssel</string>
-    <string name="lock_timeout">Zárolási időkorlát</string>
-    <string name="lock_timeout_immediate">Azonnali zárolás, amikor az alkalmazás háttérbe kerül</string>
-    <string name="lock_timeout_1min">Zárolás 1 perc után a háttérben</string>
-    <string name="lock_timeout_minutes">Zárolás %1$d perc után a háttérben</string>
     <string name="export_data">Adatok exportálása</string>
-    <string name="immediately">Azonnal</string>
     <string name="one_minute">1 perc</string>
-    <string name="minutes_format">%1$d perc</string>
     <string name="cancel">Mégse</string>
     <string name="export">Exportálás</string>
     <string name="select_data_to_backup">Válassza ki a biztonsági mentéshez adatokat:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Rendszer</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Közelgő tranzakciók</string>
-    <string name="upcoming_transactions_desc">Kapjon emlékeztetőt a közelgő kifizetésekről</string>
     <string name="home_title">Kezdőlap</string>
     <string name="add_transaction_subscription_cd">Tranzakció vagy előfizetés hozzáadása</string>
     <string name="selected_cd">Kiválasztott</string>

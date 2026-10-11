@@ -11,14 +11,8 @@
     <string name="security_section">ਸੁਰੱਖਿਆ</string>
     <string name="app_lock">ਐਪ ਲਾਕ</string>
     <string name="app_lock_biometric_sub">ਬਾਇਓਮੈਟ੍ਰਿਕ ਪ੍ਰਮਾਣਿਕਰਨ ਨਾਲ ਆਪਣਾ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਕਰੋ</string>
-    <string name="lock_timeout">ਲਾਕ ਟਾਈਮਆਉਟ</string>
-    <string name="lock_timeout_immediate">ਜਦੋਂ ਐਪ ਬੈਕਗ੍ਰਾਊਂਡ ਵਿੱਚ ਜਾਏ ਤੁਰੰਤ ਲਾਕ ਕਰੋ</string>
-    <string name="lock_timeout_1min">ਬੈਕਗ੍ਰਾਊਂਡ ਵਿੱਚ 1 ਮਿੰਟ ਬਾਅਦ ਲਾਕ ਕਰੋ</string>
-    <string name="lock_timeout_minutes">ਬੈਕਗ੍ਰਾਊਂਡ ਵਿੱਚ %1$d ਮਿੰਟ ਬਾਅਦ ਲਾਕ ਕਰੋ</string>
     <string name="export_data">ਡਾਟਾ ਐਕਸਪੋਰਟ ਕਰੋ</string>
-    <string name="immediately">ਤੁਰੰਤ</string>
     <string name="one_minute">1 ਮਿੰਟ</string>
-    <string name="minutes_format">%1$d ਮਿੰਟ</string>
     <string name="cancel">ਰੱਦ ਕਰੋ</string>
     <string name="export">ਨਿਰਯਾਤ ਕਰੋ</string>
     <string name="select_data_to_backup">ਬੈਕਅੱਪ ਲਈ ਡਾਟਾ ਚੁਣੋ:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">ਸਿਸਟਮ</string>
     <string name="font_snpro">SN ਪ੍ਰੋ</string>
     <string name="font_snpro_sub">ਮੋਡਰਨ ਮੋਨੋ</string>
-    <string name="upcoming_transactions_section">ਆਉਣ ਵਾਲੀਆਂ ਲੈਣ-ਦੇਣ</string>
-    <string name="upcoming_transactions_desc">ਆਉਣ ਵਾਲੀਆਂ ਭੁਗਤਾਨਾਂ ਲਈ ਯਾਦ ਦਿਓ</string>
     <string name="home_title">ਹੋਮ</string>
     <string name="add_transaction_subscription_cd">ਲੈਣ-ਦੇਣ ਜਾਂ ਸਬਸਕ੍ਰਿਪਸ਼ਨ ਸ਼ਾਮਲ ਕਰੋ</string>
     <string name="selected_cd">ਚੁਣਿਆ ਗਿਆ</string>

@@ -11,14 +11,8 @@
     <string name="security_section">Chitetezo</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">Tetezani deta yanu ndi kutsimikizika kwa biometric</string>
-    <string name="lock_timeout">Lock Timeout</string>
-    <string name="lock_timeout_immediate">Tsekani nthawi yomweyo pulogalamu ikapita chakumbuyo</string>
-    <string name="lock_timeout_1min">Tsekani kumbuyo kwa mphindi imodzi</string>
-    <string name="lock_timeout_minutes">Tsekani pambuyo pa mphindi %1$d chakumbuyo</string>
     <string name="export_data">Tumizani Deta</string>
-    <string name="immediately">Nthawi yomweyo</string>
     <string name="one_minute">1 miniti</string>
-    <string name="minutes_format">%1$d mphindi</string>
     <string name="cancel">Letsani</string>
     <string name="export">Tumizani kunja</string>
     <string name="select_data_to_backup">Sankhani deta yosunga zosunga zobwezeretsera:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Dongosolo</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Mono Wamakono</string>
-    <string name="upcoming_transactions_section">Zomwe Zikubwera</string>
-    <string name="upcoming_transactions_desc">Pezani zikumbutso zamalipiro omwe akubwera</string>
     <string name="home_title">Kunyumba</string>
     <string name="add_transaction_subscription_cd">Onjezani Transaction kapena Subscription</string>
     <string name="selected_cd">Zosankhidwa</string>

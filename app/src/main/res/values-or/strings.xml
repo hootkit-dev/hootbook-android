@@ -11,14 +11,8 @@
     <string name="security_section">ସୁରକ୍ଷା</string>
     <string name="app_lock">ଆପ୍ ଲକ୍</string>
     <string name="app_lock_biometric_sub">ବାୟୋମେଟ୍ରିକ୍ ପ୍ରାମାଣିକରଣ ସହ ଆପଣଙ୍କ ଡାଟା ସୁରକ୍ଷିତ କରନ୍ତୁ</string>
-    <string name="lock_timeout">ଲକ୍ ସମୟ ଶେଷ</string>
-    <string name="lock_timeout_immediate">ଆପ୍ଲିକେସନ୍ ପୃଷ୍ଠପଟକୁ ଯିବା ବେଳେ ତୁରନ୍ତ ଲକ୍ କରନ୍ତୁ</string>
-    <string name="lock_timeout_1min">ପୃଷ୍ଠପଟରେ 1 ମିନିଟ୍ ପରେ ଲକ୍ କରନ୍ତୁ</string>
-    <string name="lock_timeout_minutes">ପୃଷ୍ଠପଟରେ %1$d ମିନିଟ୍ ପରେ ଲକ୍ କରନ୍ତୁ</string>
     <string name="export_data">ଡାଟା ରପ୍ତାନୀ କରନ୍ତୁ</string>
-    <string name="immediately">ସଙ୍ଗେ ସଙ୍ଗେ</string>
     <string name="one_minute">1 ମିନିଟ୍</string>
-    <string name="minutes_format">%1$d ମିନିଟ୍</string>
     <string name="cancel">ବାତିଲ୍‌ କରନ୍ତୁ</string>
     <string name="export">ନିର୍ਯାତ</string>
     <string name="select_data_to_backup">ବ୍ୟାକ୍‌ଅପ୍‌ କରିବା ପାଇଁ ଡାଟା ବାଛନ୍ତୁ:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">ସିଷ୍ଟମ୍</string>
     <string name="font_snpro">SN ପ୍ରୋ</string>
     <string name="font_snpro_sub">ଆଧୁନିକ ମୋନୋ</string>
-    <string name="upcoming_transactions_section">ଆଗାମୀ ଟ୍ରାଞ୍ଜାକସନସ୍</string>
-    <string name="upcoming_transactions_desc">ଆଗାମୀ ଦେୟ ପାଇଁ ସ୍ମାରକଗୁଡିକ ପ୍ରାପ୍ତ କରନ୍ତୁ</string>
     <string name="home_title">ଘର</string>
     <string name="add_transaction_subscription_cd">ଟ୍ରାଞ୍ଜାକସନ୍ କିମ୍ୱା ସଦସ୍ୟତା ଯୋଡନ୍ତୁ</string>
     <string name="selected_cd">ଚୟନିତ</string>

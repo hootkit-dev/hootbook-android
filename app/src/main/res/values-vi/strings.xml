@@ -11,14 +11,8 @@
     <string name="security_section">Bảo Mật</string>
     <string name="app_lock">Khóa Ứng Dụng</string>
     <string name="app_lock_biometric_sub">Bảo vệ dữ liệu của bạn bằng xác thực sinh trắc học</string>
-    <string name="lock_timeout">Thời Gian Khóa</string>
-    <string name="lock_timeout_immediate">Khóa ngay khi ứng dụng chuyển ra nền</string>
-    <string name="lock_timeout_1min">Khóa sau 1 phút ở nền</string>
-    <string name="lock_timeout_minutes">Khóa sau %1$d phút ở nền</string>
     <string name="export_data">Xuất Dữ Liệu</string>
-    <string name="immediately">Ngay lập tức</string>
     <string name="one_minute">1 phút</string>
-    <string name="minutes_format">%1$d phút</string>
     <string name="cancel">Hủy</string>
     <string name="export">Xuất khẩu</string>
     <string name="select_data_to_backup">Chọn dữ liệu để sao lưu:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Hệ Thống</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Mono Hiện Đại</string>
-    <string name="upcoming_transactions_section">Giao dịch Sắp tới</string>
-    <string name="upcoming_transactions_desc">Nhận nhắc nhở cho các khoản thanh toán sắp tới</string>
     <string name="home_title">Trang chủ</string>
     <string name="add_transaction_subscription_cd">Thêm Giao dịch hoặc Đăng ký</string>
     <string name="selected_cd">Đã chọn</string>

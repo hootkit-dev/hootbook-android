@@ -11,14 +11,8 @@
     <string name="security_section">सुरक्षितता</string>
     <string name="app_lock">अॅप लॉक</string>
     <string name="app_lock_biometric_sub">बायोमेट्रिक प्रमाणीकरणाने आपला डेटा सुरक्षित करा</string>
-    <string name="lock_timeout">लॉक टाइमआउट</string>
-    <string name="lock_timeout_immediate">अॅप बॅकग्राऊंडमध्ये जाताच लगेच लॉक करा</string>
-    <string name="lock_timeout_1min">बॅकग्राऊंडमध्ये 1 मिनिटानंतर लॉक करा</string>
-    <string name="lock_timeout_minutes">बॅकग्राऊंडमध्ये %1$d मिनिटांनंतर लॉक करा</string>
     <string name="export_data">डेटा निर्यात करा</string>
-    <string name="immediately">तत्काळ</string>
     <string name="one_minute">1 मिनिट</string>
-    <string name="minutes_format">%1$d मिनिटे</string>
     <string name="cancel">रद्द करा</string>
     <string name="export">निर्यात करा</string>
     <string name="select_data_to_backup">बॅकअपसाठी डेटा निवडा:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">सिस्टम</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">आधुनिक मोनो</string>
-    <string name="upcoming_transactions_section">आगामी व्यवहार</string>
-    <string name="upcoming_transactions_desc">आगामी पेमेंटसाठी आठवणी मिळवा</string>
     <string name="home_title">मुखपृष्ठ</string>
     <string name="add_transaction_subscription_cd">व्यवहार किंवा सदस्यता जोडा</string>
     <string name="selected_cd">निवडलेले</string>

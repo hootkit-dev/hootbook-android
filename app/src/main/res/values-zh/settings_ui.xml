@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_time">提醒时间</string>
+    <string name="notif_time_help">每天在此时间发送提醒</string>
+    <string name="notif_inexact">Android 可能会稍晚发送提醒。</string>
+    <string name="notif_exact_settings">允许精确闹钟</string>
+    <string name="notif_subscriptions">订阅</string>
+    <string name="notif_due">到期提醒</string>
+    <string name="notif_due_help">订阅在今天或明天到期时提醒</string>
+    <string name="notif_next_due">下次扣款 %1$s</string>
+    <string name="notif_daily">每日</string>
+    <string name="notif_daily_record">记账提醒</string>
+    <string name="notif_daily_record_help">没有到期订阅时，提醒记录当天的账目</string>
+    <string name="notif_permission_title">通知已关闭</string>
+    <string name="notif_permission_text">允许 Hootbook 发送通知，才能收到提醒。</string>
+    <string name="notif_allow">允许通知</string>
+    <string name="notif_settings_unavailable">此设备未提供对应的系统设置。</string>
+    <string name="privacy_lock_after">自动锁定</string>
+    <string name="privacy_lock_immediately">离开应用后立即</string>
+    <string name="privacy_lock_minutes">离开应用 %1$d 分钟后</string>
+</resources>

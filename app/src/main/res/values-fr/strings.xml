@@ -11,14 +11,8 @@
     <string name="security_section">Sécurité</string>
     <string name="app_lock">Verrouillage de l\'application</string>
     <string name="app_lock_biometric_sub">Protégez vos données avec l\'authentification biométrique</string>
-    <string name="lock_timeout">Délai de verrouillage</string>
-    <string name="lock_timeout_immediate">Verrouiller immédiatement lorsque l\'application va en arrière-plan</string>
-    <string name="lock_timeout_1min">Verrouiller après 1 minute en arrière-plan</string>
-    <string name="lock_timeout_minutes">Verrouiller après %1$d minutes en arrière-plan</string>
     <string name="export_data">Exporter les données</string>
-    <string name="immediately">Immédiatement</string>
     <string name="one_minute">1 minute</string>
-    <string name="minutes_format">%1$d minutes</string>
     <string name="cancel">Abandonner</string>
     <string name="export">Exportation</string>
     <string name="select_data_to_backup">Sélectionner les données à sauvegarder:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Système</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Transactions à venir</string>
-    <string name="upcoming_transactions_desc">Recevez des rappels pour les paiements à venir</string>
     <string name="home_title">Accueil</string>
     <string name="add_transaction_subscription_cd">Ajouter une transaction ou un abonnement</string>
     <string name="selected_cd">Sélectionné</string>

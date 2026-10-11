@@ -11,14 +11,8 @@
     <string name="security_section">Seguretat</string>
     <string name="app_lock">Bloqueig de l\'aplicació</string>
     <string name="app_lock_biometric_sub">Protegeix les teves dades amb autenticació biomètrica</string>
-    <string name="lock_timeout">Temps d\'espera del bloqueig</string>
-    <string name="lock_timeout_immediate">Bloqueja immediatament quan l\'aplicació passa a segon pla</string>
-    <string name="lock_timeout_1min">Bloqueja després d\'1 minut en segon pla</string>
-    <string name="lock_timeout_minutes">Bloqueja després de %1$d minuts en segon pla</string>
     <string name="export_data">Exportar dades</string>
-    <string name="immediately">Immediatament</string>
     <string name="one_minute">1 minut</string>
-    <string name="minutes_format">%1$d minuts</string>
     <string name="cancel">Cancel·lar</string>
     <string name="export">Exporta</string>
     <string name="select_data_to_backup">Selecciona les dades per fer una còpia de seguretat:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sistema</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Transaccions Próximes</string>
-    <string name="upcoming_transactions_desc">Rep recordatoris per a pagaments pròxims</string>
     <string name="home_title">Inici</string>
     <string name="add_transaction_subscription_cd">Afegir transacció o subscripció</string>
     <string name="selected_cd">Seleccionat</string>

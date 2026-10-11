@@ -11,14 +11,8 @@
     <string name="security_section">Xavfsizlik</string>
     <string name="app_lock">Ilovani qulflash</string>
     <string name="app_lock_biometric_sub">Biometrik autentifikatsiya bilan ma\'lumotlaringizni himoya qiling</string>
-    <string name="lock_timeout">Qulflash vaqti</string>
-    <string name="lock_timeout_immediate">Ilova fon rejimiga o\'tganda darhol qulflang</string>
-    <string name="lock_timeout_1min">Fon rejimida 1 daqiqadan keyin qulflash</string>
-    <string name="lock_timeout_minutes">Fon rejimida %1$d daqiqadan keyin qulflash</string>
     <string name="export_data">Ma\'lumotlarni eksport qilish</string>
-    <string name="immediately">Darhol</string>
     <string name="one_minute">1 daqiqa</string>
-    <string name="minutes_format">%1$d daqiqa</string>
     <string name="cancel">Bekor qilish</string>
     <string name="export">Eksport</string>
     <string name="select_data_to_backup">Zaxira qilish uchun ma\'lumotlarni tanlang:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Tizim</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Zamonaviy Mono</string>
-    <string name="upcoming_transactions_section">Yaqinlashayotgan tranzaksiyalar</string>
-    <string name="upcoming_transactions_desc">Yaqinlashib kelayotgan to\'lovlar uchun eslatmalar oling</string>
     <string name="home_title">Bosh sahifa</string>
     <string name="add_transaction_subscription_cd">Tranzaksiya yoki obunani qo\'shish</string>
     <string name="selected_cd">Tanlangan</string>

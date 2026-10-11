@@ -11,14 +11,8 @@
     <string name="security_section">Keamanan</string>
     <string name="app_lock">Kunci Aplikasi</string>
     <string name="app_lock_biometric_sub">Lindungi data Anda dengan autentikasi biometrik</string>
-    <string name="lock_timeout">Batas Waktu Kunci</string>
-    <string name="lock_timeout_immediate">Kunci segera saat aplikasi masuk ke latar belakang</string>
-    <string name="lock_timeout_1min">Kunci setelah 1 menit di latar belakang</string>
-    <string name="lock_timeout_minutes">Kunci setelah %1$d menit di latar belakang</string>
     <string name="export_data">Ekspor Data</string>
-    <string name="immediately">Segera</string>
     <string name="one_minute">1 menit</string>
-    <string name="minutes_format">%1$d menit</string>
     <string name="cancel">Batal</string>
     <string name="export">Ekspor</string>
     <string name="select_data_to_backup">Pilih data untuk dicadangkan:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sistem</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Transaksi Mendatang</string>
-    <string name="upcoming_transactions_desc">Dapatkan pengingat untuk pembayaran mendatang</string>
     <string name="home_title">Beranda</string>
     <string name="add_transaction_subscription_cd">Tambahkan Transaksi atau Langganan</string>
     <string name="selected_cd">Terpilih</string>

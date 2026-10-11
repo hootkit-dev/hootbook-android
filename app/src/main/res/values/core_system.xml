@@ -6,20 +6,10 @@
     <string name="core_system_preferences_failed">Notification preferences could not be saved. Your previous setting is retained; try again.</string>
     <string name="core_system_subscriptions_failed">Subscriptions could not be loaded. Try again.</string>
     <string name="core_system_retry">Retry</string>
-    <string name="core_system_settings_unavailable">System settings are unavailable on this device.</string>
     <string name="core_system_permission_granted">Notifications are allowed by Android.</string>
-    <string name="core_system_permission_needed">Android notification permission or the app notification switch is off.</string>
-    <string name="core_system_allow_notifications">Allow notifications</string>
     <string name="core_system_master">Enable daily and subscription reminders</string>
-    <string name="core_system_daily_scan">Remind me to record the day</string>
-    <string name="core_system_daily_scan_help">When no unmuted subscription is due, show a daily recording reminder.</string>
-    <string name="core_system_reminder_time">Daily reminder time</string>
     <string name="core_system_hour">Hour (0–23)</string>
     <string name="core_system_minute">Minute (0–59)</string>
-    <string name="core_system_exact_enabled">Precise reminder alarms are available.</string>
-    <string name="core_system_inexact_fallback">Android may delay reminders. Inexact alarms and background work remain enabled.</string>
-    <string name="core_system_exact_settings">Precise alarm settings (optional)</string>
     <string name="core_system_subscriptions">Subscription reminders</string>
-    <string name="core_system_core_dates">The finance engine determines subscriptions due today or tomorrow. These switches only mute notifications.</string>
     <string name="core_system_no_subscriptions">No subscriptions yet.</string>
 </resources>

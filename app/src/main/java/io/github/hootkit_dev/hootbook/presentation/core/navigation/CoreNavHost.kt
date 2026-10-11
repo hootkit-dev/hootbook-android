@@ -185,7 +185,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                 composable("backup") { CoreBackupScreen(back, onSync={go("sync")}) }
                                 composable("profile") { CoreProfileScreen(back,{go("debts")},{go("merchant-icons")},onPerson={go(coreRoute("debts","id" to it))},onAddPerson={go(coreRoute("debts","new" to "true"))}) }
                                 composable("merchant-icons?name={name}",arguments=arguments("name")) { CoreMerchantIconsScreen(back,it.arguments?.getString("name")) }
-                                composable("appearance") { CoreAppearanceScreen(back,{go("app-lock")}) }
+                                composable("appearance") { CoreAppearanceScreen(back) }
                                 composable("app-lock") { CoreAppLockSettingsScreen(back) }
                                 composable("data-privacy") { CoreAppLockSettingsScreen(back, dataPrivacy = true) }
                                 composable("notifications") { CoreNotificationPreferencesScreen(back) }

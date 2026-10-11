@@ -11,14 +11,8 @@
     <string name="security_section">భద్రత</string>
     <string name="app_lock">యాప్ లాక్</string>
     <string name="app_lock_biometric_sub">బయోమెట్రిక్ ఆథెంటికేషన్‌తో మీ డేటాను రక్షించండి</string>
-    <string name="lock_timeout">లాక్ టైమ్‌అవుట్</string>
-    <string name="lock_timeout_immediate">యాప్ బ్యాక్‌గ్రౌండ్లోకి వెళ్ళిన వెంటనే లాక్ చేయండి</string>
-    <string name="lock_timeout_1min">బ్యాక్‌గ్రౌండ్లో 1 నిమిషం తర్వాత లాక్ చేయండి</string>
-    <string name="lock_timeout_minutes">బ్యాక్‌గ్రౌండ్లో %1$d నిమిషాల తర్వాత లాక్ చేయండి</string>
     <string name="export_data">డేటా ఎగుమతి</string>
-    <string name="immediately">తక్షణమే</string>
     <string name="one_minute">1 నిమిషం</string>
-    <string name="minutes_format">%1$d నిమిషాలు</string>
     <string name="cancel">రద్దు</string>
     <string name="export">ఎగుమతి</string>
     <string name="select_data_to_backup">బ్యాకప్ కోసం డేటాను ఎంచుకోండి:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">సిస్టమ్</string>
     <string name="font_snpro">SN ప్రో</string>
     <string name="font_snpro_sub">ఆధునిక మోనో</string>
-    <string name="upcoming_transactions_section">యువరిత ట్రాన్సాక్షన్స్</string>
-    <string name="upcoming_transactions_desc">రాబోయే చెల్లింపుల కోసం గుర్తింపు పొందండి</string>
     <string name="home_title">హోం</string>
     <string name="add_transaction_subscription_cd">ట్రాన్సాక్షన్ లేదా సబ్‌స్క్రిప్షన్ జోడించండి</string>
     <string name="selected_cd">ఎంచుకున్న</string>

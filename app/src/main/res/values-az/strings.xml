@@ -11,14 +11,8 @@
     <string name="security_section">Təhlükəsizlik</string>
     <string name="app_lock">Tətbiqi Kilidlə</string>
     <string name="app_lock_biometric_sub">Biometrik identifikasiya ilə məlumatlarınızı qoruyun</string>
-    <string name="lock_timeout">Kilid Zaman Aşımı</string>
-    <string name="lock_timeout_immediate">Tətbiq fon rejiminə keçdikdə dərhal kilidlə</string>
-    <string name="lock_timeout_1min">Fon rejimində 1 dəqiqədən sonra kilidlə</string>
-    <string name="lock_timeout_minutes">Fon rejimində %1$d dəqiqədən sonra kilidlə</string>
     <string name="export_data">Məlumatları Eksport et</string>
-    <string name="immediately">Dərhal</string>
     <string name="one_minute">1 dəqiqə</string>
-    <string name="minutes_format">%1$d dəqiqə</string>
     <string name="cancel">Ləğv et</string>
     <string name="export">İxrac</string>
     <string name="select_data_to_backup">Ehtiyat nüsxəsini çıxarmaq üçün məlumatları seçin:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Sistem</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Müasir Mono</string>
-    <string name="upcoming_transactions_section">Gələcək Əməliyyatlar</string>
-    <string name="upcoming_transactions_desc">Gələcək ödənişlər üçün xatırlatmalar alın</string>
     <string name="home_title">Ev</string>
     <string name="add_transaction_subscription_cd">Əməliyyat və ya Abunəliyi əlavə et</string>
     <string name="selected_cd">Seçilmiş</string>

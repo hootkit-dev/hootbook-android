@@ -11,14 +11,8 @@
     <string name="security_section">Säkerhet</string>
     <string name="app_lock">App-lås</string>
     <string name="app_lock_biometric_sub">Skydda dina uppgifter med biometrisk autentisering</string>
-    <string name="lock_timeout">Låstid</string>
-    <string name="lock_timeout_immediate">Lås omedelbart när appen går till bakgrunden</string>
-    <string name="lock_timeout_1min">Lås efter 1 minut i bakgrunden</string>
-    <string name="lock_timeout_minutes">Lås efter %1$d minuter i bakgrunden</string>
     <string name="export_data">Exportera data</string>
-    <string name="immediately">Omedelbart</string>
     <string name="one_minute">1 minut</string>
-    <string name="minutes_format">%1$d minuter</string>
     <string name="cancel">Avbryt</string>
     <string name="export">Exportera</string>
     <string name="select_data_to_backup">Välj data att säkerhetskopiera:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">System</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Kommande transaktioner</string>
-    <string name="upcoming_transactions_desc">Få påminnelser om kommande betalningar</string>
     <string name="home_title">Hem</string>
     <string name="add_transaction_subscription_cd">Lägg till transaktion eller prenumeration</string>
     <string name="selected_cd">Vald</string>

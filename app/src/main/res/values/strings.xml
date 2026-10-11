@@ -14,16 +14,10 @@
     <string name="security_section">Security</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">Protect your data with biometric authentication</string>
-    <string name="lock_timeout">Lock Timeout</string>
-    <string name="lock_timeout_immediate">Lock immediately when app goes to background</string>
-    <string name="lock_timeout_1min">Lock after 1 minute in background</string>
-    <string name="lock_timeout_minutes">Lock after %1$d minutes in background</string>
     <string name="export_data">Export Data</string>
     <string name="import_cashew_backup">Import from Cashew</string>
     <string name="import_cashew_backup_sub">Import SQLite or CSV files from Cashew app</string>
-    <string name="immediately">Immediately</string>
     <string name="one_minute">1 minute</string>
-    <string name="minutes_format">%1$d minutes</string>
     <string name="cancel">Cancel</string>
     <string name="export">Export</string>
     <string name="select_data_to_backup">Select data to backup:</string>
@@ -787,8 +781,6 @@
 <string name="unified_currency_subtitle">Display all amounts in a single currency</string>
 <string name="unknown_error">Unknown error</string>
 <string name="unlock">Unlock</string>
-<string name="upcoming_transactions_desc">Get reminders for upcoming payments</string>
-<string name="upcoming_transactions_section">Upcoming Transactions</string>
 <string name="uploading_to_cloud_format">Uploading to cloud... %1$d%%</string>
 <string name="username">Username</string>
 <string name="verification_failed">Verification failed.</string>

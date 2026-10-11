@@ -11,14 +11,8 @@
     <string name="security_section">Сигурност</string>
     <string name="app_lock">Заключване на приложението</string>
     <string name="app_lock_biometric_sub">Защитете данните си с биометрично удостоверяване</string>
-    <string name="lock_timeout">Време за автоматично заключване</string>
-    <string name="lock_timeout_immediate">Заключвайте веднага, когато приложението отиде на заден план</string>
-    <string name="lock_timeout_1min">Заключвай след 1 минута на заден план</string>
-    <string name="lock_timeout_minutes">Заключвай след %1$d минути на заден план</string>
     <string name="export_data">Експортиране на данни</string>
-    <string name="immediately">Веднага</string>
     <string name="one_minute">1 минута</string>
-    <string name="minutes_format">%1$d минути</string>
     <string name="cancel">Отказ</string>
     <string name="export">Експорт</string>
     <string name="select_data_to_backup">Изберете данни за архивиране:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Система</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Модерен Моно</string>
-    <string name="upcoming_transactions_section">Предстоящи транзакции</string>
-    <string name="upcoming_transactions_desc">Получавайте напомняния за предстоящи плащания</string>
     <string name="home_title">Начало</string>
     <string name="add_transaction_subscription_cd">Добави транзакция или абонамент</string>
     <string name="selected_cd">Избрано</string>

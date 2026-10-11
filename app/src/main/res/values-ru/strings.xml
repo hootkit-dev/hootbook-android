@@ -11,14 +11,8 @@
     <string name="security_section">Безопасность</string>
     <string name="app_lock">Блокировка приложения</string>
     <string name="app_lock_biometric_sub">Защитите свои данные с помощью биометрической аутентификации</string>
-    <string name="lock_timeout">Время блокировки</string>
-    <string name="lock_timeout_immediate">Блокировать сразу при сворачивании приложения</string>
-    <string name="lock_timeout_1min">Блокировать через 1 минуту после сворачивания</string>
-    <string name="lock_timeout_minutes">Блокировать через %1$d минут после сворачивания</string>
     <string name="export_data">Экспорт данных</string>
-    <string name="immediately">Сразу</string>
     <string name="one_minute">1 минута</string>
-    <string name="minutes_format">%1$d минут</string>
     <string name="cancel">Отмена</string>
     <string name="export">Экспорт</string>
     <string name="select_data_to_backup">Выберите данные для резервного копирования:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Системный</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Предстоящие транзакции</string>
-    <string name="upcoming_transactions_desc">Получайте напоминания о предстоящих платежах</string>
     <string name="home_title">Главная</string>
     <string name="add_transaction_subscription_cd">Добавить транзакцию или подписку</string>
     <string name="selected_cd">Выбрано</string>

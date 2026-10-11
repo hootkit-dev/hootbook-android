@@ -11,14 +11,8 @@
     <string name="security_section">Sekuriteit</string>
     <string name="app_lock">App Slot</string>
     <string name="app_lock_biometric_sub">Beskerm jou data met biometriese verifikasie</string>
-    <string name="lock_timeout">Slot Tydsduur</string>
-    <string name="lock_timeout_immediate">Sluit onmiddellik wanneer die app na die agtergrond gaan</string>
-    <string name="lock_timeout_1min">Sluit na 1 minuut in die agtergrond</string>
-    <string name="lock_timeout_minutes">Sluit na %1$d minute in die agtergrond</string>
     <string name="export_data">Voer Data Uit</string>
-    <string name="immediately">Onmiddellik</string>
     <string name="one_minute">1 minuut</string>
-    <string name="minutes_format">%1$d minute</string>
     <string name="cancel">Kanselleer</string>
     <string name="export">Uitvoer</string>
     <string name="select_data_to_backup">Kies data om te rugsteun:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Stelsel</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Komende Transaksies</string>
-    <string name="upcoming_transactions_desc">Kry herinneringe vir komende betalings</string>
     <string name="home_title">Tuis</string>
     <string name="add_transaction_subscription_cd">Voeg Transaksie of Subskripsie by</string>
     <string name="selected_cd">Gekies</string>

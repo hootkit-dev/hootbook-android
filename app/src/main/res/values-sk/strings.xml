@@ -11,14 +11,8 @@
     <string name="security_section">Bezpečnosť</string>
     <string name="app_lock">Zámok aplikácie</string>
     <string name="app_lock_biometric_sub">Chráňte svoje údaje pomocou biometrického overovania</string>
-    <string name="lock_timeout">Časový limit zámku</string>
-    <string name="lock_timeout_immediate">Okamžite zamknúť, keď aplikácia prejde do pozadia</string>
-    <string name="lock_timeout_1min">Zamknúť po 1 minúte v pozadí</string>
-    <string name="lock_timeout_minutes">Zamknúť po %1$d minútach v pozadí</string>
     <string name="export_data">Exportovať údaje</string>
-    <string name="immediately">Okamžite</string>
     <string name="one_minute">1 minúta</string>
-    <string name="minutes_format">%1$d minút</string>
     <string name="cancel">Zrušiť</string>
     <string name="export">Export</string>
     <string name="select_data_to_backup">Vyberte údaje na zálohovanie:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Systém</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Nadchádzajúce transakcie</string>
-    <string name="upcoming_transactions_desc">Získajte pripomienky na nadchádzajúce platby</string>
     <string name="home_title">Domov</string>
     <string name="add_transaction_subscription_cd">Pridať transakciu alebo predplatné</string>
     <string name="selected_cd">Vybrané</string>

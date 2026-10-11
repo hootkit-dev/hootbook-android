@@ -11,14 +11,8 @@
     <string name="security_section">سیکیورٹی</string>
     <string name="app_lock">ایپ لاک</string>
     <string name="app_lock_biometric_sub">اپنے ڈیٹا کو بایومیٹرک تصدیق کے ذریعے محفوظ کریں</string>
-    <string name="lock_timeout">لاک کا وقت ختم ہونا</string>
-    <string name="lock_timeout_immediate">جب ایپ بیک گراؤنڈ میں جائے تو فوراً لاک کریں</string>
-    <string name="lock_timeout_1min">بیک گراؤنڈ میں 1 منٹ بعد لاک کریں</string>
-    <string name="lock_timeout_minutes">بیک گراؤنڈ میں %1$d منٹ بعد لاک کریں</string>
     <string name="export_data">ڈیٹا برآمد کریں</string>
-    <string name="immediately">فوری طور پر</string>
     <string name="one_minute">1 منٹ</string>
-    <string name="minutes_format">%1$d منٹ</string>
     <string name="cancel">منسوخ</string>
     <string name="export">برآمد کریں</string>
     <string name="select_data_to_backup">بیک اپ کے لیے ڈیٹا منتخب کریں:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">سسٹم</string>
     <string name="font_snpro">SN پرو</string>
     <string name="font_snpro_sub">ماڈرن مونو</string>
-    <string name="upcoming_transactions_section">آنے والی ٹرانزیکشنز</string>
-    <string name="upcoming_transactions_desc">آنے والی ادائیگیوں کے لیے یاد دہانیاں حاصل کریں</string>
     <string name="home_title">ہوم</string>
     <string name="add_transaction_subscription_cd">ٹرانزیکشن یا سبسکرپشن شامل کریں</string>
     <string name="selected_cd">منتخب شدہ</string>

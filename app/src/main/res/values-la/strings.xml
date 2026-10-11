@@ -11,14 +11,8 @@
     <string name="security_section">Securitas</string>
     <string name="app_lock">App Claudere</string>
     <string name="app_lock_biometric_sub">Tua data protegere cum biometrica authentificatione</string>
-    <string name="lock_timeout">Tempus Clausionis</string>
-    <string name="lock_timeout_immediate">Statim claude cum app in posteriore plano transit</string>
-    <string name="lock_timeout_1min">Claude post 1 minutum in posteriore plano</string>
-    <string name="lock_timeout_minutes">Claude post %1$d minuta in posteriore plano</string>
     <string name="export_data">Exportare Data</string>
-    <string name="immediately">Statim</string>
     <string name="one_minute">1 minutum</string>
-    <string name="minutes_format">%1$d minuta</string>
     <string name="cancel">Cancella</string>
     <string name="export">Exportare</string>
     <string name="select_data_to_backup">Elige notitia ad tergum capere:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Systema</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Moderna Mono</string>
-    <string name="upcoming_transactions_section">Transactiones Futuras</string>
-    <string name="upcoming_transactions_desc">Accipe monitiones pro futuris solutionibus</string>
     <string name="home_title">Domus</string>
     <string name="add_transaction_subscription_cd">Addere Transactionem vel Subscriptio</string>
     <string name="selected_cd">Electa</string>

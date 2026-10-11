@@ -11,14 +11,8 @@
     <string name="security_section">Öryggi</string>
     <string name="app_lock">Læsa forriti</string>
     <string name="app_lock_biometric_sub">Verndaðu gögnin þín með líffræðilegri auðkenningu</string>
-    <string name="lock_timeout">Læsingaraðgerð</string>
-    <string name="lock_timeout_immediate">Læsa strax þegar forrit fer í bakgrunn</string>
-    <string name="lock_timeout_1min">Læsa eftir 1 mínútu í bakgrunni</string>
-    <string name="lock_timeout_minutes">Læsa eftir %1$d mínútur í bakgrunni</string>
     <string name="export_data">Flytja út gögn</string>
-    <string name="immediately">Strax</string>
     <string name="one_minute">1 mínúta</string>
-    <string name="minutes_format">%1$d mínútur</string>
     <string name="cancel">Hætta við</string>
     <string name="export">Flytja út</string>
     <string name="select_data_to_backup">Veldu gögn til að taka afrit af:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Kerfi</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Nútímalegt Mono</string>
-    <string name="upcoming_transactions_section">Komandi viðskipti</string>
-    <string name="upcoming_transactions_desc">Fá áminningar um komandi greiðslur</string>
     <string name="home_title">Heimasíða</string>
     <string name="add_transaction_subscription_cd">Bæta við viðskiptum eða áskriftum</string>
     <string name="selected_cd">Valið</string>

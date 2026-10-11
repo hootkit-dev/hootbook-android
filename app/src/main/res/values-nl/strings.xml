@@ -11,14 +11,8 @@
     <string name="security_section">Beveiliging</string>
     <string name="app_lock">App vergrendeling</string>
     <string name="app_lock_biometric_sub">Bescherm uw gegevens met biometrische verificatie</string>
-    <string name="lock_timeout">Vergrendel Time-out</string>
-    <string name="lock_timeout_immediate">Onmiddellijk vergrendelen wanneer de app naar de achtergrond gaat</string>
-    <string name="lock_timeout_1min">Vergrendel na 1 minuut op de achtergrond</string>
-    <string name="lock_timeout_minutes">Vergrendel na %1$d minuten op de achtergrond</string>
     <string name="export_data">Gegevens exporteren</string>
-    <string name="immediately">Onmiddellijk</string>
     <string name="one_minute">1 minuut</string>
-    <string name="minutes_format">%1$d minuten</string>
     <string name="cancel">annuleren</string>
     <string name="export">Exporteren</string>
     <string name="select_data_to_backup">Selecteer gegevens voor een back-up:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Systeem</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Aankomende transacties</string>
-    <string name="upcoming_transactions_desc">Krijg herinneringen voor aankomende betalingen</string>
     <string name="home_title">Startpagina</string>
     <string name="add_transaction_subscription_cd">Transactie of abonnement toevoegen</string>
     <string name="selected_cd">Geselecteerd</string>

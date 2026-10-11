@@ -11,14 +11,8 @@
     <string name="security_section">བདེ་འཇགས།</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">སྐྱེ་དངོས་ཀྱི་ཁུངས་དཔང་ར་སྤྲོད་ལ་བརྟེན་ནས་གཞི་གྲངས་ལ་སྲུང་སྐྱོབ་བྱེད་དགོས།</string>
-    <string name="lock_timeout">ཟྭ་རྒྱག་པའི་དུས་ཚོད་རྫོགས་པ།</string>
-    <string name="lock_timeout_immediate">ཉེར་སྤྱོད་རྒྱབ་ལྗོངས་ལ་འགྲོ་སྐབས་འཕྲལ་དུ་ཟྭ་རྒྱག་དགོས།</string>
-    <string name="lock_timeout_1min">རྒྱབ་ལྗོངས་ཀྱི་སྐར་མ་གཅིག་གི་རྗེས་སུ་ཟྭ་རྒྱག་པ།</string>
-    <string name="lock_timeout_minutes">རྒྱབ་ལྗོངས་ནང་%1$d སྐར་མ་རྗེས་ཀྱི་ཟྭ་རྒྱག་པ།</string>
     <string name="export_data">གཞི་གྲངས་ཕྱིར་འདྲེན་བྱས་པ།</string>
-    <string name="immediately">འཕྲལ་དུ་</string>
     <string name="one_minute">སྐར་མ་1</string>
-    <string name="minutes_format">%1$d སྐར་མ།</string>
     <string name="cancel">ཕྱིར་འཐེན།</string>
     <string name="export">ཕྱིར་གཏོང་</string>
     <string name="select_data_to_backup">གཞི་གྲངས་བདམས་ནས་རྗེས་གྲབས་བྱས་ཆོག་པ་སྟེ།</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">ལམ་ལུགས</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">དེང་རབས་ཀྱི་རྐྱང་པ་</string>
-    <string name="upcoming_transactions_section">ཉེ་བའི་ཉོ་འཚོང་།</string>
-    <string name="upcoming_transactions_desc">གཏོང་སྤྲོད་བྱེད་གྲབས་ཡོད་པའི་དྲན་སྐུལ་ཐོབ་པ།</string>
     <string name="home_title">ཁྱིམ་གཞིས་</string>
     <string name="add_transaction_subscription_cd">ཉོ་འཚོང་ངམ་མངག་ཉོ་ཁ་སྣོན་བྱས་པ།</string>
     <string name="selected_cd">བདམས་ཐོན་བྱུང་བ།</string>

@@ -11,14 +11,8 @@
     <string name="security_section">אבטחה</string>
     <string name="app_lock">נעילת אפליקציה</string>
     <string name="app_lock_biometric_sub">הגן על הנתונים שלך עם אימות ביומטרי</string>
-    <string name="lock_timeout">זמן סיום נעילה</string>
-    <string name="lock_timeout_immediate">נעילה מיידית כאשר האפליקציה עוברת לרקע</string>
-    <string name="lock_timeout_1min">נעילה לאחר דקה אחת ברקע</string>
-    <string name="lock_timeout_minutes">נעילה לאחר %1$d דקות ברקע</string>
     <string name="export_data">ייצוא נתונים</string>
-    <string name="immediately">מיידית</string>
     <string name="one_minute">דקה אחת</string>
-    <string name="minutes_format">%1$d דקות</string>
     <string name="cancel">בטל</string>
     <string name="export">ייצוא</string>
     <string name="select_data_to_backup">בחר נתונים לגיבוי:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">מערכת</string>
     <string name="font_snpro">SN פרו</string>
     <string name="font_snpro_sub">מודרני מונו</string>
-    <string name="upcoming_transactions_section">עסקאות קרובות</string>
-    <string name="upcoming_transactions_desc">קבל תזכורות לתשלומים קרובים</string>
     <string name="home_title">בית</string>
     <string name="add_transaction_subscription_cd">הוסף עסקה או מנוי</string>
     <string name="selected_cd">נבחר</string>

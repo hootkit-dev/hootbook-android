@@ -43,8 +43,6 @@
   <string name="core_ui_lock_load_failed">锁屏设置读取失败，私人内容保持隐藏。</string>
   <string name="core_ui_lock_enroll">请先在 Android 设置中配置设备锁屏或生物识别。</string>
   <string name="core_ui_lock_failed">验证未成功，请重新解锁。</string>
-  <string name="core_ui_lock_timeout">离开后锁定时间</string>
-  <string name="core_ui_immediately">立即</string>
   <string name="core_ui_minutes">%1$d 分钟</string>
   <string name="core_ui_lock_now">立即锁定</string>
   <string name="core_ui_backup_created">已生成备份，包含平台偏好和图片。请保存或分享。</string>

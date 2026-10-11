@@ -11,14 +11,8 @@
     <string name="security_section">セキュリティ</string>
     <string name="app_lock">アプリロック</string>
     <string name="app_lock_biometric_sub">生体認証でデータを保護</string>
-    <string name="lock_timeout">ロックタイムアウト</string>
-    <string name="lock_timeout_immediate">アプリがバックグラウンドに移動したときにすぐにロック</string>
-    <string name="lock_timeout_1min">バックグラウンドで1分後にロック</string>
-    <string name="lock_timeout_minutes">%1$d 分後にロックする</string>
     <string name="export_data">データをエクスポート</string>
-    <string name="immediately">すぐに</string>
     <string name="one_minute">1分</string>
-    <string name="minutes_format">%1$d 分</string>
     <string name="cancel">キャンセル</string>
     <string name="export">エクスポート</string>
     <string name="select_data_to_backup">バックアップするデータを選択:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">システム</string>
     <string name="font_snpro">SNプロ</string>
     <string name="font_snpro_sub">モダンモノ</string>
-    <string name="upcoming_transactions_section">今後の取引</string>
-    <string name="upcoming_transactions_desc">今後の支払いのリマインダーを受け取る</string>
     <string name="home_title">ホーム</string>
     <string name="add_transaction_subscription_cd">取引またはサブスクリプションを追加</string>
     <string name="selected_cd">選択済み</string>

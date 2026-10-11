@@ -43,8 +43,6 @@
   <string name="core_ui_lock_load_failed">Lock settings could not be loaded. Private content remains hidden.</string>
   <string name="core_ui_lock_enroll">Set up a device screen lock or biometrics in Android settings first.</string>
   <string name="core_ui_lock_failed">Authentication did not succeed. Try again to unlock.</string>
-  <string name="core_ui_lock_timeout">Lock after time away</string>
-  <string name="core_ui_immediately">Immediately</string>
   <string name="core_ui_minutes">%1$d minutes</string>
   <string name="core_ui_lock_now">Lock now</string>
   <string name="core_ui_backup_created">Backup created, including platform preferences and images. Save or share the file.</string>

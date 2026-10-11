@@ -11,14 +11,8 @@
     <string name="security_section">सुरक्षा</string>
     <string name="app_lock">एप लक</string>
     <string name="app_lock_biometric_sub">आफ्नो डेटा बायोमेट्रिक प्रमाणीकरणको प्रयोग गरेर सुरक्षित गर्नुहोस्</string>
-    <string name="lock_timeout">लक समय समाप्ति</string>
-    <string name="lock_timeout_immediate">एप पृष्ठभूमिमा गएपछि तुरुन्त लक गर्नुहोस्</string>
-    <string name="lock_timeout_1min">पृष्ठभूमिमा १ मिनेट पछि लक गर्नुहोस्</string>
-    <string name="lock_timeout_minutes">पृष्ठभूमिमा %1$d मिनेट पछि लक गर्नुहोस्</string>
     <string name="export_data">डेटा निर्यात गर्नुहोस्</string>
-    <string name="immediately">तुरुन्त</string>
     <string name="one_minute">१ मिनेट</string>
-    <string name="minutes_format">%1$d मिनेट</string>
     <string name="cancel">रद्द गर्नुहोस्</string>
     <string name="export">निर्यात गर्नुहोस्</string>
     <string name="select_data_to_backup">ब्याकअप गर्न डेटा चयन गर्नुहोस्:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">सistem</string>
     <string name="font_snpro">SN प्रो</string>
     <string name="font_snpro_sub">आधुनिक मोनो</string>
-    <string name="upcoming_transactions_section">आउँदै गरेका लेनदेनहरू</string>
-    <string name="upcoming_transactions_desc">आउँदै गरेका भुक्तानीको लागि सम्झनाहरू पाउनुहोस्</string>
     <string name="home_title">होम</string>
     <string name="add_transaction_subscription_cd">लेनदेन वा सदस्यता थप्नुहोस्</string>
     <string name="selected_cd">छानिएको</string>

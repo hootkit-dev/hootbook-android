@@ -11,14 +11,8 @@
     <string name="security_section">Sicherheit</string>
     <string name="app_lock">App-Sperre</string>
     <string name="app_lock_biometric_sub">Schützen Sie Ihre Daten mit biometrischer Authentifizierung</string>
-    <string name="lock_timeout">Sperr-Timeout</string>
-    <string name="lock_timeout_immediate">Sofort sperren wenn die App in den Hintergrund geht</string>
-    <string name="lock_timeout_1min">Sperren nach 1 Minute im Hintergrund</string>
-    <string name="lock_timeout_minutes">Sperre nach %1$d Minuten im Hintergrund</string>
     <string name="export_data">Daten exportieren</string>
-    <string name="immediately">Sofort</string>
     <string name="one_minute">1 Minute</string>
-    <string name="minutes_format">%1$d Minuten</string>
     <string name="cancel">Abbrechen</string>
     <string name="export">Exportieren</string>
     <string name="select_data_to_backup">Zu sichernde Daten auswählen:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">System</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Anstehende Transaktionen</string>
-    <string name="upcoming_transactions_desc">Erinnerungen für anstehende Zahlungen erhalten</string>
     <string name="home_title">Startseite</string>
     <string name="add_transaction_subscription_cd">Transaktion oder Abonnement hinzufügen</string>
     <string name="selected_cd">Ausgewählt</string>

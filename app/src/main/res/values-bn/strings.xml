@@ -11,14 +11,8 @@
     <string name="security_section">সুরক্ষা</string>
     <string name="app_lock">অ্যাপ লক</string>
     <string name="app_lock_biometric_sub">বায়োমেট্রিক প্রমাণীকরণের মাধ্যমে আপনার ডেটা সুরক্ষিত করুন</string>
-    <string name="lock_timeout">লক টাইমআউট</string>
-    <string name="lock_timeout_immediate">অ্যাপ ব্যাকগ্রাউন্ডে গেলে তাৎক্ষণিকভাবে লক করুন</string>
-    <string name="lock_timeout_1min">ব্যাকগ্রাউন্ডে ১ মিনিট পরে লক করুন</string>
-    <string name="lock_timeout_minutes">ব্যাকগ্রাউন্ডে %1$d মিনিট পরে লক করুন</string>
     <string name="export_data">ডেটা রপ্তানি করুন</string>
-    <string name="immediately">তাৎক্ষণিক</string>
     <string name="one_minute">১ মিনিট</string>
-    <string name="minutes_format">%1$d মিনিট</string>
     <string name="cancel">বাতিল করুন</string>
     <string name="export">রপ্তানি</string>
     <string name="select_data_to_backup">ব্যাকআপ করার জন্য ডেটা নির্বাচন করুন:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">সিস্টেম</string>
     <string name="font_snpro">SN প্রো</string>
     <string name="font_snpro_sub">মডার্ন মোনো</string>
-    <string name="upcoming_transactions_section">আসন্ন লেনদেন</string>
-    <string name="upcoming_transactions_desc">আসন্ন পেমেন্টের জন্য মনে করিয়ে দিন</string>
     <string name="home_title">হোম</string>
     <string name="add_transaction_subscription_cd">লেনদেন বা সাবস্ক্রিপশন যোগ করুন</string>
     <string name="selected_cd">নির্বাচিত</string>

@@ -11,14 +11,8 @@
     <string name="security_section">Bezpieczeństwo</string>
     <string name="app_lock">Blokada aplikacji</string>
     <string name="app_lock_biometric_sub">Chroń swoje dane za pomocą uwierzytelniania biometrycznego</string>
-    <string name="lock_timeout">Limit czasu blokady</string>
-    <string name="lock_timeout_immediate">Zablokuj natychmiast, gdy aplikacja przejdzie do tła</string>
-    <string name="lock_timeout_1min">Zablokuj po 1 minucie w tle</string>
-    <string name="lock_timeout_minutes">Zablokuj po %1$d minutach w tle</string>
     <string name="export_data">Eksportuj dane</string>
-    <string name="immediately">Natychmiast</string>
     <string name="one_minute">1 minuta</string>
-    <string name="minutes_format">%1$d minut</string>
     <string name="cancel">Anuluj</string>
     <string name="export">Eksportuj</string>
     <string name="select_data_to_backup">Wybierz dane do kopii zapasowej:</string>
@@ -487,8 +481,6 @@
     <string name="font_default_sub">Systemowa</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Nowoczesne Mono</string>
-    <string name="upcoming_transactions_section">Nadchodzące transakcje</string>
-    <string name="upcoming_transactions_desc">Otrzymuj przypomnienia o nadchodzących płatnościach</string>
     <string name="home_title">Strona główna</string>
     <string name="add_transaction_subscription_cd">Dodaj transakcję lub subskrypcję</string>
     <string name="selected_cd">Wybrane</string>
