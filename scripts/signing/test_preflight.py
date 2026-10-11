@@ -6,6 +6,7 @@ import importlib.util
 import hashlib
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -19,6 +20,25 @@ SCRIPT = Path(__file__).with_name("preflight.py")
 spec = importlib.util.spec_from_file_location("signing_preflight", SCRIPT)
 preflight = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(preflight)
+
+
+class RepositoryPinTests(unittest.TestCase):
+    def test_workflows_pin_owner_confirmed_hootbook_certificate(self):
+        root = Path(__file__).resolve().parents[2]
+        expected = "f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5"
+        for relative in (
+            ".github/actions/signing-preflight/action.yml",
+            ".github/workflows/debug-apk.yml",
+            ".github/workflows/testing-apk.yml",
+            ".github/workflows/release.yml",
+        ):
+            with self.subTest(path=relative):
+                pins = re.findall(
+                    r"^[ \t]*RELEASE_CERT_SHA256:[ \t]*(\S+)[ \t]*$",
+                    (root / relative).read_text(),
+                    re.MULTILINE,
+                )
+                self.assertEqual(pins, [expected])
 
 
 class Base64Tests(unittest.TestCase):

@@ -12,7 +12,7 @@ runs:
       shell: bash
       env:
         # Existing public release identity, also checked on built APKs.
-        RELEASE_CERT_SHA256: 23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726
+        RELEASE_CERT_SHA256: f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5
       run: |
         set +x
         python3 "$GITHUB_ACTION_PATH/../../../scripts/signing/preflight.py" \

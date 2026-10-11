@@ -50,18 +50,20 @@ rm -f "$SECRET_DIR/core-token"
 
 | Name | 内容 |
 | --- | --- |
-| `KEYSTORE_BASE64` | **原发布 keystore 文件**的完整、单行 Base64 |
+| `KEYSTORE_BASE64` | **已确认的 Hootbook keystore 文件**的完整、单行 Base64 |
 | `KEYSTORE_PASSWORD` | keystore 密码 |
-| `KEY_ALIAS` | 原发布 key alias |
-| `KEY_PASSWORD` | 原发布 key 的密码 |
+| `KEY_ALIAS` | 已确认的 Hootbook key alias |
+| `KEY_PASSWORD` | 已确认的 Hootbook key 的密码 |
 
-必须沿用已有发布私钥，勿为配置 CI 新建一个替代 key。Debug/main、Testing 和 Release 使用同一个包和发布签名；换 key 会破坏覆盖安装，且 Debug/main 的签名验证要求 SHA-256 为：
+仓库所有者已明确确认以当前 keystore 作为 Hootbook 的签名身份，替换从 Cashiro 继承的旧证书指纹。确认依据为[公开证书诊断](https://github.com/hootkit-dev/hootbook-android/actions/runs/38130958758)，诊断仅读取公开证书，未提取私钥。签名预检及 Debug/main、Testing、Release 的 APK 验证统一固定以下公开证书 SHA-256：
 
 ```text
-23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726
+f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5
 ```
 
-在已安装 JDK 的本地终端检查原证书（替换下面的私有路径和 alias，不把密码写入参数；`keytool` 会交互提示输入 keystore 密码）：
+同包名、不同签名的旧 APK 通常不能直接覆盖升级；更新预期指纹不会提供签名兼容性，也不会改变已安装 APK 的签名。后续应保留已确认的 Hootbook 私钥，勿为通过 CI 新建替代 key 或擅自改指纹。
+
+在已安装 JDK 的本地终端检查已确认的 Hootbook 证书（替换下面的私有路径和 alias，不把密码写入参数；`keytool` 会交互提示输入 keystore 密码）：
 
 ```bash
 keytool -list -v -keystore /PRIVATE/PATH/release.keystore -alias RELEASE_ALIAS
@@ -136,7 +138,7 @@ Fork PR 不获得 Secrets：Tests 两个 job 与 Debug build job 显式跳过 fo
 - `Missing CORE_REPO_READ_TOKEN`：检查是否在 App 的 Repository secrets 中、名称完全一致、不是 Variable/KEYSTORE-only Secret。
 - Core checkout 401/403/404：检查 token 过期/撤销、owner、所选 Core 仓库、Contents Read-only、账号权限、组织审批和组织 PAT 策略；私仓无权限时也可能表现为 404。
 - Secret 名称存在但 Tests 未启动：检查事件是否符合上表；Secret 配置和分支 push 不改变触发器。
-- 签名指纹不一致：确认上传的是原发布 keystore 和 alias，不修改工作流中的预期指纹来掩盖换 key。
+- 签名指纹不一致：确认上传的是所有者已确认的 Hootbook keystore 和 alias，不修改工作流中的预期指纹来掩盖意外换 key。
 
 参考：[GitHub 创建 PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)、[Actions Secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)、[gh secret set](https://cli.github.com/manual/gh_secret_set)、[actions/checkout 跨私库示例](https://github.com/actions/checkout#checkout-multiple-repos-private)。
 
@@ -144,7 +146,7 @@ Fork PR 不获得 Secrets：Tests 两个 job 与 Debug build job 显式跳过 fo
 
 Testing and release workflows run `.github/actions/signing-preflight` immediately after Java setup,
 before the private Core checkout, Rust/NDK work, or Gradle build. The validator checks Base64,
-keystore loading, password/private-key alias, signing and verification, and the existing release
+keystore loading, password/private-key alias, signing and verification, and the owner-confirmed Hootbook
 certificate fingerprint. A successful decode is not sufficient proof that the keystore password is
 correct. Credentials remain in environment variables; they are not put into Gradle command-line
 arguments. Final APKs are independently checked with apksigner and aapt2.

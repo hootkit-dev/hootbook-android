@@ -195,7 +195,7 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           # Public fingerprint of the release certificate, also enforced by Debug APK.
-          RELEASE_CERT_SHA256: 23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726
+          RELEASE_CERT_SHA256: f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5
         run: |
           set -euo pipefail
           TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)

@@ -28,10 +28,17 @@ The JDK signs a tiny temporary payload with the selected RSA, EC or DSA private
 key and verifies that signature with the same entry's certificate public key.
 It does not require a CA-trusted certificate chain, so an ordinary self-signed
 Android release certificate is accepted. The composite action also checks the
-existing public release certificate SHA-256 fingerprint, before building:
-`23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726`.
-This retains the identity already enforced by the Debug APK workflow. This does
-not validate PKI certificate dates or establish Play Store acceptance. The
+owner-confirmed Hootbook public certificate SHA-256 fingerprint, before building:
+`f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5`.
+The repository owner explicitly approved the current keystore as Hootbook's
+signing identity after the [public certificate diagnostic](https://github.com/hootkit-dev/hootbook-android/actions/runs/38130958758).
+That diagnostic read only the public certificate; it did not retrieve the private
+key. This replaces the inherited Cashiro certificate pin in the composite action
+and the Debug, Testing, and Release APK verification steps. Same-package APKs
+signed with a different key normally cannot upgrade an existing installation;
+changing the expected pin does not make those signatures compatible. Preserve the
+confirmed Hootbook key for subsequent builds. This check does not validate PKI
+certificate dates or establish Play Store acceptance. The
 standalone Python script can optionally take `RELEASE_CERT_SHA256` via the
 environment; the composite action always supplies the repository's expected
 fingerprint, so callers cannot accidentally omit the identity check.
@@ -94,6 +101,16 @@ expected fingerprint just to make an unexpected key pass. AABs need their own
 JAR signing verification; `apksigner` is specifically for APKs.
 
 ## Offline regression tests
+
+A lightweight repository consistency test checks the fixed Hootbook certificate
+pin in the composite action and all three APK verification workflows, without
+creating keystores or requiring a JDK:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.signing.test_preflight.RepositoryPinTests
+```
+
+Run the full cryptographic regression suite separately:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/signing -p 'test_*.py'
