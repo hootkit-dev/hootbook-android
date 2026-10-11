@@ -225,7 +225,6 @@
     <string name="edit_profile">சுயவிவரம் திருத்தவும்</string>
     <string name="gallery">திரைப்படகாட்சி</string>
     <string name="change_banner">பேனர் மாற்றவும்</string>
-    <string name="transactions_count_format">பரிவர்த்தனைகள்: %1$d</string>
     <string name="financial_overview">பைனான்ஷியல் ஒவர்வியூ</string>
     <string name="net_worth">நிகர மதிப்பு</string>
     <string name="upcoming">வரவிருக்கும்</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">கடன்கள்</string>
     <string name="lend_borrow_you_get">நீங்கள் பெறுவீர்கள்</string>
     <string name="lend_borrow_you_owe">நீங்கள் செலுத்த வேண்டும்</string>
-    <string name="no_contacts_desc">இன்னும் தொடர்புகள் சேர்க்கப்படவில்லை. நபர்களை சேர்க்க அனைத்தையும் காண்க பொத்தானைத் தட்டவும்.</string>
     <string name="no_due_date">கெடு தேதி இல்லை</string>
     <string name="no_persons_desc">கடன் கொடுத்த அல்லது வாங்கிய பணத்தை கண்காணிக்க ஒரு நபரை சேர்க்கவும்</string>
     <string name="no_persons_yet">இன்னும் பேரேட்டு பதிவுகள் இல்லை</string>

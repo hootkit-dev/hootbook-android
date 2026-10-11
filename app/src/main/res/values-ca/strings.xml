@@ -225,7 +225,6 @@
     <string name="edit_profile">Edita el Perfil</string>
     <string name="gallery">Galeria</string>
     <string name="change_banner">Canvia el Banner</string>
-    <string name="transactions_count_format">Transaccions: %1$d</string>
     <string name="financial_overview">Resum Financer</string>
     <string name="net_worth">Patrimoni Net</string>
     <string name="upcoming">Properament</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Préstecs</string>
     <string name="lend_borrow_you_get">Recibiràs</string>
     <string name="lend_borrow_you_owe">Deus</string>
-    <string name="no_contacts_desc">Encara no hi ha contactes. Toca el botó Veure-ho tot per afegir persones.</string>
     <string name="no_due_date">Sense data de venciment</string>
     <string name="no_persons_desc">Afegeix una persona per començar a fer el seguiment dels diners deixats o manllevats</string>
     <string name="no_persons_yet">Encara no hi ha registres de llibre</string>

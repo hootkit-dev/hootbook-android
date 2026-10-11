@@ -225,7 +225,6 @@
     <string name="edit_profile">اؠڈِٹ کَرنہٕ آمُت پروفایل</string>
     <string name="gallery">گیلری</string>
     <string name="change_banner">بینر تبدیل کٔرِو</string>
-    <string name="transactions_count_format">لین دین: %1$d</string>
     <string name="financial_overview">مٲلی جٲیزٕ</string>
     <string name="net_worth">نیٹ ورتھ</string>
     <string name="upcoming">یِنہٕ وول</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">قرض</string>
     <string name="lend_borrow_you_get">تُہؠ واتہٕ</string>
     <string name="lend_borrow_you_owe">تُہؠ ہیٚکان</string>
-    <string name="no_contacts_desc">کونٹیکٹ نہٕ چھِ شُرُو تھٲوِت. لوٗک شُرُو کرنہٕ خٲطرٕ سٕب وُچھو بٹن دبٲوِو.</string>
     <string name="no_due_date">نہٕ تٔریخ</string>
     <string name="no_persons_desc">دِیُت یا تُکی اُدھار ٹریک کرنہٕ خٲطرٕ ہوکھ شُرُو کٔرِو</string>
     <string name="no_persons_yet">نہٕ چھِ ریکارڈ</string>

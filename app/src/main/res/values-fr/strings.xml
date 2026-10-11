@@ -225,7 +225,6 @@
     <string name="edit_profile">Modifier le profil</string>
     <string name="gallery">Galerie</string>
     <string name="change_banner">Changer la bannière</string>
-    <string name="transactions_count_format">Opérations : %1$d</string>
     <string name="financial_overview">Aperçu financier</string>
     <string name="net_worth">Valeur nette</string>
     <string name="upcoming">À venir</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Prêts</string>
     <string name="lend_borrow_you_get">Vous recevrez</string>
     <string name="lend_borrow_you_owe">Vous devez</string>
-    <string name="no_contacts_desc">Aucun contact ajouté pour le moment. Appuyez sur le bouton Afficher tout pour ajouter des personnes.</string>
     <string name="no_due_date">Aucune date d\'échéance</string>
     <string name="no_persons_desc">Ajoutez une personne pour commencer à suivre l\'argent prêté ou emprunté</string>
     <string name="no_persons_yet">Aucun enregistrement de compte pour le moment</string>

@@ -225,7 +225,6 @@
     <string name="edit_profile">Редактирай профила</string>
     <string name="gallery">Галерия</string>
     <string name="change_banner">Смени банера</string>
-    <string name="transactions_count_format">Транзакции: %1$d</string>
     <string name="financial_overview">Финансов обзор</string>
     <string name="net_worth">Нетна стойност</string>
     <string name="upcoming">Предстоящо</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Заеми</string>
     <string name="lend_borrow_you_get">Ще получиш</string>
     <string name="lend_borrow_you_owe">Дължиш</string>
-    <string name="no_contacts_desc">Все още няма добавени контакти. Докоснете бутона „Виж всички“, за да добавите хора.</string>
     <string name="no_due_date">Без срок</string>
     <string name="no_persons_desc">Добавете човек, за да започнете да следите пари, взети назаем или дадени назаем</string>
     <string name="no_persons_yet">Все още няма записи в тефтера</string>

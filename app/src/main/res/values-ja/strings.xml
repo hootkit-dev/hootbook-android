@@ -225,7 +225,6 @@
     <string name="edit_profile">プロファイルを編集</string>
     <string name="gallery">ギャラリー</string>
     <string name="change_banner">バナーを変更</string>
-    <string name="transactions_count_format">トランザクション: %1$d</string>
     <string name="financial_overview">財務概要</string>
     <string name="net_worth">純価値</string>
     <string name="upcoming">近日公開</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">貸借</string>
     <string name="lend_borrow_you_get">受け取る予定</string>
     <string name="lend_borrow_you_owe">あなたの借金</string>
-    <string name="no_contacts_desc">連絡先はまだ追加されていません。「すべて表示」ボタンをタップして人を追加してください。</string>
     <string name="no_due_date">期限なし</string>
     <string name="no_persons_desc">貸したお金や借りたお金の記録を始めるには、人を追加してください</string>
     <string name="no_persons_yet">台帳記録はまだありません</string>

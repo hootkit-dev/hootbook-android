@@ -225,7 +225,6 @@
     <string name="edit_profile">རྩོམ་སྒྲིག་གི་གསལ་སྡུད།</string>
     <string name="gallery">པར་རིས་ཁང་།</string>
     <string name="change_banner">དར་ཆ་བསྒྱུར་བ།</string>
-    <string name="transactions_count_format">ཉོ་འཚོང་། %1$d</string>
     <string name="financial_overview">ནོར་དོན་མདོར་བསྡུས།</string>
     <string name="net_worth">རིན་ཐང་ཁེར་གཙང་།</string>
     <string name="upcoming">ཐོན་གྲབས་ཡོད་པའི་</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">བུན་དངུལ།</string>
     <string name="lend_borrow_you_get">ཁྱོད་ཀྱིས་ཐོབ་རྒྱུ།</string>
     <string name="lend_borrow_you_owe">ཁྱོད་ཀྱིས་བུན་ཡོད།</string>
-    <string name="no_contacts_desc">ད་དུང་འབྲེལ་མི་ཁ་སྣོན་བྱས་མེད། མི་ཁ་སྣོན་བྱེད་པའི་ཆེད་དུ་ View All མཐེབ་མནན་རོགས།</string>
     <string name="no_due_date">དུས་ཚད་མེད།</string>
     <string name="no_persons_desc">དངུལ་གཡར་བའམ་བུན་པའི་རྗེས་འདེད་འགོ་འཛུགས་པའི་ཆེད་དུ་མི་ཞིག་ཁ་སྣོན་བྱེད་རོགས།</string>
     <string name="no_persons_yet">ད་དུང་ལེདར་ཟིན་ཐོ་མེད།</string>

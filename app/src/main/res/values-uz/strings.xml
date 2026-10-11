@@ -225,7 +225,6 @@
     <string name="edit_profile">Profilni tahrirlash</string>
     <string name="gallery">Galereya</string>
     <string name="change_banner">Bannerni o\'zgartirish</string>
-    <string name="transactions_count_format">Tranzaksiyalar: %1$d</string>
     <string name="financial_overview">Moliyaviy ko\'rinish</string>
     <string name="net_worth">Sof qiymat</string>
     <string name="upcoming">Kelajakdagi</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Qarzlar</string>
     <string name="lend_borrow_you_get">Siz olasiz</string>
     <string name="lend_borrow_you_owe">Siz qarz</string>
-    <string name="no_contacts_desc">Hozircha kontaktlar qo\'shilmagan. Shaxslar qo\'shish uchun "Hammasini ko\'rish" tugmasini bosing.</string>
     <string name="no_due_date">Muddati yo\'q</string>
     <string name="no_persons_desc">Pul qarz berish yoki qarz olishni kuzatish uchun shaxs qo\'shing</string>
     <string name="no_persons_yet">Hozircha khata yozuvlari yo\'q</string>

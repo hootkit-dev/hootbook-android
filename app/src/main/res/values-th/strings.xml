@@ -225,7 +225,6 @@
     <string name="edit_profile">แก้ไขโปรไฟล์</string>
     <string name="gallery">แกลเลอรี</string>
     <string name="change_banner">เปลี่ยนแบนเนอร์</string>
-    <string name="transactions_count_format">รายการธุรกรรม: %1$d</string>
     <string name="financial_overview">ภาพรวมทางการเงิน</string>
     <string name="net_worth">มูลค่าสุทธิ</string>
     <string name="upcoming">กำลังจะมาถึง</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">เงินกู้</string>
     <string name="lend_borrow_you_get">คุณจะได้รับ</string>
     <string name="lend_borrow_you_owe">คุณเป็นหนี้</string>
-    <string name="no_contacts_desc">ยังไม่ได้เพิ่มรายชื่อติดต่อ แตะปุ่มดูทั้งหมดเพื่อเพิ่มบุคคล</string>
     <string name="no_due_date">ไม่มีวันที่ครบกำหนด</string>
     <string name="no_persons_desc">เพิ่มบุคคลเพื่อเริ่มติดตามเงินที่ให้ยืมหรือยืมมา</string>
     <string name="no_persons_yet">ยังไม่มีบันทึกบัญชี</string>

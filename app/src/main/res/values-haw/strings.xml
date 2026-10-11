@@ -225,7 +225,6 @@
     <string name="edit_profile">Hoʻoponopono i ka moʻolelo</string>
     <string name="gallery">Hale Hōʻikeʻike</string>
     <string name="change_banner">Hoʻololi i ka hae</string>
-    <string name="transactions_count_format">Nā hana: %1$d</string>
     <string name="financial_overview">ʻIke kālā</string>
     <string name="net_worth">Uuna Waiwai</string>
     <string name="upcoming">e hiki mai ana</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Nā Hōʻaiʻē</string>
     <string name="lend_borrow_you_get">E loaʻa iā ʻoe</string>
     <string name="lend_borrow_you_owe">Ua ʻaiʻē ʻoe</string>
-    <string name="no_contacts_desc">ʻAʻohe mea pilina i hoʻohui ʻia. Kaomi i ke pihi Nānā i nā mea a pau e hoʻohui i nā kānaka.</string>
     <string name="no_due_date">ʻAʻohe lā e kū ai</string>
     <string name="no_persons_desc">Hoʻohui i ke kanaka e hoʻomaka ai e nānā i ke kālā i hōʻaiʻē ʻia a i ʻaiʻē ʻia paha</string>
     <string name="no_persons_yet">ʻAʻohe moʻolelo moʻokāki i kēia manawa</string>

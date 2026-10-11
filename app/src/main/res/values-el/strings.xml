@@ -225,7 +225,6 @@
     <string name="edit_profile">Επεξεργασία Προφίλ</string>
     <string name="gallery">Γκαλερί</string>
     <string name="change_banner">Αλλαγή Banner</string>
-    <string name="transactions_count_format">Συναλλαγές: %1$d</string>
     <string name="financial_overview">Οικονομική Επισκόπηση</string>
     <string name="net_worth">Καθαρή Αξία</string>
     <string name="upcoming">Επερχόμενα</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Δάνεια</string>
     <string name="lend_borrow_you_get">Θα λάβετε</string>
     <string name="lend_borrow_you_owe">Χρωστάτε</string>
-    <string name="no_contacts_desc">Δεν έχουν προστεθεί επαφές ακόμα. Πατήστε το κουμπί Προβολή όλων για να προσθέσετε άτομα.</string>
     <string name="no_due_date">Χωρίς Ημερομηνία Λήξης</string>
     <string name="no_persons_desc">Προσθέστε ένα άτομο για να ξεκινήσετε την παρακολούθηση χρημάτων που δανείσατε ή δανειστήκατε</string>
     <string name="no_persons_yet">Δεν υπάρχουν ακόμα εγγραφές καθολικού</string>

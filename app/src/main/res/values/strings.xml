@@ -245,7 +245,6 @@
     <string name="edit_profile">Edit Profile</string>
     <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
-    <string name="transactions_count_format">Transactions: %1$d</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Upcoming</string>
@@ -695,7 +694,6 @@
 <string name="minute_timeout_format">%1$d minute timeout</string>
 <string name="net_worth_label">Net worth</string>
 <string name="no_cloud_snapshots">No remote backup snapshots found in cloud folder.</string>
-<string name="no_contacts_desc">No contacts added yet. Tap the View All button to add people.</string>
 <string name="no_due_date">No Due Date</string>
 <string name="no_persons_desc">Add a person to start tracking money lended or borrowed</string>
 <string name="no_persons_yet">No ledger records yet</string>

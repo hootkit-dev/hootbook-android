@@ -244,7 +244,6 @@
     <string name="edit_profile">Edit Profile</string>
     <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
-    <string name="transactions_count_format">Transactions: %1$d</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Upcoming</string>
@@ -710,7 +709,6 @@
     <string name="delete_record">Delete Record</string>
     <string name="due_date">Due Date</string>
     <string name="edit_record">Edit Record</string>
-    <string name="no_contacts_desc">No contacts added yet. Tap the View All button to add people.</string>
     <string name="person_avatar">Avatar</string>
     <string name="record_options">Record Options</string>
     <string name="reminder_message_format">Hi %1$s, friendly reminder regarding our ledger balance of %2$s.</string>

@@ -225,7 +225,6 @@
     <string name="edit_profile">Breyta prófíl</string>
     <string name="gallery">Myndasafn</string>
     <string name="change_banner">Breyta borða</string>
-    <string name="transactions_count_format">Færslur: %1$d</string>
     <string name="financial_overview">Fjárhagsyfirlit</string>
     <string name="net_worth">Heildareignir</string>
     <string name="upcoming">Framtíðar</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Lán</string>
     <string name="lend_borrow_you_get">Þú færð</string>
     <string name="lend_borrow_you_owe">Þú skuldar</string>
-    <string name="no_contacts_desc">Engir tengiliðir bættir við enn. Bankaðu á Sýna allt hnappinn til að bæta við fólki.</string>
     <string name="no_due_date">Enginn gjalddagi</string>
     <string name="no_persons_desc">Bættu við manneskju til að byrja að fylgjast með peningum sem lánaðir eða skuldaðir</string>
     <string name="no_persons_yet">Engar bókhaldsfærslur enn</string>

@@ -225,7 +225,6 @@
     <string name="edit_profile">Profil szerkesztése</string>
     <string name="gallery">Galéria</string>
     <string name="change_banner">Bannerváltás</string>
-    <string name="transactions_count_format">Tranzakciók: %1$d</string>
     <string name="financial_overview">Pénzügyi áttekintés</string>
     <string name="net_worth">Nettó vagyon</string>
     <string name="upcoming">Közelgő események</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Kölcsönök</string>
     <string name="lend_borrow_you_get">Kapni fogsz</string>
     <string name="lend_borrow_you_owe">Tartozol</string>
-    <string name="no_contacts_desc">Még nincsenek hozzáadott kapcsolatok. A személyek hozzáadásához érintse meg az Összes megtekintése gombot.</string>
     <string name="no_due_date">Nincs határidő</string>
     <string name="no_persons_desc">Adjon hozzá egy személyt a kölcsönadott vagy kölcsönvett pénz nyomon követéséhez</string>
     <string name="no_persons_yet">Még nincsenek nyilvántartási bejegyzések</string>

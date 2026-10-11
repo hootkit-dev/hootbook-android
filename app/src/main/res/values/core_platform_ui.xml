@@ -2,14 +2,11 @@
 <resources>
   <string name="core_ui_profile">Profile</string>
   <string name="core_ui_appearance">Appearance and display</string>
-  <string name="core_ui_back">Back</string>
   <string name="core_ui_save">Save</string>
-  <string name="core_ui_remove">Remove</string>
   <string name="core_ui_retry">Retry</string>
   <string name="core_ui_name">Name</string>
   <string name="core_ui_avatar">Profile image</string>
   <string name="core_ui_banner">Banner image</string>
-  <string name="core_ui_show_banner">Show banner</string>
   <string name="core_ui_background">Background ARGB color</string>
   <string name="core_ui_contacts">People and debts</string>
   <string name="core_ui_operation_failed">The operation did not finish. Your previous settings are preserved; check the file or permission and retry.</string>
@@ -46,10 +43,6 @@
   <string name="core_ui_minutes">%1$d minutes</string>
   <string name="core_ui_lock_now">Lock now</string>
   <string name="core_ui_legacy_image_unavailable">An old profile or merchant image is missing or unreadable. The original files were retained; choose a replacement image.</string>
-  <string name="core_ui_merchant_icons">Merchant icons</string>
   <string name="core_ui_merchant_name">Merchant name</string>
-  <string name="core_ui_pick_image">Choose image</string>
   <string name="core_ui_search_icons">Search App Store icons</string>
-  <string name="core_ui_use_icon">Use this icon</string>
-  <string name="core_ui_icon_search_note">Searching sends the entered merchant name to the public App Store search service. Local image selection stays on this device.</string>
 </resources>

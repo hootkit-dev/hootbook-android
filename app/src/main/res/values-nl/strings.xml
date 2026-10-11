@@ -225,7 +225,6 @@
     <string name="edit_profile">Profiel bewerken</string>
     <string name="gallery">Galerij</string>
     <string name="change_banner">Wijzig de banner</string>
-    <string name="transactions_count_format">Transacties: %1$d</string>
     <string name="financial_overview">Financieel Overzicht</string>
     <string name="net_worth">Netto waarde</string>
     <string name="upcoming">Aankomende</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Leningen</string>
     <string name="lend_borrow_you_get">U ontvangt</string>
     <string name="lend_borrow_you_owe">U bent verschuldigd</string>
-    <string name="no_contacts_desc">Er zijn nog geen contacten toegevoegd. Tik op de knop Alles weergeven om mensen toe te voegen.</string>
     <string name="no_due_date">Geen vervaldatum</string>
     <string name="no_persons_desc">Voeg een persoon toe om uitgeleend of geleend geld bij te houden</string>
     <string name="no_persons_yet">Nog geen registerrecords</string>

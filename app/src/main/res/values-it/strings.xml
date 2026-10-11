@@ -225,7 +225,6 @@
     <string name="edit_profile">Modifica Profilo</string>
     <string name="gallery">Galleria</string>
     <string name="change_banner">Cambia Banner</string>
-    <string name="transactions_count_format">Transazioni: %1$d</string>
     <string name="financial_overview">Panoramica Finanziaria</string>
     <string name="net_worth">Patrimonio Netto</string>
     <string name="upcoming">Prossimi</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Prestiti</string>
     <string name="lend_borrow_you_get">Riceverai</string>
     <string name="lend_borrow_you_owe">Devi</string>
-    <string name="no_contacts_desc">Nessun contatto aggiunto. Tocca il pulsante Visualizza Tutto per aggiungere persone.</string>
     <string name="no_due_date">Nessuna data di scadenza</string>
     <string name="no_persons_desc">Aggiungi una persona per iniziare a tracciare il denaro prestato o preso in prestito</string>
     <string name="no_persons_yet">Nessuna voce di contabilità</string>

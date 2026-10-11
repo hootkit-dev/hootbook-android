@@ -225,7 +225,6 @@
     <string name="edit_profile">ਪ੍ਰੋਫਾਈਲ ਸੋਧੋ</string>
     <string name="gallery">ਗੈਲਰੀ</string>
     <string name="change_banner">ਬੈਨਰ ਬਦਲੋ</string>
-    <string name="transactions_count_format">ਲੈਣ-ਦੇਣ: %1$d</string>
     <string name="financial_overview">ਵਿੱਤੀ ਜਾਇਜ਼ਾ</string>
     <string name="net_worth">ਸ਼ੁੱਧ ਮੌਲਤਾ</string>
     <string name="upcoming">ਆਗਾਮੀ</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">ਕਰਜ਼ੇ</string>
     <string name="lend_borrow_you_get">ਤੁਸੀਂ %1$s ਪ੍ਰਾਪਤ ਕਰੋਗੇ</string>
     <string name="lend_borrow_you_owe">ਤੁਹਾਨੂੰ %1$s ਦੇਣਾ ਹੈ</string>
-    <string name="no_contacts_desc">ਹੁਣ ਤੱਕ ਕੋਈ ਸੰਪਰਕ ਸ਼ਾਮਲ ਨਹੀਂ ਕੀਤਾ ਗਿਆ। ਲੋਕ ਸ਼ਾਮਲ ਕਰਨ ਲਈ ਸਭ ਵੇਖੋ ਬਟਨ ਦਬਾਓ।</string>
     <string name="no_due_date">ਕੋਈ ਦੇਉ ਤਾਰੀਖ ਨਹੀਂ</string>
     <string name="no_persons_desc">ਕਰਜ਼ ਦਿੱਤੇ ਜਾਂ ਲਏ ਲੋਕਾਂ ਨੂੰ ਟਰੈਕ ਕਰਨ ਦੀ ਸ਼ੁਰੂਆਤ ਕਰਨ ਲਈ ਵਿਅਕਤੀ ਸ਼ਾਮਲ ਕਰੋ</string>
     <string name="no_persons_yet">ਹੁਣ ਤੱਕ ਕੋਈ ਲੈਡਜਰ ਰਿਕਾਰਡ ਨਹੀਂ</string>

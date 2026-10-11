@@ -225,7 +225,6 @@
     <string name="edit_profile">Editare profil</string>
     <string name="gallery">Galerie</string>
     <string name="change_banner">Schimbă Steagul</string>
-    <string name="transactions_count_format">Tranzacții: %1$d</string>
     <string name="financial_overview">Prezentare generală financiară</string>
     <string name="net_worth">Valoare netă</string>
     <string name="upcoming">Urmează</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Împrumuturi</string>
     <string name="lend_borrow_you_get">Vei primi %1$s</string>
     <string name="lend_borrow_you_owe">Îți datoriești %1$s</string>
-    <string name="no_contacts_desc">Niciun contact adăugat încă. Apasă butonul Vezi Toate pentru a adăuga oameni.</string>
     <string name="no_due_date">Fără Data Scadenței</string>
     <string name="no_persons_desc">Adaugă o persoană pentru a începe să urmărești banii împrumutați sau împrumuțați</string>
     <string name="no_persons_yet">Nicio înregistrare de contabilitate încă</string>

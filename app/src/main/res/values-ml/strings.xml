@@ -225,7 +225,6 @@
     <string name="edit_profile">പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക</string>
     <string name="gallery">ഗ്യാലറി</string>
     <string name="change_banner">ബാനർ മാറ്റുക</string>
-    <string name="transactions_count_format">പ്രവർത്തനങ്ങൾ: %1$d</string>
     <string name="financial_overview">ധനകാര്യ അവലോകനം</string>
     <string name="net_worth">നികുതി മൂല്യം</string>
     <string name="upcoming">ശേഷിക്കുന്നവ</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">കടങ്ങൾ</string>
     <string name="lend_borrow_you_get">നിങ്ങൾക്ക് ലഭിക്കും</string>
     <string name="lend_borrow_you_owe">നിങ്ങൾ കടപ്പെട്ടിരിക്കുന്നു</string>
-    <string name="no_contacts_desc">ഇതുവരെ കോൺടാക്റ്റുകൾ ചേർത്തിട്ടില്ല. ആളുകളെ ചേർക്കാൻ എല്ലാം കാണുക ബട്ടൺ അമർത്തുക.</string>
     <string name="no_due_date">തീയതിയില്ല</string>
     <string name="no_persons_desc">കടം കൊടുത്തതോ വാങ്ങിയതോ ആയ പണം ട്രാക്ക് ചെയ്യാൻ ഒരു വ്യക്തിയെ ചേർക്കുക</string>
     <string name="no_persons_yet">ഇതുവരെ ലെഡ്ജർ രേഖകളില്ല</string>

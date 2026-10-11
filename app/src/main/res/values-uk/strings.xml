@@ -225,7 +225,6 @@
     <string name="edit_profile">Редагувати профіль</string>
     <string name="gallery">Галерея</string>
     <string name="change_banner">Змінити банер</string>
-    <string name="transactions_count_format">Транзакції: %1$d</string>
     <string name="financial_overview">Фінансовий огляд</string>
     <string name="net_worth">Чиста вартість</string>
     <string name="upcoming">Майбутні</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Позики</string>
     <string name="lend_borrow_you_get">Ви отримаєте</string>
     <string name="lend_borrow_you_owe">Ви винні</string>
-    <string name="no_contacts_desc">Контакти ще не додані. Натисніть кнопку Переглянути всі, щоб додати людей.</string>
     <string name="no_due_date">Без терміну</string>
     <string name="no_persons_desc">Додайте людину, щоб почати відстежувати позичені або зайняті гроші</string>
     <string name="no_persons_yet">Записів ще немає</string>

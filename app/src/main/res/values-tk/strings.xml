@@ -225,7 +225,6 @@
     <string name="edit_profile">Profile Düzet</string>
     <string name="gallery">Galereýa</string>
     <string name="change_banner">Banneri Üýtget</string>
-    <string name="transactions_count_format">Amallar: %1$d</string>
     <string name="financial_overview">Maliýe Gözlegi</string>
     <string name="net_worth">Net Bahasy</string>
     <string name="upcoming">Geljekde</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Karzlar</string>
     <string name="lend_borrow_you_get">Siz alarsyňyz</string>
     <string name="lend_borrow_you_owe">Siz bergilisiňiz</string>
-    <string name="no_contacts_desc">Entek aragatnaşyk goşulmady. Adam goşmak üçin Ählisini gör düwmesine basyň.</string>
     <string name="no_due_date">Möhlet ýok</string>
     <string name="no_persons_desc">Berlen ýa-da alynan pul yzarlamak üçin adam goşuň</string>
     <string name="no_persons_yet">Entek hasap ýazgysy ýok</string>

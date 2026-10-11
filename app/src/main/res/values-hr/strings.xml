@@ -225,7 +225,6 @@
     <string name="edit_profile">Uredi profil</string>
     <string name="gallery">Galerija</string>
     <string name="change_banner">Promijeni banner</string>
-    <string name="transactions_count_format">Transakcije: %1$d</string>
     <string name="financial_overview">Financijski pregled</string>
     <string name="net_worth">Neto vrijednost</string>
     <string name="upcoming">Uskoro</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Zajmovi</string>
     <string name="lend_borrow_you_get">Dobit ćete</string>
     <string name="lend_borrow_you_owe">Dugujete</string>
-    <string name="no_contacts_desc">Još nije dodan nijedan kontakt. Dodirnite gumb Prikaži sve za dodavanje osoba.</string>
     <string name="no_due_date">Nema datuma dospijeća</string>
     <string name="no_persons_desc">Dodajte osobu za početak praćenja posuđenog ili uzajmljenog novca</string>
     <string name="no_persons_yet">Još nema knjigovodstvenih zapisa</string>

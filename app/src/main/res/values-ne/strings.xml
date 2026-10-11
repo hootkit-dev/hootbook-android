@@ -225,7 +225,6 @@
     <string name="edit_profile">प्रोफाइल सम्पादन गर्नुहोस्</string>
     <string name="gallery">ग्यालेरी</string>
     <string name="change_banner">ब्यानर परिवर्तन गर्नुहोस्</string>
-    <string name="transactions_count_format">लेनदेन: %1$d</string>
     <string name="financial_overview">आर्थिक अवलोकन</string>
     <string name="net_worth">शुद्ध सम्पत्ति</string>
     <string name="upcoming">आउँदा</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">ऋणहरू</string>
     <string name="lend_borrow_you_get">तपाईंले पाउनुहुनेछ</string>
     <string name="lend_borrow_you_owe">तपाईंले तिर्नुपर्ने</string>
-    <string name="no_contacts_desc">अहिलेसम्म सम्पर्कहरू थपिएका छैनन्। व्यक्तिहरू थप्न सबै हेर्नुहोस् बटन थिच्नुहोस्।</string>
     <string name="no_due_date">म्याद छैन</string>
     <string name="no_persons_desc">दिएको वा लिएको पैसा ट्र्याक गर्न एक व्यक्ति थप्नुहोस्</string>
     <string name="no_persons_yet">अहिलेसम्म कुनै खाता रेकर्ड छैन</string>

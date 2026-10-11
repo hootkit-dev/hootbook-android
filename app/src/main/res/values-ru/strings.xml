@@ -225,7 +225,6 @@
     <string name="edit_profile">Редактировать профиль</string>
     <string name="gallery">Галерея</string>
     <string name="change_banner">Изменить баннер</string>
-    <string name="transactions_count_format">Транзакции: %1$d</string>
     <string name="financial_overview">Финансовый обзор</string>
     <string name="net_worth">Чистая стоимость</string>
     <string name="upcoming">Предстоящие</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Долги</string>
     <string name="lend_borrow_you_get">Вы получите %1$s</string>
     <string name="lend_borrow_you_owe">Вы должны %1$s</string>
-    <string name="no_contacts_desc">Контакты еще не добавлены. Нажмите кнопку Показать все, чтобы добавить людей.</string>
     <string name="no_due_date">Нет даты погашения</string>
     <string name="no_persons_desc">Добавьте человека, чтобы начать отслеживание одолженных или взятых в долг денег</string>
     <string name="no_persons_yet">Пока нет записей бухгалтерии</string>

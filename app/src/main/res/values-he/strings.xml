@@ -225,7 +225,6 @@
     <string name="edit_profile">ערוך פרופיל</string>
     <string name="gallery">גלריה</string>
     <string name="change_banner">שנה באנר</string>
-    <string name="transactions_count_format">עסקאות: %1$d</string>
     <string name="financial_overview">סקירה פיננסית</string>
     <string name="net_worth">שווי נקי</string>
     <string name="upcoming">בקרוב</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">הלוואות</string>
     <string name="lend_borrow_you_get">תקבל</string>
     <string name="lend_borrow_you_owe">אתה חייב</string>
-    <string name="no_contacts_desc">עדיין לא נוספו אנשי קשר. הקש על כפתור הצג הכל כדי להוסיף אנשים.</string>
     <string name="no_due_date">אין תאריך יעד</string>
     <string name="no_persons_desc">הוסף אדם כדי להתחיל לעקוב אחר כסף שהוהלווה או נלוה</string>
     <string name="no_persons_yet">אין עדיין רשומות ספר</string>

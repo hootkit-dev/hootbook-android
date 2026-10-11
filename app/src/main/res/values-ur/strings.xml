@@ -225,7 +225,6 @@
     <string name="edit_profile">پروفائل ترمیم کریں</string>
     <string name="gallery">گیلری</string>
     <string name="change_banner">بینر تبدیل کریں</string>
-    <string name="transactions_count_format">ٹرانزیکشنز: %1$d</string>
     <string name="financial_overview">مالیاتی جائزہ</string>
     <string name="net_worth">کل دولت</string>
     <string name="upcoming">آنے والے</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">قرض</string>
     <string name="lend_borrow_you_get">آپ کو ملے گا</string>
     <string name="lend_borrow_you_owe">آپ دیتے ہیں</string>
-    <string name="no_contacts_desc">ابھی تک کوئی رابطہ شامل نہیں کیا گیا۔ لوگ شامل کرنے کے لیے سب دیکھیں بٹن دبائیں۔</string>
     <string name="no_due_date">کوئی واجب الادا تاریخ نہیں</string>
     <string name="no_persons_desc">ادھار دیے یا لیے گئے پیسے ٹریک کرنے کے لیے ایک شخص شامل کریں</string>
     <string name="no_persons_yet">ابھی تک کوئی ریکارڈ نہیں</string>

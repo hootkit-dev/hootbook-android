@@ -225,7 +225,6 @@
     <string name="edit_profile">ప్రొఫైల్ సవరించండి</string>
     <string name="gallery">గ్యాలరీ</string>
     <string name="change_banner">బ్యానర్ మార్చండి</string>
-    <string name="transactions_count_format">లావాదేవీలు: %1$d</string>
     <string name="financial_overview">ఆర్థిక సమీక్ష</string>
     <string name="net_worth">నికర విలువ</string>
     <string name="upcoming">రాబోయే</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">అప్పులు</string>
     <string name="lend_borrow_you_get">మీరు పొందుతారు</string>
     <string name="lend_borrow_you_owe">మీరు చెల్లించాలి</string>
-    <string name="no_contacts_desc">ఇంకా పరిచయాలు జోడించబడలేదు. వ్యక్తులను జోడించడానికి అన్నీ చూడండి బటన్‌ను నొక్కండి.</string>
     <string name="no_due_date">గడువు తేదీ లేదు</string>
     <string name="no_persons_desc">అప్పుగా ఇచ్చిన లేదా తీసుకున్న డబ్బును ట్రాక్ చేయడానికి ఒక వ్యక్తిని జోడించండి</string>
     <string name="no_persons_yet">ఇంకా ఖాతా రికార్డులు లేవు</string>

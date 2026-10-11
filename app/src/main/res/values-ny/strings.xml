@@ -225,7 +225,6 @@
     <string name="edit_profile">Sinthani Mbiri</string>
     <string name="gallery">Galero</string>
     <string name="change_banner">Sinthani Banner</string>
-    <string name="transactions_count_format">Zochita: %1$d</string>
     <string name="financial_overview">Chidule cha Zachuma</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Zakubwera</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Ngongole</string>
     <string name="lend_borrow_you_get">Mudzalandira</string>
     <string name="lend_borrow_you_owe">Muli ngongole</string>
-    <string name="no_contacts_desc">Sipanawonjezedwe olumikizana nawo. Dinani batani la Onani Zonse kuti muwonjezere anthu.</string>
     <string name="no_due_date">Palibe tsiku</string>
     <string name="no_persons_desc">Onjezani munthu kuti muyambe kutsatira ndalama zobwereketsedwa kapena zobwereka</string>
     <string name="no_persons_yet">Palibe mbiri pa ledger</string>

@@ -225,7 +225,6 @@
     <string name="edit_profile">ಪ್ರೊಫೈಲ್ ಸಂಪಾದನೆ ಮಾಡು</string>
     <string name="gallery">ಗ್ಯಾಲರಿ</string>
     <string name="change_banner">ಬ್ಯಾನರ್ ಬದಲಾಯಿಸಿ</string>
-    <string name="transactions_count_format">ವಹಿವಾಟುಗಳು: %1$d</string>
     <string name="financial_overview">ಸಾಮಾನ್ಯ ಹಣಕಾಸಿನ ಅವಲೋಹನೆ</string>
     <string name="net_worth">ನಿವ್ವಳ ಮೌಲ್ಯ</string>
     <string name="upcoming">ಮುಂದಿರುವುದು</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">ಸಾಲಗಳು</string>
     <string name="lend_borrow_you_get">ನೀವು ಪಡೆಯುತ್ತೀರಿ</string>
     <string name="lend_borrow_you_owe">ನೀವು ಸಾಲದಲ್ಲಿದ್ದೀರಿ</string>
-    <string name="no_contacts_desc">ಇನ್ನೂ ಯಾವುದೇ ಸಂಪರ್ಕಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ. ಜನರನ್ನು ಸೇರಿಸಲು ಎಲ್ಲವನ್ನೂ ವೀಕ್ಷಿಸಿ ಬಟನ್ ಅನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
     <string name="no_due_date">ಗಡುವು ದಿನಾಂಕವಿಲ್ಲ</string>
     <string name="no_persons_desc">ಸಾಲವಾಗಿ ಕೊಟ್ಟ ಅಥವಾ ಪಡೆದ ಹಣವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ವ್ಯಕ್ತಿಯನ್ನು ಸೇರಿಸಿ</string>
     <string name="no_persons_yet">ಇನ್ನೂ ಲೆಡ್ಜರ್ ದಾಖಲೆಗಳಿಲ್ಲ</string>

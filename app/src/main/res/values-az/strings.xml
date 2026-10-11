@@ -225,7 +225,6 @@
     <string name="edit_profile">Profilini Redaktə Et</string>
     <string name="gallery">Qalereya</string>
     <string name="change_banner">Banneri Dəyiş</string>
-    <string name="transactions_count_format">Əməliyyatlar: %1$d</string>
     <string name="financial_overview">Maliyyə Baxışı</string>
     <string name="net_worth">Xalis Dəyər</string>
     <string name="upcoming">Gələcək</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Borclar</string>
     <string name="lend_borrow_you_get">Sən alacaqsan</string>
     <string name="lend_borrow_you_owe">Sən borclusan</string>
-    <string name="no_contacts_desc">Hələ heç bir kontakt əlavə edilməyib. İnsanları əlavə etmək üçün Hamısını gör düyməsini vurun.</string>
     <string name="no_due_date">Son Tarix yoxdur</string>
     <string name="no_persons_desc">Borc verilən və ya alınan pulları izləməyə başlamaq üçün bir şəxs əlavə edin</string>
     <string name="no_persons_yet">Hələ heç bir hesab qeydi yoxdur</string>

@@ -225,7 +225,6 @@
     <string name="edit_profile">Rediger profil</string>
     <string name="gallery">Galleri</string>
     <string name="change_banner">Bytt banner</string>
-    <string name="transactions_count_format">Transaksjoner: %1$d</string>
     <string name="financial_overview">Finansiell oversikt</string>
     <string name="net_worth">Netto formue</string>
     <string name="upcoming">Kommende</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Lån</string>
     <string name="lend_borrow_you_get">Du får</string>
     <string name="lend_borrow_you_owe">Du skylder</string>
-    <string name="no_contacts_desc">Ingen kontakter er lagt til ennå. Trykk på Vis alle for å legge til personer.</string>
     <string name="no_due_date">Ingen forfallsdato</string>
     <string name="no_persons_desc">Legg til en person for å begynne å spore utlånte eller lånte penger</string>
     <string name="no_persons_yet">Ingen kontooppføringer ennå</string>

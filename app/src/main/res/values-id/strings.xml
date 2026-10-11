@@ -225,7 +225,6 @@
     <string name="edit_profile">Edit Profil</string>
     <string name="gallery">Galeri</string>
     <string name="change_banner">Ganti Banner</string>
-    <string name="transactions_count_format">Transaksi: %1$d</string>
     <string name="financial_overview">Ikhtisar Keuangan</string>
     <string name="net_worth">Kekayaan Bersih</string>
     <string name="upcoming">Mendatang</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Pinjaman</string>
     <string name="lend_borrow_you_get">Anda akan menerima</string>
     <string name="lend_borrow_you_owe">Anda berutang</string>
-    <string name="no_contacts_desc">Belum ada kontak yang ditambahkan. Ketuk tombol Lihat Semua untuk menambahkan orang.</string>
     <string name="no_due_date">Tidak Ada Tanggal Jatuh Tempo</string>
     <string name="no_persons_desc">Tambahkan orang untuk mulai melacak uang yang dipinjamkan atau dipinjam</string>
     <string name="no_persons_yet">Belum ada catatan buku besar</string>

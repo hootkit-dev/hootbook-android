@@ -225,7 +225,6 @@
     <string name="edit_profile">Chỉnh sửa Hồ sơ</string>
     <string name="gallery">Bộ sưu tập</string>
     <string name="change_banner">Thay đổi Biểu ngữ</string>
-    <string name="transactions_count_format">Giao dịch: %1$d</string>
     <string name="financial_overview">Tổng quan Tài chính</string>
     <string name="net_worth">Giá trị Ròng</string>
     <string name="upcoming">Sắp tới</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Khoản vay</string>
     <string name="lend_borrow_you_get">Bạn sẽ nhận</string>
     <string name="lend_borrow_you_owe">Bạn nợ</string>
-    <string name="no_contacts_desc">Chưa thêm liên hệ nào. Nhấn nút Xem tất cả để thêm mọi người.</string>
     <string name="no_due_date">Không có ngày đáo hạn</string>
     <string name="no_persons_desc">Thêm một người để bắt đầu theo dõi tiền cho vay hoặc vay</string>
     <string name="no_persons_yet">Chưa có bản ghi sổ cái nào</string>

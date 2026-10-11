@@ -225,7 +225,6 @@
     <string name="edit_profile">Edit Profile</string>
     <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
-    <string name="transactions_count_format">Transactions: %1$d</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Upcoming</string>
@@ -599,7 +598,6 @@
     <string name="lend_borrow_you_owe">Дæ фыст</string>
     <string name="manual_actions">Хицæмæй амалтæ</string>
     <string name="no_cloud_snapshots">Облакон папкæйы алыгъды фæстæ ницы у.</string>
-    <string name="no_contacts_desc">Контакттæ ма æфтыд. Æдæппæт рацыны фæтæн бакод.</string>
     <string name="no_due_date">Аххæст фæгонд бон нæй</string>
     <string name="no_persons_desc">Скæн адæймаг, цæмæй райдай радтæ æмæ райсты æхцайы фæдыл амалтæ.</string>
     <string name="no_persons_yet">Уавæртæ ма ис</string>

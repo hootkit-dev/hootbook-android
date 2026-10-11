@@ -225,7 +225,6 @@
     <string name="edit_profile">Edit Profile</string>
     <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
-    <string name="transactions_count_format">Transactions: %1$d</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Upcoming</string>
@@ -599,7 +598,6 @@
     <string name="lend_borrow_you_owe">Txellec</string>
     <string name="manual_actions">Isemnek s ufus</string>
     <string name="no_cloud_snapshots">Ur yella uwenitis n usekles deg usigna.</string>
-    <string name="no_contacts_desc">Ur yelli yal isegger n tussi. Senned ɣef iqef n Wali akk i tmerna n imdanen.</string>
     <string name="no_due_date">Ur yella uzemz n wallal</string>
     <string name="no_persons_desc">Rnu amdan akken ad tebduḍ deg uṣelleq n izerfan n ẓelf / tellef</string>
     <string name="no_persons_yet">Ur yelli yal asenked</string>

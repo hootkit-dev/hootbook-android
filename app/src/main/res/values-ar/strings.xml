@@ -225,7 +225,6 @@
     <string name="edit_profile">تعديل الملف الشخصي</string>
     <string name="gallery">المعرض</string>
     <string name="change_banner">تغيير البانر</string>
-    <string name="transactions_count_format">المعاملات: %1$d</string>
     <string name="financial_overview">نظرة مالية عامة</string>
     <string name="net_worth">صافي الثروة</string>
     <string name="upcoming">القادمة</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">القروض</string>
     <string name="lend_borrow_you_get">ستحصل على</string>
     <string name="lend_borrow_you_owe">أنت مدين بـ</string>
-    <string name="no_contacts_desc">لم تتم إضافة أي جهات اتصال بعد. اضغط على زر عرض الكل لإضافة أشخاص.</string>
     <string name="no_due_date">لا يوجد تاريخ استحقاق</string>
     <string name="no_persons_desc">أضف شخصًا للبدء في تتبع الأموال المُقرضة أو المقترضة</string>
     <string name="no_persons_yet">لا توجد سجلات دفتر حسابات بعد</string>

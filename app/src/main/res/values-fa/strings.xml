@@ -225,7 +225,6 @@
     <string name="edit_profile">ویرایش پروفایل</string>
     <string name="gallery">گالری</string>
     <string name="change_banner">تغییر بنر</string>
-    <string name="transactions_count_format">تراکنش‌ها: %1$d</string>
     <string name="financial_overview">نمای کلی مالی</string>
     <string name="net_worth">ارزش خالص</string>
     <string name="upcoming">در راه</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">وام‌ها</string>
     <string name="lend_borrow_you_get">دریافت خواهید کرد</string>
     <string name="lend_borrow_you_owe">بدهکار هستید</string>
-    <string name="no_contacts_desc">هنوز هیچ مخاطبی اضافه نشده است. برای افزودن افراد، روی دکمه «مشاهده همه» ضربه بزنید.</string>
     <string name="no_due_date">بدون سررسید</string>
     <string name="no_persons_desc">برای شروع پیگیری پول قرض‌داده‌شده یا قرض‌گرفته‌شده، یک شخص اضافه کنید</string>
     <string name="no_persons_yet">هنوز هیچ رکورد دفتری وجود ندارد</string>

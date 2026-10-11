@@ -225,7 +225,6 @@
     <string name="edit_profile">Upraviť profil</string>
     <string name="gallery">Galéria</string>
     <string name="change_banner">Zmeniť banner</string>
-    <string name="transactions_count_format">Transakcie: %1$d</string>
     <string name="financial_overview">Finančný prehľad</string>
     <string name="net_worth">Čistý majetok</string>
     <string name="upcoming">Nadchádzajúce</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Požičky</string>
     <string name="lend_borrow_you_get">Dostanete %1$s</string>
     <string name="lend_borrow_you_owe">Ste dlžní %1$s</string>
-    <string name="no_contacts_desc">Ešte neboli pridané žiadne kontakty. Stlačte tlačidlo Zobraziť všetko, aby ste pridali ľudí.</string>
     <string name="no_due_date">Bez dátumu splatnosti</string>
     <string name="no_persons_desc">Pridajte osobu, aby ste začali sledovať požičané alebo požičiavane peniaze</string>
     <string name="no_persons_yet">Ešte žiadne účetné záznamy</string>

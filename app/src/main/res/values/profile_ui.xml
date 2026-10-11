@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_total_income">Total income</string>
+    <string name="profile_total_expense">Total spending</string>
+    <string name="profile_subscriptions">Subscriptions</string>
+    <string name="merchant_icons">Merchant icons</string>
+    <string name="merchant_icons_help">Icons shown for merchants in your transactions</string>
+    <string name="profile_avatar">Avatar</string>
+    <string name="profile_default_banner">Use the default banner</string>
+    <string name="profile_add_contact">Add a contact</string>
+    <string name="profile_no_contacts">People you lend to or borrow from appear here</string>
+    <string name="profile_pick_photo">Choose photo</string>
+    <string name="micon_current">Current icon</string>
+    <string name="micon_enter_name">Enter a merchant name</string>
+    <string name="micon_custom">Your own icon</string>
+    <string name="micon_brand">Built-in brand logo</string>
+    <string name="micon_none">Category icon</string>
+    <string name="micon_remove">Remove your icon</string>
+    <string name="micon_app_store">App Store</string>
+    <string name="micon_use">Use</string>
+    <string name="micon_search_note">Searching sends the merchant name to Apple’s public App Store search. Photos you pick stay on this device.</string>
+    <string name="profile_avatar_background">Avatar background</string>
+    <plurals name="profile_transactions">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
+</resources>

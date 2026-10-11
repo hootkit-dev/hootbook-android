@@ -225,7 +225,6 @@
     <string name="edit_profile">Wysig Profiel</string>
     <string name="gallery">Galerij</string>
     <string name="change_banner">Verander Banier</string>
-    <string name="transactions_count_format">Transaksies: %1$d</string>
     <string name="financial_overview">Finansiële Oorsig</string>
     <string name="net_worth">Netto Waarde</string>
     <string name="upcoming">Komende</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Lenings</string>
     <string name="lend_borrow_you_get">Jy sal kry</string>
     <string name="lend_borrow_you_owe">Jy skuld</string>
-    <string name="no_contacts_desc">Nog geen kontakte bygevoeg nie. Tik die Sien Alles-knoppie om mense by te voeg.</string>
     <string name="no_due_date">Geen Sperdatum</string>
     <string name="no_persons_desc">Voeg \'n persoon by om geld wat uitgeleen of geleen is te begin volg</string>
     <string name="no_persons_yet">Nog geen grootboekrekords nie</string>

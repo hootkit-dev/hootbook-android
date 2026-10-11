@@ -225,7 +225,6 @@
     <string name="edit_profile">Profili Edita</string>
     <string name="gallery">Phototheca</string>
     <string name="change_banner">Banner Mutare</string>
-    <string name="transactions_count_format">Transactiones: %1$d</string>
     <string name="financial_overview">Conspectus Financial</string>
     <string name="net_worth">Netius Valor</string>
     <string name="upcoming">Futura</string>
@@ -621,7 +620,6 @@
     <string name="lend_borrow_title">Credita</string>
     <string name="lend_borrow_you_get">Accipies</string>
     <string name="lend_borrow_you_owe">Debes</string>
-    <string name="no_contacts_desc">Nulli contactus nondum additi sunt. Tange bullam Videre omnia ut homines addas.</string>
     <string name="no_due_date">Nullus dies</string>
     <string name="no_persons_desc">Adde hominem ut pecuniam mutuo datam vel acceptam observare incipias</string>
     <string name="no_persons_yet">Nulla adhuc adversaria</string>

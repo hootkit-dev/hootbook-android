@@ -225,7 +225,6 @@
     <string name="edit_profile">编辑个人资料</string>
     <string name="gallery">图库</string>
     <string name="change_banner">更改横幅</string>
-    <string name="transactions_count_format">交易：%1$d</string>
     <string name="financial_overview">财务概览</string>
     <string name="net_worth">净资产</string>
     <string name="upcoming">即将到来</string>
@@ -623,7 +622,6 @@
     <string name="lend_borrow_title">借贷</string>
     <string name="lend_borrow_you_get">你将收到</string>
     <string name="lend_borrow_you_owe">你欠</string>
-    <string name="no_contacts_desc">暂无联系人。点击“查看全部”按钮添加人物。</string>
     <string name="no_due_date">无到期日</string>
     <string name="no_persons_desc">添加人物以开始跟踪借出或借入的钱款</string>
     <string name="no_persons_yet">暂无账本记录</string>
