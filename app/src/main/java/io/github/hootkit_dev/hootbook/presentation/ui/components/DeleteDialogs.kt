@@ -2,6 +2,8 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +42,10 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.LocalBlurEffects
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import io.github.hootkit_dev.hootbook.presentation.common.icons.BrandIcons
+import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import io.github.hootkit_dev.hootbook.R
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeDefaults
@@ -256,12 +262,18 @@ fun DeleteAccountDialog(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BrandIcon(
-                            merchantName = bankName,
-                            accountIconResId = accountIcon,
-                            accountColorHex = accountColor,
-                            size = 40.dp
-                        )
+                        val context = LocalContext.current
+                        val fallbackIcon = BrandIcons.getIconResource(bankName) ?: R.drawable.type_finance_bank
+                        val icon = IconResolutionUtils.getSafeResId(context, accountIcon, fallbackIcon)
+                        val background = accountColor?.let { value ->
+                            runCatching { Color(android.graphics.Color.parseColor(value)) }.getOrNull()
+                        }?.copy(alpha = 0.12f) ?: MaterialTheme.colorScheme.surfaceContainer
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(background),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(32.dp))
+                        }
                         Column {
                             Text(
                                 text = bankName,
@@ -269,7 +281,7 @@ fun DeleteAccountDialog(
                                 fontWeight = FontWeight.Medium
                             )
                             val supportingText = if (isWallet) stringResource(R.string.type_wallet)
-                            else maskAccountNumber(accountLast4).orEmpty()
+                            else accountLast4.takeIf { it.isNotBlank() }?.let { "•••• ${it.takeLast(4)}" }.orEmpty()
                             Text(
                                 text = supportingText,
                                 style = MaterialTheme.typography.bodySmall,
@@ -310,6 +322,7 @@ fun DeleteAccountDialog(
 @Composable
 fun DeleteCategoryDialog(
     hasTransactions: Boolean = false,
+    // Already resolved by Core (including localized builtin names); no App name mapping.
     categoryName: String,
     onMoveDefault: () -> Unit,
     onMoveOthers: () -> Unit,
@@ -347,7 +360,7 @@ fun DeleteCategoryDialog(
             },
             text = {
                 Text(
-                    stringResource(R.string.delete_category_confirm_with_transactions, io.github.hootkit_dev.hootbook.presentation.common.categoryName(categoryName))
+                    stringResource(R.string.delete_category_confirm_with_transactions, categoryName)
                 )
             },
             confirmButton = {
@@ -385,7 +398,7 @@ fun DeleteCategoryDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.delete_category_title)) },
-            text = { Text(stringResource(R.string.delete_category_confirm_no_transactions, io.github.hootkit_dev.hootbook.presentation.common.categoryName(categoryName))) },
+            text = { Text(stringResource(R.string.delete_category_confirm_no_transactions, categoryName)) },
             confirmButton = {
                 DialogConfirmButton(
                     text = stringResource(R.string.delete),
@@ -474,6 +487,7 @@ fun DeleteSubscriptionDialog(
 @OptIn(ExperimentalHazeApi::class)
 @Composable
 fun DeleteSubcategoryDialog(
+    // Already resolved by Core; render directly, including user-defined names.
     subcategoryName: String,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
@@ -493,7 +507,7 @@ fun DeleteSubcategoryDialog(
         title = { Text(stringResource(R.string.delete_subcategory_title)) },
         text = {
             Text(
-                text = stringResource(R.string.delete_subcategory_confirm, io.github.hootkit_dev.hootbook.presentation.common.categoryName(subcategoryName)),
+                text = stringResource(R.string.delete_subcategory_confirm, subcategoryName),
                 style = MaterialTheme.typography.bodyMedium
             )
         },

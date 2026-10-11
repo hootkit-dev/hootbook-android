@@ -86,6 +86,8 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
       - uses: actions/cache@v4
         with:
           path: |
@@ -147,11 +149,11 @@ jobs:
           REV="$BASE_REF"
           if git rev-parse --verify -q "origin/$BASE_REF" > /dev/null; then REV="origin/$BASE_REF"; fi
           SHA=$(git rev-parse --verify "$REV^{commit}")
-          git log -1 --format='Baseline app/src/main from %h %s' "$SHA"
-          # The baseline is the base commit's app/src/main built with everything else from
+          git log -1 --format='Baseline app source sets from %h %s' "$SHA"
+          # The baseline is a complete compatible historical Core application graph, never a source splice from
           # this branch, so both go into the cache key.
-          SETUP=$(git ls-files -s -- app gradle '*.gradle.kts' gradle.properties .github/workflows/perf-device.yml \
-            | awk -F'\t' '$2 !~ /^app\/src\/main\//' | sha256sum | cut -c1-16)
+          SETUP=$(git ls-files -s -- app gradle core-bindings core-platform scripts/core '*.gradle.kts' gradle.properties .github/workflows/perf-device.yml .github/actions/setup-core \
+            | awk -F'\t' '$2 !~ /^app\/src\/(main|standard)\//' | sha256sum | cut -c1-16)
           {
             echo "ref=$BASE_REF"
             echo "sha=$SHA"
@@ -171,6 +173,9 @@ jobs:
         if: steps.apk.outputs.cache-hit != 'true'
         with:
           packages: platform-tools
+      - name: Set up pinned Core source and toolchain
+        if: steps.apk.outputs.cache-hit != 'true'
+        uses: ./.github/actions/setup-core
       - uses: actions/cache@v4
         if: steps.apk.outputs.cache-hit != 'true'
         with:
@@ -198,16 +203,19 @@ jobs:
           GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache
         run: |
           chmod +x gradlew
-          # Replace app/src/main wholesale: a plain checkout of the base's files would keep
-          # files that only this branch has (e.g. a new baseline-prof.txt) in the baseline.
-          rm -rf app/src/main
-          git checkout "$SHA" -- app/src/main
+          # Build a COMPLETE compatible historical graph in a separate worktree. Never splice
+          # old Room source sets into the current Core application dependency graph.
+          git show "$SHA:app/build.gradle.kts" | grep -q 'project(":core-platform")' || { echo "No compatible historical Core baseline at $SHA; benchmark baseline is unavailable"; exit 1; }
+          git worktree add --detach "$RUNNER_TEMP/core-baseline" "$SHA"
+          if [ -f local.properties ]; then cp local.properties "$RUNNER_TEMP/core-baseline/local.properties"; fi
+          git show "$SHA:core-bindings/core.lock.json" | cmp - core-bindings/core.lock.json || { echo "Historical Core pin differs; comparable baseline unavailable"; exit 1; }
+          cd "$RUNNER_TEMP/core-baseline"
           # Under its own applicationId, so it installs next to the candidate.
           ./gradlew :app:assembleStandardBenchmark -PbenchmarkIdSuffix=.benchmark.base --no-configuration-cache --stacktrace
-          mkdir -p apks
-          cp app/build/outputs/apk/standard/benchmark/app-standard-arm64-v8a-benchmark.apk apks/base.apk
-          rm -rf app/src/main
-          git checkout HEAD -- app/src/main
+          mkdir -p "$GITHUB_WORKSPACE/apks"
+          cp app/build/outputs/apk/standard/benchmark/app-standard-arm64-v8a-benchmark.apk "$GITHUB_WORKSPACE/apks/base.apk"
+          cd "$GITHUB_WORKSPACE"
+          git worktree remove "$RUNNER_TEMP/core-baseline"
           # Gradle does not mark entries it reads, so bound the saved cache by age instead: an
           # entry dropped here is simply rebuilt and stored again by the next miss.
           find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete
@@ -362,6 +370,8 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
       - uses: actions/cache@v4
         with:
           path: |

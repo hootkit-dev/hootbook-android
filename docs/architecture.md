@@ -1,5 +1,9 @@
 # Hootbook Architecture
 
+Current production uses the single Rust Core path and the standard flavor only.
+See [Core migration architecture](core-integration.md) and [standard-only build notes](standard-only.md).
+The legacy layer inventory below records the pre-Core implementation; it is not a second production engine.
+
 Hootbook is a single-module Android app (`app`, package `io.github.hootkit_dev.hootbook`) for manual,
 multi-currency bookkeeping. It uses MVVM with unidirectional data flow: Room is the source of
 truth, repositories write to it, ViewModels expose `StateFlow`s, and Compose renders them.
@@ -72,8 +76,9 @@ io.github.hootkit_dev.hootbook
     transaction per page with capture paused, copying balance rows verbatim (never through the
     use cases). `SyncManager` decides when (debounced push, pull in the foreground, WorkManager
     retries) and drives sign-in, the passphrase and the first sync.
-  - The backend is per flavor: `src/standard` implements `SyncBackend` with Firebase Auth,
-    Credential Manager and Firestore; `src/fdroid` binds an unavailable stub.
+  - The sole standard flavor binds `CoreCapabilitiesModule` and the Firebase v2/Auth adapter
+    under `src/standard`; no separate flavor or unavailable flavor stub remains.
+    With no valid Google/Firebase configuration or sign-in, standard remains offline.
 - **AI** (`data/ai`): cloud models with the user's key. `LedgerTools` only queues proposals;
   nothing is written before the user saves the review.
 - **Brokerage** (`data/brokerage`): read-only IBKR Flex holdings, kept apart from the ledger
@@ -99,4 +104,5 @@ io.github.hootkit_dev.hootbook
   holds the protocol's encryption test vector.
 - Performance is measured on a physical device with the `benchmark` module (see `CLAUDE.md` →
   Performance).
-- CI (`.github/workflows/test.yml`) runs the unit tests, debug lint and the F-Droid compile.
+- CI (`.github/workflows/test.yml`) runs standard unit tests/debug lint and compiles/packages
+  standard instrumentation tests, plus separate public Core module validation.

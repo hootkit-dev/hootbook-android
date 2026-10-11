@@ -1,13 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
--->
+<?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Core data moves only through explicit Core backups or ledger sync. -->
+    <exclude domain="database" path="hootkit.sqlite" />
+    <exclude domain="database" path="hootkit.sqlite-wal" />
+    <exclude domain="database" path="hootkit.sqlite-shm" />
+    <!-- Current Core files use noBackupFilesDir; reserve filesDir paths too. -->
+    <exclude domain="file" path="hootkit-core/" />
 </full-backup-content>

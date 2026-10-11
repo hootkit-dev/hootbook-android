@@ -7,6 +7,62 @@ on:
     branches: [ main ]
 
 jobs:
+  core-platform-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read pinned Core commit
+        id: core-pin
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          pin = json.load(open("core-bindings/core.lock.json"))
+          print("commit=" + pin["coreCommit"])
+          PY
+      - uses: actions/checkout@v4
+        with:
+          repository: hootkit-dev/hootkit-core
+          ref: ${{ steps.core-pin.outputs.commit }}
+          path: .core-source
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.97.0'
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install pinned NDK
+        run: sdkmanager "ndk;28.2.13676358"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.cargo/registry
+            core-bindings/build/rust
+          key: ${{ runner.os }}-core-${{ hashFiles('core-bindings/core.lock.json', 'scripts/core/*.py', '**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+      - name: Core platform tests, Android test APK and native packaging
+        run: |
+          ./gradlew :core-platform:testDebugUnitTest :core-platform:lintDebug \
+            :core-bindings:assembleDebug :core-platform:assembleDebugAndroidTest \
+            -PhootkitCoreDir="$PWD/.core-source" --no-configuration-cache
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/core/verify.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-platform-validation
+          path: |
+            core-platform/build/test-results/testDebugUnitTest/
+            core-platform/build/reports/lint-results-debug.html
+            core-platform/build/outputs/apk/androidTest/debug/
+            core-bindings/build/outputs/aar/
+            core-bindings/build/generated/*-provenance.json
+          retention-days: 7
   app-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -20,6 +76,8 @@ jobs:
         with:
           # The default also installs the removed "tools" package, which now fails.
           packages: platform-tools
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
       - uses: actions/cache@v4
         with:
           path: |
@@ -29,7 +87,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-app-gradle-
       - name: Unit tests and lint
-        run: ./gradlew :app:testStandardDebugUnitTest :app:lintStandardDebug :app:compileFdroidDebugKotlin --continue --no-configuration-cache
+        run: ./gradlew :app:testStandardDebugUnitTest :app:lintStandardDebug --continue --no-configuration-cache
+      # The package wildcard includes accounts/categories/transactions/home and
+      # budgets/plans/debts/settings/currencies/backup and navigation; no brittle hard-coded case count or obsolete class list.
+      - name: Isolated Core UI and business regression tests
+        run: |
+          ./gradlew :app:compileStandardDebugKotlin \
+            :app:testStandardDebugUnitTest --no-configuration-cache \
+            --tests 'io.github.hootkit_dev.hootbook.core.*' \
+            --tests 'io.github.hootkit_dev.hootbook.presentation.core.*'
+      - name: Compile and package modern App device tests (standard)
+        run: |
+          ./gradlew :app:compileStandardDebugAndroidTestKotlin \
+            :app:assembleStandardDebugAndroidTest \
+            --no-configuration-cache
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -37,4 +108,5 @@ jobs:
           path: |
             app/build/test-results/testStandardDebugUnitTest/
             app/build/reports/lint-results-standardDebug.html
+            app/build/outputs/apk/androidTest/standard/debug/
           retention-days: 7

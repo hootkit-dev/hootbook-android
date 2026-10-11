@@ -12,6 +12,7 @@
     <application
         android:name=".HootbookApplication"
         android:allowBackup="false"
+        android:usesCleartextTraffic="${coreAcceptanceCleartext}"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:enableOnBackInvokedCallback="true"
@@ -25,7 +26,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Hootbook.SplashScreen"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop">
             <!-- Screenshots, statements and exports shared to Hootbook open AI bookkeeping -->
             <intent-filter android:label="@string/ai_share_label">
                 <action android:name="android.intent.action.SEND" />
@@ -150,19 +152,25 @@
 
         <receiver
             android:name=".receiver.ReminderReceiver"
+            android:enabled="true"
             android:exported="false" />
 
         <receiver
             android:name=".receiver.BootReceiver"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
         <!-- Home-screen widget: add button and quick templates -->
         <receiver
             android:name=".widget.QuickAddWidgetReceiver"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_quick_add_title">
             <intent-filter>
@@ -175,6 +183,7 @@
 
         <service
             android:name=".service.AddTransactionTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_transaction"
             android:icon="@drawable/ic_add_transaction"
@@ -186,6 +195,7 @@
 
         <service
             android:name=".service.AddSubscriptionTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_subscription"
             android:icon="@drawable/ic_add_subscription"
@@ -197,6 +207,7 @@
 
         <service
             android:name=".service.AddTransferTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_transfer"
             android:icon="@drawable/ic_transfer"

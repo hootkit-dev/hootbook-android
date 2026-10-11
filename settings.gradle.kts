@@ -29,3 +29,5 @@ buildCache {
 rootProject.name = "hootbook"
 include(":app")
 include(":benchmark")
+include(":core-bindings")
+include(":core-platform")

@@ -3,7 +3,7 @@
 <resources>
     <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage connections are not uploaded.</string>
     <string name="sync_unavailable_title">Not available in this build</string>
-    <string name="sync_unavailable_body">The F-Droid build contains no Google services. To sync, install the standard build. You can still move data with a backup file under Backup &amp; Sync.</string>
+    <string name="sync_unavailable_body">Sync is currently unavailable. You can still move data with a backup file under Backup &amp; Sync.</string>
     <string name="sync_sign_in">Sign in with Google</string>
     <string name="sync_account">Account</string>
     <string name="sync_signed_in_as">Signed in with Google</string>

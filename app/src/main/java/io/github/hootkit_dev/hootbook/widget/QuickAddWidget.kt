@@ -1,6 +1,11 @@
 package io.github.hootkit_dev.hootbook.widget
 
 import android.content.Context
+import android.content.Intent
+import dev.hootkit.core.QuickTemplate
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
+import io.github.hootkit_dev.hootbook.core.CoreProcess
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
@@ -30,13 +35,13 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.QuickTemplateEntity
-import io.github.hootkit_dev.hootbook.data.repository.QuickTemplateRepository
+
+
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 
 /**
  * Home-screen widget: "+" for an empty Add form, and the first quick templates, each opening
@@ -48,24 +53,26 @@ class QuickAddWidget : GlanceAppWidget() {
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
-        fun quickTemplateRepository(): QuickTemplateRepository
+        fun coreSession(): CoreSession
+        fun preferences(): CoreUiPreferencesStore
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val templates = try {
-            EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
-                .quickTemplateRepository().templates.first().take(QuickEntry.MAX_TEMPLATES)
-        } catch (e: Exception) {
-            Log.w("QuickAddWidget", "Templates not loaded", e)
-            emptyList()
-        }
+        val templates:List<QuickTemplate> = try {
+            if(CoreProcess.isCrashProcess(context))emptyList() else {
+                val entry=EntryPointAccessors.fromApplication(context.applicationContext,WidgetEntryPoint::class.java)
+                entry.preferences().ready()
+                if(entry.preferences().state.value.appLockEnabled)emptyList() else
+                    entry.coreSession().awaitCore().plans().use{it.templates().take(QuickEntry.MAX_TEMPLATES)}
+            }
+        } catch(cancelled:CancellationException){throw cancelled} catch(_:Throwable){emptyList()}
         provideContent {
             GlanceTheme { Content(context, templates) }
         }
     }
 
     @Composable
-    private fun Content(context: Context, templates: List<QuickTemplateEntity>) {
+    private fun Content(context: Context, templates: List<QuickTemplate>) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -85,7 +92,7 @@ class QuickAddWidget : GlanceAppWidget() {
                 )
                 Box(
                     modifier = GlanceModifier
-                        .size(36.dp)
+                        .size(48.dp)
                         .cornerRadius(18.dp)
                         .background(GlanceTheme.colors.primary)
                         .clickable(actionStartActivity(QuickEntry.addIntent(context))),
@@ -123,10 +130,10 @@ class QuickAddWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TemplateChip(context: Context, template: QuickTemplateEntity, modifier: GlanceModifier) {
+    private fun TemplateChip(context: Context, template: QuickTemplate, modifier: GlanceModifier) {
         Box(
             modifier = modifier
-                .height(40.dp)
+                .height(56.dp)
                 .cornerRadius(12.dp)
                 .background(GlanceTheme.colors.secondaryContainer)
                 .clickable(actionStartActivity(QuickEntry.templateIntent(context, template.id)))
@@ -136,12 +143,15 @@ class QuickAddWidget : GlanceAppWidget() {
             Text(
                 text = QuickEntry.label(template),
                 style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 13.sp),
-                maxLines = 1
+                maxLines = 2
             )
         }
     }
 }
 
 class QuickAddWidgetReceiver : GlanceAppWidgetReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+    }
     override val glanceAppWidget: GlanceAppWidget = QuickAddWidget()
 }

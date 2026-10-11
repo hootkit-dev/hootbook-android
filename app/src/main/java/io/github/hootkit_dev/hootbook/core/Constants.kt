@@ -15,15 +15,6 @@ object Constants {
     }
 
     /**
-     * Database Configuration
-     */
-    object Database {
-        const val DATABASE_NAME = "cashiro_database"
-        const val CURRENT_VERSION = 2
-        const val TRANSACTION_HASH_DEFAULT = ""
-    }
-
-    /**
      * External Links
      */
     object Links {

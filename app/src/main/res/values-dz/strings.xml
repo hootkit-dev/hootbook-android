@@ -563,9 +563,7 @@
     <string name="category_friends">གྲོགས་པོ།</string>
     <string name="category_other">གཞན།</string>
     <string name="clear_due_date">དུས་ཚོད་ཕྱིས་བཤོལ།</string>
-    <string name="cloud_backup_failed">གནམ་གྲུབ་ཉར་ཚགས་ཕམ།</string>
     <string name="cloud_snapshots">གནམ་གྲུབ་སྒྲིམ་ཐོ།</string>
-    <string name="connected_to_google_drive">Google Drive དང་འབྲེལ་ཟིན།</string>
     <string name="connection_failed_format">འབྲེལ་མཐུད་ཕམ། %1$s</string>
     <string name="connection_verified">འབྲེལ་མཐུད་ལེགས་འགྲུབ་ཀྱིས་ཚོད་ལྟ་བྱུང་།</string>
     <string name="contacts">འབྲེལ་ཐོ།</string>
@@ -596,9 +594,6 @@
     <string name="failed_restore_snapshot">གནམ་གྲུབ་སྒྲིམ་ཐོ་ཕྱིར་ལེན་མ་ཐུབ།</string>
     <string name="full_settlement">ཆ་ཚང་།</string>
     <string name="gets_amount">%1$s ཐོབ།</string>
-    <string name="google_drive_configuration">Google Drive སྒྲིག་སྟངས།</string>
-    <string name="google_drive_provider_desc">ཁྱེད་ཀྱི་སྒེར་གྱི་Google Drive ནང་གི་བདེ་འཇགས་AppData སྡེ་ཚན།</string>
-    <string name="google_drive_signin_desc">Google Drive ཉར་ཚགས་དང་མཉམ་བསྒྲིག་བྱེད་པའི་ཆེད་དུ་ཁྱེད་ཀྱི་Google རྩིས་ཐོ་དང་ཐོ་འཛུལ་བྱེད།</string>
     <string name="google_signin_failed_no_email">Google ཐོ་འཛུལ་ཕམ། email བསྐྱར་ལེན་མ་ཐུབ།</string>
     <string name="google_signin_failed_null">Google ཐོ་འཛུལ་ཕམ། རྩིས་ཐོ་ནི་null ཡིན།</string>
     <string name="i_borrowed">ངས་ཁོང་ཚོར་སྤྲོད་དགོས།</string>
@@ -628,8 +623,6 @@
     <string name="person_avatar">མདོང་རིས།</string>
     <string name="person_name">མིའི་མིང་། *</string>
     <string name="phone_number_optional">ཁ་བྱང་ཨང་། (དགོས་ངེས་མེད།)</string>
-    <string name="provider_google_drive">Google Drive</string>
-    <string name="provider_webdav">Nextcloud / WebDAV</string>
     <string name="record_options">ཐོའི་གདམ་ཁ།</string>
     <string name="reminder_message_format">ཚེ་རིང་། %1$s, ང་ཚོའི་%2$s ཐོའི་ཆ་འཕྲིན་སྐོར་གྱི་གྲོགས་རམ་སྙན་གསལ།</string>
     <string name="restore">ཕྱིར་ལེན།</string>
@@ -654,7 +647,6 @@
     <string name="size_mb_format">%.2f MB</string>
     <string name="snapshot_restored_success">སྒྲིམ་ཐོ་ལེགས་འགྲུབ་ཀྱིས་ཕྱིར་ལེན་བྱུང་།</string>
     <string name="snapshot_subtitle_format">%1$s • %2$s</string>
-    <string name="starting_cloud_backup">གནམ་གྲུབ་ཉར་ཚགས་འགོ་འཛུགས་བཞིན་པ།...</string>
     <string name="store_backups_local_desc">ཉར་ཚགས་ལག་ཆས་འདི་ནང་ཁོ་ནར་ཉར།</string>
     <string name="telegram_cd">Telegram</string>
     <string name="test_connection">འབྲེལ་མཐུད་ཚོད་ལྟ།</string>
@@ -666,8 +658,6 @@
     <string name="uploading_to_cloud_format">གནམ་གྲུབ་ལ་ཡར་འདྲེན་བྱེད་བཞིན་པ།... %1$d%%</string>
     <string name="username">སྤྱོད་པའི་མིང་།</string>
     <string name="verification_failed">ཚོད་ལྟ་ཕམ།</string>
-    <string name="webdav_credentials_title">Nextcloud / WebDAV ངོས་འཛིན།</string>
-    <string name="webdav_provider_desc">Nextcloud, OwnCloud, Synology, ཡང་ན་སྒེར་སྒྲིག་WebDAV</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">བུལ་ལེན་དང་བུན་ལེན་གྱི་ཐོ་འགོད།</string>
     <string name="delete_multiple_records_confirm">Are you sure you want to delete the selected records?</string>

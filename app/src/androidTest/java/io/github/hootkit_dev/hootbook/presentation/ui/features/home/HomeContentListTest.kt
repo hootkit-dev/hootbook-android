@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HomeContentList
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height

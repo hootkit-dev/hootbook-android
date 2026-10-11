@@ -3,7 +3,7 @@
 <resources>
     <string name="sync_intro">登录同一账号的设备会保持同一份账本。记录在上传前就在本机用同步密码加密，只有你的设备能读取。附件、商户图标、设置、AI 密钥和券商连接都不会上传。</string>
     <string name="sync_unavailable_title">此版本不支持同步</string>
-    <string name="sync_unavailable_body">F-Droid 版本不含 Google 服务。如需同步，请安装标准版本；也可以在「备份与同步」中用备份文件迁移数据。</string>
+    <string name="sync_unavailable_body">同步暂不可用。您仍可在「备份与同步」中用备份文件迁移数据。</string>
     <string name="sync_sign_in">使用 Google 账号登录</string>
     <string name="sync_account">账号</string>
     <string name="sync_signed_in_as">已登录 Google 账号</string>

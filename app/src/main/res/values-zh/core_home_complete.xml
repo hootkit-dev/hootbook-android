@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_complete_greeting">你好，%1$s</string>
+  <string name="core_complete_default_name">用户</string>
+  <string name="core_complete_profile">个人资料</string>
+  <string name="core_complete_banner">个人资料横幅</string>
+  <string name="core_complete_refresh">刷新</string>
+  <string name="core_complete_query_failed">Core 数据刷新失败，请重试。</string>
+  <string name="core_complete_widgets_failed">部分首页组件刷新失败，请重试。</string>
+  <string name="core_complete_display_missing">%1$s 显示换算不可用，保留原币种。</string>
+  <string name="core_complete_securities">证券市值：%1$s</string>
+  <string name="core_complete_net_worth">净资产</string>
+  <string name="core_complete_incomplete">部分汇总：有币种未能换算。</string>
+  <string name="core_complete_credit">可用信用额度：%1$s</string>
+  <string name="core_complete_card_due">最近还款日：%1$s</string>
+  <string name="core_complete_income">收入 %1$s %2$s</string>
+  <string name="core_complete_expense">支出 %1$s %2$s</string>
+  <string name="core_complete_net">净收支 %1$s %2$s</string>
+  <string name="core_complete_missing">缺少汇率：%1$s</string>
+  <string name="core_complete_analytics">分析</string>
+  <string name="core_complete_accounts">账户</string>
+  <string name="core_complete_manage_accounts">管理账户</string>
+  <string name="core_complete_debts">人员与借贷</string>
+  <string name="core_complete_receivable">应收 %1$s %2$s</string>
+  <string name="core_complete_payable">应付 %1$s %2$s</string>
+  <string name="core_complete_debt_people">%1$s 人；%2$s 人逾期</string>
+  <string name="core_complete_budgets">预算</string>
+  <string name="core_complete_upcoming">即将到期的订阅</string>
+  <string name="core_complete_subscription_cost">月均 %1$s · 年均 %2$s %3$s</string>
+  <string name="core_complete_subscriptions">管理订阅</string>
+  <string name="core_complete_recent">近期交易</string>
+  <string name="core_complete_transactions">交易记录</string>
+  <string name="core_complete_heatmap">交易活动</string>
+  <string name="core_complete_heatmap_note">过去 26 周的每日交易数，由 Core 查询。</string>
+  <string name="core_complete_templates">快捷模板</string>
+  <string name="core_complete_categories">分类</string>
+  <string name="core_complete_settings">业务设置</string>
+  <string name="core_complete_currencies">币种与汇率</string>
+  <string name="core_complete_backup">文件备份与恢复</string>
+  <string name="core_complete_layout">外观与首页布局</string>
+</resources>

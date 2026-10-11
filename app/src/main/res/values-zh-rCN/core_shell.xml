@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_shell_preferences_recovered">已在设备认证后恢复界面设置；保留原文件，不更改账本。</string>
+    <string name="core_shell_legacy_defaults">旧版未知显示选项使用默认值；原偏好已保留。</string>
+    <string name="core_shell_preferences_failed">界面偏好读取失败，私有内容继续遮挡。</string>
+    <string name="core_shell_recovery_note">请先重试。明确恢复会保留原文件，在新设备认证后仅重置界面偏好。保留应用锁保护，不清账本或恢复认证时间。</string>
+    <string name="core_shell_recovery_auth_failed">认证或恢复失败；原偏好及账本仍保留。</string>
+    <string name="core_shell_retry">重试</string>
+    <string name="core_shell_recover_ui">认证后恢复界面</string>
+    <string name="core_shell_device_security">设置设备锁屏</string>
+    <string name="core_shell_welcome">欢迎使用 Hootbook</string>
+    <string name="core_shell_onboarding_note">选择主货币及可选设置步骤。不会自动读取、导出或清除旧数据库；请明确选择已有备份。</string>
+    <string name="core_shell_name">显示名称</string>
+    <string name="core_shell_profile">个人资料</string>
+    <string name="core_shell_backup">文件备份</string>
+    <string name="core_shell_sync">账本同步</string>
+    <string name="core_shell_notifications">通知</string>
+    <string name="core_shell_onboarding_failed">设置失败；检查输入后重试。未标记完成。</string>
+    <string name="core_shell_finish">完成设置</string>
+    <string name="core_shell_home">首页</string>
+    <string name="core_shell_share_failed">分享内容读取失败；请选择外部文档后重试。</string>
+    <string name="core_shell_close">关闭</string>
+    <string name="core_shell_investments">券商</string>
+    <string name="core_shell_appearance">外观</string>
+    <string name="core_shell_app_lock">应用锁</string>
+    <string name="core_shell_about">关于／更新／帮助</string>
+    <string name="core_shell_platform_skipped">账本导入已提交。平台界面偏好／资产已保留，但明确未应用；未重复导入账本。</string>
+    <string name="core_shell_skip_platform">保留文件，跳过平台界面恢复</string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_categories_1">分类管理</string>
+    <string name="core_categories_2">返回</string>
+    <string name="core_categories_3">刷新</string>
+    <string name="core_categories_4">关闭</string>
+    <string name="core_categories_5">支出</string>
+    <string name="core_categories_6">收入</string>
+    <string name="core_categories_7">暂无分类，点击 ＋ 添加</string>
+    <string name="core_categories_8">上移</string>
+    <string name="core_categories_9">下移</string>
+    <string name="core_categories_10">已隐藏：已有交易和业务引用仍保留</string>
+    <string name="core_categories_11">显示</string>
+    <string name="core_categories_12">隐藏</string>
+    <string name="core_categories_13">恢复默认</string>
+    <string name="core_categories_14">默认归属分类始终保留并显示</string>
+    <string name="core_categories_15">子分类</string>
+    <string name="core_categories_16">暂无子分类，点击 ＋ 添加</string>
+    <string name="core_categories_17">编辑</string>
+    <string name="core_categories_18">删除</string>
+    <string name="core_categories_19">分类</string>
+    <string name="core_categories_20">名称</string>
+    <string name="core_categories_21">图标标识</string>
+    <string name="core_categories_22">颜色 #RRGGBB</string>
+    <string name="core_categories_23">收支类型由父分类／当前列表决定；已有分类的类型保持不变。</string>
+    <string name="core_categories_24">交易、订阅和模板仍保留父分类，子分类引用将清空。</string>
+    <string name="core_categories_25">取消</string>
+    <string name="core_categories_26">转移目标</string>
+    <string name="core_categories_27">默认其他分类</string>
+    <string name="core_categories_28">删除并转移</string>
+    <string name="core_categories_saving_navigation">正在保存，请等待完成后再返回或切换。</string>
+</resources>

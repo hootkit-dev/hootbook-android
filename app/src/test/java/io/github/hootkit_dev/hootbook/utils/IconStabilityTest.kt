@@ -1,6 +1,6 @@
 package io.github.hootkit_dev.hootbook.utils
 
-import io.github.hootkit_dev.hootbook.presentation.common.icons.IconProvider
+import io.github.hootkit_dev.hootbook.presentation.common.icons.BrandIcons
 import io.github.hootkit_dev.hootbook.presentation.common.icons.IconResource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -33,10 +33,10 @@ class IconStabilityTest {
         
         // Test that getIconForTransaction handles the parameters correctly.
         // Priority: Brand Icon > Account Icon > ...
-        val resource = IconProvider.getIconForTransaction(
-            merchantName = merchantName,
-            accountIconName = iconName
-        )
+        val brand = BrandIcons.getIconResource(merchantName)
+        val account = IconResolutionUtils.nameToResId(null, iconName)
+        val resource = brand?.let(IconResource::DrawableResource)
+            ?: IconResource.DrawableResource(account)
         
         // Uber has a brand logo in BrandIcons, so it should be used first
         assertTrue("Brand logo or custom icon should be resolved", resource is IconResource.DrawableResource)

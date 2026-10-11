@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
+import dev.hootkit.core.TransactionKind
 
 /**
  * Whether the app is drawing its dark scheme. The app's own theme setting can differ from the
@@ -18,14 +18,13 @@ val isAppInDarkTheme: Boolean
 /** The color of an amount of this type, in the light or dark variant the app is showing. */
 @Composable
 @ReadOnlyComposable
-fun transactionTypeColor(type: TransactionType): Color {
+fun transactionTypeColor(type: TransactionKind): Color {
     val dark = isAppInDarkTheme
     return when (type) {
-        TransactionType.INCOME, TransactionType.BORROWED -> if (dark) income_dark else income_light
-        TransactionType.EXPENSE, TransactionType.LENT -> if (dark) expense_dark else expense_light
-        TransactionType.CREDIT -> if (dark) credit_dark else credit_light
-        TransactionType.TRANSFER, TransactionType.BALANCE_UPDATE -> if (dark) transfer_dark else transfer_light
-        TransactionType.INVESTMENT -> if (dark) investment_dark else investment_light
+        TransactionKind.INCOME, TransactionKind.LOAN_IN -> if (dark) income_dark else income_light
+        TransactionKind.EXPENSE, TransactionKind.LOAN_OUT -> if (dark) expense_dark else expense_light
+        TransactionKind.TRANSFER, TransactionKind.UNKNOWN -> if (dark) transfer_dark else transfer_light
+        TransactionKind.INVESTMENT -> if (dark) investment_dark else investment_light
     }
 }
 

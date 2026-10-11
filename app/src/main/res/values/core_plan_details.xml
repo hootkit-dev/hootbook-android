@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_detail_template_missing">This template no longer exists. Return to the list.</string>
+  <string name="core_detail_subscription_missing">This subscription no longer exists. Return to the list.</string>
+  <string name="core_detail_kind_expense">Expense</string>
+  <string name="core_detail_kind_income">Income</string>
+  <string name="core_detail_kind_transfer">Transfer</string>
+  <string name="core_detail_kind_investment">Investment</string>
+  <string name="core_detail_kind_loan_out">Loan out / repayment out</string>
+  <string name="core_detail_kind_loan_in">Loan in / repayment in</string>
+  <string name="core_detail_kind_unknown">Unknown</string>
+  <string name="core_detail_choose_date">Choose date</string>
+  <string name="core_detail_choose_time">Choose time</string>
+  <string name="core_detail_clear">Clear</string>
+  <string name="core_detail_contact">Choose phone contact</string>
+  <string name="core_detail_dial">Dial phone number</string>
+  <string name="core_detail_avatar">Choose person avatar</string>
+  <string name="core_detail_attachments">Add attachment</string>
+  <string name="core_detail_open_attachment">Open attachment</string>
+  <string name="core_detail_remove_attachment">Remove attachment</string>
+  <string name="core_detail_name_filter">Filter by name</string>
+  <string name="core_detail_sort_name">Sort by name</string>
+  <string name="core_detail_sort_date">Sort by date</string>
+  <string name="core_detail_all">All</string>
+  <string name="core_detail_contact_failed">The selected contact or attachment could not be read.</string>
+</resources>

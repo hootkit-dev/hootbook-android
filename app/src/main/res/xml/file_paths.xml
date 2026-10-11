@@ -1,27 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Cache directory for temporary export files -->
-    <cache-path 
-        name="exports" 
-        path="exports/" />
-    
-    <!-- Cache directory for backup files -->
-    <cache-path 
-        name="backups" 
-        path="backups/" />
-    
-    <!-- Cache directory for crash log files -->
-    <cache-path
-        name="crash_logs"
-        path="." />
-
-    <!-- Files directory for attachments -->
-    <files-path 
-        name="attachments" 
-        path="attachments/" />
-
-    <!-- Files directory for person avatars -->
-    <files-path
-        name="avatars"
-        path="avatars/" />
+    <cache-path name="core_backup_share" path="core-backup-share/" />
+    <cache-path name="core_attachment_share" path="core-attachment-share/" />
+    <cache-path name="core_crash_share" path="core-crash-share/" />
 </paths>
