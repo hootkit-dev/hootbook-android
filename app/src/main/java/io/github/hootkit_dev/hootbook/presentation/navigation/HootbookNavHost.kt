@@ -59,7 +59,7 @@ import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSetti
 import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsViewModel
-import io.github.hootkit_dev.hootbook.presentation.core.categories.CoreCategoriesScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.debts.CoreDebtsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeScreen
@@ -383,8 +383,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until categories is migrated
-                                    CoreCategoriesScreen(back)
+                                    CategoriesScreen(onNavigateBack = back, blurEffects = prefs.blur)
                                 }
                             }
                             composable<Budgets>(
