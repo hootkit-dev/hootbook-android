@@ -4,4 +4,6 @@
     <string name="home_activity">Activity</string>
     <string name="ui_move_up">Move up</string>
     <string name="ui_move_down">Move down</string>
+    <string name="ui_yes">Yes</string>
+    <string name="ui_no">No</string>
 </resources>

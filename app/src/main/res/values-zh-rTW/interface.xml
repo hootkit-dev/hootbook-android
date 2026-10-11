@@ -12,7 +12,7 @@
     <string name="saving_account">正在儲存…</string>
     <string name="quick_add_templates">快捷記帳</string>
     <string name="quick_templates_subtitle">咖啡、午餐等常用消費一鍵填入</string>
-    <string name="quick_templates_empty">還沒有快捷範本。新增交易時開啟「儲存為快捷範本」，或在交易詳情選單中選擇「儲存為快捷範本」。</string>
+    <string name="quick_templates_empty">還沒有快捷範本，點選「新建範本」新增。</string>
     <string name="quick_template_save_toggle">存為快捷</string>
     <string name="quick_template_save_from_detail">儲存為快捷範本</string>
     <string name="quick_template_edit_title">編輯快捷範本</string>

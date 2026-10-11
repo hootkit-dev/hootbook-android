@@ -765,7 +765,7 @@
     <string name="balance_operation_failed">操作未保存。请检查余额历史，旧流水可能缺少起始余额记录。</string>
     <string name="quick_add_templates">快捷记账</string>
     <string name="quick_templates_subtitle">咖啡、午饭等常用消费一键填入</string>
-    <string name="quick_templates_empty">还没有快捷模板。添加交易时打开“保存为快捷模板”，或在交易详情菜单中选择“保存为快捷模板”。</string>
+    <string name="quick_templates_empty">还没有快捷模板，点击“新建模板”添加。</string>
     <string name="quick_template_save_toggle">存为快捷</string>
     <string name="quick_template_save_from_detail">保存为快捷模板</string>
     <string name="quick_template_edit_title">编辑快捷模板</string>

@@ -828,7 +828,7 @@
     <string name="balance_operation_failed">The change was not saved. Check the balance history: older entries may be missing their opening balance.</string>
     <string name="quick_add_templates">Quick templates</string>
     <string name="quick_templates_subtitle">One-tap entries for coffee, lunch and other regulars</string>
-    <string name="quick_templates_empty">No quick templates yet. Turn on \"Save as quick template\" when adding a transaction, or use it from a transaction\'s menu.</string>
+    <string name="quick_templates_empty">No templates yet. Tap New template to add one.</string>
     <string name="quick_template_save_toggle">Save as quick chip</string>
     <string name="quick_template_save_from_detail">Save as quick template</string>
     <string name="quick_template_edit_title">Edit quick template</string>

@@ -137,21 +137,9 @@ internal fun UpcomingSubscriptionsCard(rows: List<Subscription>, summary: Subscr
             }
             Box(Modifier.width((40 + (rows.take(3).size - 1).coerceAtLeast(0) * 22).dp).height(40.dp)) {
                 rows.take(3).forEachIndexed { index, subscription ->
-                    Box(Modifier.offset(x = (index * 22).dp).size(40.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.surfaceContainerLow, CircleShape)) { HomeMerchantIcon(subscription.name, assets) }
+                    Box(Modifier.offset(x = (index * 22).dp).size(40.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.surfaceContainerLow, CircleShape)) { io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon(subscription.name, assets, Modifier.fillMaxSize()) }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun HomeMerchantIcon(name: String, assets: CorePlatformAssets, fallback: String? = null) {
-    val revision by assets.revision.collectAsStateWithLifecycle()
-    val image = remember(name, revision) { assets.merchantIcon(name) }
-    val brand = remember(name) { BrandIcons.getIconResource(name) }
-    Box(Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
-        if (image != null || brand != null) AsyncImage(image ?: brand, null, Modifier.fillMaxSize())
-        else if (!fallback.isNullOrBlank()) CoreRecordIcon(fallback, Modifier.size(26.dp))
-        else Icon(Icons.Rounded.ReceiptLong, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }

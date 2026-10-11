@@ -259,7 +259,7 @@ private fun CurrencyCodeDialog(onDismiss: () -> Unit, onConfirm: (String) -> Uni
 
 /** The amount: the system decimal keyboard, or a keypad while the keyboard is hidden. */
 @Composable
-private fun AmountPadSheet(amount: String, change: (String) -> Unit, onDone: () -> Unit) {
+internal fun AmountPadSheet(amount: String, change: (String) -> Unit, onDone: () -> Unit) {
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val finish: () -> Unit = { focusManager.clearFocus(); keyboard?.hide(); onDone() }

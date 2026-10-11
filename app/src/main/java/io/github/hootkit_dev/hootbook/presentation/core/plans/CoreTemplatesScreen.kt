@@ -1,35 +1,25 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package io.github.hootkit_dev.hootbook.presentation.core.plans
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
-import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
-import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -37,20 +27,60 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreTextField
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon
+import io.github.hootkit_dev.hootbook.presentation.ui.components.*
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
+/**
+ * Quick templates: a reorderable list (drag the handle), suggestions from recent entries, one
+ * template's page (use it, edit in the bar, delete behind ⋮) and the editor.
+ */
 @Composable
 fun CoreTemplatesScreen(onBack: () -> Unit, onUseTemplate: (templateId: String) -> Unit,
-    viewModel: CoreTemplatesViewModel = hiltViewModel(),platform:CorePlanPlatformViewModel=hiltViewModel()) {
+    viewModel: CoreTemplatesViewModel = hiltViewModel(), platform: CorePlanPlatformViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val back: () -> Unit = { if (!viewModel.back()) onBack() }
     BackHandler(onBack = back)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     var deleteId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(state.commandRevision) { deleteId = null }
-    val scroll = TopAppBarDefaults.pinnedScrollBehavior()
+    val selected = state.selected
+    val enabled = !state.saving
+    SecondaryScreen(
+        title = selected?.name ?: stringResource(R.string.quick_add_templates), onBack = back,
+        actions = {
+            if (selected != null) {
+                TooltipIconButton(Icons.Rounded.Edit, stringResource(R.string.plan_template_edit), viewModel::edit, enabled = enabled)
+                OverflowMenu(enabled = enabled, actions = listOf(
+                    MenuAction(stringResource(R.string.delete), Icons.Rounded.Delete, destructive = true) { deleteId = selected.id },
+                ))
+            }
+        },
+        floatingActionButton = {
+            if (state.selectedId == null && state.form == null) ExtendedFloatingActionButton(onClick = viewModel::create,
+                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.plan_template_new)) })
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+            if (state.navigationBlocked) Text(stringResource(R.string.core_plans_saving_navigation), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            (state.error.takeIf { state.form == null } ?: state.errorResource?.let { stringResource(it) })?.let {
+                ErrorBanner(it, viewModel::clearError, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+            if (state.selectedId == null) TemplateList(state, platform, viewModel)
+            else if (selected != null) TemplateDetail(selected, state, platform) { if (viewModel.canNavigate()) onUseTemplate(selected.id) }
+        }
+    }
+    state.form?.let { form -> TemplateEditor(form, state, viewModel) }
+    if (deleteId != null) ConfirmDialog(stringResource(R.string.core_plans_delete_template_title), stringResource(R.string.core_plans_delete_template_body),
+        stringResource(R.string.delete), { deleteId?.let(viewModel::delete) }, { deleteId = null }, destructive = true, enabled = enabled)
+}
+
+/** The templates as one segmented list whose rows can be dragged by their handle, then suggestions. */
+@Composable
+private fun TemplateList(state: CoreTemplatesUiState, platform: CorePlanPlatformViewModel, viewModel: CoreTemplatesViewModel) {
     var ordered by remember(state.templates) { mutableStateOf(state.templates) }
     val listState = rememberLazyListState()
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
@@ -60,115 +90,100 @@ fun CoreTemplatesScreen(onBack: () -> Unit, onUseTemplate: (templateId: String) 
             if (fromIndex >= 0 && toIndex >= 0) ordered = ordered.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
         }
     }
-    Scaffold(topBar = {
-        CustomTitleTopAppBar(title = state.selected?.name ?: stringResource(R.string.quick_add_templates), scrollBehaviorSmall = scroll, scrollBehaviorLarge = scroll,
-            hasBackButton = true, navigationContent = { NavigationContent(back) }, actionContent = {
-                IconButton(onClick = viewModel::refresh, enabled = !state.saving) { Icon(Icons.Rounded.Refresh, stringResource(R.string.core_plans_refresh)) }
-            })
-    }, floatingActionButton = {
-        if (state.selectedId == null && state.form == null) FloatingActionButton(onClick = viewModel::create) { Text("＋") }
-    }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            state.errorResource?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(12.dp))}
-            PlanStatus(state.loading, state.saving, state.navigationBlocked, state.error, viewModel::clearError)
-            if (state.selectedId == null) {
-                LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { Text(stringResource(R.string.core_plans_template_boundary), style = MaterialTheme.typography.bodySmall) }
-                    if (!state.loading && state.templates.isEmpty()) item {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.Bolt, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp)); Text(stringResource(R.string.quick_templates_empty))
-                        }
-                    }
-                    items(ordered, key = { it.id }) { row ->
-                        ReorderableItem(state = reorderState, key = row.id) { dragging ->
-                            val elevation by animateDpAsState(if (dragging) 8.dp else 0.dp, label = "templateDrag")
-                            Row(Modifier.fillMaxWidth().shadow(elevation, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow).clickable(enabled = !state.saving) { viewModel.select(row.id) }
-                                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                CoreMerchantIcon(row.merchant, platform.assets, Modifier.size(40.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(row.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    val category = state.references.categories.find { it.id == row.categoryId }?.displayName
-                                    val notPrefilled = stringResource(R.string.quick_template_amount_not_prefilled)
-                                    Text(listOfNotNull(category, row.amount?.let { CurrencyFormatter.formatCurrency(it, row.currency ?: state.references.mainCurrency) + if (row.prefillAmount) "" else " ($notPrefilled)" }).joinToString(" • "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                IconButton(onClick = { viewModel.edit(row) }, enabled = !state.saving) { Icon(Icons.Rounded.Edit, stringResource(R.string.edit)) }
-                                IconButton(onClick = { deleteId = row.id }, enabled = !state.saving) { Icon(Icons.Rounded.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error) }
-                                Icon(Icons.Default.DragHandle, stringResource(R.string.reorder), Modifier.draggableHandle(onDragStopped = { viewModel.reorder(ordered.map { it.id }) }).padding(horizontal = 8.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-                    if (state.suggestions.isNotEmpty()) item { Text(stringResource(R.string.core_plans_suggestions), style = MaterialTheme.typography.titleLarge) }
-                    items(state.suggestions, key = { "suggestion:${it.key}" }) { row ->
-                        OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                            Text(row.name, style = MaterialTheme.typography.titleMedium)
-                            Text(stringResource(R.string.core_plans_suggestion_count, row.count.toString()))
-                            FlowRow {
-                                TextButton(onClick = { viewModel.useSuggestion(row) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_save_suggestion)) }
-                                TextButton(onClick = { viewModel.dismissSuggestion(row) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_dismiss_suggestion)) }
-                            }
-                        } }
-                    }
-                    item { Spacer(Modifier.height(80.dp)) }
-                }
-            } else state.selected?.let { row ->
-                Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CoreMerchantIcon(row.merchant,platform.assets,Modifier.size(64.dp))
-                    Text(row.name, style = MaterialTheme.typography.headlineMedium)
-                    Text("${CoreKindLabel(row.kind)} · ${row.merchant}")
-                    Text(stringResource(R.string.core_plans_template_amount_value, row.amount?.toPlainString() ?: stringResource(R.string.core_plans_none)))
-                    Text(stringResource(if (row.prefillAmount) R.string.core_plans_prefill_on else R.string.core_plans_prefill_off))
-                    Text(stringResource(R.string.core_plans_currency_value, row.currency ?: stringResource(R.string.core_plans_none)))
-                    PlanReferenceDescription(state.references, row.accountId, row.categoryId, row.subcategoryId)
-                    row.notes?.let { Text(it) }
-                    FlowRow {
-                        TextButton(onClick = viewModel::edit, enabled = !state.saving) { Text(stringResource(R.string.edit)) }
-                        TextButton(onClick = { deleteId = row.id }, enabled = !state.saving) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
-                    }
-                    Button(onClick = { if (viewModel.canNavigate()) onUseTemplate(row.id) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_use_template)) }
-                    Text(stringResource(R.string.core_plans_template_boundary), style = MaterialTheme.typography.bodySmall)
+    LazyColumn(state = listState, contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        item(key = "note") {
+            Text(stringResource(R.string.core_plans_template_boundary), Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (!state.loading && state.templates.isEmpty()) item(key = "empty") {
+            Column(Modifier.fillMaxWidth().padding(vertical = 64.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Icon(Icons.Rounded.Bolt, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.quick_templates_empty), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        items(ordered, key = { it.id }) { row ->
+            ReorderableItem(state = reorderState, key = row.id) { dragging ->
+                val elevation by animateDpAsState(if (dragging) 8.dp else 0.dp, label = "templateDrag")
+                val shape = ListItemPosition.from(ordered.indexOf(row), ordered.size).toShape()
+                val category = state.references.categories.find { it.id == row.categoryId }?.displayName
+                val notPrefilled = stringResource(R.string.quick_template_amount_not_prefilled)
+                ListItem(
+                    modifier = Modifier.shadow(elevation, shape),
+                    leading = { CoreMerchantIcon(row.merchant, platform.assets, Modifier.size(40.dp)) },
+                    headline = { Text(row.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    supporting = { Text(listOfNotNull(category, row.amount?.let { CoreMoneyPresentation.format(it, row.currency ?: state.references.mainCurrency) +
+                        if (row.prefillAmount) "" else " ($notPrefilled)" }).joinToString(" · "), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    trailing = { Icon(Icons.Rounded.DragHandle, stringResource(R.string.reorder),
+                        Modifier.draggableHandle(onDragStopped = { viewModel.reorder(ordered.map { it.id }) }).padding(8.dp)) },
+                    shape = shape, padding = PaddingValues(0.dp),
+                    onClick = if (!state.saving) ({ viewModel.select(row.id) }) else null,
+                )
+            }
+        }
+        if (state.suggestions.isNotEmpty()) item(key = "suggestions") {
+            ListSection(Modifier.padding(top = SectionSpacing), title = stringResource(R.string.core_plans_suggestions)) {
+                state.suggestions.forEach { row ->
+                    item(
+                        headline = { Text(row.name) },
+                        supporting = { Text(stringResource(R.string.core_plans_suggestion_count, row.count.toString())) },
+                        trailing = { Row {
+                            TooltipIconButton(Icons.Rounded.BookmarkAdd, stringResource(R.string.core_plans_save_suggestion), { viewModel.useSuggestion(row) }, enabled = !state.saving)
+                            TooltipIconButton(Icons.Rounded.Close, stringResource(R.string.core_plans_dismiss_suggestion), { viewModel.dismissSuggestion(row) }, enabled = !state.saving)
+                        } },
+                    )
                 }
             }
         }
     }
-    state.form?.let { form -> HootbookModalBottomSheet(onDismissRequest = { if (!state.saving) viewModel.back() }) {
-        Text(stringResource(if (form.id == null) R.string.core_plans_templates else R.string.edit), Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.headlineSmall)
-        state.error?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
-        TemplateEditor(form, state.references, state.saving, viewModel::updateForm, viewModel::save)
-    } }
-    if (deleteId != null) AlertDialog(onDismissRequest = { if (!state.saving) deleteId = null },
-        title = { Text(stringResource(R.string.core_plans_delete_template_title)) },
-        text = { Column { Text(stringResource(R.string.core_plans_delete_template_body)); state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
-        dismissButton = { TextButton(onClick = { deleteId = null }, enabled = !state.saving) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onClick = { deleteId?.let(viewModel::delete) }, enabled = !state.saving) { Text(stringResource(R.string.delete)) } })
 }
 
 @Composable
-private fun TemplateEditor(form: CoreTemplateForm, refs: CorePlanReferences, saving: Boolean,
-    update: (CoreTemplateForm) -> Unit, save: () -> Unit) {
-    Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        CoreTextField(form.name, stringResource(R.string.core_plans_name), saving) { update(form.copy(name = it)) }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.INVESTMENT).forEach { kind ->
-                FilterChip(selected = form.kind == kind, onClick = { update(form.copy(kind = kind, categoryId = null, subcategoryId = null)) },
-                    enabled = !saving, label = { Text(CoreKindLabel(kind)) })
-            }
+private fun TemplateDetail(row: QuickTemplate, state: CoreTemplatesUiState, platform: CorePlanPlatformViewModel, onUse: () -> Unit) {
+    val none = stringResource(R.string.core_plans_none)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            CoreMerchantIcon(row.merchant, platform.assets, Modifier.size(72.dp))
+            StatusLabel(CoreKindLabel(row.kind))
         }
-        CoreTextField(form.merchant, stringResource(R.string.core_plans_merchant), saving) { update(form.copy(merchant = it)) }
-        CoreTextField(form.amount, stringResource(R.string.core_plans_optional_amount), saving) { update(form.copy(amount = it)) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.core_plans_prefill_amount))
-            Switch(checked = form.prefillAmount, onCheckedChange = { update(form.copy(prefillAmount = it)) }, enabled = !saving)
+        Button(onClick = onUse, enabled = !state.saving, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Rounded.Bolt, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.core_plans_use_template)) }
+        ListSection(title = stringResource(R.string.plan_details)) {
+            if (row.merchant.isNotBlank()) detailRow(stringResource(R.string.core_plans_merchant), row.merchant)
+            detailRow(stringResource(R.string.amount), row.amount?.let { CoreMoneyPresentation.format(it, row.currency ?: state.references.mainCurrency) } ?: none)
+            item(headline = { Text(stringResource(R.string.core_plans_prefill_amount)) },
+                trailing = { Text(stringResource(if (row.prefillAmount) R.string.ui_yes else R.string.ui_no), style = MaterialTheme.typography.bodyLarge) })
+            detailRow(stringResource(R.string.core_plans_currency), row.currency ?: none)
+            planReferenceRows(state.references, row.accountId, row.categoryId, row.subcategoryId)
+            row.notes?.takeIf { it.isNotBlank() }?.let { notes -> item(headline = { Text(stringResource(R.string.core_plans_notes)) },
+                supporting = { Text(notes, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface) }) }
         }
-        CoreTextField(form.currency, stringResource(R.string.core_plans_optional_currency), saving) { update(form.copy(currency = it)) }
+    }
+}
+
+@Composable
+private fun TemplateEditor(form: CoreTemplateForm, state: CoreTemplatesUiState, viewModel: CoreTemplatesViewModel) {
+    val saving = state.saving
+    val update = viewModel::updateForm
+    val kinds = listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.INVESTMENT)
+    FormSheet(stringResource(if (form.id == null) R.string.plan_template_new else R.string.plan_template_edit), { if (!saving) viewModel.back() }, viewModel::save,
+        busy = saving, error = state.error, confirmEnabled = form.name.isNotBlank()) {
+        FormTextField(form.name, stringResource(R.string.core_plans_name), { update(form.copy(name = it)) }, enabled = !saving)
+        GenericTypeSwitcher(kinds.indexOf(form.kind).coerceAtLeast(0), { if (!saving) update(form.copy(kind = kinds[it], categoryId = null, subcategoryId = null)) },
+            kinds.map { CoreKindLabel(it) }, Modifier.fillMaxWidth())
+        FormTextField(form.merchant, stringResource(R.string.core_plans_merchant), { update(form.copy(merchant = it)) }, enabled = !saving)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FormTextField(form.amount, stringResource(R.string.core_plans_optional_amount), { update(form.copy(amount = it)) }, Modifier.weight(1f), enabled = !saving, decimal = true)
+            FormTextField(form.currency, stringResource(R.string.core_plans_optional_currency), { update(form.copy(currency = it.uppercase())) }, Modifier.weight(1f), enabled = !saving)
+        }
+        ListSection {
+            item(headline = { Text(stringResource(R.string.core_plans_prefill_amount)) }, trailing = { HootbookSwitch(form.prefillAmount, null, enabled = !saving) },
+                toggled = form.prefillAmount, onToggle = { if (!saving) update(form.copy(prefillAmount = it)) })
+        }
         val kind = when (form.kind) { TransactionKind.EXPENSE -> CategoryKind.EXPENSE; TransactionKind.INCOME -> CategoryKind.INCOME; else -> null }
-        PlanReferencePicker(refs, form.accountId, form.categoryId, form.subcategoryId, kind, saving,
+        PlanReferencePicker(state.references, form.accountId, form.categoryId, form.subcategoryId, kind, saving,
             account = { update(form.copy(accountId = it)) }, category = { update(form.copy(categoryId = it, subcategoryId = null)) },
             subcategory = { update(form.copy(subcategoryId = it)) })
-        CoreTextField(form.notes, stringResource(R.string.core_plans_notes), saving) { update(form.copy(notes = it)) }
-        Text(stringResource(R.string.core_plans_template_boundary), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = save, enabled = !saving, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.save)) }
+        FormTextField(form.notes, stringResource(R.string.core_plans_notes), { update(form.copy(notes = it)) }, enabled = !saving)
     }
 }

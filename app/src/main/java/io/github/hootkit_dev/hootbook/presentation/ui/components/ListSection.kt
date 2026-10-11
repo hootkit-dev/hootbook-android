@@ -56,13 +56,15 @@ class ListSectionScope internal constructor() {
         chevron: Boolean = false,
         selected: Boolean = false,
         modifier: Modifier = Modifier,
+        toggled: Boolean? = null,
+        onToggle: ((Boolean) -> Unit)? = null,
         onClick: (() -> Unit)? = null,
     ) = row { shape ->
         ListItem(
             headline = headline, supporting = supporting, leading = leading,
             trailing = if (chevron) ({ ChevronTrailing(trailing) }) else trailing,
             selected = selected, shape = shape, padding = PaddingValues(0.dp),
-            onClick = onClick, modifier = modifier,
+            onClick = onClick, modifier = modifier, toggled = toggled, onToggle = onToggle,
         )
     }
 }

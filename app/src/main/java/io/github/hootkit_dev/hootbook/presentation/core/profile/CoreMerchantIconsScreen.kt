@@ -12,6 +12,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -66,9 +71,21 @@ fun CoreMerchantIconsScreen(onBack:()->Unit,merchant:String?=null,viewModel:Core
         }
     }
 }
-/** Display consumer for new transaction/home screens; contains no old Entity dependencies. */
+/**
+ * A merchant's icon in a circle: the one the user picked, else a bundled brand logo, else
+ * [fallback] (a record icon name) or a generic receipt on the secondary container.
+ */
 @Composable
-fun CoreMerchantIcon(merchant:String,assets:CorePlatformAssets,modifier:Modifier=Modifier){
-    val revision by assets.revision.collectAsStateWithLifecycle();val image=remember(merchant,revision){assets.merchantIcon(merchant)}
-    image?.let{AsyncImage(it,merchant,modifier)}
+fun CoreMerchantIcon(merchant: String, assets: CorePlatformAssets, modifier: Modifier = Modifier, fallback: String? = null) {
+    val revision by assets.revision.collectAsStateWithLifecycle()
+    val image = remember(merchant, revision) { assets.merchantIcon(merchant) }
+    val brand = remember(merchant) { io.github.hootkit_dev.hootbook.presentation.common.icons.BrandIcons.getIconResource(merchant) }
+    androidx.compose.foundation.layout.Box(modifier.clip(androidx.compose.foundation.shape.CircleShape)
+        .background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
+        when {
+            image != null || brand != null -> AsyncImage(image ?: brand, merchant, Modifier.fillMaxSize())
+            !fallback.isNullOrBlank() -> io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon(fallback, Modifier.fillMaxSize(0.62f))
+            else -> Icon(Icons.AutoMirrored.Rounded.ReceiptLong, null, Modifier.fillMaxSize(0.5f), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+        }
+    }
 }

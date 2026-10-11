@@ -4,4 +4,6 @@
     <string name="home_activity">记账频率</string>
     <string name="ui_move_up">上移</string>
     <string name="ui_move_down">下移</string>
+    <string name="ui_yes">是</string>
+    <string name="ui_no">否</string>
 </resources>
