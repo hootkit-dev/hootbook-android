@@ -1,6 +1,11 @@
 package io.github.hootkit_dev.hootbook.acceptance
 
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.core.CoreRateRefreshCoordinator
 import io.github.hootkit_dev.hootbook.core.backup.*
 import io.github.hootkit_dev.hootbook.core.ui.*
 import io.github.hootkit_dev.hootbook.presentation.data.backup.*
@@ -22,13 +27,17 @@ import org.junit.runners.MethodSorters
 /** Native imports execute on actual production session; run on fresh acceptance APK before UI seeds. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class NativeBackupJourneys {
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface BackupEntryPoint { fun rates(): CoreRateRefreshCoordinator }
     private lateinit var f:NativeScenarioFixture
     @Before fun ready():Unit=runBlocking{f=NativeScenarioFixture();f.core();f.preferences.ready()}
     private fun workflow(folder:String,apply:(suspend(BackupOperation)->Unit)?=null,access:CoreBackupAccess=SessionBackupAccess(f.session)):BackupWorkflow {
         val root=File(f.context.noBackupFilesDir,"native-acceptance/$folder-${UUID.randomUUID()}")
         val files=CoreBackupFiles(root);return BackupWorkflow(access,files,BackupOperationJournal(files),root,apply)
     }
-    private fun applier():BackupPlatformApplier=BackupPlatformApplier(f.context,f.preferences,CorePlatformAssets(f.context),LocaleController(f.context),f.session)
+    private fun applier():BackupPlatformApplier=BackupPlatformApplier(f.context,f.preferences,CorePlatformAssets(f.context),LocaleController(f.context),f.session,
+        EntryPointAccessors.fromApplication(f.context.applicationContext,BackupEntryPoint::class.java).rates())
     private fun digest(file:File)=MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString(""){"%02x".format(it)}
     @Test fun aLegacyEmptyCoreSchemaAndActualProfileMerchantAssets()=runBlocking {
         val c=f.core()
