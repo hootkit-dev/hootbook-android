@@ -12,6 +12,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
@@ -104,6 +105,8 @@ fun TransactionItem(
     linkedLoanPersonName: String? = null,
     linkedLoanPersonColor: String? = null,
     linkedLoanPersonAvatar: String? = null,
+    useHomeStyle: Boolean = false,
+    customSymbols: Map<String, String> = emptyMap(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val attachmentStore = remember(context) { io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore(context) }
@@ -271,6 +274,34 @@ fun TransactionItem(
             }
         }
         parts to parts.joinToString(" • ")
+    }
+
+    if (useHomeStyle) {
+        val secondaryAmount = when {
+            transaction?.kind == TransactionKind.TRANSFER && transaction.toAmount != null -> stringResource(
+                R.string.home_received, CoreMoneyPresentation.format(transaction.toAmount, transaction.toCurrency ?: transaction.currency, customSymbols))
+            convertedAmount != null && mainCurrency != null -> CoreMoneyPresentation.format(convertedAmount, mainCurrency, customSymbols)
+            else -> null
+        }
+        Row(
+            itemModifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 64.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            leadingContent()
+            Column(Modifier.weight(1f)) {
+                Text(finalMerchantName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitleFinal.isNotEmpty()) Text(subtitleFinal, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(amountText, style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"), color = amountColor, maxLines = 1)
+                if (secondaryAmount != null) Text(secondaryAmount, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
+        return
     }
 
     if (useCardStyle) {

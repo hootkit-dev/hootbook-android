@@ -64,7 +64,7 @@ import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSetti
 import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
-import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.home.HomeScreen
 import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsViewModel
 import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
@@ -204,18 +204,20 @@ fun HootbookNavHost(
                                 popExitTransition = MainTabMotion.popExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until home is migrated
-                                    CoreHomeScreen(
-                                        onAccounts = { go(ManageAccounts) }, onCategories = { go(Categories) },
-                                        onTransactions = { go(Transactions()) }, onBudgets = { go(Budgets()) },
-                                        onSubscriptions = { go(Subscriptions()) }, onTemplates = { go(QuickTemplates) },
-                                        onDebts = { go(LendBorrow()) }, onSettings = { go(Settings) },
-                                        onCurrencies = { go(CurrencySettings()) }, onBackup = { go(DataPrivacy) },
-                                        onProfile = { go(Profile) }, onAppearance = { go(Appearance) },
-                                        onAnalytics = { go(Analytics) }, onAccount = { go(AccountDetail(it)) },
-                                        onBudget = { go(BudgetDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
-                                        onSubscription = { go(Subscriptions(it)) },
-                                    )
+                                    SharedTransitionLayout {
+                                        HomeScreen(
+                                            navController = navController,
+                                            onNavigateToProfile = { go(Profile) },
+                                            onNavigateToTransactions = { go(Transactions()) },
+                                            onNavigateToSubscriptions = { go(Subscriptions()) },
+                                            onNavigateToAnalytics = { go(Analytics) },
+                                            onNavigateToBudgets = { id -> if (id == null) go(Budgets()) else go(BudgetDetail(id)) },
+                                            onNavigateToBudgetHistory = { go(BudgetHistory(it)) },
+                                            onNavigateToLendBorrow = { go(LendBorrow(it)) },
+                                            onTransactionClick = { id, key -> go(TransactionDetail(id, key)) },
+                                            animatedContentScope = this@composable,
+                                        )
+                                    }
                                 }
                             }
                             composable<Transactions>(
