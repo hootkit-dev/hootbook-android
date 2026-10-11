@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_upcoming">即将扣款：%1$s</string>
+    <string name="plan_hidden_done">订阅已隐藏</string>
+    <string name="plan_next">下次 %1$s</string>
+    <string name="plan_due_in">%1$s 天后</string>
+    <string name="plan_cycle">周期</string>
+    <string name="plan_last_paid">上次付款</string>
+    <string name="plan_monthly">每月折合</string>
+    <string name="plan_details">详情</string>
+    <string name="plan_edit">编辑订阅</string>
+    <string name="plan_template_edit">编辑模板</string>
+    <string name="plan_template_new">新建模板</string>
+    <string name="invest_holdings">持仓</string>
+</resources>

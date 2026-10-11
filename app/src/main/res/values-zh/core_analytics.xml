@@ -1,28 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="core_analytics_this_month">本月</string>
-  <string name="core_analytics_last_month">上月</string>
-  <string name="core_analytics_this_year">今年</string>
-  <string name="core_analytics_all_time_note">全部时间不使用日期输入，并包含 Core 中的未来日期记录。每日分页使用 Core 最早／最新记录边界。</string>
-  <string name="core_analytics_all_time">全部时间</string>
-  <string name="core_analytics_title">分析</string>
-  <string name="core_analytics_back">返回</string>
-  <string name="core_analytics_days">%1$s 天</string>
-  <string name="core_analytics_from">开始日期（YYYY-MM-DD）</string>
-  <string name="core_analytics_through">结束日期（含当天）</string>
-  <string name="core_analytics_filter_currency">筛选交易币种（留空为全部）</string>
-  <string name="core_analytics_apply">应用筛选</string>
-  <string name="core_analytics_retry">重试</string>
-  <string name="core_analytics_query_failed">分析加载失败，请检查日期后重试。</string>
-  <string name="core_analytics_totals">Core 汇总 · %1$s</string>
-  <string name="core_analytics_income">收入 %1$s</string>
-  <string name="core_analytics_expense">支出 %1$s</string>
-  <string name="core_analytics_net">净额 %1$s</string>
-  <string name="core_analytics_count">%1$s 笔交易</string>
-  <string name="core_analytics_missing">部分汇总；缺少汇率：%1$s</string>
-  <string name="core_analytics_categories">分类汇总</string>
-  <string name="core_analytics_daily">每日收入与支出</string>
-  <string name="core_analytics_daily_note">金额为 Core 每日汇总，曲线显示支出；平台不重算金额或换汇。</string>
-  <string name="core_analytics_older">加载更早的每日汇总</string>
-  <string name="core_analytics_unsupported">当前 Core API 未提供准确商户排行、财务日均或特殊投资／借贷汇总。收入与支出遵循 Core 汇总语义。</string>
+    <string name="core_analytics_this_month">本月</string>
+    <string name="core_analytics_last_month">上月</string>
+    <string name="core_analytics_this_year">今年</string>
+    <string name="core_analytics_all_time">全部时间</string>
+    <string name="core_analytics_custom">自定义</string>
+    <string name="core_analytics_title">分析</string>
+    <string name="core_analytics_filter_currency">货币</string>
+    <string name="core_analytics_currency_any">留空表示全部货币</string>
+    <string name="core_analytics_apply">应用</string>
+    <string name="core_analytics_retry">重试</string>
+    <string name="core_analytics_query_failed">无法加载分析数据。</string>
+    <string name="core_analytics_net">净额 %1$s</string>
+    <string name="core_analytics_count">%1$s 笔交易</string>
+    <string name="core_analytics_missing">合计未包含 %1$s：缺少汇率。</string>
+    <string name="core_analytics_categories">按类别</string>
+    <string name="core_analytics_daily">每日收支</string>
+    <string name="core_analytics_older">加载更早的日期</string>
+    <string name="core_analytics_chart">图表</string>
+    <string name="core_analytics_list">列表</string>
 </resources>

@@ -1,5 +1,4 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="core_transactions_title">交易</string>
-    <string name="core_transactions_limits">筛选、分页、多选、批量修改和删除均使用 Core API。当前 Core 未暴露子分类筛选、金额区间、多币种、金额升序和商户排序；界面不以当前页局部过滤冒充全局结果。</string>
 </resources>

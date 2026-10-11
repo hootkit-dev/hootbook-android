@@ -29,9 +29,11 @@ internal fun investmentFailure(failure: Throwable): CoreInvestmentFailure = when
 
 /** Exact display only: no price-times-quantity, currency conversion, cost or P&L arithmetic. */
 internal fun investmentDecimal(amount: BigDecimal?): String = amount?.toPlainString() ?: "—"
-internal fun investmentDate(date: LocalDate): String = "%04d-%02d-%02d".format(date.year, date.month.toInt(), date.day.toInt())
+internal fun investmentDate(date: LocalDate): String =
+    io.github.hootkit_dev.hootbook.utils.DateFormats.shortDate(java.time.LocalDate.of(date.year, date.month.toInt(), date.day.toInt()))
 internal fun investmentTime(time: LocalDateTime?): String = time?.let {
-    "%04d-%02d-%02d %02d:%02d:%02d".format(it.year, it.month.toInt(), it.day.toInt(), it.hour.toInt(), it.minute.toInt(), it.second.toInt())
+    java.time.LocalDateTime.of(it.year, it.month.toInt(), it.day.toInt(), it.hour.toInt(), it.minute.toInt()).let { t ->
+        io.github.hootkit_dev.hootbook.utils.DateFormats.shortDate(t.toLocalDate()) + " " + io.github.hootkit_dev.hootbook.utils.DateFormats.time(t) }
 } ?: "—"
 
 internal fun linkedAccount(ref: BrokerAccountRef, connections: List<BrokerageConnection>): BrokerageAccount? =

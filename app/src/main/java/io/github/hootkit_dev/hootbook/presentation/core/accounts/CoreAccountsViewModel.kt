@@ -2,6 +2,7 @@ package io.github.hootkit_dev.hootbook.presentation.core.accounts
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
@@ -38,13 +39,15 @@ data class CoreAccountsUiState(
     val commandRevision: Long = 0,
     val historyOpen: Boolean = false,
     val historyLoading: Boolean = false,
-    val historyFrom: String = java.time.LocalDate.now().minusDays(30).toString(),
-    val historyTo: String = java.time.LocalDate.now().toString(),
-    val balanceAtInput: String = java.time.LocalDateTime.now().withNano(0).toString(),
+    val historyMonths: Int = 3,
+    val balanceAtInput: String = "",
     val history: List<BalanceDay> = emptyList(),
     val historicalBalance: java.math.BigDecimal? = null,
     val customSymbols: Map<String, String> = emptyMap(),
     val displayValues: Map<String, CoreDisplayedMoney> = emptyMap(),
+    /** The selected account's latest transactions, with the categories to label them. */
+    val recent: List<Transaction> = emptyList(),
+    val categories: List<Category> = emptyList(),
 )
 
 @HiltViewModel
@@ -56,7 +59,8 @@ class CoreAccountsViewModel private constructor(
     private val savedState: SavedStateHandle? = null,
     private val preferences: CoreUiPreferencesStore? = null,
 ) : ViewModel() {
-    @Inject constructor(session: CoreSession, changes: ChangeBus, savedState: SavedStateHandle? = null, preferences: CoreUiPreferencesStore? = null) : this(session, changes, null, null, savedState, preferences)
+    @Inject constructor(session: CoreSession, changes: ChangeBus, savedState: SavedStateHandle? = null, preferences: CoreUiPreferencesStore? = null,
+        assets: CorePlatformAssets? = null) : this(session, changes, null, null, savedState, preferences) { platformAssets = assets }
     internal constructor(changes: ChangeBus, accounts: suspend () -> AccountsInterface,
         institutions: () -> List<Institution> = { emptyList() }) : this(null, changes, accounts, institutions)
 
@@ -64,6 +68,8 @@ class CoreAccountsViewModel private constructor(
         if (testAccounts != null) return block(testAccounts.invoke())
         return session!!.awaitCore().accounts().use { block(it) }
     }
+    var platformAssets: CorePlatformAssets? = null
+        private set
     private val mutable = MutableStateFlow(CoreAccountsUiState(draft = restoreAccountDraft(savedState?.get("account_draft"))))
     val state = mutable.asStateFlow()
     private var query: Job? = null
@@ -101,6 +107,12 @@ class CoreAccountsViewModel private constructor(
                         LocalDate(today.year, today.monthValue.toUByte(), today.dayOfMonth.toUByte())) else null
                     QueryResult(overview, account, pocket, anchors, card, count, pocketCount)
                 }
+                val (recent, categories) = if (result.account != null && session != null) {
+                    val core = session.awaitCore()
+                    val filter = TransactionFilter(null, null, emptyList(), listOf(result.account.id), emptyList(), null, null,
+                        DeletedFilter.EXCLUDE, SortOrder.NEWEST_FIRST)
+                    core.ledger().use { it.list(filter, PageRequest(0u, RECENT_COUNT)).items } to core.categories().use { it.list(null, true) }
+                } else emptyList<Transaction>() to emptyList()
                 val preferencesValue = preferences?.ready()
                 val symbols = if (preferences != null) session!!.awaitCore().currency().use { it.customCurrencies().associate { row -> row.code to row.symbol } } else emptyMap()
                 val unified = preferencesValue?.unifiedDisplayCurrency?.takeIf { preferencesValue.unifiedDisplayEnabled }
@@ -110,7 +122,8 @@ class CoreAccountsViewModel private constructor(
                 if (revision == queryRevision) mutable.update { it.copy(loading = false, overview = result.overview, institutions = institutions,
                     selectedId = result.account?.id, account = result.account, currency = result.currency,
                     anchors = result.anchors, cardStatus = result.card, transactionCount = result.count,
-                    pocketTransactionCount = result.pocketCount, customSymbols = symbols, displayValues = display) }
+                    pocketTransactionCount = result.pocketCount, customSymbols = symbols, displayValues = display,
+                    recent = recent, categories = categories) }
                 if (revision == queryRevision && mutable.value.historyOpen) queryHistory()
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: Throwable) { if (revision == queryRevision) mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } }
@@ -120,7 +133,8 @@ class CoreAccountsViewModel private constructor(
     fun select(id: String?) {
         if (rejectNavigationWhileSaving()) return
         ++historyRevision; historyQuery?.cancel()
-        mutable.update { it.copy(selectedId = id, account = null, currency = null, anchors = emptyList(), cardStatus = null, history = emptyList(), historicalBalance = null) }
+        mutable.update { it.copy(selectedId = id, account = null, currency = null, anchors = emptyList(), cardStatus = null, history = emptyList(),
+            historicalBalance = null, recent = emptyList(), historyOpen = false) }
         refresh()
     }
     fun selectCurrency(currency: String) { if (rejectNavigationWhileSaving()) return; ++historyRevision; historyQuery?.cancel(); mutable.update { it.copy(currency = currency, history = emptyList(), historicalBalance = null) }; refresh() }
@@ -203,11 +217,12 @@ class CoreAccountsViewModel private constructor(
         if (accountId != null) mutable.update { it.copy(selectedId = accountId, historyOpen = history) }
         refresh()
     }
-    fun historyInputs(from: String, to: String, at: String) {
-        if (mutable.value.saving) return
-        mutable.update { it.copy(historyFrom = from, historyTo = to, balanceAtInput = at) }
-    }
+    /** The balance chart covers the last [months] months. */
+    fun historyPeriod(months: Int) { mutable.update { it.copy(historyMonths = months) }; queryHistory() }
+    /** The balance at one moment; blank means now. */
+    fun balanceAt(at: String) { mutable.update { it.copy(balanceAtInput = at) }; queryHistory() }
     fun openHistory() { mutable.update { it.copy(historyOpen = true) }; queryHistory() }
+    fun closeHistory() { mutable.update { it.copy(historyOpen = false) } }
     fun queryHistory() {
         val selected = mutable.value.selectedId ?: return
         val currency = mutable.value.currency ?: return
@@ -217,9 +232,10 @@ class CoreAccountsViewModel private constructor(
         mutable.update { it.copy(historyLoading = true) }
         historyQuery = viewModelScope.launch {
             try {
-                val from = java.time.LocalDate.parse(snapshot.historyFrom).let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
-                val to = java.time.LocalDate.parse(snapshot.historyTo).let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
-                val at = requireNotNull(optionalDateTime(snapshot.balanceAtInput))
+                val today = java.time.LocalDate.now()
+                val from = today.minusMonths(snapshot.historyMonths.toLong()).let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
+                val to = LocalDate(today.year, today.monthValue.toUByte(), today.dayOfMonth.toUByte())
+                val at = optionalDateTime(snapshot.balanceAtInput) ?: requireNotNull(optionalDateTime(java.time.LocalDateTime.now().withNano(0).toString()))
                 val result = withAccounts { api -> api.balanceSeries(selected, currency, from, to) to api.balanceAt(selected, currency, at) }
                 if (revision == historyRevision && mutable.value.selectedId == selected && mutable.value.currency == currency)
                     mutable.update { it.copy(history = result.first, historicalBalance = result.second, historyLoading = false) }
@@ -241,6 +257,7 @@ class CoreAccountsViewModel private constructor(
             finally { mutable.update { it.copy(saving = false, navigationBlocked = false) } }
         }
     }
+    private companion object { const val RECENT_COUNT = 3u }
     private data class QueryResult(val overview: AccountsOverview, val account: Account?, val currency: String?,
         val anchors: List<BalanceAnchor>, val card: CardStatus?, val count: UInt, val pocketCount: UInt)
 }

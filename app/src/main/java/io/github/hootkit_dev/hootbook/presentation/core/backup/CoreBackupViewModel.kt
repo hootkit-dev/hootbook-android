@@ -50,7 +50,7 @@ class CoreBackupViewModel private constructor(
             val files = CoreBackupFiles(root)
             CoreBackupWorkflow(SessionBackupAccess(session, currencies::importCommitted), files, BackupOperationJournal(files), root) { operation ->
                 try { platform.apply(operation) } catch(cancelled: CancellationException) { throw cancelled }
-                catch(failure: Exception) { throw CoreBackupUiException(R.string.core_ui_backup_platform_failed, failure) }
+                catch(failure: Exception) { throw CoreBackupUiException(R.string.backup_err_platform_failed, failure) }
             }
         }, platform)
     internal constructor(context: Context, access: CoreBackupAccess, root: File) : this(context,
@@ -72,6 +72,10 @@ class CoreBackupViewModel private constructor(
         }
     }
     fun canBack(): Boolean = !mutable.value.busy
+    fun clearError() = mutable.update { it.copy(error = null) }
+    fun clearMessage() = mutable.update { it.copy(message = null) }
+    /** Opens a fresh export form: the file made last time is not offered again. */
+    fun clearExport() { if (!mutable.value.busy) mutable.update { it.copy(exportFile = null, exportInfo = null, message = null, error = null) } }
     fun invalidateInspection() {
         if (!mutable.value.busy) { inspectedPassword = null; mutable.update { it.copy(info = null, legacyInfo = null) } }
     }
@@ -97,39 +101,39 @@ class CoreBackupViewModel private constructor(
     fun export(includeAttachments: Boolean, includeAi: Boolean, includeBrokerage: Boolean, password: String?, secretsConfirmed: Boolean) {
         command {
             if ((includeAi || includeBrokerage) && password.isNullOrBlank() && !secretsConfirmed)
-                throw CoreBackupUiException(R.string.core_ui_backup_plain_secrets)
+                throw CoreBackupUiException(R.string.backup_err_plain_secrets)
             val snapshot = platform?.exportSnapshot()
             val platformFiles = (workflow.preservedAssets() + snapshot?.files.orEmpty()).associateBy { it.entryName }.values.toList()
             val (file, info) = workflow.export(ExportOptions(includeAttachments, includeAi, includeBrokerage,
                 password, preferencesJson = snapshot?.preferencesJson, platformFiles = platformFiles, device = android.os.Build.MODEL))
-            mutable.update { it.copy(exportFile = file, exportInfo = info, message = context.getString(R.string.core_ui_backup_created)) }
+            mutable.update { it.copy(exportFile = file, exportInfo = info, message = context.getString(R.string.backup_msg_created)) }
         }
     }
     fun restore(mode: ImportMode, password: String?, replaceConfirmed: Boolean, sensitiveConfirmed: Boolean) {
         val snapshot = mutable.value; val source = snapshot.source ?: return
         command {
             if ((snapshot.info == null && snapshot.legacyInfo == null) || inspectedPassword != password)
-                throw CoreBackupUiException(R.string.core_ui_backup_inspect_first)
+                throw CoreBackupUiException(R.string.backup_err_inspect_first)
             if ((snapshot.legacy || snapshot.info?.includes?.ai == true || snapshot.info?.includes?.brokerage == true) && !sensitiveConfirmed)
-                throw CoreBackupUiException(R.string.core_ui_backup_sensitive_restore)
+                throw CoreBackupUiException(R.string.backup_err_sensitive)
             val result = workflow.restore(source, snapshot.legacy, mode, password, replaceConfirmed)
             inspectedPassword = null
             mutable.update { it.copy(result = result, info = null, legacyInfo = null,
-                message = context.getString(R.string.core_ui_backup_applied)) }
+                message = context.getString(R.string.backup_msg_applied)) }
         }
     }
     fun finishPlatform(operation: BackupOperation) { command {
         val result = workflow.finishPlatform(operation)
-        mutable.update { it.copy(result = result, message = context.getString(R.string.core_ui_backup_platform_applied)) }
+        mutable.update { it.copy(result = result, message = context.getString(R.string.backup_msg_platform_applied)) }
     } }
     fun skipPlatform(operation: BackupOperation) { command {
         val result = workflow.skipPlatform(operation)
-        mutable.update { it.copy(result = result, message = context.getString(R.string.core_shell_platform_skipped)) }
+        mutable.update { it.copy(result = result, message = context.getString(R.string.backup_msg_platform_skipped)) }
     } }
     fun save(uri: Uri?) {
         if (uri == null) return
         val file = mutable.value.exportFile ?: return
-        command { workflow.files.save(context.contentResolver, uri, file); mutable.update { it.copy(message = context.getString(R.string.core_ui_backup_saved)) } }
+        command { workflow.files.save(context.contentResolver, uri, file); mutable.update { it.copy(message = context.getString(R.string.backup_msg_saved)) } }
     }
     fun savePreferences(uri: Uri?) {
         if (uri == null) return
@@ -139,14 +143,14 @@ class CoreBackupViewModel private constructor(
             val file = CoreBackupFiles.safeChild(workflow.files.operation(operation.source.operationId), "preferences-review.json")
             val verified = workflow.files.verify(operation.source.operationId, file)
             workflow.files.save(context.contentResolver, uri, verified)
-            mutable.update { it.copy(message = context.getString(R.string.core_ui_backup_preferences_saved)) }
+            mutable.update { it.copy(message = context.getString(R.string.backup_msg_preferences_saved)) }
         }
     }
     fun saveSource(uri: Uri?, operationId: String) {
         if (uri == null) return
         val operation = mutable.value.operations.find { it.source.operationId == operationId } ?: return
         command { workflow.files.save(context.contentResolver, uri, operation.source)
-            mutable.update { it.copy(message = context.getString(R.string.core_ui_backup_source_saved)) } }
+            mutable.update { it.copy(message = context.getString(R.string.backup_msg_source_saved)) } }
     }
     fun share() {
         val file = mutable.value.exportFile ?: return
@@ -160,7 +164,7 @@ class CoreBackupViewModel private constructor(
         }
     }
     fun shareHandled(error: Boolean = false) { mutable.update { it.copy(shareFile = null,
-        error = if (error) context.getString(R.string.core_ui_backup_share_failed) else it.error) } }
+        error = if (error) context.getString(R.string.backup_err_share) else it.error) } }
     private fun command(block: suspend () -> Unit) {
         if (mutable.value.busy) return
         mutable.update { it.copy(busy = true, error = null, message = null) }
@@ -171,7 +175,7 @@ class CoreBackupViewModel private constructor(
             finally {
                 withContext(NonCancellable) {
                     try { mutable.update { it.copy(operations = workflow.recover()) } }
-                    catch (failure: Exception) { mutable.update { it.copy(error = context.getString(R.string.core_ui_backup_journal_failed)) } }
+                    catch (failure: Exception) { mutable.update { it.copy(error = context.getString(R.string.backup_err_journal)) } }
                     mutable.update { it.copy(busy = false) }
                 }
             }

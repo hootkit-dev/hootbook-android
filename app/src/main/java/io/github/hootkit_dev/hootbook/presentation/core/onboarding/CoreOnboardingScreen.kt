@@ -51,10 +51,19 @@ import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrencyP
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreProfileViewModel
 import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncScreen
 import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncViewModel
-import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreColorPickerRow
+import io.github.hootkit_dev.hootbook.presentation.core.profile.AvatarPresets
+import io.github.hootkit_dev.hootbook.presentation.core.profile.ProfileHeader
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
+import io.github.hootkit_dev.hootbook.presentation.ui.components.FormTextField
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionTitle
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.InstitutionPicker
 
-/** Original four-step onboarding, backed only by generated Core records and platform preferences. */
+/**
+ * First run in four steps: welcome (start fresh, turn on sync or restore a backup), the main
+ * account and currency, the profile, and notifications.
+ */
 @Composable
 fun CoreOnboardingScreen(@Suppress("UNUSED_PARAMETER") session: CoreSession, prefs: CoreUiPreferencesStore,
     onRoute: (String) -> Unit, viewModel: CoreOnboardingViewModel = hiltViewModel(),
@@ -95,8 +104,9 @@ fun CoreOnboardingScreen(@Suppress("UNUSED_PARAMETER") session: CoreSession, pre
         else -> true
     }
     Scaffold(modifier = Modifier.fillMaxSize().imePadding(), topBar = {
-        Column(Modifier.statusBarsPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.onboarding_step_count, state.step.number, 4), style = MaterialTheme.typography.labelLarge)
+        Column(Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.onboarding_step_count, state.step.number, 4), style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             LinearWavyProgressIndicator(progress = { state.step.number.toFloat() / 4 }, modifier = Modifier.fillMaxWidth())
         }
     }, bottomBar = {
@@ -116,95 +126,78 @@ fun CoreOnboardingScreen(@Suppress("UNUSED_PARAMETER") session: CoreSession, pre
                 shapes = ButtonDefaults.shapesFor(ButtonDefaults.MediumContainerHeight), contentPadding = ButtonDefaults.contentPaddingFor(ButtonDefaults.MediumContainerHeight)) {
                 Text(stringResource(when (state.step) {
                     CoreOnboardingStep.WELCOME -> R.string.onboarding_start_fresh
-                    CoreOnboardingStep.NOTIFICATIONS -> R.string.stay_informed
+                    CoreOnboardingStep.NOTIFICATIONS -> R.string.notif_allow
                     else -> R.string.continue_action
                 }), style = ButtonDefaults.textStyleFor(ButtonDefaults.MediumContainerHeight))
             }
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            if (state.error || profileState.error != null) {
-                Text(stringResource(R.string.onboarding_operation_failed), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 24.dp))
-                TextButton(onClick = viewModel::refresh, enabled = !busy) { Text(stringResource(R.string.onboarding_try_again)) }
-            }
+            if (state.error || profileState.error != null) ErrorBanner(stringResource(R.string.onboarding_operation_failed), viewModel::refresh,
+                Modifier.padding(horizontal = 24.dp), actionLabel = stringResource(R.string.onboarding_try_again), onAction = viewModel::refresh)
             when (state.step) {
-                CoreOnboardingStep.WELCOME -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    Surface(shape = MaterialTheme.shapes.extraLargeIncreased, color = MaterialTheme.colorScheme.primaryContainer) {
-                        Icon(Icons.Rounded.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(40.dp).size(72.dp))
+                CoreOnboardingStep.WELCOME -> StepColumn {
+                    Surface(Modifier.align(Alignment.CenterHorizontally), shape = MaterialTheme.shapes.extraLargeIncreased, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Image(painterResource(R.drawable.hootbook), null, Modifier.padding(32.dp).size(72.dp),
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer))
                     }
-                    Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.displaySmallEmphasized, textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.onboarding_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                    if (sync.status?.phase != SyncPhase.UNAVAILABLE) OnboardingWelcomeChoice(Icons.Rounded.CloudSync,
-                        stringResource(R.string.onboarding_sync_title), stringResource(R.string.onboarding_sync_description), ready) { viewModel.step(CoreOnboardingStep.SYNC) }
-                    OnboardingWelcomeChoice(Icons.Rounded.Restore, stringResource(R.string.onboarding_import_backup), stringResource(R.string.platform_onboarding_import_body), ready) {
-                        viewModel.step(CoreOnboardingStep.ACCOUNT); onRoute("backup")
+                    StepHeading(stringResource(R.string.onboarding_welcome_title), stringResource(R.string.onboarding_welcome_body), display = true)
+                    ListSection(title = stringResource(R.string.onb_existing_data)) {
+                        if (sync.status?.phase != SyncPhase.UNAVAILABLE) item(leading = { Icon(Icons.Rounded.CloudSync, null) },
+                            headline = { Text(stringResource(R.string.onboarding_sync_title)) }, supporting = { Text(stringResource(R.string.onboarding_sync_description)) },
+                            chevron = true, onClick = if (ready) { { viewModel.step(CoreOnboardingStep.SYNC) } } else null)
+                        item(leading = { Icon(Icons.Rounded.Restore, null) }, headline = { Text(stringResource(R.string.onboarding_import_backup)) },
+                            supporting = { Text(stringResource(R.string.onb_restore_body)) },
+                            chevron = true, onClick = if (ready) { { viewModel.step(CoreOnboardingStep.ACCOUNT); onRoute("backup") } } else null)
                     }
                 }
                 CoreOnboardingStep.SYNC -> CoreSyncScreen(onBack = viewModel::previous, onBackup = { onRoute("backup") }, onRecord = onRecord, viewModel = syncViewModel, embedded = true)
-                CoreOnboardingStep.ACCOUNT -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Rounded.AccountBalance, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(16.dp))
-                    Text(stringResource(if (state.accounts.isEmpty()) R.string.add_your_main_account else R.string.onboarding_sync_currency), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(stringResource(if (state.accounts.isEmpty()) R.string.enter_primary_account_details else R.string.platform_onboarding_account_ready),
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(24.dp))
-                    if (state.accounts.isEmpty()) {
-                        FilledTonalButton(onClick = { onRoute("backup") }, enabled = ready, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                            Icon(Icons.Rounded.Restore, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.onboarding_import_backup))
+                CoreOnboardingStep.ACCOUNT -> StepColumn {
+                    val fresh = state.accounts.isEmpty()
+                    StepHeading(stringResource(if (fresh) R.string.add_your_main_account else R.string.onboarding_sync_currency),
+                        stringResource(if (fresh) R.string.enter_primary_account_details else R.string.platform_onboarding_account_ready))
+                    if (fresh) {
+                        ListSection {
+                            item(leading = { Icon(Icons.Rounded.AccountBalance, null) }, headline = { Text(stringResource(R.string.institution_choose)) },
+                                supporting = state.institution?.let { { Text(if (chinese) it.chineseName else it.englishName) } },
+                                chevron = true, onClick = if (ready) { { showInstitutions = true } } else null)
                         }
-                        Spacer(Modifier.height(24.dp))
-                        OutlinedButton(onClick = { showInstitutions = true }, enabled = ready, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Rounded.AccountBalance, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.institution_choose))
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        OnboardingTextField(state.accountName, viewModel::name, stringResource(R.string.bank_name_hint), Icons.Rounded.Edit, ready)
-                        Spacer(Modifier.height(16.dp))
+                        FormTextField(state.accountName, stringResource(R.string.onb_account_name), viewModel::name, enabled = ready,
+                            supporting = stringResource(R.string.bank_name_hint))
+                        FormTextField(state.openingBalance, stringResource(R.string.balance), viewModel::balance, enabled = ready, decimal = true)
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        if (state.accounts.isEmpty()) OnboardingTextField(state.openingBalance, viewModel::balance, stringResource(R.string.balance), Icons.Rounded.AccountBalanceWallet, ready,
-                            Modifier.weight(1f), KeyboardType.Decimal)
-                        Card(onClick = { showCurrencies = true }, enabled = ready, modifier = if (state.accounts.isEmpty()) Modifier.height(56.dp) else Modifier.fillMaxWidth().height(64.dp),
-                            shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-                            Box(Modifier.fillMaxHeight().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-                                Text(state.currency, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
+                    ListSection {
+                        item(leading = { Icon(Icons.Rounded.CurrencyExchange, null) }, headline = { Text(stringResource(R.string.onb_currency)) },
+                            supporting = { Text(stringResource(R.string.onboarding_sync_currency_body)) },
+                            trailing = { Text(state.currency, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary) },
+                            chevron = true, onClick = if (ready) { { showCurrencies = true } } else null)
                     }
-                    if (state.accounts.isEmpty()) {
-                        Spacer(Modifier.height(16.dp))
-                        OnboardingTextField(state.last4, viewModel::last4, stringResource(R.string.last_4_digits_hint), Icons.Rounded.Pin, ready, keyboard = KeyboardType.Number)
-                    } else Text(stringResource(R.string.onboarding_sync_currency_body), Modifier.padding(top = 16.dp), style = MaterialTheme.typography.bodyMedium)
-                }
-                CoreOnboardingStep.PROFILE -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    Text(stringResource(R.string.set_up_your_profile), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(190.dp).clip(RoundedCornerShape(24.dp))) {
-                        Image(painterResource(R.drawable.banner_bg_image), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background))))
-                        Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp).size(100.dp).clip(CircleShape).background(Color(background))) {
-                            val image = profile.assets.resolve(avatar)
-                            if (image != null) AsyncImage(image, stringResource(R.string.profile), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                            else Image(painterResource(R.drawable.avatar_1), stringResource(R.string.profile), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        }
-                    }
-                    OnboardingTextField(name, { name = it }, stringResource(R.string.what_should_we_call_you), Icons.Rounded.Person, ready, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(CoreProfileViewModel.PRESET_AVATARS) { resource ->
-                            Image(painterResource(resource), stringResource(R.string.core_ui_avatar), Modifier.size(80.dp).clip(CircleShape).clickable(enabled = ready) { profile.presetAvatar(resource) { avatar = it } })
-                        }
-                    }
-                    TextButton(onClick = { picture.launch(arrayOf("image/*")) }, enabled = ready) { Text(stringResource(R.string.gallery)) }
-                    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(16.dp))) {
-                        ColorPickerContent(initialColor = background, onColorChanged = { if (ready) background = it }, showTitle = true)
+                    if (fresh) FormTextField(state.last4, stringResource(R.string.last_4_digits_hint), viewModel::last4, enabled = ready,
+                        supporting = stringResource(R.string.onb_last4_help))
+                    if (fresh) TextButton(onClick = { onRoute("backup") }, enabled = ready, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text(stringResource(R.string.onboarding_import_backup))
                     }
                 }
-                CoreOnboardingStep.NOTIFICATIONS -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    Icon(Icons.Rounded.Notifications, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text(stringResource(R.string.stay_informed), style = MaterialTheme.typography.headlineLarge)
-                    Text(stringResource(R.string.onboarding_notifications_body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    TextButton(onClick = viewModel::finish, enabled = ready, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.onboarding_not_now)) }
+                CoreOnboardingStep.PROFILE -> StepColumn {
+                    StepHeading(stringResource(R.string.set_up_your_profile), stringResource(R.string.onb_profile_body))
+                    ProfileHeader(null, profile.assets.resolve(avatar), Color(background), avatarSize = 80.dp)
+                    FormTextField(name, stringResource(R.string.what_should_we_call_you), { name = it }, enabled = ready)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SectionTitle(stringResource(R.string.profile_avatar), indent = 0.dp, action = {
+                            TextButton(onClick = { picture.launch(arrayOf("image/*")) }, enabled = ready) { Text(stringResource(R.string.profile_pick_photo)) }
+                        })
+                        AvatarPresets(ready) { resource -> profile.presetAvatar(resource) { avatar = it } }
+                    }
+                    CoreColorPickerRow("#%06X".format(background and 0xFFFFFF), ready, label = stringResource(R.string.profile_avatar_background)) { color ->
+                        background = runCatching { android.graphics.Color.parseColor(color) }.getOrDefault(background)
+                    }
+                }
+                CoreOnboardingStep.NOTIFICATIONS -> StepColumn {
+                    Icon(Icons.Rounded.NotificationsActive, null, Modifier.size(72.dp).align(Alignment.CenterHorizontally), tint = MaterialTheme.colorScheme.primary)
+                    StepHeading(stringResource(R.string.onb_notifications_title), stringResource(R.string.onboarding_notifications_body))
+                    TextButton(onClick = viewModel::finish, enabled = ready, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text(stringResource(R.string.onboarding_not_now))
+                    }
                 }
             }
         }
@@ -217,21 +210,19 @@ fun CoreOnboardingScreen(@Suppress("UNUSED_PARAMETER") session: CoreSession, pre
     }, onDismiss = { showInstitutions = false })
 }
 
+/** One step's scrolling content, at most 600 dp wide. */
 @Composable
-private fun OnboardingWelcomeChoice(icon: ImageVector, title: String, description: String, enabled: Boolean, onClick: () -> Unit) {
-    Card(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLargeIncreased,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)) {
-        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(icon, null); Text(title, style = MaterialTheme.typography.titleLarge); Text(description, style = MaterialTheme.typography.bodyMedium)
-        }
+private fun StepColumn(content: @Composable ColumnScope.() -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp), content = content)
     }
 }
 
 @Composable
-private fun OnboardingTextField(value: String, onChange: (String) -> Unit, label: String, icon: ImageVector, enabled: Boolean,
-    modifier: Modifier = Modifier.fillMaxWidth(), keyboard: KeyboardType = KeyboardType.Text) {
-    TextField(value, onChange, modifier, label = { Text(label) }, leadingIcon = { Icon(icon, null) }, enabled = enabled,
-        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(16.dp),
-        colors = TextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
+private fun StepHeading(title: String, body: String, display: Boolean = false) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title, style = if (display) MaterialTheme.typography.displaySmallEmphasized else MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+        Text(body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+    }
 }

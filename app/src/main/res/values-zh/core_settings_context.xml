@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_locale_command_failed">语言命令在应用界面偏好前被拒绝，界面选择未改变。请重试语言同步。</string>
-  <string name="core_locale_rolled_back">界面语言保存失败，已完成原选择与 Core 语言的补偿。请重试语言修改。</string>
-  <string name="core_locale_diverged">操作结果或回滚未能确认，界面与 Core 语言状态可能不同。请先重试同步再继续。</string>
+  <string name="core_locale_rolled_back">语言未能保存，已恢复为之前的语言。请重试。</string>
+  <string name="core_locale_diverged">语言设置可能未完全保存，请重试后再继续。</string>
   <string name="core_locale_retry_sync">重试同步界面语言</string>
-  <string name="core_currency_download_failed">汇率下载不可用或失败。现有汇率保留，请检查网络或平台能力后重试。</string>
+  <string name="core_currency_download_failed">汇率下载失败，现有汇率已保留。请检查网络后重试。</string>
 </resources>

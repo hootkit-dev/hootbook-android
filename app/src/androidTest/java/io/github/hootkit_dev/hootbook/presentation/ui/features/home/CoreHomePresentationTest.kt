@@ -71,15 +71,15 @@ class CoreHomePresentationTest {
                 onSubscription = {}, onDebts = {}, onWidgetVisibility = { _, _ -> }, onReorder = {},
                 onResetLayout = {}, onToggleBanner = {})
         } }
-        rule.onNodeWithTag("home_transaction_tx-3").performScrollTo().assertIsDisplayed()
-        val before = rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot
+        rule.onNodeWithTag("transaction_tx-3").performScrollTo().assertIsDisplayed()
+        val before = rule.onNodeWithTag("transaction_tx-3").fetchSemanticsNode().boundsInRoot
         rule.runOnIdle { state.value = state.value.copy(refreshing = true, widgetsLoading = true) }
         rule.onNodeWithText(context.getString(R.string.home_recent_empty)).assertDoesNotExist()
-        assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
+        assertEquals(before, rule.onNodeWithTag("transaction_tx-3").fetchSemanticsNode().boundsInRoot)
         rule.runOnIdle { state.value = state.value.copy(refreshing = false, widgetsLoading = false, heatmapLoading = true) }
-        assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
+        assertEquals(before, rule.onNodeWithTag("transaction_tx-3").fetchSemanticsNode().boundsInRoot)
         rule.runOnIdle { state.value = state.value.copy(heatmapLoading = false) }
-        assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
+        assertEquals(before, rule.onNodeWithTag("transaction_tx-3").fetchSemanticsNode().boundsInRoot)
     }
 
     @Test fun recentEmptyMessageWaitsForSuccessfulLoad() {

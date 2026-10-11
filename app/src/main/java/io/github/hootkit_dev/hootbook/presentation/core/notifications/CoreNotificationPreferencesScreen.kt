@@ -9,26 +9,16 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.EditCalendar
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.rounded.Upcoming
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -40,20 +30,24 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.system.notificationPermission
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch
-import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
-import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
-import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
-import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.purple_dark
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.purple_light
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NoticeCard
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SecondaryScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionSpacing
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TimeDialog
 import io.github.hootkit_dev.hootbook.utils.DateFormats
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
-/** The original grouped notification rows; due dates and identities come directly from Core. */
+/**
+ * Notification settings: the time reminders go out, subscription due reminders (with a switch per
+ * subscription) and the daily recording reminder. Android's permission and exact-alarm state are
+ * shown only when they are missing.
+ */
 @Composable
 fun CoreNotificationPreferencesScreen(onBack: () -> Unit, viewModel: CoreNotificationPreferencesViewModel = hiltViewModel()) {
     val context = LocalContext.current
@@ -81,81 +75,65 @@ fun CoreNotificationPreferencesScreen(onBack: () -> Unit, viewModel: CoreNotific
     val granted = remember(platformRefresh) { notificationPermission(context) && NotificationManagerCompat.from(context).areNotificationsEnabled() }
     val exact = remember(platformRefresh) { Build.VERSION.SDK_INT < 31 || context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms() }
     fun openSettings(intent: Intent) { try { context.startActivity(intent) } catch (_: Exception) { platformError = true } }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val haze = remember { HazeState() }
     val enabled = ready && !busy
-    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
-        CustomTitleTopAppBar(title = stringResource(R.string.notifications), scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(),
-            scrollBehaviorLarge = scroll, hazeState = haze, hasBackButton = true, navigationContent = { NavigationContent(onBack) })
-    }) { padding ->
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState()).padding(padding)
-                .consumeWindowInsets(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error); TextButton(onClick = viewModel::reload) { Text(stringResource(R.string.core_system_retry)) } }
-                if (platformError) Text(stringResource(R.string.core_system_settings_unavailable), color = MaterialTheme.colorScheme.error)
-                if (!granted) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.core_system_permission_needed))
-                        Button(onClick = {
-                            if (Build.VERSION.SDK_INT >= 33 && !notificationPermission(context)) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            else openSettings(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
-                        }) { Text(stringResource(R.string.core_system_allow_notifications)) }
+    SecondaryScreen(title = stringResource(R.string.notifications), onBack = onBack) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).verticalScroll(rememberScrollState()).padding(ScreenContentPadding),
+            verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
+            error?.let { ErrorBanner(stringResource(it), viewModel::clearError, actionLabel = stringResource(R.string.core_system_retry), onAction = viewModel::reload) }
+            if (platformError) ErrorBanner(stringResource(R.string.notif_settings_unavailable), { platformError = false })
+            if (!granted) PermissionCard {
+                if (Build.VERSION.SDK_INT >= 33 && !notificationPermission(context)) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                else openSettings(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ListSection {
+                    item(leading = { Icon(Icons.Rounded.Schedule, null) },
+                        headline = { Text(stringResource(R.string.notif_time)) },
+                        supporting = { Text(stringResource(R.string.notif_time_help)) },
+                        trailing = { Text(LocalTime.of(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60)
+                            .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)), color = MaterialTheme.colorScheme.primary) },
+                        onClick = if (enabled) { { showTimePicker = true } } else null)
+                }
+                if (!exact && Build.VERSION.SDK_INT >= 31) Row(Modifier.padding(start = 16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(stringResource(R.string.notif_inexact), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { openSettings(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:" + context.packageName))) }) {
+                        Text(stringResource(R.string.notif_exact_settings))
                     }
                 }
-                SectionHeader(title = stringResource(R.string.upcoming_transactions_section), modifier = Modifier.padding(start = 16.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                    NotificationPreference(stringResource(R.string.upcoming_transactions_section), stringResource(R.string.upcoming_transactions_desc),
-                        preferences.notificationsEnabled, enabled, Icons.Rounded.Upcoming,
-                        if (!preferences.notificationsEnabled || subscriptions.isEmpty()) ListItemPosition.Single else ListItemPosition.Top) {
-                        value -> viewModel.update { it.copy(notificationsEnabled = value) }
-                    }
-                    AnimatedVisibility(preferences.notificationsEnabled && subscriptions.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                            subscriptions.forEachIndexed { index, subscription ->
-                                val date = subscription.nextDue?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()).format(DateFormats.monthDayFormatter()) }
-                                NotificationPreference(subscription.name, date ?: stringResource(R.string.no_date),
-                                    subscription.id !in preferences.mutedSubscriptionIds, enabled, Icons.Rounded.Notifications,
-                                    if (index == subscriptions.lastIndex) ListItemPosition.Bottom else ListItemPosition.Middle) {
-                                    viewModel.mute(subscription.id, !it)
-                                }
-                            }
-                        }
-                    }
+            }
+            ListSection(title = stringResource(R.string.notif_subscriptions)) {
+                switchRow(Icons.Rounded.EventRepeat, R.string.notif_due, R.string.notif_due_help, preferences.notificationsEnabled, enabled) { value ->
+                    viewModel.update { it.copy(notificationsEnabled = value) }
                 }
-                SectionHeader(title = stringResource(R.string.core_system_reminder_time), modifier = Modifier.padding(start = 16.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                    NotificationPreference(stringResource(R.string.core_system_daily_scan), stringResource(R.string.core_system_daily_scan_help),
-                        preferences.scanReminderEnabled, enabled, Icons.Rounded.Schedule, ListItemPosition.Top) { value ->
-                        viewModel.update { it.copy(scanReminderEnabled = value) }
-                    }
-                    ListItem(headline = { Text(stringResource(R.string.core_system_reminder_time)) },
-                        supporting = { Text(java.time.LocalTime.of(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60)
-                            .format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))) },
-                        onClick = if (enabled) { { showTimePicker = true } } else null,
-                        shape = ListItemPosition.Bottom.toShape(), padding = PaddingValues(0.dp))
+                if (preferences.notificationsEnabled) subscriptions.forEach { subscription ->
+                    val muted = subscription.id in preferences.mutedSubscriptionIds
+                    item(headline = { Text(subscription.name) },
+                        supporting = { Text(subscription.nextDue?.let { stringResource(R.string.notif_next_due,
+                            DateFormats.shortDate(java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()))) } ?: stringResource(R.string.no_date)) },
+                        trailing = { HootbookSwitch(!muted, null, enabled = enabled) },
+                        toggled = !muted, onToggle = if (enabled) { on -> viewModel.mute(subscription.id, !on) } else null)
                 }
-                Text(stringResource(if (exact) R.string.core_system_exact_enabled else R.string.core_system_inexact_fallback),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
-                if (!exact && Build.VERSION.SDK_INT >= 31) TextButton(onClick = {
-                    openSettings(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:" + context.packageName)))
-                }) { Text(stringResource(R.string.core_system_exact_settings)) }
-                Text(stringResource(R.string.core_system_core_dates), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            ListSection(title = stringResource(R.string.notif_daily)) {
+                switchRow(Icons.Rounded.EditCalendar, R.string.notif_daily_record, R.string.notif_daily_record_help, preferences.scanReminderEnabled, enabled) { value ->
+                    viewModel.update { it.copy(scanReminderEnabled = value) }
+                }
             }
         }
     }
-    if (showTimePicker) {
-        val time = rememberTimePickerState(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60, android.text.format.DateFormat.is24HourFormat(context))
-        io.github.hootkit_dev.hootbook.presentation.ui.components.TimePicker(onDismiss = { showTimePicker = false }, onConfirm = {
-            viewModel.update { it.copy(reminderMinutes = time.hour * 60 + time.minute) }; showTimePicker = false
-        }, timePickerState = time)
-    }
+    if (showTimePicker) TimeDialog(LocalTime.of(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60), { showTimePicker = false },
+        android.text.format.DateFormat.is24HourFormat(context)) { time -> viewModel.update { it.copy(reminderMinutes = time.hour * 60 + time.minute) } }
 }
 
+/** Notifications are off at the system level: say so and offer to turn them on. */
 @Composable
-private fun NotificationPreference(title: String, subtitle: String, checked: Boolean, enabled: Boolean, icon: ImageVector,
-    position: ListItemPosition, onChange: (Boolean) -> Unit) {
-    ListItem(headline = { Text(title) }, supporting = { Text(subtitle) },
-        leading = { Box(Modifier.size(48.dp).background(purple_light, CircleShape), contentAlignment = Alignment.Center) { Icon(icon, null, tint = purple_dark) } },
-        trailing = { HootbookSwitch(checked, null, enabled = enabled) }, toggled = checked, onToggle = if (enabled) onChange else null,
-        shape = position.toShape(), padding = PaddingValues(0.dp))
-}
+private fun PermissionCard(onAllow: () -> Unit) =
+    NoticeCard(stringResource(R.string.notif_permission_text), title = stringResource(R.string.notif_permission_title)) {
+        TextButton(onClick = onAllow) { Text(stringResource(R.string.notif_allow)) }
+    }
+
+private fun io.github.hootkit_dev.hootbook.presentation.ui.components.ListSectionScope.switchRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, title: Int, help: Int, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit,
+) = item(leading = { Icon(icon, null) }, headline = { Text(stringResource(title)) }, supporting = { Text(stringResource(help)) },
+    trailing = { HootbookSwitch(checked, null, enabled = enabled) }, toggled = checked, onToggle = if (enabled) onChange else null)

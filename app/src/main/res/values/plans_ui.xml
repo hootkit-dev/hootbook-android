@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_upcoming">Coming up: %1$s</string>
+    <string name="plan_hidden_done">Subscription hidden</string>
+    <string name="plan_next">Next %1$s</string>
+    <string name="plan_due_in">in %1$s days</string>
+    <string name="plan_cycle">Cycle</string>
+    <string name="plan_last_paid">Last paid</string>
+    <string name="plan_monthly">Per month</string>
+    <string name="plan_details">Details</string>
+    <string name="plan_edit">Edit subscription</string>
+    <string name="plan_template_edit">Edit template</string>
+    <string name="plan_template_new">New template</string>
+    <string name="invest_holdings">Holdings</string>
+</resources>

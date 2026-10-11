@@ -53,7 +53,6 @@ data class CoreTransactionsUiState(
     val error: String? = null,
     val queryFailure: String? = null,
     val commandFailure: String? = null,
-    val notice: String? = null,
     val undoToken: String? = null,
     val selectedIds: Set<String> = emptySet(),
     val duplicateCandidates: List<Transaction> = emptyList(),
@@ -304,7 +303,6 @@ class CoreTransactionsViewModel @Inject constructor(
 
     fun reportUnsupportedMerchantFilter(message: String) { mutableState.update { it.copy(commandFailure = message, error = message) } }
 
-    fun dismissNotice() { mutableState.update { it.copy(notice = null) } }
 
     /** Compare edit state only; no monetary validation or mutation happens on navigation. */
     fun hasUnsavedDraft(): Boolean = state.value.form?.let { it != draftBaseline } ?: false
@@ -341,7 +339,7 @@ class CoreTransactionsViewModel @Inject constructor(
                 if (form.editingId == null) ledger.add(draft)
                 else form.editingId.also { ledger.edit(it, draft) }
             }
-            mutableState.update { it.copy(form = null, detailId = id, detail = null, notice = "Transaction saved", importedDraftRefs = emptySet(), duplicateCandidates = emptyList()) }
+            mutableState.update { it.copy(form = null, detailId = id, detail = null, importedDraftRefs = emptySet(), duplicateCandidates = emptyList()) }
             persistDraft()
         }
     }
@@ -351,7 +349,7 @@ class CoreTransactionsViewModel @Inject constructor(
         if (transaction.deleted) return
         write {
             val token = session.awaitCore().ledger().use { it.delete(listOf(transaction.id)) }
-            mutableState.update { it.copy(detailId = null, detail = null, form = null, undoToken = token, notice = "交易已删除，可撤销") }
+            mutableState.update { it.copy(detailId = null, detail = null, form = null, undoToken = token) }
         }
     }
 
@@ -359,7 +357,7 @@ class CoreTransactionsViewModel @Inject constructor(
         val token = state.value.undoToken ?: return
         write {
             session.awaitCore().ledger().use { it.undo(token) }
-            mutableState.update { it.copy(undoToken = null, notice = "删除已撤销") }
+            mutableState.update { it.copy(undoToken = null) }
         }
     }
 
@@ -369,7 +367,7 @@ class CoreTransactionsViewModel @Inject constructor(
         if (transaction.deleted || transaction.debtId != null || state.value.form != null) return
         write {
             session.awaitCore().plans().use { it.linkTransaction(transaction.id, personId, kind) }
-            mutableState.update { it.copy(detail = null, notice = "已有交易已关联到人员／借贷") }
+            mutableState.update { it.copy(detail = null) }
         }
     }
 
@@ -485,7 +483,7 @@ class CoreTransactionsViewModel @Inject constructor(
         write {
             val targets = if (allRecycleBin) collectTransactionIds(CoreTransactionQuery(deleted = DeletedFilter.ONLY).toFilter()) else ids
             if (targets.isNotEmpty()) session.awaitCore().ledger().use { it.purge(targets) }
-            mutableState.update { it.copy(selectedIds = emptySet(), detailId = null, detail = null, notice = "Permanently deleted") }
+            mutableState.update { it.copy(selectedIds = emptySet(), detailId = null, detail = null) }
         }
     }
     fun bulkUpdate(form: CoreTransactionBulkForm) {
@@ -521,7 +519,7 @@ class CoreTransactionsViewModel @Inject constructor(
     fun createSubscription(cycle: Cycle, endDate: LocalDate?) {
         val id = state.value.detail?.id ?: return
         write { val subscription = session.awaitCore().plans().use { it.subscriptionFromTransaction(id, cycle, endDate) }
-            mutableState.update { it.copy(createdSubscriptionId = subscription, notice = "Subscription created") } }
+            mutableState.update { it.copy(createdSubscriptionId = subscription) } }
     }
     fun importAttachment(uri: Uri) {
         val store = attachmentStore ?: return
@@ -553,7 +551,7 @@ class CoreTransactionsViewModel @Inject constructor(
         val store = attachmentStore ?: return
         if (state.value.exporting) return
         val snapshot = state.value; val revision = changes.revisions.value
-        mutableState.update { it.copy(exporting = true, error = null) }
+        mutableState.update { it.copy(exporting = true, error = null, exportFile = null) }
         exportJob = viewModelScope.launch {
             var file: File? = null
             var completed = false
@@ -576,10 +574,10 @@ class CoreTransactionsViewModel @Inject constructor(
     fun clearError() { mutableState.update { it.copy(error = null, commandFailure = null, queryFailure = null) } }
     private fun write(block: suspend () -> Unit) {
         if (state.value.writing) return
-        mutableState.update { it.copy(writing = true, error = null, commandFailure = null, notice = null) }
+        mutableState.update { it.copy(writing = true, error = null, commandFailure = null) }
         val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             try { block(); currentCoroutineContext().ensureActive() }
-            catch (cancelled: CancellationException) { mutableState.update { it.copy(notice = "Request cancelled; reload to verify any committed change") }; throw cancelled }
+            catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: Exception) { mutableState.update {
                 val message = queryError(failure)
                 it.copy(error = message, commandFailure = message)

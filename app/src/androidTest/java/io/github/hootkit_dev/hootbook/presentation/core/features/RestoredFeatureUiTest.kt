@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.core.features
 
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -12,11 +13,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsSummaryCard
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetCard
-import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetLimitsCard
+import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetLimitsSection
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetHistoryRow
-import io.github.hootkit_dev.hootbook.presentation.core.categories.CoreCategoryItem
+import io.github.hootkit_dev.hootbook.presentation.core.categories.categoryRow
 import io.github.hootkit_dev.hootbook.presentation.core.debts.CorePersonRow
 import io.github.hootkit_dev.hootbook.presentation.core.debts.CoreDebtRecordRow
 import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreHoldingRow
@@ -59,13 +59,10 @@ class RestoredFeatureUiTest {
         val progress = BudgetProgress(day, day, 1u, 1u, BigDecimal("12.34"), BigDecimal("87.66"), false, BigDecimal("87.66"), BigDecimal.ZERO, true, emptyList(), listOf(limit), emptyList())
         val budget = Budget("budget-id", "Budget", BudgetKind.EXPENSE, BudgetPeriod.MONTHLY, Money(BigDecimal("100"), "CNY"), day, null, null, true, "#4CAF50", progress, null, at, at)
         var edited: String? = null
-        var removed: String? = null
-        rule.setContent { HootbookTheme(dynamicColor = false) { CoreBudgetLimitsCard(budget, listOf(category), true, {}, { edited = it.id }, { removed = it }) } }
+        rule.setContent { HootbookTheme(dynamicColor = false) { CoreBudgetLimitsSection(budget, listOf(category), true, {}, { edited = it.id }) } }
         rule.onNodeWithText(money("34.56")).assertIsDisplayed()
         rule.onNodeWithText("Food").performClick()
         rule.runOnIdle { assertEquals("limit-category", edited) }
-        rule.onNodeWithContentDescription(context.getString(R.string.core_budgets_limit_remove)).performClick()
-        rule.runOnIdle { assertEquals("limit-category", removed) }
     }
 
     @Test fun budgetHistoryRingKeepsOverspendPercentageAndPeriodNavigation() {
@@ -77,50 +74,16 @@ class RestoredFeatureUiTest {
         rule.runOnIdle { assertEquals(true, opened) }
     }
 
-    @Test fun categoryChipKeepsExactCoreSubcategoryAndEditableParent() {
+    @Test fun categoryRowNamesSubcategoriesAndOpensItsCategory() {
         val child = Subcategory("child-id", "parent-id", null, "Coffee", "Coffee", "coffee", "#112233", 0, false)
         val parent = Category("parent-id", CategoryKind.EXPENSE, null, "Food", "Food", "restaurant", "#334455", 0, false, listOf(child))
-        var edited: String? = null
+        var opened: String? = null
         rule.setContent { HootbookTheme(dynamicColor = false) {
-            CoreCategoryItem(parent, onEdit = { edited = parent.id }, onDetails = {}, onAddSubcategory = {},
-                onEditSubcategory = { edited = it.id }, onMove = {})
+            io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection { categoryRow(parent) { opened = parent.id } }
         } }
         rule.onNodeWithText("Food").assertIsDisplayed()
-        rule.onNodeWithText("Coffee").performClick()
-        rule.runOnIdle { assertEquals("child-id", edited) }
-    }
-
-    @Test fun customCategorySwipeRequestsConfirmationWithoutRemovingTheRow() {
-        val category = Category("swipe-id", CategoryKind.EXPENSE, null, "Travel", "Travel", "flight", "#334455", 0, false, emptyList())
-        val secondCategory = category.copy(id = "second-swipe-id", name = "Food", displayName = "Food")
-        var requested = 0
-        var secondRequested = 0
-        var pending by mutableStateOf<String?>(null)
-        rule.setContent { HootbookTheme(dynamicColor = false) {
-            Column {
-                CoreCategoryItem(category, onEdit = {}, onDetails = {}, onAddSubcategory = {}, onEditSubcategory = {}, onMove = {}, onDelete = { requested++; pending = category.id })
-                CoreCategoryItem(secondCategory, onEdit = {}, onDetails = {}, onAddSubcategory = {}, onEditSubcategory = {}, onMove = {}, onDelete = { secondRequested++; pending = secondCategory.id })
-            }
-            if (pending != null) AlertDialog(onDismissRequest = { pending = null },
-                text = { Text("Confirm category deletion") },
-                confirmButton = { TextButton(onClick = { pending = null }) { Text("Cancel category deletion") } })
-        } }
-        rule.onNodeWithText("Travel").performTouchInput { swipeLeft() }
-        rule.waitForIdle()
-        rule.runOnIdle { assertEquals(1, requested); assertEquals(0, secondRequested) }
-        rule.onNodeWithText("Cancel category deletion").performClick()
-        rule.onNodeWithText("Travel").assertIsDisplayed()
-        // No confirmed deletion: the same row remains actionable after dismissing confirmation.
-        rule.onNodeWithText("Travel").performTouchInput { swipeLeft() }
-        rule.waitForIdle()
-        rule.runOnIdle { assertEquals(2, requested); assertEquals(0, secondRequested) }
-        rule.onNodeWithText("Cancel category deletion").performClick()
-        rule.onNodeWithText("Food").performTouchInput { swipeLeft() }
-        rule.waitForIdle()
-        rule.runOnIdle { assertEquals(2, requested); assertEquals(1, secondRequested) }
-        rule.onNodeWithText("Cancel category deletion").performClick()
-        rule.onNodeWithText("Travel").assertIsDisplayed()
-        rule.onNodeWithText("Food").assertIsDisplayed()
+        rule.onNodeWithText("Coffee").assertIsDisplayed().performClick()
+        rule.runOnIdle { assertEquals("parent-id", opened) }
     }
 
     @Test fun subscriptionSummaryDisplaysCoreMonthlyAndYearlyAndPartialState() {
@@ -133,9 +96,9 @@ class RestoredFeatureUiTest {
 
     @Test fun analyticsSummaryRendersSelectedIncomeWithoutClientAggregation() {
         val summary = LedgerSummary("CNY", BigDecimal("71.23"), BigDecimal("11.11"), BigDecimal("60.12"), true, emptyList(), emptyList(), emptyList(), emptyList())
-        rule.setContent { HootbookTheme(dynamicColor = false) { CoreAnalyticsSummaryCard(summary, 3u, setOf(TransactionKind.INCOME)) } }
+        rule.setContent { HootbookTheme(dynamicColor = false) { io.github.hootkit_dev.hootbook.presentation.ui.components.LedgerTotals(summary, emptyMap(), count = 3u) } }
         rule.onNodeWithText(money("71.23")).assertIsDisplayed()
-        rule.onNodeWithText(context.getString(R.string.transactions_format, 3)).assertIsDisplayed()
+        rule.onNodeWithText(context.getString(R.string.core_analytics_count, "3")).assertIsDisplayed()
     }
 
     @Test fun personRowShowsCoreNetAndRetainsContactNavigation() {
@@ -167,7 +130,9 @@ class RestoredFeatureUiTest {
                 onCancel = {}, onClearError = {}, onConnect = {}, onSelect = {}, onHolding = {}, onLink = {}, onDisconnect = {},
                 onManageAccounts = { managed = true }, onAccountHistory = {}, onAddInvestment = { created = true })
         } }
-        rule.onNodeWithContentDescription(context.getString(R.string.investments_add)).performClick()
+        // The extended FAB sits in the gesture area on some phones, where touch injection is refused.
+        rule.onNodeWithContentDescription(context.getString(R.string.investments_add))
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         rule.runOnIdle { assertEquals(true, created); assertEquals(false, managed) }
     }
 
@@ -176,8 +141,8 @@ class RestoredFeatureUiTest {
         var opened: String? = null
         rule.setContent { HootbookTheme(dynamicColor = false) { CoreHoldingRow(holding, ListItemPosition.Single) { opened = holding.instrumentId } } }
         rule.onNodeWithText("EXM").assertIsDisplayed().performClick()
-        rule.onNodeWithText(context.getString(R.string.investments_value, "USD", "10.25")).assertIsDisplayed()
-        rule.onNodeWithText(context.getString(R.string.investments_pnl, "USD", "-2.25")).assertIsDisplayed()
+        rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("10.25"), "USD")).assertIsDisplayed()
+        rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("-2.25"), "USD")).assertIsDisplayed()
         rule.runOnIdle { assertEquals("instrument-id", opened) }
     }
 }

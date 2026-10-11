@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onb_existing_data">已有数据？</string>
+    <string name="onb_restore_body">从备份文件恢复账本</string>
+    <string name="onb_account_name">账户名称</string>
+    <string name="onb_currency">主货币</string>
+    <string name="onb_last4_help">可选，用于区分同一银行的多张卡</string>
+    <string name="onb_profile_body">只在本机显示</string>
+    <string name="onb_notifications_title">开启提醒</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_version">版本 %1$s</string>
+    <string name="about_data_version">数据格式版本 %1$d</string>
+    <string name="about_updates">更新</string>
+    <string name="about_upstream">上游项目：Cashiro</string>
+    <string name="about_upstream_website">Cashiro 的网站、常见问题与指南</string>
+    <string name="about_upstream_note">Hootbook 基于 Cashiro（其前身为 PennyWise AI）开发，以 AGPL-3.0 许可发布。以上链接属于上游项目。</string>
+</resources>

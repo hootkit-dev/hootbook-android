@@ -12,9 +12,9 @@
   <string name="core_detail_choose_date">选择日期</string>
   <string name="core_detail_choose_time">选择时间</string>
   <string name="core_detail_clear">清除</string>
-  <string name="core_detail_contact">选择电话联系人</string>
+  <string name="core_detail_contact">从通讯录选择</string>
   <string name="core_detail_dial">拨打电话</string>
-  <string name="core_detail_avatar">选择联系人头像</string>
+  <string name="core_detail_avatar">选择头像</string>
   <string name="core_detail_attachments">添加附件</string>
   <string name="core_detail_open_attachment">打开附件</string>
   <string name="core_detail_remove_attachment">移除附件</string>

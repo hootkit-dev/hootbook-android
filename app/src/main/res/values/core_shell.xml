@@ -24,6 +24,4 @@
     <string name="core_shell_appearance">Appearance</string>
     <string name="core_shell_app_lock">App lock</string>
     <string name="core_shell_about">About / updates / help</string>
-    <string name="core_shell_platform_skipped">Ledger import is committed. Platform UI preferences/assets remain retained but were explicitly not applied. No ledger import was repeated.</string>
-    <string name="core_shell_skip_platform">Keep files; skip platform UI restore</string>
 </resources>

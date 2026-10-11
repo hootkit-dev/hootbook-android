@@ -26,6 +26,10 @@ import org.junit.Test
 
 /** Launches actual MainActivity; no manual setContent, NoPointer, test Application or second Core. */
 class RealMainJourneys {
+    private companion object {
+        /** The system file picker: Google's build, or AOSP's on phones such as ColorOS. */
+        val DOCUMENTS_UI = setOf("com.google.android.documentsui", "com.android.documentsui")
+    }
     @get:Rule val activityRule=ActivityScenarioRule(MainActivity::class.java)
     private lateinit var f:NativeScenarioFixture
     private lateinit var main:MainActivity
@@ -42,7 +46,7 @@ class RealMainJourneys {
             val starterName="${f.tag} Starter account"
             click(R.string.onboarding_start_fresh)
             if(originalAccounts.isEmpty()){
-                field(R.string.bank_name_hint,starterName)
+                field(R.string.onb_account_name,starterName)
                 field(R.string.balance,"0")
                 field(R.string.last_4_digits_hint,"1234")
             }
@@ -70,12 +74,22 @@ class RealMainJourneys {
         if(::main.isInitialized&&::launchIntent.isInitialized)InstrumentationRegistry.getInstrumentation().runOnMainSync{main.intent=launchIntent}
     }
     private fun awaitCondition(timeout:Long=30_000,predicate:()->Boolean){val deadline=android.os.SystemClock.elapsedRealtime()+timeout
-        while(!predicate()){check(android.os.SystemClock.elapsedRealtime()<deadline){"Real UI condition timed out"};Thread.sleep(100)}
+        while(!predicate()){
+            if(android.os.SystemClock.elapsedRealtime()>=deadline){
+                // Keep what was on screen, as failed actions do.
+                runCatching{val name="failed-condition-"+android.os.SystemClock.elapsedRealtime();shot(name);layout(name)}
+                error("Real UI condition timed out")
+            }
+            Thread.sleep(100)
+        }
     }
     private fun showText(expected:String,contains:Boolean=false,direction:Int=AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,timeout:Long=40_000){
         val end=android.os.SystemClock.elapsedRealtime()+timeout
         while(true){val current=nodes();if(current.any{it.isVisibleToUser&&it.text?.toString()?.let{value->if(contains)value.contains(expected) else value==expected}==true})return
-            check(android.os.SystemClock.elapsedRealtime()<end){"Missing visible UI text: $expected"}
+            if(android.os.SystemClock.elapsedRealtime()>=end){
+                runCatching{val name="failed-text-"+android.os.SystemClock.elapsedRealtime();shot(name);layout(name)}
+                error("Missing visible UI text: $expected")
+            }
             scrollingNode(current)?.let{scroll(it,direction)};Thread.sleep(650)
         }
     }
@@ -102,7 +116,7 @@ class RealMainJourneys {
         val settingsDestination = when (id) {
             R.string.core_complete_accounts -> R.string.title_accounts
             R.string.core_complete_categories -> R.string.categories
-            R.string.core_complete_currencies -> R.string.currency
+            R.string.core_complete_currencies -> R.string.settings_currencies
             R.string.core_complete_backup -> R.string.backup_sync_title
             R.string.core_complete_templates -> R.string.quick_add_templates
             R.string.core_complete_subscriptions -> R.string.core_plans_subscriptions
@@ -120,7 +134,7 @@ class RealMainJourneys {
             id == R.string.core_complete_settings -> settings()
             id == R.string.core_complete_transactions -> { home(); clickText(f.text(R.string.transactions)) }
             id == R.string.core_complete_analytics -> { home(); clickText(f.text(R.string.analytics)) }
-            id == R.string.core_shell_app_lock -> { settings(); clickText(f.text(R.string.appearances)); clickText(f.text(R.string.core_ui_app_lock)) }
+            id == R.string.core_shell_app_lock -> { settings(); clickText(f.text(R.string.data_privacy_title)) }
             id == R.string.core_shell_sync -> { settings(); clickText(f.text(R.string.backup_sync_title)); clickText(f.text(R.string.sync_firebase_title)) }
             id == R.string.core_ai_title -> clickText(f.text(R.string.ai_assistant_title))
             else -> clickText(f.text(id))
@@ -158,18 +172,22 @@ class RealMainJourneys {
             Thread.sleep(850)
         }
     }
-    private fun clickBelow(scope:String,id:Int){
+    /** The control labelled [id] (text or description) on the same row as the text [scope]. */
+    private fun clickInRow(scope:String,id:Int){
         showText(scope)
         val current=nodes();val heading=current.first{it.text?.toString()==scope};val hb=Rect();heading.getBoundsInScreen(hb)
-        val label=current.filter{it.text?.toString()==f.text(id)&&it.isVisibleToUser}.filter{node->val b=Rect();node.getBoundsInScreen(b);b.top>=hb.bottom}
-            .minByOrNull{node->val b=Rect();node.getBoundsInScreen(b);b.top}
-        checkNotNull(label){"Missing scoped action below $scope"};val lb=Rect();label.getBoundsInScreen(lb)
-        val action=current.filter{node->val b=Rect();node.getBoundsInScreen(b);node.isClickable&&node.isEnabled&&b.contains(lb.centerX(),lb.centerY())}
+        val label=f.text(id)
+        val target=current.firstOrNull{node->val b=Rect();node.getBoundsInScreen(b)
+            node.isVisibleToUser&&(node.text?.toString()==label||node.contentDescription?.toString()==label)&&b.top<hb.bottom&&b.bottom>hb.top}
+        val tb=Rect();target?.getBoundsInScreen(tb)
+        val action=if(target==null)null else current.filter{node->val b=Rect();node.getBoundsInScreen(b)
+            node.isClickable&&node.isEnabled&&node.isVisibleToUser&&b.contains(tb.centerX(),tb.centerY())}
             .minByOrNull{node->val b=Rect();node.getBoundsInScreen(b);b.width().toLong()*b.height()}
-        checkNotNull(action);check(action.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(850)
+        if(action==null){runCatching{shot("failed-row-action");layout("failed-row-action")};error("Missing $label on the row of $scope")}
+        check(action.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(850)
     }
-    private fun field(id:Int,value:String,last:Boolean=false){
-        val label=f.text(id);var target:AccessibilityNodeInfo?=null;var count=0
+    private fun field(id:Int,value:String,last:Boolean=false,label:String=f.text(id)){
+        var target:AccessibilityNodeInfo?=null;var count=0
         while(target==null&&count++<30){val matches=nodes().filter{it.isEditable&&(it.text?.toString()==label||it.hintText?.toString()==label||descendants(it).any{child->child.text?.toString()==label})};target=if(last)matches.lastOrNull()else matches.firstOrNull()
             if(target==null){scrollingNode(nodes())?.let{scroll(it,AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)};Thread.sleep(850)}}
         if(target==null){val labelNode=nodes().firstOrNull{it.text?.toString()==label};val labelBounds=Rect();labelNode?.getBoundsInScreen(labelBounds)
@@ -191,13 +209,6 @@ class RealMainJourneys {
     private fun transactionAmount(value:String,current:String="0") {
         clickText(current); field(R.string.amount,value); click(R.string.done)
     }
-    private fun keypadAmount(value:String,confirmation:Int,current:String="0") {
-        clickText(current)
-        // Subscription/debt keypads are text-only decimal pads, not native numeric fields.
-        repeat(if(current=="0")0 else current.length){clickText("⌫")}
-        value.forEach { digit -> clickText(digit.toString()) }
-        click(confirmation)
-    }
     private fun transactionCategory(name:String) { click(R.string.category); clickText(name) }
     private fun openTransaction(merchant:String) {
         click(R.string.core_complete_transactions);field(R.string.search_transactions,merchant)
@@ -208,9 +219,9 @@ class RealMainJourneys {
         awaitCondition{nodes().any{it.contentDescription?.toString()==f.text(R.string.edit_transaction)&&it.isEnabled}}
     }
     private fun categoryDetails(name:String) {
-        click(R.string.filters);click(R.string.expense)
-        field(R.string.search_fruits,name)
-        click(R.string.core_categories_19);click(R.string.core_categories_19)
+        click(R.string.expense)
+        field(R.string.search_categories,name)
+        clickText(name)
         showText(name)
     }
     private fun shot(name:String){
@@ -223,19 +234,20 @@ class RealMainJourneys {
     private fun typed(entry:QuickEntry.Entry){activityRule.scenario.onActivity{it.startActivity(QuickEntry.intent(f.context,entry).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP))};Thread.sleep(850)}
     @Test fun uiCategoryAndChildCreateRenameHideRestore()=runBlocking{
         val c=f.core();home();click(R.string.core_complete_categories);click(R.string.add_category)
-        val name="${f.tag} Category";field(R.string.core_categories_20,name);click(R.string.save)
+        val name="${f.tag} Category";field(R.string.cat_name,name);click(R.string.save)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).any{row->row.displayName==name}}}}
-        clickText(name);val edited="$name Edited";field(R.string.core_categories_20,edited);click(R.string.save)
+        clickText(name);click(R.string.cat_edit);val edited="$name Edited";field(R.string.cat_name,edited);click(R.string.save)
+        awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).any{row->row.displayName==edited}}}}
         val id=c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.displayName==edited}.id}
-        categoryDetails(edited);click(R.string.core_categories_12);awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
-        click(R.string.core_categories_11);awaitCondition{runBlocking{!c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
-        click(R.string.add_subcategory);field(R.string.core_categories_20,"${f.tag} Child");click(R.string.save)
+        click(R.string.more_options);click(R.string.cat_hide);awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
+        click(R.string.more_options);click(R.string.cat_show);awaitCondition{runBlocking{!c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.hidden}}}
+        click(R.string.add_subcategory);field(R.string.cat_name,"${f.tag} Child");click(R.string.save)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==id}.subcategories.any{child->child.displayName=="${f.tag} Child"}}}}
         shot("ui-category-child-restored");f.note("ui-category","real category create/rename/hide/unhide + child create confirmed native id=$id")
     }
     @Test fun uiExpenseCreateEditDeleteUndoThroughTypedEntry()=runBlocking{
         val c=f.core();val merchant="${f.tag} UI expense";typed(QuickEntry.Entry.NewTransaction)
-        transactionAmount("9.25");field(R.string.core_full_label_67,merchant)
+        transactionAmount("9.25");field(R.string.txn_merchant,merchant)
         transactionCategory(c.categories().use{it.list(CategoryKind.EXPENSE,false).first().displayName})
         click(R.string.save)
         val filter=TransactionFilter(from=null,to=null,kinds=emptyList(),accountIds=emptyList(),categoryIds=emptyList(),text=merchant,currency=null,deleted=DeletedFilter.INCLUDE,sort=SortOrder.NEWEST_FIRST)
@@ -243,54 +255,55 @@ class RealMainJourneys {
         val id=c.ledger().use{it.list(filter,PageRequest(0u,10u)).items.single().id};assertEquals(0,c.ledger().use{it.get(id).amount}.compareTo(BigDecimal("9.25")))
         openTransaction(merchant);click(R.string.edit_transaction);field(R.string.notes_optional,"UI edited notes");click(R.string.save)
         awaitCondition{runBlocking{c.ledger().use{it.get(id).notes=="UI edited notes"}}}
-        click(R.string.delete);click(R.string.delete)
+        click(R.string.more_options);click(R.string.delete);click(R.string.delete)
         awaitCondition{runBlocking{c.ledger().use{it.get(id).deleted}}};click(R.string.undo)
         awaitCondition{runBlocking{!c.ledger().use{it.get(id).deleted}}};shot("ui-expense-undo")
         f.note("ui-ledger","real typed-entry UI expense create/edit/delete/undo id=$id")
     }
     @Test fun uiBudgetCreateHistoryAndPauseResume()=runBlocking{
         val c=f.core();val name="${f.tag} UI budget";home();click(R.string.core_complete_budgets);click(R.string.new_budget);click(R.string.expense_budget)
-        field(R.string.core_budgets_name,name);field(R.string.core_budgets_amount,"80");field(R.string.core_budgets_start,"2023-01-31");click(R.string.core_budgets_save)
-        awaitCondition{nodes().any{it.text?.toString()==name}};click(R.string.core_budgets_pause);click(R.string.core_budgets_resume)
-        click(R.string.core_budgets_limit_edit);field(R.string.core_budgets_limit_amount,"10");click(R.string.core_budgets_save)
+        field(R.string.core_budgets_name,name);field(R.string.core_budgets_amount,"80");pickDate(R.string.core_budgets_start,JavaDate.of(2023,1,31));click(R.string.save)
+        awaitCondition{nodes().any{it.text?.toString()==name}};clickText(name)
+        click(R.string.more_options);click(R.string.core_budgets_pause);click(R.string.more_options);click(R.string.core_budgets_resume)
+        click(R.string.add_limit);clickText(c.categories().use{it.list(CategoryKind.EXPENSE,false).first().displayName});field(R.string.core_budgets_limit_amount,"10");click(R.string.save)
         val id=c.budgets().use{it.list(JavaDate.now().nativeDate(),false,null).single{budget->budget.name==name}.id}
         awaitCondition{runBlocking{c.budgets().use{it.get(id,JavaDate.now().nativeDate(),null).current.limits.any{limit->limit.amount.compareTo(BigDecimal("10"))==0}}}}
-        click(R.string.core_budgets_history);shot("ui-budget-history-first-page");click(R.string.core_history_load_older);shot("ui-budget-history-second-page")
+        click(R.string.more_options);click(R.string.core_budgets_history);shot("ui-budget-history-first-page");click(R.string.core_history_load_older);shot("ui-budget-history-second-page")
         val oldest=c.budgets().use{it.get(id,LocalDate(2023,1u,31u),null).current}
-        fun display(day:LocalDate)="%04d-%02d-%02d".format(java.util.Locale.ROOT,day.year,day.month.toInt(),day.day.toInt())
-        clickText("${display(oldest.start)} — ${display(oldest.end)}");shot("ui-budget-oldest-exact-period");f.note("ui-budget","real create/pause/resume/categorylimit/history Load older traversed >24 through production UI")
+        fun day(value:LocalDate)=JavaDate.of(value.year,value.month.toInt(),value.day.toInt())
+        clickText(io.github.hootkit_dev.hootbook.utils.DateFormats.range(day(oldest.start),day(oldest.end),main.resources.configuration.locales[0]));shot("ui-budget-oldest-exact-period");f.note("ui-budget","real create/pause/resume/categorylimit/history Load older traversed >24 through production UI")
     }
     @Test fun uiTemplateAndSubscriptionCreateAndPersonDebt()=runBlocking{
-        val c=f.core();val name="${f.tag} UI template";home();click(R.string.core_complete_templates);clickText("＋")
+        val c=f.core();val name="${f.tag} UI template";home();click(R.string.core_complete_templates);click(R.string.plan_template_new)
         field(R.string.core_plans_name,name);field(R.string.core_plans_merchant,"${f.tag} UI merchant");field(R.string.core_plans_optional_amount,"6");field(R.string.core_plans_optional_currency,"CNY");click(R.string.save)
         awaitCondition{runBlocking{c.plans().use{it.templates().any{t->t.name==name}}}};shot("ui-template-saved")
         home();click(R.string.core_complete_subscriptions);click(R.string.add_transaction_subscription_cd);val sub="${f.tag} UI subscription"
-        keypadAmount("5",R.string.core_plans_confirm);field(R.string.service_name_required,sub);field(R.string.core_plans_currency,"CNY");field(R.string.core_plans_next_due,JavaDate.now().toString());click(R.string.save)
+        transactionAmount("5");field(R.string.service_name_required,sub);field(R.string.core_plans_currency,"CNY");click(R.string.save)
         awaitCondition{nodes().any{it.text?.toString()==sub}};shot("ui-subscription-saved")
         home();click(R.string.core_complete_debts);click(R.string.core_debts_add_person);val person="${f.tag} UI person"
-        field(R.string.core_debts_name,person);field(R.string.core_debts_phone,"+15551234567");click(R.string.core_debts_save)
+        field(R.string.core_debts_name,person);field(R.string.core_debts_phone,"+15551234567");click(R.string.save)
         awaitCondition{nodes().any{it.text?.toString()==person}};click(R.string.core_debts_add_record)
-        keypadAmount("7",R.string.done);field(R.string.core_debts_record_title,"${f.tag} UI debt");click(R.string.core_debts_save)
-        awaitCondition{nodes().any{it.text?.toString()=="${f.tag} UI debt"}};shot("ui-person-debt-saved")
+        field(R.string.core_debts_amount,"7");field(R.string.core_debts_record_title,"${f.tag} UI debt");click(R.string.save)
+        showText("${f.tag} UI debt");shot("ui-person-debt-saved")
         f.note("ui-plans","real template/subscription/person/debt forms saved via Main UI")
     }
-    private fun layout(name:String){File(f.output,"$name-layout.txt").writeText(nodes().joinToString("\n"){node->val b=Rect();node.getBoundsInScreen(b);"${node.className} text=${if(node.isPassword)"[PASSWORD]" else node.text} description=${node.contentDescription} bounds=$b checked=${node.isChecked}"})}
+    private fun layout(name:String){File(f.output,"$name-layout.txt").writeText(nodes().joinToString("\n"){node->val b=Rect();node.getBoundsInScreen(b);"${node.className} text=${if(node.isPassword)"[PASSWORD]" else node.text} description=${node.contentDescription} bounds=$b checked=${node.isChecked} visible=${node.isVisibleToUser}"})}
     @Test fun uiCurrenciesCustomAndNativeRateConversion()=runBlocking{
         val c=f.core();val code="X"+f.tag.takeLast(3).uppercase();home();click(R.string.core_complete_currencies)
-        click(R.string.exchange_rates);click(R.string.core_currencies_add)
-        field(R.string.core_currencies_code,code);field(R.string.core_currencies_name,"${f.tag} Currency");field(R.string.core_currencies_symbol,"X");click(R.string.core_currencies_save)
+        click(R.string.exchange_rates);click(R.string.cur_new_currency)
+        field(R.string.core_currencies_code,code);field(R.string.core_currencies_name,"${f.tag} Currency");field(R.string.core_currencies_symbol,"X");click(R.string.save)
         awaitCondition{runBlocking{c.currency().use{it.customCurrencies().any{row->row.code==code}}}}
         c.currency().use{it.setCustomRate("USD","EUR",BigDecimal("1.5"))}
         systemBack();click(R.string.exchange_rates)
         field(R.string.core_currencies_amount,"2");field(R.string.core_currencies_from,"USD");field(R.string.core_currencies_to,"EUR");click(R.string.core_currencies_convert)
-        awaitCondition{nodes().any{node->node.text?.toString()?.let{value->Regex("2 USD = ([0-9.]+) EUR").matchEntire(value)?.groupValues?.get(1)?.toBigDecimalOrNull()?.compareTo(BigDecimal("3"))==0}==true}};assertEquals(0,c.currency().use{it.convert(BigDecimal("2"),"USD","EUR")!!}.compareTo(BigDecimal("3")))
+        awaitCondition{nodes().any{node->node.text?.toString()?.startsWith("1 USD = 1.5 EUR")==true}};assertEquals(0,c.currency().use{it.convert(BigDecimal("2"),"USD","EUR")!!}.compareTo(BigDecimal("3")))
         shot("ui-currency-conversion");f.note("ui-currency","real customcurrency save code=$code, real convert UI using native rate fixture=1.5 result=3; no online rates")
     }
     @Test fun uiAppearanceThemesAndNoCredentialLockGuard()=runBlocking{
         home();click(R.string.core_complete_layout);click(R.string.theme_dark)
         awaitCondition{f.preferences.state.value.darkTheme==true};shot("ui-appearance-dark")
         click(R.string.theme_light);awaitCondition{f.preferences.state.value.darkTheme==false}
-        click(R.string.core_ui_app_lock);click(R.string.core_ui_app_lock)
+        systemBack();click(R.string.core_shell_app_lock);click(R.string.app_lock)
         awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_lock_enroll)}}
         assertFalse(f.preferences.state.value.appLockEnabled);shot("ui-lock-no-credential-guard")
         f.note("ui-appearance-lock","UI dark/light persist; no device credential enable rejected without enabling")
@@ -314,15 +327,41 @@ class RealMainJourneys {
     @Test fun uiNotificationPermissionDenyAllowAndReminderTime()=runBlocking{
         home();click(R.string.core_complete_settings);click(R.string.core_shell_notifications)
         if(androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
-            click(R.string.core_system_allow_notifications);clickResource("com.android.permissioncontroller:id/permission_deny_button")
+            click(R.string.notif_allow);clickResource("com.android.permissioncontroller:id/permission_deny_button")
             assertEquals(android.content.pm.PackageManager.PERMISSION_DENIED,androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS))
-            click(R.string.core_system_allow_notifications);clickResource("com.android.permissioncontroller:id/permission_allow_button")
+            click(R.string.notif_allow);clickResource("com.android.permissioncontroller:id/permission_allow_button")
         }
         assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,androidx.core.content.ContextCompat.checkSelfPermission(f.context,android.Manifest.permission.POST_NOTIFICATIONS))
-        field(R.string.core_system_hour,"22");field(R.string.core_system_minute,"42");click(R.string.core_ui_save)
-        awaitCondition{f.preferences.state.value.reminderMinutes==1362};shot("ui-notifications-permission-reminder")
-        f.note("ui-notifications","system permission deny then allow; UI reminder time22:42 persisted; exactAllowed="+f.context.getSystemService(android.app.AlarmManager::class.java).canScheduleExactAlarms())
+        // The Material time dial: an hour, then a minute (every fifth one is a target).
+        click(R.string.notif_time)
+        if(android.text.format.DateFormat.is24HourFormat(f.context))clickText(libraryText("m3c_time_picker_hour_24h_suffix",22))
+        else{clickText(libraryText("m3c_time_picker_pm"));clickText(libraryText("m3c_time_picker_hour_suffix",10))}
+        clickText(libraryText("m3c_time_picker_minute_suffix",40));click(R.string.ok)
+        awaitCondition{f.preferences.state.value.reminderMinutes==1360};shot("ui-notifications-permission-reminder")
+        f.note("ui-notifications","system permission deny then allow; UI reminder time 22:40 persisted; exactAllowed="+f.context.getSystemService(android.app.AlarmManager::class.java).canScheduleExactAlarms())
     }
+    /** Picks [date] in a date field: its picker, switched to text input, gets the digits in the order the locale writes dates. */
+    private fun pickDate(id:Int,date:JavaDate){
+        clickText(f.text(id));clickText(libraryText("m3c_date_picker_switch_to_input_mode"))
+        val pattern=(java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT,main.resources.configuration.locales[0]) as java.text.SimpleDateFormat).toPattern()
+        val digits=listOf('y' to "%04d".format(date.year),'M' to "%02d".format(date.monthValue),'d' to "%02d".format(date.dayOfMonth))
+            .sortedBy{(letter,_)->pattern.indexOf(letter)}.joinToString(""){it.second}
+        field(0,digits,label=libraryText("m3c_date_input_label"));click(R.string.ok)
+    }
+    /** A chip in a horizontally scrolling row: scrolls the row (forward, then back) until the chip is on screen. */
+    private fun clickChip(id:Int){
+        val text=f.text(id)
+        fun visible()=nodes().any{it.isVisibleToUser&&it.text?.toString()==text}
+        fun rows()=nodes().filter{node->val b=Rect();node.getBoundsInScreen(b);node.isScrollable&&node.isVisibleToUser&&b.width()>b.height()*2}
+        for(action in listOf(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)){
+            var tries=0
+            while(!visible()&&tries++<6){rows().forEach{it.performAction(action)};Thread.sleep(500)}
+            if(visible())break
+        }
+        clickText(text)
+    }
+    /** A string of a library (Material) in the app's resources, looked up by name. */
+    private fun libraryText(name:String,vararg args:Any)=f.context.getString(f.context.resources.getIdentifier(name,"string",f.context.packageName),*args)
     private fun enterFixturePin(){
         awaitCondition{nodes().any{it.isEditable&&it.isEnabled&&it.isPassword}}
         val pin=nodes().first{it.isEditable&&it.isEnabled&&it.isPassword};check(pin.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
@@ -331,7 +370,7 @@ class RealMainJourneys {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_ENTER);Thread.sleep(850)
     }
     @Test fun uiEnrolledPinEnableCancelAndReauthentication()=runBlocking{
-        home();click(R.string.core_complete_settings);click(R.string.core_shell_app_lock);click(R.string.core_ui_app_lock);enterFixturePin()
+        home();click(R.string.core_complete_settings);click(R.string.core_shell_app_lock);click(R.string.app_lock);enterFixturePin()
         awaitCondition{f.preferences.state.value.appLockEnabled}
         assertTrue(main.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE!=0)
         click(R.string.core_ui_lock_now);awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_locked)}}
@@ -369,11 +408,11 @@ class RealMainJourneys {
     @Test fun uiAnalyticsAllTimeIncludesFutureAndCoreCounts()=runBlocking{
         val c=f.core();val seed=f.seed()
         val future=c.ledger().use{it.add(f.draft(seed.account,seed.category,"${f.tag} Future",BigDecimal("1.25"),JavaTime.now().plusDays(400).nativeTime()))}
-        home();click(R.string.core_complete_analytics);click(R.string.core_analytics_all_time)
+        home();click(R.string.core_complete_analytics);clickChip(R.string.core_analytics_all_time)
         val filter=TransactionFilter(null,null,listOf(TransactionKind.EXPENSE),emptyList(),emptyList(),null,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)
         val total=c.ledger().use{it.list(filter,PageRequest(0u,1u)).total}
-        showText(f.context.getString(R.string.transactions_format,total.toInt()))
-        shot("ui-analytics-alltime-future");click(R.string.core_analytics_this_month);shot("ui-analytics-this-month")
+        showText(f.context.getString(R.string.core_analytics_count,total.toString()))
+        shot("ui-analytics-alltime-future");clickChip(R.string.core_analytics_this_month);shot("ui-analytics-this-month")
         f.note("ui-analytics","real allTime Expense-filter UI count equals exact matching Core total=$total includes native futureid=$future; thismonth preset rendered; no App monetary calculation")
     }
     @Test fun uiInvestmentEmptyCredentialConnectCancelProtected()=runBlocking{
@@ -381,7 +420,7 @@ class RealMainJourneys {
         assertTrue(main.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE!=0)
         assertTrue(nodes().any{it.isEditable&&it.isPassword})
         val before=f.core().brokerage().use{it.connections().size}
-        click(R.string.core_invest_cancel)
+        click(R.string.close)
         awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-investments"}}
         assertEquals(before,f.core().brokerage().use{it.connections().size})
         shot("ui-investments-cancel-no-connection");f.note("ui-investments","actual provider connect dialog empty credential inputs secure, cancel retained no native connection; no realbroker network")
@@ -406,41 +445,41 @@ class RealMainJourneys {
         val c=f.core();val seed=f.seed();val ids=mutableListOf<String>()
         c.ledger().use{api->for(index in 0 until 206)ids+=api.add(f.draft(null,seed.category,"${f.tag} Page $index"))}
         home();click(R.string.core_complete_transactions);field(R.string.search_transactions,"${f.tag} Page")
-        click(R.string.more_options);click(R.string.select_all);click(R.string.core_full_bulk_edit);click(R.string.core_full_bulk_edit);field(R.string.core_full_bulk_amount,"1.25");click(R.string.core_full_confirm)
+        click(R.string.more_options);click(R.string.txn_select);click(R.string.select_all);click(R.string.core_full_bulk_edit);field(R.string.bulk_amount,"1.25");click(R.string.save)
         awaitCondition{runBlocking{c.ledger().use{api->ids.all{api.get(it).amount.compareTo(BigDecimal("1.25"))==0}}}}
-        click(R.string.core_full_export_all_pages)
-        awaitCondition{nodes().any{it.text?.toString()==f.context.getString(R.string.core_full_export_count,"206")}}
+        if(nodes().any{it.contentDescription?.toString()==f.text(R.string.close)})click(R.string.close)
+        click(R.string.export_transactions)
+        awaitCondition{nodes().any{it.text?.toString()==f.context.getString(R.string.txn_exported,"206")}}
         val csv=File(f.context.cacheDir,"core-attachment-share").walkTopDown().filter{it.isFile&&it.extension=="csv"}.toList()
         assertTrue(csv.isNotEmpty());assertTrue(csv.any{it.readText().contains(ids.last())});layout("ui-csv206-ready")
-        systemBack();showText("${f.tag} Page 0",timeout=180_000)
-        showText(f.context.getString(R.string.transaction_page_position,"1","206","206"));shot("ui-ledger-second-page")
+        systemBack();showText("${f.tag} Page 0",timeout=180_000);shot("ui-ledger-second-page")
         f.note("ui-ledger-pages","native206 unique Page fixture rows, actual UI textfilter/selectAll206/bulkamount1.25/CSV206/continuous Load more; CSV contains final generatedID; seed writes not UI")
     }
     @Test fun uiCreditCardPocketCalibrationArchiveAndDefault()=runBlocking{
-        val c=f.core();home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc);click(R.string.core_accounts_31)
-        val name="${f.tag} UI card";field(R.string.core_accounts_37,name);field(R.string.core_accounts_38,"8679");field(R.string.core_accounts_40,"20")
-        field(R.string.core_accounts_43,"1000");field(R.string.core_accounts_44,"15");field(R.string.core_accounts_45,"2");click(R.string.save)
+        val c=f.core();home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc);click(R.string.account_kind_credit_card)
+        val name="${f.tag} UI card";field(R.string.account_name,name);field(R.string.account_last4,"8679");field(R.string.account_opening_debt,"20")
+        field(R.string.account_credit_limit,"1000");field(R.string.account_statement_day,"15");field(R.string.account_due_day,"2");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.overview().accounts.any{row->row.name==name}}}}
         val id=c.accounts().use{it.overview().accounts.single{row->row.name==name}.id};val card=c.accounts().use{it.get(id)}
         assertEquals(AccountKind.CREDIT_CARD,card.kind);assertEquals(0,card.creditLimit!!.compareTo(BigDecimal("1000")));assertEquals(15.toUByte(),card.statementDay);assertEquals(2.toUByte(),card.dueDay)
-        click(R.string.edit);field(R.string.core_accounts_37,"$name Edited");click(R.string.save)
+        click(R.string.edit);field(R.string.account_name,"$name Edited");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).name=="$name Edited"}}}
-        click(R.string.core_accounts_14);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.core_accounts_13)
-        click(R.string.core_accounts_12);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.core_accounts_11)
-        click(R.string.core_accounts_18);field(R.string.core_accounts_53,"USD");field(R.string.new_balance_label,"3");click(R.string.save)
+        click(R.string.more_options);click(R.string.account_set_default);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.more_options);click(R.string.account_clear_default)
+        click(R.string.more_options);click(R.string.account_archive);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.more_options);click(R.string.account_unarchive)
+        click(R.string.account_currency_add);field(R.string.account_currency_code,"USD");field(R.string.account_balance,"3");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).pockets.any{pocket->pocket.currency=="USD"}}}}
-        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.core_accounts_19);field(R.string.new_balance_label,"25");click(R.string.save)
-        click(R.string.balance_history_title);field(R.string.core_full_history_from,JavaDate.now().minusDays(7).toString());field(R.string.core_full_history_to,JavaDate.now().toString());click(R.string.core_full_history_query)
-        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.core_accounts_15);click(R.string.core_accounts_25)
+        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.account_calibrate);field(R.string.account_balance,"25");click(R.string.save)
+        click(R.string.account_balance_trend);click(R.string.net_worth_history_month)
+        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.account_delete);click(R.string.delete)
         awaitCondition{runBlocking{c.accounts().use{it.overview().accounts.none{row->row.id==id}}}}
         f.note("ui-accounts-advanced","real card create/nameedit/default/archive/unarchive/USD pocket/calibrate/history/zero-refdelete UI and Core queries; balance/missing-rate output remains Core")
     }
     @Test fun uiOwnedCategoryChildDeletionAndProtectedBuiltinSurface()=runBlocking{
         val c=f.core();val category=c.categories().use{it.list(CategoryKind.EXPENSE,true).first{row->row.builtinKey==null&&row.displayName.startsWith("Acceptance-")&&row.subcategories.isNotEmpty()}}
         home();click(R.string.core_complete_categories);categoryDetails(category.displayName)
-        val child=category.subcategories.first();clickBelow(child.displayName,R.string.core_categories_18);click(R.string.core_categories_18)
+        val child=category.subcategories.first();clickInRow(child.displayName,R.string.more_options);click(R.string.delete);click(R.string.delete)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==category.id}.subcategories.none{row->row.id==child.id}}}}
-        click(R.string.delete);click(R.string.core_categories_28)
+        click(R.string.more_options);click(R.string.delete);click(R.string.cat_delete_confirm)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).none{row->row.id==category.id}}}}
         val builtin=c.categories().use{it.list(CategoryKind.EXPENSE,false).first{row->row.builtinKey!=null}};categoryDetails(builtin.displayName)
         assertFalse(nodes().any{it.text?.toString()==f.text(R.string.delete)&&it.isEnabled});shot("ui-category-builtin-protected")
@@ -459,8 +498,8 @@ class RealMainJourneys {
     @Test fun uiSubscriptionHideSchedulePaidAndConfirmedLedgerPayment()=runBlocking{
         val c=f.core();val today=JavaDate.now().nativeDate();val sub=c.plans().use{it.subscriptions(today,true).first{row->row.name.contains("UI subscription")&&!row.ended}}
         home();click(R.string.core_complete_subscriptions);field(R.string.core_detail_name_filter,sub.name);clickText(sub.name)
-        click(R.string.core_plans_hide);awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.hidden}}}
-        click(R.string.core_plans_unhide);click(R.string.core_plans_mark_paid);click(R.string.core_plans_confirm)
+        click(R.string.more_options);click(R.string.core_plans_hide);awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.hidden}}}
+        click(R.string.more_options);click(R.string.core_plans_unhide);click(R.string.core_plans_mark_paid);click(R.string.core_plans_mark_paid)
         awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.lastPaid==today}}}
         val all=TransactionFilter(null,null,emptyList(),emptyList(),emptyList(),null,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)
         val before=c.ledger().use{it.list(all,PageRequest(0u,1u)).total};click(R.string.core_plans_record_payment)
@@ -474,15 +513,15 @@ class RealMainJourneys {
     }
     private fun systemBack(){automation.executeShellCommand("input keyevent 4").use{android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes()};Thread.sleep(850)}
     private fun documentDownloads(){
-        awaitCondition{nodes().any{it.packageName?.toString()=="com.google.android.documentsui"}}
+        awaitCondition{nodes().any{it.packageName?.toString() in DOCUMENTS_UI}}
         clickText("Show roots");clickText("Downloads");Thread.sleep(850)
     }
     @Test fun uiAttachmentSafCancelSelectPreviewShareAndConfirmedSave()=runBlocking{
         val c=f.core();val merchant="${f.tag} SAF expense";typed(QuickEntry.Entry.NewTransaction)
-        transactionAmount("3.50");field(R.string.core_full_label_67,merchant)
-        click(R.string.core_full_attachment_add);awaitCondition{nodes().any{it.packageName?.toString()=="com.google.android.documentsui"}};systemBack()
+        transactionAmount("3.50");field(R.string.txn_merchant,merchant)
+        click(R.string.txn_attachment_add);awaitCondition{nodes().any{it.packageName?.toString() in DOCUMENTS_UI}};systemBack()
         awaitCondition{nodes().any{it.isEditable&&it.text?.toString()==merchant}}
-        click(R.string.core_full_attachment_add);documentDownloads();clickText("hoot-core-accept-image.png")
+        click(R.string.txn_attachment_add);documentDownloads();clickText("hoot-core-accept-image.png")
         awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_full_attachment_view)}}
         click(R.string.core_full_attachment_view);click(R.string.core_attachment_share)
         awaitCondition{nodes().none{it.contentDescription?.toString()=="core-screen-transactions"}};systemBack();click(R.string.core_attachment_close)
@@ -495,23 +534,23 @@ class RealMainJourneys {
     }
     @Test fun uiBackupEncryptedExportSafSaveInspectAndMerge()=runBlocking{
         val root=File(f.context.noBackupFilesDir,"hootkit-core/backup-ui");home();click(R.string.core_complete_backup)
-        click(R.string.export_data)
-        field(R.string.core_backup_password,"fixture-password");click(R.string.core_backup_export);click(R.string.core_backup_save)
+        click(R.string.backup_export)
+        field(R.string.backup_password,"fixture-password");click(R.string.backup_export_action);click(R.string.backup_save)
         documentDownloads()
         val edit=nodes().first{it.isEditable&&it.isEnabled};check(edit.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
         val fileName="${f.tag}-ui.hkbak";check(edit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,Bundle().apply{putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,fileName)}));clickText("Save")
-        awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_backup_share)}}
-        click(R.string.core_backup_share)
+        awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.backup_share)}}
+        click(R.string.backup_share)
         awaitCondition{nodes().firstOrNull()?.packageName?.toString()?.let{it!=f.context.packageName}==true}
-        systemBack();showText(f.text(R.string.core_backup_share));systemBack()
-        click(R.string.core_backup_restore)
-        click(R.string.core_backup_select);documentDownloads();clickText(fileName)
-        field(R.string.core_backup_password,"fixture-password",last=true);click(R.string.core_backup_inspect)
+        systemBack();showText(f.text(R.string.backup_share));systemBack()
+        click(R.string.backup_restore)
+        field(R.string.backup_password,"fixture-password",last=true)
+        click(R.string.backup_file);documentDownloads();clickText(fileName)
         val source=root.walkTopDown().filter{it.isFile&&it.name=="source.backup"}.maxBy{it.lastModified()}
         assertTrue(f.core().backup().use{it.inspectBackup(source.path,"fixture-password").encrypted})
         val original=java.security.MessageDigest.getInstance("SHA-256").digest(source.readBytes()).joinToString(""){"%02x".format(it)}
-        click(R.string.core_backup_import)
-        showText(f.text(R.string.core_backup_result))
+        click(R.string.backup_restore_action)
+        showText(f.text(R.string.backup_last_restore))
         val journal=root.walkTopDown().filter{it.isFile&&it.name=="journal.json"}.maxBy{it.lastModified()};val op=org.json.JSONObject(journal.readText())
         assertEquals("PLATFORM_APPLIED",op.getString("phase"));assertEquals(original,op.getString("sha256"));assertTrue(source.isFile)
         File(f.output,"ui-saf-backup-journal.json").writeText(journal.readText());layout("ui-saf-backup-import-result")
@@ -524,7 +563,7 @@ class RealMainJourneys {
         home();click(R.string.core_complete_settings)
         for(label in listOf(R.string.core_shell_profile,R.string.core_shell_appearance,R.string.core_shell_app_lock,
             R.string.core_shell_notifications,R.string.core_shell_about,R.string.core_shell_sync,R.string.core_shell_investments)){
-            click(label);awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-"+when(label){R.string.core_shell_profile->"profile";R.string.core_shell_appearance->"appearance";R.string.core_shell_app_lock->"app-lock";R.string.core_shell_notifications->"notifications";R.string.core_shell_about->"about";R.string.core_shell_sync->"sync";else->"investments"}}};shot("menu-$label");f.note("menu","real route label=${f.text(label)}")
+            click(label);awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-"+when(label){R.string.core_shell_profile->"profile";R.string.core_shell_appearance->"appearance";R.string.core_shell_app_lock->"data-privacy";R.string.core_shell_notifications->"notifications";R.string.core_shell_about->"about";R.string.core_shell_sync->"sync";else->"investments"}}};shot("menu-$label");f.note("menu","real route label=${f.text(label)}")
             InstrumentationRegistry.getInstrumentation().runOnMainSync{main.onBackPressedDispatcher.onBackPressed()};Thread.sleep(850)
         }
         home();for(label in listOf(R.string.core_complete_categories,R.string.core_complete_currencies,R.string.core_complete_backup,
@@ -536,12 +575,12 @@ class RealMainJourneys {
     @Test fun uiCreatesWalletAndProfileSurvivesActivityRecreation()=runBlocking {
         home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc)
         val name="${f.tag} UI wallet"
-        field(R.string.core_accounts_37,name);click(R.string.core_accounts_32);field(R.string.core_accounts_41,"25")
+        field(R.string.account_name,name);click(R.string.account_kind_wallet);field(R.string.account_opening_balance,"25")
         click(R.string.save)
         awaitCondition{nodes().any{it.text?.toString()?.contains(name)==true}}
         val wallets=f.core().accounts().use{it.overview().accounts}
         assertTrue(wallets.any{it.name==name&&it.kind==AccountKind.WALLET});f.note("ui-account","saved native id=${wallets.single{it.name==name}.id}")
-        home();click(R.string.core_complete_profile);click(R.string.edit)
+        home();click(R.string.core_complete_profile);click(R.string.edit_profile)
         field(R.string.name_label,"${f.tag} Display");click(R.string.save)
         awaitCondition{f.preferences.state.value.userName=="${f.tag} Display"}
         activityRule.scenario.recreate();Thread.sleep(850)
@@ -593,7 +632,7 @@ class RealMainJourneys {
         val before=c.ledger().use{it.list(TransactionFilter(from=null,to=null,kinds=emptyList(),accountIds=emptyList(),categoryIds=emptyList(),text=null,currency=null,deleted=DeletedFilter.EXCLUDE,sort=SortOrder.NEWEST_FIRST),PageRequest(0u,1u)).total}
         val intent=QuickEntry.templateIntent(f.context,seed.template)
         activityRule.scenario.onActivity{it.startActivity(Intent(intent).setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP))} // Same ActivityScenario task; cold/external NEW_TASK tested separately by CLI.
-        awaitCondition{nodes().any{it.isEditable&&it.text?.toString()=="${f.tag} Merchant"}}
+        showText("${f.tag} Merchant")
         shot("template-entry-unconfirmed")
         val after=c.ledger().use{it.list(TransactionFilter(from=null,to=null,kinds=emptyList(),accountIds=emptyList(),categoryIds=emptyList(),text=null,currency=null,deleted=DeletedFilter.EXCLUDE,sort=SortOrder.NEWEST_FIRST),PageRequest(0u,1u)).total}
         assertEquals(before,after);f.note("native-plans","due/payment/debt/attachment/settle/template real native, entry did not save")

@@ -29,7 +29,7 @@
     <string name="core_ai_leave_body">未保存建议将被丢弃。已保存修改仍保留，但释放会话后，本次撤销凭据失效。</string>
     <string name="core_ai_leave">退出</string>
     <string name="core_ai_keep_reviewing">继续审阅</string>
-    <string name="core_ai_apply_warning">在一次 Core 事务中保存所选的 %1$d 项建议？勾选的账户余额、交易修改及删除也会一起提交。</string>
+    <string name="core_ai_apply_warning">一起保存所选的 %1$d 项更改？勾选的余额校准、交易修改和删除也会一并保存。</string>
     <string name="core_ai_restart_warning">丢弃当前审阅并移除收件箱副本？已保存的账本修改会保留，除非先撤销。不会删除分享来源文件。</string>
     <string name="core_ai_pdf_password">PDF 密码</string>
     <string name="core_ai_continue">继续</string>
@@ -51,9 +51,9 @@
     <string name="core_ai_kind">类型</string>
     <string name="core_ai_amount">金额</string>
     <string name="core_ai_currency">币种</string>
-    <string name="core_ai_date">本地日期时间（ISO 8601）</string>
+    <string name="core_ai_date">日期时间</string>
     <string name="core_ai_merchant">商户</string>
-    <string name="core_ai_default">Core 默认</string>
+    <string name="core_ai_default">默认</string>
     <string name="core_ai_account">账户</string>
     <string name="core_ai_category">分类</string>
     <string name="core_ai_subcategory">子分类</string>

@@ -1,28 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="core_analytics_this_month">This month</string>
-  <string name="core_analytics_last_month">Last month</string>
-  <string name="core_analytics_this_year">This year</string>
-  <string name="core_analytics_all_time_note">All time ignores the date fields and includes future-dated Core records. Daily pages use Core oldest/newest endpoints.</string>
-  <string name="core_analytics_all_time">All time</string>
-  <string name="core_analytics_title">Analytics</string>
-  <string name="core_analytics_back">Back</string>
-  <string name="core_analytics_days">%1$s days</string>
-  <string name="core_analytics_from">From date (YYYY-MM-DD)</string>
-  <string name="core_analytics_through">Through date (inclusive)</string>
-  <string name="core_analytics_filter_currency">Filter transaction currency (blank = all)</string>
-  <string name="core_analytics_apply">Apply filters</string>
-  <string name="core_analytics_retry">Retry</string>
-  <string name="core_analytics_query_failed">Analytics could not be loaded. Check dates and retry.</string>
-  <string name="core_analytics_totals">Core totals · %1$s</string>
-  <string name="core_analytics_income">Income %1$s</string>
-  <string name="core_analytics_expense">Expense %1$s</string>
-  <string name="core_analytics_net">Net %1$s</string>
-  <string name="core_analytics_count">%1$s transactions</string>
-  <string name="core_analytics_missing">Partial totals; missing rates: %1$s</string>
-  <string name="core_analytics_categories">Category totals</string>
-  <string name="core_analytics_daily">Daily income and expense</string>
-  <string name="core_analytics_daily_note">Amounts are Core daily summaries. The chart shows expenses; no platform money aggregation or conversion.</string>
-  <string name="core_analytics_older">Load older daily summaries</string>
-  <string name="core_analytics_unsupported">Exact merchant ranking, financial daily averages and special investment/loan totals are not exposed by this Core API. Income/expense follow Core summary semantics.</string>
+    <string name="core_analytics_this_month">This month</string>
+    <string name="core_analytics_last_month">Last month</string>
+    <string name="core_analytics_this_year">This year</string>
+    <string name="core_analytics_all_time">All time</string>
+    <string name="core_analytics_custom">Custom</string>
+    <string name="core_analytics_title">Analytics</string>
+    <string name="core_analytics_filter_currency">Currency</string>
+    <string name="core_analytics_currency_any">Leave blank for all currencies</string>
+    <string name="core_analytics_apply">Apply</string>
+    <string name="core_analytics_retry">Retry</string>
+    <string name="core_analytics_query_failed">Analytics couldn\'t be loaded.</string>
+    <string name="core_analytics_net">Net %1$s</string>
+    <string name="core_analytics_count">%1$s transactions</string>
+    <string name="core_analytics_missing">Totals leave out %1$s: their exchange rates are missing.</string>
+    <string name="core_analytics_categories">By category</string>
+    <string name="core_analytics_daily">Daily</string>
+    <string name="core_analytics_older">Load earlier days</string>
+    <string name="core_analytics_chart">Chart</string>
+    <string name="core_analytics_list">List</string>
 </resources>

@@ -2,6 +2,9 @@
 
 package io.github.hootkit_dev.hootbook.presentation.core.navigation
 
+import io.github.hootkit_dev.hootbook.presentation.core.common.legacyItemLabel
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SecondaryScreen
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -30,7 +32,6 @@ import io.github.hootkit_dev.hootbook.core.migration.LegacyMigrationPreview
 import io.github.hootkit_dev.hootbook.core.migration.LegacyMigrationUiState
 import io.github.hootkit_dev.hootbook.core.migration.LegacyServiceSettings
 import io.github.hootkit_dev.hootbook.core.ui.CoreSecureWindow
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 
 @Composable
 internal fun LegacyUpgradeScreen(
@@ -91,22 +92,12 @@ internal fun LegacyUpgradeContent(
     }
     val requiresReload = commandFailed || reportMissing
     BackHandler(enabled = state.busy || leaving) { /* Do not navigate away during a write. */ }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(
-        modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
-        topBar = {
-            CustomTitleTopAppBar(
-                title = stringResource(R.string.legacy_upgrade_title),
-                scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(),
-                scrollBehaviorLarge = scroll,
-            )
-        },
-    ) { padding ->
+    SecondaryScreen(title = stringResource(R.string.legacy_upgrade_title), onBack = null) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             LazyColumn(
                 modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 720.dp).fillMaxSize()
                     .testTag("legacy-upgrade-content"),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = ScreenContentPadding,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 if (state.busy) item {
@@ -370,32 +361,3 @@ internal fun isFinancialOmission(item: String): Boolean = item in setOf(
     "cards", "balance_updates", "unknown_transactions", "deleted_transactions", "deleted_debts",
     "invalid_records", "brokerage_connections", "loan_transactions_without_account", "budget_limits",
 )
-
-@Composable
-private fun legacyItemLabel(item: String): String {
-    val resource = when (item) {
-        "accounts" -> R.string.legacy_upgrade_count_accounts
-        "anchors" -> R.string.legacy_upgrade_count_anchors
-        "categories" -> R.string.legacy_upgrade_count_categories
-        "subcategories" -> R.string.legacy_upgrade_count_subcategories
-        "transactions" -> R.string.legacy_upgrade_count_transactions
-        "budgets" -> R.string.legacy_upgrade_count_budgets
-        "budget_limits" -> R.string.legacy_upgrade_count_budget_limits
-        "subscriptions" -> R.string.legacy_upgrade_count_subscriptions
-        "people" -> R.string.legacy_upgrade_count_people
-        "debts" -> R.string.legacy_upgrade_count_debts
-        "custom_rates" -> R.string.legacy_upgrade_count_custom_rates
-        "attachments" -> R.string.legacy_upgrade_count_attachments
-        "cards" -> R.string.legacy_upgrade_count_cards
-        "balance_updates" -> R.string.legacy_upgrade_count_balance_updates
-        "unknown_transactions" -> R.string.legacy_upgrade_count_unknown_transactions
-        "deleted_transactions" -> R.string.legacy_upgrade_count_deleted_transactions
-        "deleted_debts" -> R.string.legacy_upgrade_count_deleted_debts
-        "invalid_records" -> R.string.legacy_upgrade_count_invalid_records
-        "brokerage_connections" -> R.string.legacy_upgrade_count_brokerage_connections
-        "loan_transactions_without_account" -> R.string.legacy_upgrade_count_unlinked_loans
-        "downloaded_rates" -> R.string.legacy_upgrade_count_downloaded_rates
-        else -> null
-    }
-    return resource?.let { stringResource(it) } ?: item
-}

@@ -88,7 +88,6 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun CoreAppearanceScreen(
     onBack: () -> Unit,
-    onAppLock: () -> Unit = {},
     viewModel: CoreAppearanceViewModel = hiltViewModel()
 ) {
     val themeUiState by viewModel.preferences.state.collectAsStateWithLifecycle()
@@ -639,7 +638,7 @@ fun CoreAppearanceScreen(
                 }
 
                 error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) }
-                CoreAppearanceAdditionalSettings(viewModel, onAppLock)
+                CoreAppearanceAdditionalSettings(viewModel)
                 Spacer(modifier = Modifier.height(Spacing.xl))
             }
         }
@@ -973,43 +972,15 @@ fun AppLogoOption(
     }
 }
 
+/** What the appearance screen keeps beyond theme, icon and font: showing AI token counts. */
 @Composable
-private fun CoreAppearanceAdditionalSettings(viewModel: CoreAppearanceViewModel, onAppLock: () -> Unit) {
+private fun CoreAppearanceAdditionalSettings(viewModel: CoreAppearanceViewModel) {
     val p by viewModel.preferences.state.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    var displayCurrency by rememberSaveable(p.unifiedDisplayCurrency) { mutableStateOf(p.unifiedDisplayCurrency.orEmpty()) }
-    var entryCurrency by rememberSaveable(p.defaultEntryCurrency) { mutableStateOf(p.defaultEntryCurrency.orEmpty()) }
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        UiSwitch(R.string.core_ui_dynamic, p.dynamicColor, !busy) { value -> viewModel.update { it.copy(dynamicColor = value) } }
-        TextButton(onClick = { expanded = !expanded }) { Text(stringResource(R.string.core_ui_home_layout)) }
-        if (expanded) {
-            p.homeOrder.forEachIndexed { index, widget ->
-                UiSwitch(widget.titleRes, widget !in p.hiddenHomeWidgets, !busy) { value -> viewModel.update { it.copy(hiddenHomeWidgets = if (value) it.hiddenHomeWidgets - widget else it.hiddenHomeWidgets + widget) } }
-                Row {
-                    TextButton(onClick = { viewModel.update { val order = it.homeOrder.toMutableList(); java.util.Collections.swap(order, index, index - 1); it.copy(homeOrder = order) } }, enabled = !busy && index > 0) { Text(stringResource(R.string.core_ui_move_up)) }
-                    TextButton(onClick = { viewModel.update { val order = it.homeOrder.toMutableList(); java.util.Collections.swap(order, index, index + 1); it.copy(homeOrder = order) } }, enabled = !busy && index < p.homeOrder.lastIndex) { Text(stringResource(R.string.core_ui_move_down)) }
-                }
-            }
-            TextButton(onClick = { viewModel.update { it.copy(homeOrder = HomeWidget.entries.sortedBy { it.defaultOrder }, hiddenHomeWidgets = emptySet()) } }, enabled = !busy) { Text(stringResource(R.string.core_ui_reset_layout)) }
-        }
-        Text(stringResource(R.string.core_ui_display_currency), style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(displayCurrency, { displayCurrency = it.uppercase(java.util.Locale.ROOT) }, label = { Text(stringResource(R.string.core_ui_currency_code)) }, singleLine = true, enabled = !busy)
-        UiSwitch(R.string.core_ui_unified, p.unifiedDisplayEnabled, !busy) { value -> viewModel.update { it.copy(unifiedDisplayEnabled = value) } }
-        Button(onClick = { viewModel.update { it.copy(unifiedDisplayCurrency = displayCurrency.takeIf(String::isNotBlank)) } }, enabled = !busy && (displayCurrency.isEmpty() || displayCurrency.matches(Regex("[A-Z0-9]{1,4}")))) { Text(stringResource(R.string.core_ui_save)) }
-        Text(stringResource(R.string.core_ui_entry_currency), style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(entryCurrency, { entryCurrency = it.uppercase(java.util.Locale.ROOT) }, label = { Text(stringResource(R.string.core_ui_currency_code)) }, singleLine = true, enabled = !busy)
-        UiSwitch(R.string.core_ui_default_entry, p.defaultEntryEnabled, !busy) { value -> viewModel.update { it.copy(defaultEntryEnabled = value) } }
-        Button(onClick = { viewModel.update { it.copy(defaultEntryCurrency = entryCurrency.takeIf(String::isNotBlank)) } }, enabled = !busy && (entryCurrency.isEmpty() || entryCurrency.matches(Regex("[A-Z0-9]{1,4}")))) { Text(stringResource(R.string.core_ui_save)) }
-        val languageOptions = CoreUiLanguages.supported(LocalContext.current)
-        var languages by remember { mutableStateOf(false) }
-        OutlinedButton(onClick = { languages = true }, enabled = !busy) { Text(stringResource(R.string.core_ui_language)) }
-        DropdownMenu(languages, { languages = false }, Modifier.heightIn(max = 360.dp)) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.core_ui_system_theme)) }, onClick = { languages = false; viewModel.language("") })
-            languageOptions.forEach { (tag, label) -> DropdownMenuItem(text = { Text(label) }, onClick = { languages = false; viewModel.language(tag) }) }
-        }
-        UiSwitch(R.string.core_ui_tokens, p.tokenInfo, !busy) { value -> viewModel.update { it.copy(tokenInfo = value) } }
-        OutlinedButton(onClick = onAppLock, enabled = !busy) { Text(stringResource(R.string.core_ui_app_lock)) }
+    io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection(Modifier.padding(horizontal = 16.dp), title = stringResource(R.string.appearance_other)) {
+        item(headline = { Text(stringResource(R.string.core_ui_tokens)) },
+            trailing = { io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch(p.tokenInfo, null, enabled = !busy) },
+            toggled = p.tokenInfo, onToggle = { value -> if (!busy) viewModel.update { it.copy(tokenInfo = value) } })
     }
 }
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_data_version">Data format %1$d</string>
+    <string name="about_updates">Updates</string>
+    <string name="about_upstream">Upstream project: Cashiro</string>
+    <string name="about_upstream_website">Cashiro’s site, FAQ and guides</string>
+    <string name="about_upstream_note">Hootbook is built from Cashiro, itself based on PennyWise AI, and is released under AGPL-3.0. The links above belong to the upstream project.</string>
+</resources>

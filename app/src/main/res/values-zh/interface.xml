@@ -2,15 +2,13 @@
 <resources>
     <string name="settings_group_personal">个性化</string>
     <string name="settings_group_finances">财务管理</string>
-    <string name="settings_group_automation">自动化与通知</string>
-    <string name="settings_group_app">关于应用</string>
     <string name="type_bank_account">银行账户</string>
     <string name="type_investment_account">投资账户</string>
     <string name="merchant_optional">商家（可选）</string>
     <string name="common_categories">常用分类</string>
     <string name="all_categories">全部</string>
     <string name="recently_used">最近使用</string>
-    <string name="search_categories">搜索分类</string>
+    <string name="search_categories">搜索类别</string>
     <string name="template_suggested_pin">固定为模板</string>
     <string name="template_suggested_dismiss">不再推荐</string>
     <string name="template_suggested_desc">根据最近 %1$d 笔记录推荐</string>
@@ -96,7 +94,6 @@
     <string name="ai_leave_out">不保存这笔</string>
     <string name="ai_put_back">恢复保存</string>
     <string name="ai_merchant">商户</string>
-    <string name="ai_date_time_pattern">M月d日 HH:mm</string>
     <string name="ai_section_accounts">新账户 · %1$d 个</string>
     <string name="ai_new_account_note">会先于记在它上面的交易创建。若不保存这个账户，相关交易会保存为不关联账户。</string>
     <string name="ai_section_account_changes">账户调整 · %1$d 项</string>
@@ -173,7 +170,7 @@
     <string name="account_other_currencies">其他币种</string>
     <string name="account_add_currency">添加币种</string>
     <string name="account_add_currency_title">为这个账户添加 %1$s？</string>
-    <string name="account_add_currency_text">币种添加后不能删除。它有自己的余额和交易记录。</string>
+    <string name="account_add_currency_text">它有自己的余额；之后只有在没有交易使用时才能移除。</string>
     <string name="account_add_currency_confirm">添加</string>
     <string name="account_add_named_currency">添加 %1$s</string>
     <string name="transfer_target_lacks_currency">%1$s 没有 %2$s：可以为它添加 %2$s，或转入它已有的币种并填写到账金额。</string>

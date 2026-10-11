@@ -86,6 +86,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
     val current by nav.currentBackStackEntryAsState()
     val windowLayout = rememberWindowLayout()
     val view = LocalView.current
+    val hostChrome = remember { HostChromeState() }
     val start = remember { if (prefs.onboardingFinished) "home" else "onboarding" }
     var recordHint by rememberSaveable { mutableStateOf<String?>(null) }
     var schema by remember(session) { mutableStateOf<UInt?>(null) }
@@ -120,15 +121,15 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
             }
             go(route); ingress.consumed(entry.token)
         }
-        CompositionLocalProvider(LocalWindowLayout provides windowLayout) {
+        CompositionLocalProvider(LocalWindowLayout provides windowLayout, LocalHostChrome provides hostChrome) {
             val route = current?.destination?.route.orEmpty().substringBefore('?')
             val entryScreen = current?.arguments?.let { args ->
                 listOf("newKind", "transactionId", "subscriptionId", "templateId").any { args.getString(it) != null }
             } == true
             val mainScreen = route in setOf("home", "analytics", "transactions") && !entryScreen
             val showRail = windowLayout.useNavigationRail && route != "onboarding" && !entryScreen
-            val showBottomBar = !windowLayout.useNavigationRail && mainScreen
-            val showAdd = !entryScreen && (route in setOf("home", "transactions", "subscriptions") ||
+            val showBottomBar = !windowLayout.useNavigationRail && mainScreen && hostChrome.suppressed == 0
+            val showAdd = !entryScreen && hostChrome.suppressed == 0 && (route in setOf("home", "transactions", "subscriptions") ||
                 (route == "budgets" && current?.arguments?.getString("id") != null))
             Row(Modifier.fillMaxSize()) {
                 if (showRail) HootbookNavigationRail(navController = nav, currentDestination = current?.destination, visible = true)
@@ -149,6 +150,8 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                     Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                         if (shareFailure) TextButton(onClick = ingress::dismissFailure) { Text(stringResource(R.string.core_shell_share_failed)) }
                         recordHint?.let { hint -> Row { Text(hint, Modifier.weight(1f)); TextButton(onClick = { recordHint = null }) { Text(stringResource(R.string.core_shell_close)) } } }
+                        // The Add FAB (56 dp and its 16 dp margin) lies over each screen's snackbars unless they leave room.
+                        CompositionLocalProvider(io.github.hootkit_dev.hootbook.presentation.ui.components.LocalHostFabClearance provides if (showAdd) 80.dp else 0.dp) {
                         Box(Modifier.weight(1f).fillMaxWidth().semantics { contentDescription = "core-screen-" + current?.destination?.route.orEmpty().substringBefore('?') }, contentAlignment = Alignment.TopCenter) {
                             NavHost(nav, startDestination = start, modifier = Modifier.fillMaxSize(),
                                 enterTransition = CoreNavigationMotion.enter,
@@ -160,7 +163,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                     onSubscriptions={go("subscriptions")},onTemplates={go("templates")},onDebts={go("debts")},onSettings={go("settings")},onCurrencies={go("currencies")},onBackup={go("backup")},
                                     onProfile={go("profile")},onAppearance={go("appearance")},onAnalytics={go("analytics")},onAccount={go(coreRoute("accounts","id" to it))},onBudget={go(coreRoute("budgets","id" to it))},
                                     onTransaction={go(coreTransactionsRoute(transactionId=it))},onSubscription={go(coreRoute("subscriptions","id" to it))},onAi={go("ai")},onAccountCategory={go(coreRoute("accounts","kind" to it.name))}) }
-                                composable("accounts?id={id}&history={history}&kind={kind}&create={create}", arguments=arguments("id","history","kind","create")) { entry -> CoreAccountsScreen(back,{go(coreTransactionsRoute(accountId=it))},initialAccountId=entry.arguments?.getString("id"),onConnectBroker={go("investments")},initialHistory=entry.arguments?.getString("history")=="true",initialCreate=entry.arguments?.getString("create")=="true",initialKind=entry.arguments?.getString("kind")?.let { raw -> AccountKind.entries.find { it.name == raw } },onBrokerage={connection,id->go(coreRoute("investments","connection" to connection.toString(),"id" to id))}) }
+                                composable("accounts?id={id}&history={history}&kind={kind}&create={create}", arguments=arguments("id","history","kind","create")) { entry -> CoreAccountsScreen(back,{go(coreTransactionsRoute(accountId=it))},initialAccountId=entry.arguments?.getString("id"),onConnectBroker={go("investments")},initialHistory=entry.arguments?.getString("history")=="true",initialCreate=entry.arguments?.getString("create")=="true",initialKind=entry.arguments?.getString("kind")?.let { raw -> AccountKind.entries.find { it.name == raw } },onBrokerage={connection,id->go(coreRoute("investments","connection" to connection.toString(),"id" to id))},onTransaction={go(coreTransactionsRoute(transactionId=it))}) }
                                 composable("categories") { CoreCategoriesScreen(back) }
                                 composable("budgets?id={id}", arguments=arguments("id")) { CoreBudgetsScreen(back,it.arguments?.getString("id")) }
                                 composable("subscriptions?id={id}&new={new}", arguments=arguments("id","new")) { entry -> CoreSubscriptionsScreen(back,{go(coreTransactionsRoute(subscriptionId=it))},entry.arguments?.getString("id"),initialCreate=entry.arguments?.getString("new")=="true",onNewTransaction={go(coreTransactionsRoute(newKind=TransactionKind.EXPENSE))}) }
@@ -179,18 +182,19 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                     LaunchedEffect(connection,id,brokerState.loading) { if(!brokerState.loading&&!routedBroker&&connection!=null&&id!=null) { routedBroker=true; vm.selectAccount(BrokerAccountRef(connection,id)) } }
                                     CoreInvestmentsScreen(back,{go("accounts")},{go(coreRoute("accounts","id" to it,"history" to "true"))},vm,onAddInvestment={go(coreRoute("accounts","kind" to AccountKind.INVESTMENT.name,"create" to "true"))})
                                 }
-                                composable("settings") { CoreSettingsScreen(back,{go("currencies")},{go("backup")},onRoute=::go,coreSchemaVersion=schema) }
+                                composable("settings") { CoreSettingsScreen(back,{go("currencies")},{go("backup")},onRoute=::go) }
                                 composable("currencies?currency={currency}",arguments=arguments("currency")) { CoreCurrenciesScreen(back,it.arguments?.getString("currency")) }
                                 composable("backup") { CoreBackupScreen(back, onSync={go("sync")}) }
                                 composable("profile") { CoreProfileScreen(back,{go("debts")},{go("merchant-icons")},onPerson={go(coreRoute("debts","id" to it))},onAddPerson={go(coreRoute("debts","new" to "true"))}) }
                                 composable("merchant-icons?name={name}",arguments=arguments("name")) { CoreMerchantIconsScreen(back,it.arguments?.getString("name")) }
-                                composable("appearance") { CoreAppearanceScreen(back,{go("app-lock")}) }
+                                composable("appearance") { CoreAppearanceScreen(back) }
                                 composable("app-lock") { CoreAppLockSettingsScreen(back) }
                                 composable("data-privacy") { CoreAppLockSettingsScreen(back, dataPrivacy = true) }
                                 composable("notifications") { CoreNotificationPreferencesScreen(back) }
-                                composable("about") { AboutScreen(back,{go("licenses")},blurEffects=prefs.blur,coreSchemaVersion=schema) }
-                                composable("licenses") { LicensesScreen(back,coreSchemaVersion=schema) }
+                                composable("about") { AboutScreen(back,{go("licenses")},coreSchemaVersion=schema) }
+                                composable("licenses") { LicensesScreen(back) }
                             }
+                        }
                         }
                     }
                 }

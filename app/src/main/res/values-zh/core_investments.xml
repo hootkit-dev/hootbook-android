@@ -6,7 +6,7 @@
     <string name="core_invest_connect_title">连接 %1$s</string>
     <string name="core_invest_ibkr_setup">在 IBKR Client Portal 创建 Activity Flex Query：XML 格式、Last Business Day，添加 Open Positions 的 Summary 层级并选择全部字段。可选添加 Cash Report 的 Ending Cash 和 Ending Settled Cash。启用 Flex Web Service 后填写 Token 和 Query ID。</string>
     <string name="core_invest_provider_help">IBKR 配置说明</string>
-    <string name="core_invest_credentials_privacy">通过 HTTPS 读取报表，不下单、不上传账本。凭据由 Core 保存至设备安全存储。表单在提交、取消或关闭时清空凭据，失败后需重新输入。</string>
+    <string name="core_invest_credentials_privacy">通过 HTTPS 读取报表，不会下单，也不会上传账本。凭据保存在设备的安全存储中；提交、取消或关闭表单后会清空输入。</string>
     <string name="core_invest_connection_label">连接名称</string>
     <string name="core_invest_cancelling">正在取消，等待当前操作结束</string>
     <string name="core_invest_working">正在读取或保存券商报表，可能需要数十秒</string>
@@ -15,13 +15,13 @@
     <string name="core_invest_connect_and_refresh">连接并读取报表</string>
     <string name="core_invest_connect">连接</string>
     <string name="core_invest_link_title">关联账本账户</string>
-    <string name="core_invest_link_warning">关联后 Core 立即以报表现金校准账本账户，并替换相关币种的开户锚点；证券市值单独计入且仅计算一次。取消关联保留账本账户与已写入的现金锚点。</string>
+    <string name="core_invest_link_warning">关联后会按报表现金校准账本账户，并替换相关币种的初始余额；证券市值单独计入且只计一次。取消关联会保留账本账户和已写入的校准记录。</string>
     <string name="core_invest_no_link_accounts">没有可关联的账本账户。请先创建投资或银行账户；列表不包含钱包、信用卡、归档账户及已关联其他券商的账户。</string>
     <string name="core_invest_unlink">取消关联（保留现金锚点）</string>
     <string name="core_invest_close">关闭</string>
     <string name="core_invest_disconnect">断开连接</string>
     <string name="core_invest_disconnect_warning">删除此设备的连接、快照缓存与安全存储中的凭据？账本账户和现金锚点保留。本地删除不会撤销券商 Token。更新过期凭据需断开后重新连接；远程撤销需在券商网站操作。</string>
-    <string name="core_invest_cancelled_notice">请求已取消。Core 写入可能已提交，现已重新读取本地快照；取消不等于断开连接或撤销写入。</string>
+    <string name="core_invest_cancelled_notice">已取消。已保存的内容不会撤销，已重新读取本地快照；取消不会断开券商连接。</string>
     <string name="core_invest_cash_history">账本现金余额历史</string>
     <string name="core_invest_latest_only">只保留最新券商快照。账本现金历史不是证券行情或投资组合市值历史。</string>
     <string name="core_invest_search_holdings">搜索标的或描述</string>
@@ -32,7 +32,7 @@
     <string name="core_invest_cash">报表现金（负数表示融资欠款）</string>
     <string name="core_invest_no_cash">报表没有现金部分，不视作现金为零。</string>
     <string name="core_invest_settled_cash">已结算现金：%1$s</string>
-    <string name="core_invest_report_note">本地只读报表缓存，不是实时行情或完整 NAV。金额由 Core 返回；缺失值保持未知。仅用户主动操作时刷新。</string>
+    <string name="core_invest_report_note">持仓来自券商报表快照，不是实时行情，只在你刷新时更新；缺失的数值保持未知。</string>
     <string name="core_invest_refresh_all">刷新全部连接</string>
     <string name="core_invest_refresh">刷新报表</string>
     <string name="core_invest_no_connections">尚无券商连接</string>
@@ -42,8 +42,8 @@
     <string name="core_invest_securities">证券市值：%1$s</string>
     <string name="core_invest_linked_broker">关联券商账户 %1$s · 报表日 %2$s</string>
     <string name="core_invest_manage_accounts">添加或管理投资账本账户</string>
-    <string name="core_invest_providers">Core 可用提供方</string>
-    <string name="core_invest_no_providers">Core 尚无已注册的券商提供方</string>
+    <string name="core_invest_providers">连接券商</string>
+    <string name="core_invest_no_providers">暂无可连接的券商</string>
     <string name="core_invest_as_of">报表日期：%1$s</string>
     <string name="core_invest_snapshot_total">报表快照合计：%1$s</string>
     <string name="core_invest_total_unavailable">缺少换算合计，请查看原币值</string>
@@ -61,9 +61,9 @@
     <string name="core_invest_error_rate">已触发券商请求限制，请稍后刷新。</string>
     <string name="core_invest_error_network">网络请求失败，仍显示已有快照。</string>
     <string name="core_invest_error_report">报表格式被拒绝，保留上次快照。</string>
-    <string name="core_invest_error_provider">此提供方尚未在 Core 注册。</string>
+    <string name="core_invest_error_provider">暂不支持此券商。</string>
     <string name="core_invest_error_duplicate">凭据或券商账户重复，请检查已有连接。</string>
-    <string name="core_invest_error_invalid">Core 拒绝了当前输入，请检查账户与凭据。</string>
+    <string name="core_invest_error_invalid">输入未通过校验，请检查账户和凭据。</string>
     <string name="core_invest_error_conflict">此账户已有关联或正在被使用。</string>
     <string name="core_invest_error_not_found">连接或账户已不存在，请重新读取本地数据。</string>
     <string name="core_invest_error_storage">本地存储操作失败，重试前请重新读取缓存状态。</string>

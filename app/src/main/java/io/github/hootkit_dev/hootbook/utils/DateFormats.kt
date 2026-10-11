@@ -24,6 +24,13 @@ object DateFormats {
     fun shortDate(date: LocalDate, locale: Locale = Locale.getDefault()): String =
         if (date.year == LocalDate.now().year) monthDay(date, locale) else fullDate(date, locale)
 
+    /** 9月1日 – 9月30日 this year; full dates when either end is in another year. */
+    fun range(start: LocalDate, end: LocalDate, locale: Locale = Locale.getDefault()): String {
+        val thisYear = LocalDate.now().year
+        val full = start.year != thisYear || end.year != thisYear
+        return (if (full) fullDate(start, locale) else monthDay(start, locale)) + " – " + (if (full) fullDate(end, locale) else monthDay(end, locale))
+    }
+
     /** 2026年9月 / September 2026 */
     fun yearMonth(date: TemporalAccessor, locale: Locale = Locale.getDefault()): String =
         DateTimeFormatter.ofPattern(if (zh(locale)) "yyyy年M月" else "MMMM yyyy", locale).format(date)

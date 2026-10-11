@@ -6,7 +6,7 @@
     <string name="account_show_less">收起</string>
     <string name="account_section_expanded">已展开全部账户</string>
     <string name="account_section_collapsed">仅显示汇总，明细已收起</string>
-    <string name="onboarding_import_backup">导入旧备份</string>
+    <string name="onboarding_import_backup">从备份恢复</string>
     <string name="onboarding_import_description">从 Hootbook ZIP 或 JSON 备份恢复账户、交易和偏好设置，无需先新建账户。</string>
     <string name="onboarding_sync_title">开启同步</string>
     <string name="onboarding_sync_description">登录 Google 账号，所有设备共用同一份账本。若其他设备已在同步，账户和交易会直接同步到本机，无需导入备份，也无需添加账户。</string>

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="core_host_standard_offline">Core-only 调试入口 · 离线 · Firebase v2 适配待接入</string>
-    <string name="core_host_open_failed">Core 数据库打开失败</string>
+    <string name="core_host_open_failed">无法打开账本</string>
     <string name="core_host_retry">重试</string>
-    <string name="core_host_closed">Core 会话已关闭</string>
 </resources>

@@ -31,6 +31,8 @@ data class CoreCurrenciesUiState(
     val previewLoading: Boolean = false, val previewError: String? = null,
     val downloadFailed:Boolean=false,
     val refreshOutcome: RefreshOutcome? = null, val commandRevision: Long = 0,
+    /** A custom currency or rate waiting for the user to confirm its deletion. */
+    val deletingCurrency: CustomCurrency? = null, val deletingRate: ExchangeRate? = null,
 )
 
 @HiltViewModel
@@ -159,12 +161,15 @@ class CoreCurrenciesViewModel private constructor(
         if (!state.value.saving) return false
         mutable.update { it.copy(navigationBlocked = true) }; return true
     }
+    fun requestDeleteCurrency(currency: CustomCurrency) { if (!state.value.saving) mutable.update { it.copy(deletingCurrency = currency, deletingRate = null) } }
+    fun requestDeleteRate(rate: ExchangeRate) { if (!state.value.saving) mutable.update { it.copy(deletingRate = rate, deletingCurrency = null) } }
+    fun cancelDelete() { if (!state.value.saving) mutable.update { it.copy(deletingCurrency = null, deletingRate = null) } }
     private fun command(block: suspend (CurrencyInterface) -> Unit) {
         if (state.value.saving || !state.value.loaded) return
         ++queryRevision; query?.cancel(); invalidatePreview()
         mutable.update { it.copy(saving = true, loading = false, error = null,downloadFailed=false, navigationBlocked = false) }
         viewModelScope.launch {
-            try { withCurrency(block); mutable.update { it.copy(commandRevision = it.commandRevision + 1) } }
+            try { withCurrency(block); mutable.update { it.copy(commandRevision = it.commandRevision + 1, deletingCurrency = null, deletingRate = null) } }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: Throwable) { mutable.update { it.copy(error = coreFailureText(failure)) } }
             finally { mutable.update { it.copy(saving = false, navigationBlocked = false) }; refresh() }

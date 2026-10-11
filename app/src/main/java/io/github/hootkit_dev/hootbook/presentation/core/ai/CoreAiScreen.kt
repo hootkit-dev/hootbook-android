@@ -25,7 +25,9 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBo
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.ui.components.*
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -104,34 +106,31 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
             LazyColumn(Modifier.widthIn(max = 880.dp).fillMaxSize(), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                state.error?.let { error -> item { Surface(color = MaterialTheme.colorScheme.errorContainer) { Column(Modifier.padding(12.dp)) {
-                    Text(error); FlowRow { TextButton(onClick = viewModel::clearError) { Text(stringResource(R.string.core_ai_dismiss)) }
-                        TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.core_ai_refresh)) } }
-                } } } }
+                state.error?.let { error -> item { ErrorBanner(error, viewModel::clearError, actionLabel = stringResource(R.string.core_ai_refresh), onAction = viewModel::refresh) } }
                 if (state.navigationBlocked) item { Text(stringResource(R.string.core_ai_wait_write)) }
                 if (state.phase == CoreAiPhase.COMPOSE) item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary)
-                                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                    Text(stringResource(R.string.core_ai_configuration), style = MaterialTheme.typography.titleMedium)
-                                    Text(state.settings?.model ?: "—", style = MaterialTheme.typography.bodySmall)
-                                }
-                                TextButton(onClick = { settingsOpen = !settingsOpen }, enabled = !state.configBusy) { Text(stringResource(R.string.core_ai_edit)) }
-                            }
-                            if (settingsOpen || state.settings?.configured != true) Configuration(state, viewModel)
-                        }
+                    val configured = state.settings?.configured == true
+                    ListSection {
+                        item(leading = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary) },
+                            headline = { Text(stringResource(R.string.core_ai_configuration)) },
+                            supporting = { Text(if (configured) state.settings?.model.orEmpty() else stringResource(R.string.ai_not_configured),
+                                color = if (configured) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error) },
+                            chevron = true, onClick = { if (!state.configBusy) settingsOpen = true })
                     }
                 }
                 when (state.phase) {
                     CoreAiPhase.COMPOSE -> {
                         item { OutlinedTextField(state.request, viewModel::request, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_request)) }, minLines = 3) }
-                        item { Button(onClick = { files.launch(arrayOf("image/*", "application/pdf", "text/*")) }, enabled = !state.fileBusy && !state.configBusy) { Text(stringResource(R.string.core_ai_add_files)) } }
-                        items(state.files, key = { it.id }) { file -> OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-                            Text(file.name); Text("${file.mimeType} · ${file.size} B")
-                            TextButton(onClick = { viewModel.removeFile(file.id) }, enabled = !state.fileBusy) { Text(stringResource(R.string.core_ai_remove)) }
-                        } } }
+                        item { ListSection(title = stringResource(R.string.txn_section_attachments)) {
+                            state.files.forEach { file ->
+                                item(leading = { Icon(if (file.mimeType.startsWith("image/")) Icons.Rounded.Image else Icons.Rounded.Description, null) },
+                                    headline = { Text(file.name, maxLines = 1) },
+                                    supporting = { Text(android.text.format.Formatter.formatShortFileSize(LocalContext.current, file.size.toLong())) },
+                                    trailing = { TooltipIconButton(Icons.Rounded.Close, stringResource(R.string.core_ai_remove), { viewModel.removeFile(file.id) }, enabled = !state.fileBusy) })
+                            }
+                            item(leading = { Icon(Icons.Rounded.AttachFile, null) }, headline = { Text(stringResource(R.string.core_ai_add_files)) },
+                                onClick = { if (!state.fileBusy && !state.configBusy) files.launch(arrayOf("image/*", "application/pdf", "text/*")) })
+                        } }
                         if (state.configDirty) item { Text(stringResource(R.string.core_ai_save_config_first)) }
                         item { Text(stringResource(R.string.core_ai_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
@@ -145,8 +144,9 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
                         val groups = listOf(0 to R.string.core_ai_accounts, 1 to R.string.core_ai_additions, 2 to R.string.core_ai_updates, 3 to R.string.core_ai_deletions)
                         groups.forEach { (group, label) ->
                             val entries = state.items.filter { proposalGroup(it.proposal.change) == group && (state.phase != CoreAiPhase.SAVED || it.keep) }
-                            if (entries.isNotEmpty()) item { Text(stringResource(label), style = MaterialTheme.typography.titleLarge) }
-                            items(entries, key = { it.proposal.index.toString() }) { entry -> ProposalCard(entry, state, { viewModel.keep(entry.proposal.index, it) }, { editing = entry }) }
+                            if (entries.isNotEmpty()) item(key = "group-$group") { ListSection(title = stringResource(label)) {
+                                entries.forEach { entry -> row { shape -> ProposalCard(entry, state, shape, { viewModel.keep(entry.proposal.index, it) }, { editing = entry }) } }
+                            } }
                         }
                         if (state.items.isEmpty()) item { Text(stringResource(R.string.core_ai_no_changes)) }
                     }
@@ -161,18 +161,13 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
             }
         }
     }
-    if (confirmBack) AlertDialog(onDismissRequest = { confirmBack = false }, title = { Text(stringResource(R.string.core_ai_leave_title)) },
-        text = { Text(stringResource(R.string.core_ai_leave_body)) },
-        confirmButton = { TextButton(onClick = { confirmBack = false; onBack() }) { Text(stringResource(R.string.core_ai_leave)) } },
-        dismissButton = { TextButton(onClick = { confirmBack = false }) { Text(stringResource(R.string.core_ai_keep_reviewing)) } })
-    if (confirmSave) AlertDialog(onDismissRequest = { confirmSave = false }, title = { Text(stringResource(R.string.core_ai_apply)) },
-        text = { Text(stringResource(R.string.core_ai_apply_warning, state.items.count { it.keep })) },
-        confirmButton = { TextButton(onClick = { confirmSave = false; viewModel.apply() }) { Text(stringResource(R.string.core_ai_apply)) } },
-        dismissButton = { TextButton(onClick = { confirmSave = false }) { Text(stringResource(R.string.core_ai_cancel)) } })
-    if (confirmRestart) AlertDialog(onDismissRequest = { confirmRestart = false }, title = { Text(stringResource(R.string.core_ai_restart)) },
-        text = { Text(stringResource(R.string.core_ai_restart_warning)) },
-        confirmButton = { TextButton(onClick = { confirmRestart = false; viewModel.restart() }) { Text(stringResource(R.string.core_ai_restart)) } },
-        dismissButton = { TextButton(onClick = { confirmRestart = false }) { Text(stringResource(R.string.core_ai_cancel)) } })
+    if (confirmBack) ConfirmDialog(stringResource(R.string.core_ai_leave_title), stringResource(R.string.core_ai_leave_body), stringResource(R.string.core_ai_leave),
+        { confirmBack = false; onBack() }, { confirmBack = false }, destructive = true)
+    if (confirmSave) ConfirmDialog(stringResource(R.string.core_ai_apply), stringResource(R.string.core_ai_apply_warning, state.items.count { it.keep }),
+        stringResource(R.string.core_ai_apply), { confirmSave = false; viewModel.apply() }, { confirmSave = false })
+    if (confirmRestart) ConfirmDialog(stringResource(R.string.core_ai_restart), stringResource(R.string.core_ai_restart_warning), stringResource(R.string.core_ai_restart),
+        { confirmRestart = false; viewModel.restart() }, { confirmRestart = false }, destructive = true)
+    if (settingsOpen) ConfigurationSheet(state, viewModel) { settingsOpen = false }
     state.passwordFile?.let { file ->
         var password by remember(file.id) { mutableStateOf("") }
         AlertDialog(onDismissRequest = { viewModel.password(null) }, title = { Text(stringResource(R.string.core_ai_pdf_password)) },
@@ -189,42 +184,49 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
 }
 private tailrec fun Context.findActivity(): Activity? = when (this) { is Activity -> this; is ContextWrapper -> baseContext.findActivity(); else -> null }
 
-@Composable private fun Configuration(state: CoreAiUiState, vm: CoreAiViewModel) {
+/** Provider preset and protocol, address, model (picked from the provider's list), API key. */
+@Composable private fun ConfigurationSheet(state: CoreAiUiState, vm: CoreAiViewModel, onDismiss: () -> Unit) {
     val enabled = !state.loading && !state.configBusy && state.phase == CoreAiPhase.COMPOSE
     var pickingModel by remember { mutableStateOf(false) }
-    OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FormSheet(stringResource(R.string.core_ai_configuration), onDismiss, { vm.saveConfig() }, busy = state.configBusy,
+        confirmEnabled = enabled && state.configDirty, confirmLabel = stringResource(R.string.core_ai_save_configuration), error = state.error) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(state.config.protocol == AiProtocol.CLAUDE, { vm.protocol(AiProtocol.CLAUDE) }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_claude)) })
             FilterChip(state.config.protocol == AiProtocol.OPEN_AI_COMPATIBLE && state.config.baseUrl.contains("openrouter.ai"), { vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE, "https://openrouter.ai/api/v1") }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_openrouter)) })
             FilterChip(state.config.protocol == AiProtocol.OPEN_AI_COMPATIBLE && !state.config.baseUrl.contains("openrouter.ai"), { vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE, "") }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_custom)) })
         }
-        FlowRow { AiProtocol.entries.forEach { protocol -> FilterChip(selected = state.config.protocol == protocol, onClick = { vm.protocol(protocol) }, enabled = enabled,
-            label = { Text(if (protocol == AiProtocol.CLAUDE) "Claude" else "OpenAI compatible") }) } }
-        OutlinedTextField(state.config.baseUrl, { value -> vm.configChanged { it.copy(baseUrl = value) } }, Modifier.fillMaxWidth(), enabled = enabled,
+        OutlinedTextField(state.config.baseUrl, { value -> vm.configChanged { it.copy(baseUrl = value) } }, Modifier.fillMaxWidth(), enabled = enabled, singleLine = true,
             label = { Text(stringResource(R.string.core_ai_base_url)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-        OutlinedTextField(state.config.model, { value -> vm.configChanged { it.copy(model = value) } }, Modifier.fillMaxWidth(), enabled = enabled, label = { Text(stringResource(R.string.core_ai_model)) })
-        OutlinedTextField(state.config.apiKey, { value -> vm.configChanged { it.copy(apiKey = value, removeKey = false) } }, Modifier.fillMaxWidth(), enabled = enabled,
+        OutlinedTextField(state.config.model, { value -> vm.configChanged { it.copy(model = value) } }, Modifier.fillMaxWidth(), enabled = enabled, singleLine = true,
+            label = { Text(stringResource(R.string.core_ai_model)) },
+            trailingIcon = { TooltipIconButton(Icons.AutoMirrored.Rounded.List, stringResource(R.string.core_ai_models), { vm.loadModels(); pickingModel = true },
+                enabled = enabled && !state.modelLoading && !state.config.removeKey) })
+        OutlinedTextField(state.config.apiKey, { value -> vm.configChanged { it.copy(apiKey = value, removeKey = false) } }, Modifier.fillMaxWidth(), enabled = enabled, singleLine = true,
             label = { Text(stringResource(if (state.settings?.hasKey == true) R.string.core_ai_key_replace else R.string.core_ai_key)) },
             visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.config.removeKey, { value -> vm.configChanged { it.copy(removeKey = value, apiKey = "") } }, enabled = enabled)
-            Text(stringResource(R.string.core_ai_delete_key), Modifier.weight(1f)) }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = vm::saveConfig, enabled = enabled && state.configDirty) { Text(stringResource(R.string.core_ai_save_configuration)) }
-            OutlinedButton(onClick = { vm.loadModels(); pickingModel = true }, enabled = enabled && !state.modelLoading && !state.config.removeKey) { Text(stringResource(R.string.core_ai_models)) }
+        if (state.settings?.hasKey == true) ListSection {
+            item(headline = { Text(stringResource(R.string.core_ai_delete_key)) }, trailing = { HootbookSwitch(state.config.removeKey, null, enabled = enabled) },
+                toggled = state.config.removeKey, onToggle = { value -> if (enabled) vm.configChanged { it.copy(removeKey = value, apiKey = "") } })
         }
-        if (pickingModel) HootbookModalBottomSheet(onDismissRequest = { pickingModel = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.core_ai_models), style = MaterialTheme.typography.titleLarge)
-                OutlinedTextField(state.modelSearch, vm::modelSearch, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_search_models)) })
-                LazyColumn(Modifier.heightIn(max = 480.dp)) {
-                    items(state.models.filter { state.modelSearch.isBlank() || it.id.contains(state.modelSearch, true) || it.displayName.contains(state.modelSearch, true) }, key = { it.id }) { model ->
-                        ListItem(headlineContent = { Text(model.displayName) }, supportingContent = { Text(model.id + if (model.readsImages) " ◉" else "") },
-                            leadingContent = { RadioButton(state.config.model == model.id, onClick = { vm.selectModel(model.id); pickingModel = false }, enabled = enabled) })
-                    }
+    }
+    if (pickingModel) HootbookModalBottomSheet(onDismissRequest = { pickingModel = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.core_ai_models), Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.headlineSmall)
+            SearchBarBox(searchQuery = androidx.compose.ui.text.input.TextFieldValue(state.modelSearch), onSearchQueryChange = { vm.modelSearch(it.text) },
+                label = { Text(stringResource(R.string.core_ai_search_models)) }, leadingIcon = { Icon(Icons.Rounded.Search, null) })
+            val models = state.models.filter { state.modelSearch.isBlank() || it.id.contains(state.modelSearch, true) || it.displayName.contains(state.modelSearch, true) }
+            LazyColumn(Modifier.heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                items(models.size, key = { models[it].id }) { index -> val model = models[index]
+                    io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(headline = { Text(model.displayName) },
+                        supporting = { Text(model.id) },
+                        trailing = { Row { if (model.readsImages) Icon(Icons.Rounded.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (state.config.model == model.id) Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary) } },
+                        selected = state.config.model == model.id, shape = ListItemPosition.from(index, models.size).toShape(), padding = PaddingValues(0.dp),
+                        onClick = { if (enabled) { vm.selectModel(model.id); pickingModel = false } })
                 }
             }
         }
-    } }
+    }
 }
 @Composable private fun RunningProgress(state: CoreAiUiState) {
     var seconds by remember { mutableLongStateOf(0) }
@@ -234,39 +236,44 @@ private tailrec fun Context.findActivity(): Activity? = when (this) { is Activit
     Text(stringResource(R.string.core_ai_progress, state.settings?.model.orEmpty(), turn.toInt(), seconds.toInt()))
 }
 private fun proposalGroup(change: AiChange) = when (change) { is AiChange.AddTransaction -> 1; is AiChange.UpdateTransaction -> 2; is AiChange.DeleteTransaction -> 3; else -> 0 }
-@Composable private fun ProposalCard(item: CoreAiReviewItem, state: CoreAiUiState, onKeep: (Boolean) -> Unit, onEdit: () -> Unit) {
+/** One proposed change: a checkbox to keep it, what it is, its amount; a new transaction can be corrected. */
+@Composable private fun ProposalCard(item: CoreAiReviewItem, state: CoreAiUiState, shape: androidx.compose.foundation.shape.CornerBasedShape,
+    onKeep: (Boolean) -> Unit, onEdit: () -> Unit) {
     val change = item.proposal.change
     val draft = item.edited ?: (change as? AiChange.AddTransaction)?.draft
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (state.phase == CoreAiPhase.REVIEW) Checkbox(item.keep, onKeep, enabled = !state.saving)
-            if (draft != null) {
-                val category = state.categories.find { it.id == draft.categoryId }
-                CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(40.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(draft.merchant.ifBlank { category?.displayName ?: CoreKindLabel(draft.kind) }, style = MaterialTheme.typography.titleSmall)
-                    Text("${draft.dateTime.year}-${draft.dateTime.month}-${draft.dateTime.day} · ${category?.displayName.orEmpty()}", style = MaterialTheme.typography.bodySmall)
-                    (change as? AiChange.AddTransaction)?.possibleDuplicate?.let { Text(stringResource(R.string.core_ai_duplicate, it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error) }
+    val reviewing = state.phase == CoreAiPhase.REVIEW
+    io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
+        leading = { if (reviewing) Checkbox(item.keep, onKeep, enabled = !state.saving)
+            else draft?.let { d -> CoreRecordIcon(state.categories.find { it.id == d.categoryId }?.icon.orEmpty(), Modifier.size(40.dp)) } },
+        headline = { Text(when {
+            draft != null -> draft.merchant.ifBlank { state.categories.find { it.id == draft.categoryId }?.displayName ?: CoreKindLabel(draft.kind) }
+            change is AiChange.UpdateTransaction -> "${change.before.merchant} → ${change.after.merchant}"
+            change is AiChange.DeleteTransaction -> change.before.merchant
+            else -> proposalText(change, state).lineSequence().first()
+        }, maxLines = 2) },
+        supporting = { Column {
+            when {
+                draft != null -> {
+                    Text(listOfNotNull(draft.dateTime.let { io.github.hootkit_dev.hootbook.utils.DateFormats.shortDate(java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt())) },
+                        state.categories.find { it.id == draft.categoryId }?.displayName).joinToString(" · "))
+                    (change as? AiChange.AddTransaction)?.possibleDuplicate?.let { Text(stringResource(R.string.core_ai_duplicate, it), color = MaterialTheme.colorScheme.error) }
                 }
-                Text(CurrencyFormatter.formatCurrency(draft.amount, draft.currency), fontWeight = FontWeight.SemiBold)
-                IconButton(onClick = onEdit, enabled = !state.saving && state.phase == CoreAiPhase.REVIEW) { Icon(Icons.Rounded.Edit, stringResource(R.string.core_ai_edit)) }
-            } else Column(Modifier.weight(1f)) {
-                when (change) {
-                    is AiChange.UpdateTransaction -> {
-                        Text("${change.before.merchant} → ${change.after.merchant}", style = MaterialTheme.typography.titleSmall)
-                        Text(CurrencyFormatter.formatCurrency(change.before.amount, change.before.currency))
-                        Text(proposalText(change, state), style = MaterialTheme.typography.bodySmall)
-                    }
-                    is AiChange.DeleteTransaction -> {
-                        Text(change.before.merchant, style = MaterialTheme.typography.titleSmall)
-                        Text(CurrencyFormatter.formatCurrency(change.before.amount, change.before.currency), color = MaterialTheme.colorScheme.error)
-                        change.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    }
-                    else -> Text(proposalText(change, state), style = MaterialTheme.typography.bodyMedium)
-                }
+                change is AiChange.DeleteTransaction -> change.reason?.let { Text(it) }
+                change is AiChange.UpdateTransaction -> Text(proposalText(change, state).lines().drop(1).take(2).joinToString("\n"))
+                else -> Text(proposalText(change, state).lines().drop(1).filter { it.isNotBlank() }.joinToString("\n"))
             }
-        }
-    }
+        } },
+        trailing = { Row(verticalAlignment = Alignment.CenterVertically) {
+            when {
+                draft != null -> Text(CoreMoneyPresentation.format(draft.amount, draft.currency), style = MaterialTheme.typography.titleMedium)
+                change is AiChange.DeleteTransaction -> Text(CoreMoneyPresentation.format(change.before.amount, change.before.currency), style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.error)
+                change is AiChange.UpdateTransaction -> Text(CoreMoneyPresentation.format(change.before.amount, change.before.currency), style = MaterialTheme.typography.titleMedium)
+            }
+            if (draft != null && reviewing) TooltipIconButton(Icons.Rounded.Edit, stringResource(R.string.core_ai_edit), onEdit, enabled = !state.saving)
+        } },
+        shape = shape, padding = PaddingValues(0.dp),
+    )
 }
 private fun proposalText(change: AiChange, state: CoreAiUiState): String {
     fun account(id: String) = state.accounts.find { it.id == id }?.name ?: id
@@ -309,42 +316,34 @@ private fun proposalText(change: AiChange, state: CoreAiUiState): String {
         }
     } }
 }
+/** Correct a proposed transaction before saving it. */
 @Composable private fun DraftDialog(index: UInt, draft: AiTransactionDraft, state: CoreAiUiState, onDismiss: () -> Unit, onSave: (CoreAiDraftForm) -> Unit) {
     var form by remember(index) { mutableStateOf(CoreAiDraftForm.from(draft)) }
-    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.core_ai_edit), style = MaterialTheme.typography.headlineSmall)
-            Picker(stringResource(R.string.core_ai_kind), form.kind.name, listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER).map { it to it.name }) { form = form.copy(kind = it) }
-            AiField(stringResource(R.string.core_ai_amount), form.amount, true) { form = form.copy(amount = it) }
-            AiField(stringResource(R.string.core_ai_currency), form.currency) { form = form.copy(currency = it) }
-            AiField(stringResource(R.string.core_ai_date), form.dateTime) { form = form.copy(dateTime = it) }
-            AiField(stringResource(R.string.core_ai_merchant), form.merchant) { form = form.copy(merchant = it) }
-            val refs: List<Pair<AiAccountRef?, String>> = listOf(null to stringResource(R.string.core_ai_default)) +
-                state.accounts.map { AiAccountRef.Existing(it.id) to it.name } + state.items.mapNotNull { (it.proposal.change as? AiChange.CreateAccount)?.let { account -> AiAccountRef.New(account.reference) to "${account.reference} · ${account.name}" } }
-            Picker(stringResource(R.string.core_ai_account), refs.find { it.first == form.account }?.second ?: form.account.toString(), refs) { form = form.copy(account = it) }
-            val categories = state.categories.filter { it.kind == if (form.kind == TransactionKind.INCOME) CategoryKind.INCOME else CategoryKind.EXPENSE }
-            Picker(stringResource(R.string.core_ai_category), state.categories.find { it.id == form.categoryId }?.displayName ?: form.categoryId ?: "—",
-                listOf(null to "—") + categories.map { it.id to it.displayName }) { form = form.copy(categoryId = it, subcategoryId = null) }
-            val subcategories = state.categories.find { it.id == form.categoryId }?.subcategories.orEmpty()
-            Picker(stringResource(R.string.core_ai_subcategory), subcategories.find { it.id == form.subcategoryId }?.displayName ?: form.subcategoryId ?: "—",
-                listOf(null to "—") + subcategories.map { it.id to it.displayName }) { form = form.copy(subcategoryId = it) }
-            AiField(stringResource(R.string.core_ai_notes), form.notes) { form = form.copy(notes = it) }
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            if (form.kind == TransactionKind.TRANSFER) {
-                Picker(stringResource(R.string.core_ai_to_account), refs.find { it.first == form.toAccount }?.second ?: form.toAccount.toString(), refs) { form = form.copy(toAccount = it) }
-                AiField(stringResource(R.string.core_ai_to_currency), form.toCurrency) { form = form.copy(toCurrency = it) }
-                AiField(stringResource(R.string.core_ai_to_amount), form.toAmount, true) { form = form.copy(toAmount = it) }
+    FormSheet(stringResource(R.string.core_ai_edit), onDismiss, { onSave(form) }, confirmLabel = stringResource(R.string.core_ai_done), error = state.error) {
+        SelectField(stringResource(R.string.core_ai_kind), CoreKindLabel(form.kind), listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER).map { it to CoreKindLabel(it) },
+            { form = form.copy(kind = it) })
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FormTextField(form.amount, stringResource(R.string.core_ai_amount), { form = form.copy(amount = it) }, Modifier.weight(1.4f), decimal = true)
+            FormTextField(form.currency, stringResource(R.string.core_ai_currency), { form = form.copy(currency = it.uppercase()) }, Modifier.weight(1f))
+        }
+        DateTimeField(form.dateTime, stringResource(R.string.core_ai_date), { form = form.copy(dateTime = it) }, allowClear = false)
+        FormTextField(form.merchant, stringResource(R.string.core_ai_merchant), { form = form.copy(merchant = it) })
+        val refs: List<Pair<AiAccountRef?, String>> = listOf(null to stringResource(R.string.core_ai_default)) +
+            state.accounts.map { AiAccountRef.Existing(it.id) to it.name } + state.items.mapNotNull { (it.proposal.change as? AiChange.CreateAccount)?.let { account -> AiAccountRef.New(account.reference) to "${account.reference} · ${account.name}" } }
+        SelectField(stringResource(R.string.core_ai_account), refs.find { it.first == form.account }?.second ?: form.account.toString(), refs, { form = form.copy(account = it) })
+        val categories = state.categories.filter { it.kind == if (form.kind == TransactionKind.INCOME) CategoryKind.INCOME else CategoryKind.EXPENSE }
+        SelectField(stringResource(R.string.core_ai_category), state.categories.find { it.id == form.categoryId }?.displayName ?: form.categoryId ?: "—",
+            listOf(null to "—") + categories.map { it.id to it.displayName }, { form = form.copy(categoryId = it, subcategoryId = null) })
+        val subcategories = state.categories.find { it.id == form.categoryId }?.subcategories.orEmpty()
+        if (subcategories.isNotEmpty()) SelectField(stringResource(R.string.core_ai_subcategory), subcategories.find { it.id == form.subcategoryId }?.displayName ?: form.subcategoryId ?: "—",
+            listOf(null to "—") + subcategories.map { it.id to it.displayName }, { form = form.copy(subcategoryId = it) })
+        FormTextField(form.notes, stringResource(R.string.core_ai_notes), { form = form.copy(notes = it) })
+        if (form.kind == TransactionKind.TRANSFER) {
+            SelectField(stringResource(R.string.core_ai_to_account), refs.find { it.first == form.toAccount }?.second ?: form.toAccount.toString(), refs, { form = form.copy(toAccount = it) })
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FormTextField(form.toAmount, stringResource(R.string.core_ai_to_amount), { form = form.copy(toAmount = it) }, Modifier.weight(1.4f), decimal = true)
+                FormTextField(form.toCurrency, stringResource(R.string.core_ai_to_currency), { form = form.copy(toCurrency = it.uppercase()) }, Modifier.weight(1f))
             }
-            Button(onClick = { onSave(form) }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.core_ai_done)) }
-            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_ai_cancel)) }
         }
     }
-}
-@Composable private fun AiField(label: String, value: String, decimal: Boolean = false, onValue: (String) -> Unit) {
-    OutlinedTextField(value, onValue, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Text))
-}
-@Composable private fun <T> Picker(label: String, selected: String, values: List<Pair<T, String>>, onPick: (T) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box { OutlinedButton(onClick = { open = true }) { Text("$label · $selected") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) { values.forEach { (id, name) -> DropdownMenuItem(text = { Text(name) }, onClick = { open = false; onPick(id) }) } } }
 }

@@ -17,17 +17,22 @@ data class CoreDisplayedMoney(
 
 /** Presentation-only formatting. Conversion always calls Core; no rates or arithmetic live here. */
 object CoreMoneyPresentation {
+    /**
+     * The amount with its currency's symbol (¥ 10,554.00), at Core's exact precision. [useCode]
+     * writes the ISO code instead, for lists that mix currencies sharing a symbol. A custom
+     * symbol set in Currencies wins; a blank one falls back to the code.
+     */
     fun format(amount: BigDecimal?, currency: String, customSymbolMap: Map<String, String> = emptyMap(),
-        locale: Locale = Locale.getDefault()): String {
+        locale: Locale = Locale.getDefault(), useCode: Boolean = false): String {
         if (amount == null) return "— $currency"
-        val symbol = if (currency in customSymbolMap) customSymbolMap.getValue(currency).ifBlank { currency }
-            else runCatching { java.util.Currency.getInstance(currency).getSymbol(locale) }.getOrDefault(currency)
+        val label = if (useCode) currency else customSymbolMap[currency]?.ifBlank { currency }
+            ?: runCatching { java.util.Currency.getInstance(currency).getSymbol(locale) }.getOrDefault(currency)
         val formatter = NumberFormat.getNumberInstance(locale).apply {
             maximumFractionDigits = amount.scale().coerceAtLeast(0)
             minimumFractionDigits = amount.scale().coerceAtLeast(0)
             maximumIntegerDigits = 309
         }
-        return "$symbol ${formatter.format(amount)} · $currency"
+        return "$label ${formatter.format(amount)}"
     }
 
     suspend fun convert(coreCurrency: CurrencyInterface, amount: BigDecimal, from: String, to: String): CoreDisplayedMoney {

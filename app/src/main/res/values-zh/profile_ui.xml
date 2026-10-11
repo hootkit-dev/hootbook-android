@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_total_income">累计收入</string>
+    <string name="profile_total_expense">累计支出</string>
+    <string name="profile_subscriptions">订阅</string>
+    <string name="merchant_icons">商户图标</string>
+    <string name="merchant_icons_help">交易中商户显示的图标</string>
+    <string name="profile_avatar">头像</string>
+    <string name="profile_default_banner">恢复默认横幅</string>
+    <string name="profile_add_contact">添加联系人</string>
+    <string name="profile_no_contacts">借贷记录中的联系人会显示在这里</string>
+    <string name="profile_pick_photo">从相册选择</string>
+    <string name="micon_current">当前图标</string>
+    <string name="micon_enter_name">请输入商户名称</string>
+    <string name="micon_custom">自定义图标</string>
+    <string name="micon_brand">内置品牌图标</string>
+    <string name="micon_none">分类图标</string>
+    <string name="micon_remove">移除自定义图标</string>
+    <string name="micon_app_store">App Store</string>
+    <string name="micon_use">使用</string>
+    <string name="micon_search_note">搜索会把商户名称发送到 Apple 的公开 App Store 搜索。从相册选择的图片只保存在本机。</string>
+    <string name="profile_avatar_background">头像背景色</string>
+    <plurals name="profile_transactions">
+        <item quantity="other">%1$d 笔交易</item>
+    </plurals>
+</resources>

@@ -71,15 +71,12 @@
     <string name="sync_debug_error">Last error</string>
     <string name="sync_debug_project">Firestore project</string>
     <string name="sync_debug_protocol">Protocol version</string>
-    <string name="seamless_sync_section">Seamless sync</string>
     <string name="sync_entry_signed_out">Off · not signed in</string>
     <string name="sync_entry_setup">Signed in as %1$s · finish setting up</string>
     <string name="sync_entry_on">On · %1$s</string>
     <string name="sync_entry_paused">Paused · %1$s</string>
-    <string name="full_backup_section">Full backup</string>
     <string name="full_backup_body">A complete copy of your data, exported or restored only when you ask.</string>
     <string name="backup_destination">Where</string>
-    <string name="provider_local_file">Local file</string>
     <string name="backup_export_to">Export to %1$s</string>
     <string name="backup_export_local_body">Choose what to include, then where to save the file</string>
     <string name="backup_export_cloud_body">Upload a full backup now</string>

@@ -6,7 +6,7 @@
     <string name="account_show_less">Show less</string>
     <string name="account_section_expanded">All accounts shown</string>
     <string name="account_section_collapsed">Summary only; account details are collapsed</string>
-    <string name="onboarding_import_backup">Import old backup</string>
+    <string name="onboarding_import_backup">Restore a backup</string>
     <string name="onboarding_import_description">Bring back your accounts, transactions and preferences from a Hootbook ZIP or JSON backup. No new account needed.</string>
     <string name="onboarding_sync_title">Turn on sync</string>
     <string name="onboarding_sync_description">Sign in with Google to keep one ledger on all your devices. If another device already syncs, its accounts and transactions come here: no backup to import, no account to add.</string>

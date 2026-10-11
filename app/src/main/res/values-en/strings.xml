@@ -14,17 +14,9 @@
     <string name="security_section">Security</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">Protect your data with biometric authentication</string>
-    <string name="lock_timeout">Lock Timeout</string>
-    <string name="lock_timeout_immediate">Lock immediately when app goes to background</string>
-    <string name="lock_timeout_1min">Lock after 1 minute in background</string>
-    <string name="lock_timeout_minutes">Lock after %1$d minutes in background</string>
-    <string name="export_data">Export Data</string>
-    <string name="immediately">Immediately</string>
     <string name="one_minute">1 minute</string>
-    <string name="minutes_format">%1$d minutes</string>
     <string name="cancel">Cancel</string>
     <string name="export">Export</string>
-    <string name="select_data_to_backup">Select data to backup:</string>
     <string name="transactional_data">Transactional Data</string>
     <string name="profile_data">Profile Data</string>
     <string name="budgets">Budgets</string>
@@ -214,7 +206,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">%1$d TXNS</string>
     <string name="average">AVERAGE</string>
     <string name="per_day"> /day</string>
     <string name="percentage_of_total">%1$d%% OF TOTAL</string>
@@ -250,9 +241,7 @@
     <string name="per_month">/ Month</string>
     <!-- Edit Profile & Profile -->
     <string name="edit_profile">Edit Profile</string>
-    <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
-    <string name="transactions_count_format">Transactions: %1$d</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
     <string name="upcoming">Upcoming</string>
@@ -266,7 +255,6 @@
     <string name="bank_name_hint">Bank Name (e.g., HDFC, SBI)</string>
     <string name="last_4_digits_hint">Last 4 Digits of Account</string>
     <string name="last_4_digits_placeholder">e.g. 1234</string>
-    <string name="stay_informed">Stay Informed</string>
     <string name="continue_action">Continue</string>
     <!-- Mock Messages -->
     <string name="notification">Notification</string>
@@ -365,31 +353,22 @@
     <!-- About Screen -->
     <string name="about">About</string>
     <string name="hootbook_logo_cd">Hootbook Logo</string>
-    <string name="version_format">Version %1$s, db-v%2$d</string>
     <string name="website">Website</string>
     <string name="github">Github</string>
     <string name="discord">Discord</string>
     <string name="join_community">Join our community</string>
-    <string name="faq">FAQ</string>
-    <string name="faq_desc">Frequently asked questions</string>
-    <string name="guides">Guides</string>
-    <string name="guides_desc">How to use Hootbook</string>
     <string name="report_bug">Report Bug</string>
     <string name="report_bug_desc">Help us improve Hootbook</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="privacy_policy_desc">Your data usage and privacy</string>
-    <string name="terms_of_service">Terms of Service</string>
-    <string name="terms_of_service_desc">Rules for using the app</string>
     <string name="licenses">Licenses</string>
     <string name="licenses_desc">Open source libraries</string>
     <string name="delete_all_data">Delete All Data</string>
     <string name="delete_all_data_desc">Permanently clear all records</string>
-    <string name="built_with_love">Built with ❤️ for privacy</string>
     <string name="delete_all_data_confirm_title">Delete All Data?</string>
     <string name="delete_all_data_confirm_desc">This action will permanently delete all your transactions, budgets, subscriptions, and settings. This cannot be undone.</string>
     <string name="delete_all">Delete All</string>
     <!-- Licenses Screen -->
-    <string name="license_version_format">v%1$s, db-v%2$d</string>
     <string name="license_disclaimer_software">THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</string>
     <string name="license_disclaimer_rates">The exchange rates displayed within this app are for informational purposes only and should not be used for investment decisions. These rates are estimates and may not reflect actual rates. By using this app, you acknowledge that you understand and accept these limitations and that you assume full responsibility for any decisions made based on the information provided within the app.</string>
     <string name="powered_by">Powered by Kotlin Compose</string>
@@ -457,7 +436,6 @@
     <!-- Rules Dialogs -->
     <!-- SMS Scanning & Workers -->
     <!-- Time Selection -->
-    <string name="select_time">Select Time</string>
     <!-- Transactions, Indicators & Categories -->
     <string name="recurring">Recurring</string>
     <string name="balance_after_format">Bal: %1$s</string>
@@ -488,8 +466,6 @@
     <string name="notifications_subtitle">Manage reminder notification settings</string>
     <string name="about_subtitle">App version, source code and more</string>
     <!-- Currency Settings -->
-    <string name="currency">Currency</string>
-    <string name="currency_subtitle">Exchange rates and currency preferences</string>
     <string name="currency_settings_title">Currency</string>
     <string name="unified_currency">Unified Currency</string>
     <string name="unified_currency_subtitle">Display all amounts in a single currency</string>
@@ -553,8 +529,6 @@
     <string name="font_default_sub">System</string>
     <string name="font_snpro">SN Pro</string>
     <string name="font_snpro_sub">Modern Mono</string>
-    <string name="upcoming_transactions_section">Upcoming Transactions</string>
-    <string name="upcoming_transactions_desc">Get reminders for upcoming payments</string>
     <string name="home_title">Home</string>
     <string name="add_transaction_subscription_cd">Add Transaction or Subscription</string>
     <string name="selected_cd">Selected</string>
@@ -720,7 +694,6 @@
     <string name="delete_record">Delete Record</string>
     <string name="due_date">Due Date</string>
     <string name="edit_record">Edit Record</string>
-    <string name="no_contacts_desc">No contacts added yet. Tap the View All button to add people.</string>
     <string name="person_avatar">Avatar</string>
     <string name="record_options">Record Options</string>
     <string name="reminder_message_format">Hi %1$s, friendly reminder regarding our ledger balance of %2$s.</string>

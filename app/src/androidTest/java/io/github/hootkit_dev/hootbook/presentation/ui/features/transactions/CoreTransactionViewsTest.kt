@@ -31,7 +31,7 @@ class CoreTransactionViewsTest {
         rule.setContent { HootbookTheme(dynamicColor = false) {
             TransactionItem(row, currentAccountId = "target/id")
         } }
-        rule.onNodeWithText("+ " + CoreMoneyPresentation.format(row.toAmount, "USD")).assertIsDisplayed()
+        rule.onNodeWithText("+" + CoreMoneyPresentation.format(row.toAmount, "USD")).assertIsDisplayed()
         rule.onNodeWithText(CoreMoneyPresentation.format(row.amount, "CNY"), substring = true).assertDoesNotExist()
     }
 
@@ -66,7 +66,7 @@ class CoreTransactionViewsTest {
         restoration.emulateSavedInstanceStateRestore()
         rule.onNodeWithTag("amount_editor").assertTextContains("987654321.123456789")
         rule.onNodeWithText(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getString(io.github.hootkit_dev.hootbook.R.string.done)).performClick()
-        rule.onNodeWithTag("save_transaction").performScrollTo().performClick()
+        rule.onNodeWithTag("save_transaction").performClick()
         rule.runOnIdle { assertEquals(BigDecimal("987654321.123456789"), saved!!.toDraft().amount) }
     }
 

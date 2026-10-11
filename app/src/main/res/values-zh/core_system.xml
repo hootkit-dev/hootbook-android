@@ -6,20 +6,8 @@
     <string name="core_system_preferences_failed">通知偏好保存失败，已保留原设置，请重试。</string>
     <string name="core_system_subscriptions_failed">订阅加载失败，请重试。</string>
     <string name="core_system_retry">重试</string>
-    <string name="core_system_settings_unavailable">此设备未提供对应系统设置。</string>
     <string name="core_system_permission_granted">Android 已允许通知。</string>
-    <string name="core_system_permission_needed">Android 通知权限或应用通知开关未开启。</string>
-    <string name="core_system_allow_notifications">允许通知</string>
     <string name="core_system_master">启用每日与订阅提醒</string>
-    <string name="core_system_daily_scan">提醒记录每日账目</string>
-    <string name="core_system_daily_scan_help">没有需要提醒的到期订阅时，显示每日记账提醒。</string>
-    <string name="core_system_reminder_time">每日提醒时间</string>
-    <string name="core_system_hour">小时（0–23）</string>
-    <string name="core_system_minute">分钟（0–59）</string>
-    <string name="core_system_exact_enabled">可使用精确提醒。</string>
-    <string name="core_system_inexact_fallback">Android 可能延迟提醒；非精确闹钟与后台任务仍可使用。</string>
-    <string name="core_system_exact_settings">精确闹钟设置（可选）</string>
     <string name="core_system_subscriptions">订阅提醒</string>
-    <string name="core_system_core_dates">财务引擎判断今天或明天到期的订阅。以下开关仅控制通知。</string>
     <string name="core_system_no_subscriptions">暂无订阅。</string>
 </resources>

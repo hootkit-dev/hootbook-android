@@ -12,8 +12,8 @@ class CoreInvestmentPresentationTest {
         assertEquals("—", investmentDecimal(null))
     }
     @Test fun snapshotDatesAndSuccessTimeAreDifferentValues() {
-        assertEquals("2026-10-01", investmentDate(LocalDate(2026, 10u, 1u)))
-        assertEquals("2026-10-11 09:05:03", investmentTime(LocalDateTime(2026, 10u, 11u, 9u, 5u, 3u, 0u)))
+        assertEquals(io.github.hootkit_dev.hootbook.utils.DateFormats.shortDate(java.time.LocalDate.of(2026, 10, 1)), investmentDate(LocalDate(2026, 10u, 1u)))
+        assertEquals(io.github.hootkit_dev.hootbook.utils.DateFormats.shortDate(java.time.LocalDate.of(2026, 10, 11)) + " 09:05", investmentTime(LocalDateTime(2026, 10u, 11u, 9u, 5u, 3u, 0u)))
         assertEquals("—", investmentTime(null))
     }
     @Test fun sameInstrumentInDifferentModelsOrCurrenciesHasDistinctSelectionIdentity() {

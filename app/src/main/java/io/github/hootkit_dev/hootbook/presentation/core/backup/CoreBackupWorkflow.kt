@@ -150,15 +150,15 @@ internal fun backupFailureText(failure: Throwable, context: android.content.Cont
     val message = when (failure) {
         is CoreBackupUiException -> failure.resource
         is CoreException.Invalid -> when {
-            failure.field == "password" && failure.reason == InvalidReason.REQUIRED -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_needs_password
-            failure.field == "password" -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_wrong_password
-            failure.reason == InvalidReason.UNKNOWN_VALUE -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_unsupported
-            else -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_invalid
+            failure.field == "password" && failure.reason == InvalidReason.REQUIRED -> io.github.hootkit_dev.hootbook.R.string.backup_err_needs_password
+            failure.field == "password" -> io.github.hootkit_dev.hootbook.R.string.backup_err_wrong_password
+            failure.reason == InvalidReason.UNKNOWN_VALUE -> io.github.hootkit_dev.hootbook.R.string.backup_err_unsupported
+            else -> io.github.hootkit_dev.hootbook.R.string.backup_err_invalid
         }
-        is CoreException.Conflict -> if(failure.reason==ConflictReason.NOT_EMPTY) io.github.hootkit_dev.hootbook.R.string.core_ui_backup_not_empty else io.github.hootkit_dev.hootbook.R.string.core_ui_backup_invalid
-        is CoreException.Storage -> if(failure.kind==StorageErrorKind.SCHEMA_TOO_NEW) io.github.hootkit_dev.hootbook.R.string.core_ui_backup_upgrade else io.github.hootkit_dev.hootbook.R.string.core_ui_backup_storage
-        is CancellationException, is CoreException.Cancelled -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_interrupted
-        is IllegalArgumentException, is IllegalStateException -> io.github.hootkit_dev.hootbook.R.string.core_ui_backup_inspect_first
+        is CoreException.Conflict -> if(failure.reason==ConflictReason.NOT_EMPTY) io.github.hootkit_dev.hootbook.R.string.backup_err_not_empty else io.github.hootkit_dev.hootbook.R.string.backup_err_invalid
+        is CoreException.Storage -> if(failure.kind==StorageErrorKind.SCHEMA_TOO_NEW) io.github.hootkit_dev.hootbook.R.string.backup_err_upgrade else io.github.hootkit_dev.hootbook.R.string.backup_err_storage
+        is CancellationException, is CoreException.Cancelled -> io.github.hootkit_dev.hootbook.R.string.backup_err_interrupted
+        is IllegalArgumentException, is IllegalStateException -> io.github.hootkit_dev.hootbook.R.string.backup_err_inspect_first
         else -> io.github.hootkit_dev.hootbook.R.string.core_ui_operation_failed
     }
     return context.getString(message)

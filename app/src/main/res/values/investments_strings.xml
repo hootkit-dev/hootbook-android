@@ -23,7 +23,6 @@
     <string name="investments_quantity">Quantity: %1$s</string>
     <string name="investments_value">Market value: %1$s %2$s</string>
     <string name="investments_pnl">Unrealized P/L: %1$s %2$s</string>
-    <string name="investments_setup">In IBKR Client Portal, open Reports → Flex Queries and create an Activity Flex Query:\n\n• Format: XML; date format: yyyyMMdd; period: Last Business Day\n• Add Open Positions, choose Summary and all fields, not Lots\n• Add Cash Report with currency breakdown so idle cash and margin debit are included\n• Save the Query ID; enable Flex Web Service and generate a token\n\nKeep empty Open Positions and Cash Report sections when those balances are zero.</string>
     <string name="investments_privacy">The token grants access to reports. Keep it private. Credentials and holdings are encrypted on this device, excluded from backups, and sent directly to IBKR, not a Hootbook server. Reconnect after reinstalling.</string>
     <string name="investments_help">IBKR setup instructions</string>
     <string name="investments_label">Connection name</string>

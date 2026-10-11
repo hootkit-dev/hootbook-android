@@ -70,15 +70,12 @@
     <string name="sync_debug_error">上次的错误</string>
     <string name="sync_debug_project">Firestore 项目</string>
     <string name="sync_debug_protocol">协议版本</string>
-    <string name="seamless_sync_section">无缝同步</string>
     <string name="sync_entry_signed_out">未开启 · 未登录</string>
     <string name="sync_entry_setup">已登录 %1$s · 待完成设置</string>
     <string name="sync_entry_on">已开启 · %1$s</string>
     <string name="sync_entry_paused">已暂停 · %1$s</string>
-    <string name="full_backup_section">全量备份</string>
     <string name="full_backup_body">完整的数据副本，只在你操作时导出或恢复。</string>
     <string name="backup_destination">备份位置</string>
-    <string name="provider_local_file">本地文件</string>
     <string name="backup_export_to">导出到%1$s</string>
     <string name="backup_export_local_body">选择要包含的数据，再选择保存位置</string>
     <string name="backup_export_cloud_body">立即上传一份完整备份</string>

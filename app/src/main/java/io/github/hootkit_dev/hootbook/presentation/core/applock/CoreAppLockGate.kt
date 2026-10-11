@@ -1,5 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.core.applock
 
+import io.github.hootkit_dev.hootbook.presentation.ui.components.LoadingCircle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.Icons
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.WindowManager
@@ -33,9 +37,13 @@ fun CoreAppLockGate(controller:CoreAppLockController,content: @Composable () -> 
     if(state.allowContent){contentState.SaveableStateProvider("private_core_content"){content()};return}
     Surface(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp,Alignment.CenterVertically),horizontalAlignment=Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.core_ui_locked),style=MaterialTheme.typography.headlineMedium)
-            state.errorResource?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
-            if(!state.loaded){CircularProgressIndicator();TextButton(onClick=controller::retryLoading){Text(stringResource(R.string.core_ui_retry))}}
+            Surface(shape=MaterialTheme.shapes.extraLarge,color=MaterialTheme.colorScheme.primaryContainer) {
+                Icon(Icons.Rounded.Lock,null,Modifier.padding(24.dp).size(40.dp),tint=MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Text(stringResource(R.string.core_ui_locked),style=MaterialTheme.typography.headlineSmall,textAlign=TextAlign.Center)
+            Text(stringResource(R.string.lock_body),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,textAlign=TextAlign.Center)
+            state.errorResource?.let {Text(stringResource(it),color=MaterialTheme.colorScheme.error,textAlign=TextAlign.Center)}
+            if(!state.loaded){LoadingCircle(Modifier.size(48.dp));TextButton(onClick=controller::retryLoading){Text(stringResource(R.string.core_ui_retry))}}
             else if(state.foreground)Button(onClick={activity?.let(controller::authenticate)},enabled=activity!=null&&!state.authenticating){Text(stringResource(R.string.core_ui_unlock))}
         }
     }

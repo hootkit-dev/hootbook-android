@@ -2,8 +2,6 @@
 <resources>
     <string name="settings_group_personal">個人化</string>
     <string name="settings_group_finances">財務管理</string>
-    <string name="settings_group_automation">自動化與通知</string>
-    <string name="settings_group_app">關於應用</string>
     <string name="type_bank_account">銀行帳戶</string>
     <string name="type_investment_account">投資帳戶</string>
 
@@ -12,7 +10,7 @@
     <string name="saving_account">正在儲存…</string>
     <string name="quick_add_templates">快捷記帳</string>
     <string name="quick_templates_subtitle">咖啡、午餐等常用消費一鍵填入</string>
-    <string name="quick_templates_empty">還沒有快捷範本。新增交易時開啟「儲存為快捷範本」，或在交易詳情選單中選擇「儲存為快捷範本」。</string>
+    <string name="quick_templates_empty">還沒有快捷範本，點選「新建範本」新增。</string>
     <string name="quick_template_save_toggle">存為快捷</string>
     <string name="quick_template_save_from_detail">儲存為快捷範本</string>
     <string name="quick_template_edit_title">編輯快捷範本</string>
@@ -111,7 +109,6 @@
     <string name="ai_leave_out">不儲存這筆</string>
     <string name="ai_put_back">恢復儲存</string>
     <string name="ai_merchant">商戶</string>
-    <string name="ai_date_time_pattern">M月d日 HH:mm</string>
     <string name="ai_section_accounts">新帳戶 · %1$d 個</string>
     <string name="ai_new_account_note">會先於記在它上面的交易建立。若不儲存這個帳戶，相關交易會儲存為不關聯帳戶。</string>
     <string name="ai_section_account_changes">帳戶調整 · %1$d 項</string>
@@ -188,7 +185,7 @@
     <string name="account_other_currencies">其他幣種</string>
     <string name="account_add_currency">新增幣種</string>
     <string name="account_add_currency_title">為這個帳戶新增 %1$s？</string>
-    <string name="account_add_currency_text">幣種新增後不能刪除。它有自己的餘額和交易紀錄。</string>
+    <string name="account_add_currency_text">它有自己的餘額；之後只有在沒有交易使用時才能移除。</string>
     <string name="account_add_currency_confirm">新增</string>
     <string name="account_add_named_currency">新增 %1$s</string>
     <string name="transfer_target_lacks_currency">%1$s 沒有 %2$s：可以為它新增 %2$s，或轉入它已有的幣種並填寫到帳金額。</string>

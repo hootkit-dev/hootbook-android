@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="core_home_title">新 Core 账本</string>
     <string name="core_home_settings">业务设置与界面语言</string>
     <string name="core_home_currencies">币种与汇率</string>
     <string name="core_home_backup">文件备份与恢复</string>

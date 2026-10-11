@@ -3,12 +3,8 @@
     <string name="transaction_use_conversion">Use estimated %1$s %2$s</string>
     <string name="transaction_minimum">Minimum</string>
     <string name="transaction_maximum">Maximum</string>
-    <string name="transaction_amount_filter_unavailable">Amount filtering is unavailable in the current Core. These fields cannot be applied.</string>
-    <string name="transaction_subcategory_filter_unavailable">Subcategory filtering is unavailable in the current Core. Category filtering above is supported.</string>
     <string name="transaction_filter_invalid">Check the dates and filter values.</string>
-    <string name="transaction_page_position">%1$s–%2$s of %3$s</string>
-    <string name="transaction_sort_unavailable">Additional sort orders are unavailable in the current Core.</string>
     <string name="transaction_currency_summary">Totals by currency</string>
-    <string name="transaction_unsupported_merchant">Exact merchant filtering is unavailable in the current Core. Use search to find merchant names and notes.</string>
+    <string name="transaction_unsupported_merchant">Filtering by exact merchant is not available yet. Search for the merchant name instead.</string>
     <string name="transaction_load_more">Load more</string>
 </resources>

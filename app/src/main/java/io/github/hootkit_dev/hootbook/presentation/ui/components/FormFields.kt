@@ -1,0 +1,302 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
+package io.github.hootkit_dev.hootbook.presentation.ui.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDisplayMode
+import androidx.compose.material3.TimePickerDialogDefaults
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.utils.DateFormats
+import io.github.hootkit_dev.hootbook.utils.pickerDate
+import io.github.hootkit_dev.hootbook.utils.toPickerMillis
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+
+/** A single-line outlined field. [decimal] brings up the number keyboard for amounts. */
+@Composable
+fun FormTextField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    decimal: Boolean = false,
+    supporting: String? = null,
+    isError: Boolean = false,
+) {
+    OutlinedTextField(
+        value = value, onValueChange = onValueChange, label = { Text(label) }, enabled = enabled,
+        singleLine = true, isError = isError, supportingText = supporting?.let { { Text(it) } },
+        keyboardOptions = if (decimal) KeyboardOptions(keyboardType = KeyboardType.Decimal) else KeyboardOptions.Default,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** A password field with a show / hide button. */
+@Composable
+fun PasswordField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    supporting: String? = null,
+) {
+    var visible by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value, onValueChange = onValueChange, label = { Text(label) }, enabled = enabled, singleLine = true,
+        supportingText = supporting?.let { { Text(it) } },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+        trailingIcon = {
+            TooltipIconButton(if (visible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                stringResource(if (visible) R.string.ui_hide_password else R.string.ui_show_password), { visible = !visible })
+        },
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** A checkbox with its label; the whole row toggles it. */
+@Composable
+fun CheckboxRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckedChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked, null, enabled = enabled)
+        Text(label, Modifier.padding(start = 16.dp).weight(1f), style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/** One choice of a set; the whole row selects it. */
+@Composable
+fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, supporting: String? = null) {
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected, null, enabled = enabled)
+        androidx.compose.foundation.layout.Column(Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp).weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            supporting?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
+}
+
+/**
+ * A day, picked from the Material date picker and shown as 9月1日 / Sep 1. [value] is ISO
+ * (2026-09-01) or blank; [emptyText] says what blank means (for example "None").
+ */
+@Composable
+fun DateField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    allowClear: Boolean = true,
+    emptyText: String = "",
+) {
+    val date = runCatching { LocalDate.parse(value) }.getOrNull()
+    var picking by remember { mutableStateOf(false) }
+    PickerField(
+        text = date?.let { DateFormats.shortDate(it) } ?: emptyText, label = label, enabled = enabled,
+        icon = { Icon(Icons.Rounded.Event, null) },
+        onClear = if (allowClear && date != null) ({ onValueChange("") }) else null,
+        onClick = { picking = true }, modifier = modifier,
+    )
+    if (picking) DayPicker(date, { picking = false }) { onValueChange(it.toString()) }
+}
+
+/**
+ * A date and time: the date picker, then the time picker. [value] is an ISO local date-time or
+ * blank; [emptyText] says what blank means (for example "Now").
+ */
+@Composable
+fun DateTimeField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    allowClear: Boolean = true,
+    emptyText: String = "",
+) {
+    val dateTime = runCatching { LocalDateTime.parse(value) }.getOrNull()
+    var pickingDate by remember { mutableStateOf(false) }
+    var pickedDay by remember { mutableStateOf<LocalDate?>(null) }
+    PickerField(
+        text = dateTime?.let { DateFormats.shortDate(it.toLocalDate()) + " " + DateFormats.time(it) } ?: emptyText,
+        label = label, enabled = enabled, icon = { Icon(Icons.Rounded.Schedule, null) },
+        onClear = if (allowClear && dateTime != null) ({ onValueChange("") }) else null,
+        onClick = { pickingDate = true }, modifier = modifier,
+    )
+    if (pickingDate) DayPicker(dateTime?.toLocalDate(), { pickingDate = false }) { pickedDay = it }
+    pickedDay?.let { day ->
+        TimeDialog(dateTime?.toLocalTime(), { pickedDay = null }) { onValueChange(day.atTime(it).toString()) }
+    }
+}
+
+/** A time of day from the time picker. [value] is HH:mm (or HH:mm:ss) or blank. */
+@Composable
+fun TimeField(
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    allowClear: Boolean = true,
+    emptyText: String = "",
+) {
+    val time = runCatching { LocalTime.parse(value) }.getOrNull()
+    var picking by remember { mutableStateOf(false) }
+    PickerField(
+        text = time?.let { DateFormats.time(it) } ?: emptyText, label = label, enabled = enabled,
+        icon = { Icon(Icons.Rounded.Schedule, null) },
+        onClear = if (allowClear && time != null) ({ onValueChange("") }) else null,
+        onClick = { picking = true }, modifier = modifier,
+    )
+    if (picking) TimeDialog(time, { picking = false }) { onValueChange(it.toString()) }
+}
+
+/**
+ * The Material time picker dialog: the clock dial, or hour and minute fields after the keyboard
+ * toggle. [initial] null starts at the current time.
+ */
+@Composable
+fun TimeDialog(initial: LocalTime?, onDismiss: () -> Unit, is24Hour: Boolean = true, onPicked: (LocalTime) -> Unit) {
+    val start = initial ?: LocalTime.now()
+    val clock = rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute, is24Hour = is24Hour)
+    var mode by remember { mutableStateOf(TimePickerDisplayMode.Picker) }
+    androidx.compose.material3.TimePickerDialog(
+        onDismissRequest = onDismiss,
+        title = { TimePickerDialogDefaults.Title(displayMode = mode) },
+        modeToggleButton = {
+            TimePickerDialogDefaults.DisplayModeToggle(displayMode = mode, onDisplayModeChange = {
+                mode = if (mode == TimePickerDisplayMode.Picker) TimePickerDisplayMode.Input else TimePickerDisplayMode.Picker
+            })
+        },
+        dismissButton = { DialogDismissButton(stringResource(R.string.cancel), onDismiss) },
+        confirmButton = { DialogConfirmButton(stringResource(R.string.ok), { onPicked(LocalTime.of(clock.hour, clock.minute)); onDismiss() }) },
+        containerColor = HootbookDialogDefaults.containerColor,
+    ) {
+        if (mode == TimePickerDisplayMode.Picker) TimePicker(clock) else TimeInput(clock)
+    }
+}
+
+@Composable
+private fun DayPicker(initial: LocalDate?, onDismiss: () -> Unit, onPicked: (LocalDate) -> Unit) {
+    val state = rememberDatePickerState(initialSelectedDateMillis = (initial ?: LocalDate.now()).toPickerMillis(), yearRange = 1900..2200)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = { DialogDismissButton(stringResource(R.string.cancel), onDismiss) },
+        confirmButton = {
+            DialogConfirmButton(stringResource(R.string.ok), {
+                state.selectedDateMillis?.let { onPicked(pickerDate(it)) }; onDismiss()
+            }, enabled = state.selectedDateMillis != null)
+        },
+    ) { DatePicker(state) }
+}
+
+/** A read-only outlined field that opens a picker when tapped. */
+@Composable
+private fun PickerField(
+    text: String,
+    label: String,
+    enabled: Boolean,
+    icon: @Composable () -> Unit,
+    onClear: (() -> Unit)?,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    Box(modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = text, onValueChange = {}, readOnly = true, enabled = enabled, singleLine = true,
+            label = { Text(label) }, leadingIcon = icon,
+            trailingIcon = onClear?.let { clear ->
+                { TooltipIconButton(Icons.Rounded.Clear, stringResource(R.string.ui_clear), clear, enabled = enabled) }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // The field itself is read-only; this layer makes it one button. It stops short of the
+        // clear button so that stays reachable.
+        // It carries the field's label and value, which the read-only field only exposes as a hint.
+        Box(Modifier.matchParentSize().padding(end = if (onClear != null) 56.dp else 0.dp)
+            .clickable(enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label; stateDescription = text })
+    }
+}
+
+/** One choice from a short list: a read-only outlined field with the Material exposed dropdown. */
+@Composable
+fun <T> SelectField(
+    label: String,
+    value: String,
+    options: List<Pair<T, String>>,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    supporting: String? = null,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    androidx.compose.material3.ExposedDropdownMenuBox(expanded = expanded && enabled, onExpandedChange = { if (enabled) expanded = it }, modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value, onValueChange = {}, readOnly = true, enabled = enabled, singleLine = true,
+            label = { Text(label) }, supportingText = supporting?.let { { Text(it) } },
+            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (option, text) ->
+                androidx.compose.material3.DropdownMenuItem(text = { Text(text) }, onClick = { expanded = false; onSelect(option) })
+            }
+        }
+    }
+}
