@@ -111,6 +111,8 @@
     <string name="notes_placeholder">Add any additional information...</string>
     <string name="action_save">Save</string>
     <string name="search_fruits">Search Fruits</string>
+    <string name="search_icons">Search icons</string>
+    <string name="subscriptions_subtitle">Manage recurring subscriptions and renewals</string>
     <string name="transaction_type_required">Transaction Type *</string>
     <string name="select_source_account">Select Source Account</string>
     <string name="select_target_account">Select Target Account</string>

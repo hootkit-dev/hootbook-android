@@ -86,7 +86,7 @@ fun IconSelector(
                 }
             }
 
-    val searchLabel = stringResource(R.string.search_fruits)
+    val searchLabel = stringResource(R.string.search_icons)
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         SearchBarBox(

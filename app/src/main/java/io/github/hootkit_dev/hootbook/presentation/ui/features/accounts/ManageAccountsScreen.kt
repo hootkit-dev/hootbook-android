@@ -133,6 +133,7 @@ fun ManageAccountsScreen(
     var expanded by remember { mutableStateOf(emptySet<AccountCategory>()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
     val showFloatingLabel by remember { derivedStateOf { lazyListState.firstVisibleItemIndex == 0 } }
     val operationFailed = stringResource(R.string.onboarding_operation_failed)
@@ -142,13 +143,12 @@ fun ManageAccountsScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                title = { Text(stringResource(category?.titleRes ?: R.string.title_accounts)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack, shapes = IconButtonDefaults.shapes()) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.account_navigate_back))
-                    }
-                }, scrollBehavior = scrollBehavior
+            CustomTitleTopAppBar(
+                title = stringResource(category?.titleRes ?: R.string.title_accounts),
+                scrollBehaviorSmall = scrollBehaviorSmall,
+                scrollBehaviorLarge = scrollBehavior,
+                hasBackButton = true,
+                navigationContent = { NavigationContent(onNavigateBack) },
             )
         },
         floatingActionButton = {

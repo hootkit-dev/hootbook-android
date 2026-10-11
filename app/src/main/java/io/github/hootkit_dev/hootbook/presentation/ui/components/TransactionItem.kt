@@ -347,7 +347,7 @@ fun TransactionItem(
                     }
 
                     // Date Tag
-                    if (subtitleOverride == null && defaultSubtitle.isNotEmpty()) {
+                    if (showDate && subtitleOverride == null && defaultSubtitle.isNotEmpty()) {
                         TagSeparator()
                         SubtitleTag(
                             icon = {

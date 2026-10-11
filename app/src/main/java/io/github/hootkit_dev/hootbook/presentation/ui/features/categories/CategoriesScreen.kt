@@ -146,7 +146,7 @@ fun CategoriesScreen(
     var showFloatingLabel by remember { mutableStateOf(true) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("All") }
-    val searchLabel = stringResource(R.string.search_fruits)
+    val searchLabel = stringResource(R.string.search_categories)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 

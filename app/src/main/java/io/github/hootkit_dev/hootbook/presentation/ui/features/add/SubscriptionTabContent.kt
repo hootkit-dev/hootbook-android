@@ -66,6 +66,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.format.*
@@ -294,16 +295,14 @@ fun SubscriptionTabContent(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                shape = RoundedCornerShape(Dimensions.Radius.md)
-                            )
-                            .padding(8.dp)
+                            .clip(RoundedCornerShape(Dimensions.Radius.md))
+                            .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(
                                 onClick = { showDatePicker = true },
                                 indication = ripple(),
                                 interactionSource = remember { MutableInteractionSource() }
-                            ),
+                            )
+                            .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(

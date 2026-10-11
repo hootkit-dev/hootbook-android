@@ -530,7 +530,8 @@ fun HootbookNavHost(
                                         onNavigateToManageAccounts = { go(ManageAccounts) }, onNavigateToQuickTemplates = { go(QuickTemplates) },
                                         onNavigateToAiAssistant = { go(AiAssistant) }, onNavigateToAppearance = { go(Appearance) },
                                         onNavigateToProfile = { go(Profile) }, onNavigateToNotifications = { go(NotificationSettings) },
-                                        onNavigateToBudgets = { go(Budgets()) }, onNavigateToLendBorrow = { go(LendBorrow()) },
+                                        onNavigateToBudgets = { go(Budgets()) }, onNavigateToSubscriptions = { go(Subscriptions()) },
+                                        onNavigateToLendBorrow = { go(LendBorrow()) },
                                         onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToCloudBackup = { go(DataPrivacy) },
                                         onNavigateToAbout = { go(About) }, onNavigateToCurrency = { go(CurrencySettings()) }, blurEffects = prefs.blur)
                                 }

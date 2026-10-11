@@ -75,6 +75,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.NotificationBing
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.SecuritySafe
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Status
+import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoTime
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.orange_dark
@@ -94,6 +95,7 @@ fun SettingsScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToBudgets: () -> Unit = {},
+    onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToLendBorrow: () -> Unit = {},
     onNavigateToDataPrivacy: () -> Unit = {},
     onNavigateToCloudBackup: () -> Unit = {},
@@ -504,6 +506,51 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { onNavigateToBudgets() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Subscriptions
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.subscriptions),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.subscriptions_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.VideoTime,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToSubscriptions() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
                     )

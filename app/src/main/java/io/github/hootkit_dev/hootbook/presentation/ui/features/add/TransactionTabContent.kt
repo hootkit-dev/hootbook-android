@@ -130,6 +130,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.TimePicker
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPad
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Box2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Calendar
+import io.github.hootkit_dev.hootbook.presentation.ui.icons.Clock
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DocumentText2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Shop
@@ -282,21 +283,20 @@ fun TransactionTabContent(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Date Button
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(Dimensions.Radius.md)
-                        )
-                        .padding(8.dp)
+                        .clip(RoundedCornerShape(Dimensions.Radius.md))
+                        .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
                         .clickable(
                             onClick = { showDatePicker = true },
                             indication = ripple(),
                             interactionSource = remember { MutableInteractionSource() }
-                        ),
+                        )
+                        .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -345,31 +345,44 @@ fun TransactionTabContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 8.dp, vertical = 12.dp)
-                        .clickable { showTimePicker = true },
-                    contentAlignment = Alignment.CenterEnd
+                        .clip(RoundedCornerShape(Dimensions.Radius.md))
+                        .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable(
+                            onClick = { showTimePicker = true },
+                            indication = ripple(),
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.Center
                     ) {
+                        val themeColors = MaterialTheme.colorScheme
+                        Icon(
+                            imageVector = Iconax.Clock,
+                            contentDescription = stringResource(R.string.select_time),
+                            tint = themeColors.onSurface
+                        )
+                        Spacer(Modifier.size(8.dp))
+
                         val hour = draft.dateTime.toJavaDateTime().hour
                         val minute = draft.dateTime.toJavaDateTime().minute
-                        Box(modifier = Modifier
-                            .padding(5.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary.copy(0.2f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(0.2f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = String.format("%02d", hour),
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 16.sp,
-                                modifier = Modifier.padding(5.dp)
                             )
                         }
 
@@ -378,23 +391,22 @@ fun TransactionTabContent(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
 
                         Box(
                             modifier = Modifier
-                                .padding(5.dp)
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(8.dp)
                                 )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = String.format("%02d", minute),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 16.sp,
-                                modifier = Modifier.padding(5.dp)
                             )
                         }
                     }
@@ -662,6 +674,7 @@ fun TransactionTabContent(
             }
             BlurredAnimatedVisibility(draft.kind != TransactionKind.TRANSFER){
                 // Non-Transfer Type UI: Original layout with connected sections
+                val hasCategoryBelow = draft.kind == TransactionKind.EXPENSE || draft.kind == TransactionKind.INCOME
                 Column(
                     modifier = Modifier.animateContentSize().fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(1.5.dp)
@@ -670,7 +683,11 @@ fun TransactionTabContent(
                         account = selectedAccount,
                         onClick = { showAccountSheet = true },
                         placeholder = stringResource(R.string.select_account),
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
+                        shape = if (hasCategoryBelow) {
+                            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                        } else {
+                            RoundedCornerShape(16.dp)
+                        },
                     )
 
                     if (draft.kind == TransactionKind.EXPENSE || draft.kind == TransactionKind.INCOME) {

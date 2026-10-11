@@ -211,9 +211,14 @@ internal fun MonthCard(
             if (lastIncome.signum() != 0 || lastExpenses.signum() != 0) {
                 HorizontalDivider(Modifier.padding(top = 14.dp, bottom = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 val lastNet = (if (showConverted) display["lastNet"]?.amount else null) ?: lastSummary!!.net
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.Top) {
                     // The same tick as on the bars, as the note's legend
-                    Box(Modifier.size(width = 2.dp, height = 12.dp).background(MaterialTheme.colorScheme.onSurfaceVariant))
+                    Box(
+                        Modifier
+                            .padding(top = 3.dp)
+                            .size(width = 3.dp, height = 12.dp)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(1.5.dp))
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         stringResource(

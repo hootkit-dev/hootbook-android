@@ -101,6 +101,8 @@
     <string name="notes_placeholder">添加任何额外信息...</string>
     <string name="action_save">保存</string>
     <string name="search_fruits">搜索水果</string>
+    <string name="search_icons">搜索图标</string>
+    <string name="subscriptions_subtitle">管理周期性订阅与续费</string>
     <string name="transaction_type_required">交易类型 *</string>
     <string name="select_source_account">选择来源账户</string>
     <string name="select_target_account">选择目标账户</string>
