@@ -45,6 +45,15 @@ TARGETS = {
 }
 
 
+def requested_abis(abis=None):
+    """Default to the frozen full set; explicit source builds may request a subset."""
+    if abis is None:
+        return list(LOCK["abis"])
+    if not abis or len(set(abis)) != len(abis) or any(abi not in LOCK["abis"] for abi in abis):
+        raise ValueError("Requested ABIs must be a nonempty, unique subset of core.lock.json ABIs")
+    return [abi for abi in LOCK["abis"] if abi in abis]
+
+
 def run(*args, **kwargs):
     print("+", " ".join(str(arg) for arg in args), flush=True)
     return subprocess.run([str(arg) for arg in args], check=True, **kwargs)
@@ -110,8 +119,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=ROOT.parent / "hootkit-core")
     parser.add_argument("--native", action="store_true")
+    parser.add_argument("--abis", nargs="+", choices=LOCK["abis"],
+                        help="Native ABIs to build (default: every locked ABI)")
     parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args()
+    if args.abis is not None and (not args.native or args.verify_only):
+        parser.error("--abis requires --native and cannot be used with --verify-only")
+    abis = requested_abis(args.abis)
     source = args.source.resolve()
     verify_source(source)
     if args.verify_only:
@@ -144,8 +158,19 @@ def main():
         if not tools.is_dir():
             raise ValueError(f"Install pinned NDK {LOCK['ndkVersion']}")
         provenance["packaging"] = packaging_contract()
+        # Keep the lock's supported ABI set intact and record the actual build separately.
+        provenance["requestedAbis"] = abis
+        destination = generated / "native-provenance.json"
+        destination.unlink(missing_ok=True)
+        # Generated JNI outputs belong to this invocation, unlike reusable Cargo intermediates.
+        # Recreate them so full -> slim -> full cannot retain unwanted ABIs or stale basenames.
+        jni = generated / "jniLibs"
+        if jni.is_symlink():
+            jni.unlink()
+        elif jni.exists():
+            shutil.rmtree(jni)
         libraries = {}
-        for abi in LOCK["abis"]:
+        for abi in abis:
             rust_target, clang_target = TARGETS[abi]
             cc = tools / f"{clang_target}{LOCK['minSdk']}-clang"
             arch_env = dict(env)
@@ -155,16 +180,13 @@ def main():
             arch_env["CARGO_TARGET_" + rust_target.upper().replace("-", "_") + "_RUSTFLAGS"] = "-C link-arg=-Wl,-z,max-page-size=16384"
             run(cargo, "build", "--manifest-path", source / "Cargo.toml", "--locked", "--release", "--lib",
                 "--target", rust_target, env=arch_env)
-            out = generated / "jniLibs" / abi
+            out = jni / abi
             out.mkdir(parents=True, exist_ok=True)
-            # A stale previous package basename must not coexist with the generated loader alias.
-            (out / "libhootkit_core.so").unlink(missing_ok=True)
             library = out / LIBRARY_FILE
             shutil.copy2(target / rust_target / "release/libhootkit_core.so", library)
             run(tools / "llvm-strip", "--strip-unneeded", library)
             libraries[abi] = verify_elf(library, abi)
         provenance["libraries"] = libraries
-        destination = generated / "native-provenance.json"
     # A concurrent checkout/edit must not be stamped as the originally verified source.
     verify_source(source)
     generated.mkdir(parents=True, exist_ok=True)

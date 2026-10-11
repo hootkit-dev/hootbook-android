@@ -7,6 +7,8 @@ plugins {
 
 val coreSource = providers.gradleProperty("hootkitCoreDir")
     .orElse(rootProject.file("../hootkit-core").absolutePath)
+// Match the app's existing property-presence semantics. Ordinary release/test builds omit it.
+val slimCoreNative = project.hasProperty("slimDebug")
 val verifyCoreSource by tasks.registering(Exec::class) {
     // Always check before reusing outputs: a checkout can move without changing source bytes.
     commandLine("python3", rootProject.file("scripts/core/build.py"), "--source", coreSource.get(), "--verify-only")
@@ -25,11 +27,13 @@ val buildCoreNative by tasks.registering(Exec::class) {
     // Cross-check the real generated default loader before producing any native package.
     dependsOn(generateCoreBindings)
     inputs.files(rootProject.file("scripts/core/build.py"), file("core.lock.json"))
+    inputs.property("slimDebug", slimCoreNative)
     inputs.dir(coreSource.map { file("$it/src") })
     inputs.files(coreSource.map { file("$it/Cargo.lock") }, coreSource.map { file("$it/uniffi.toml") })
     outputs.dir(layout.buildDirectory.dir("generated/jniLibs"))
     outputs.file(layout.buildDirectory.file("generated/native-provenance.json"))
-    commandLine("python3", rootProject.file("scripts/core/build.py"), "--source", coreSource.get(), "--native")
+    commandLine(listOf("python3", rootProject.file("scripts/core/build.py"), "--source", coreSource.get(), "--native") +
+        if (slimCoreNative) listOf("--abis", "arm64-v8a") else emptyList<String>())
 }
 
 android {

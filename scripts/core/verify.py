@@ -51,13 +51,30 @@ def verify_runner(apk):
     print(f"PASS: actual AndroidJUnitRunner DEX class definition / APK CRC: {apk}")
 
 
+def verify_native_coverage(native, directory, abis):
+    expected = set(abis)
+    # Older full builds have no requestedAbis field. Only their full locked set is valid.
+    require(native.get("requestedAbis", build.LOCK["abis"]) == abis, "Requested native ABI mismatch")
+    require(set(native["libraries"]) == expected, "Native ABI coverage mismatch")
+    filename = native["packaging"]["libraryFile"]
+    actual = {path.relative_to(directory / "jniLibs").as_posix()
+              for path in (directory / "jniLibs").rglob("*.so")}
+    require(actual == {f"{abi}/{filename}" for abi in abis}, "Generated JNI coverage mismatch")
+    for abi, info in native["libraries"].items():
+        require(build.verify_elf(directory / "jniLibs" / abi / filename, abi) == info,
+                f"Native library mismatch: {abi}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runner-apk", type=Path)
+    parser.add_argument("--abis", nargs="+", choices=build.LOCK["abis"],
+                        help="Expected native ABIs (default: every locked ABI)")
     args = parser.parse_args()
     if args.runner_apk:
         verify_runner(args.runner_apk)
         return
+    abis = build.requested_abis(args.abis)
     directory = ROOT / "core-bindings/build/generated"
     bindings = json.loads((directory / "bindings-provenance.json").read_text())
     native = json.loads((directory / "native-provenance.json").read_text())
@@ -69,26 +86,23 @@ def main():
         require(bindings[field] == native[field] == lock[field], f"Provenance mismatch: {field}")
     for name, sha in bindings["bindings"].items():
         require(build.sha(directory / "kotlin" / name) == sha, "Generated binding hash mismatch")
-    require(set(native["libraries"]) == set(lock["abis"]), "Native ABI coverage mismatch")
-    for abi, info in native["libraries"].items():
-        require(build.verify_elf(directory / "jniLibs" / abi / filename, abi) == info,
-                f"Native library mismatch: {abi}")
-    print(f"PASS: generated loader {contract['libraryName']} matches four native paths {filename}")
-    print("PASS: same pinned source for Kotlin and four Android ABI libraries; ELF 16 KB alignment")
+    verify_native_coverage(native, directory, abis)
+    print(f"PASS: generated loader {contract['libraryName']} matches native paths {filename}: {', '.join(abis)}")
+    print("PASS: same pinned source for Kotlin and requested Android ABI libraries; ELF 16 KB alignment")
 
     aar = ROOT / "core-bindings/build/outputs/aar/core-bindings-debug.aar"
     with zipfile.ZipFile(aar) as archive:
         actual = {name.split("/")[1] for name in archive.namelist()
                   if name.startswith("jni/") and name.endswith("/" + filename)}
         require(not any(name.endswith("/libhootkit_core.so") for name in archive.namelist()), "Stale native library basename packaged")
-        require(actual == set(lock["abis"]), "Packaged ABI coverage mismatch")
+        require(actual == set(abis), "Packaged ABI coverage mismatch")
         for abi, info in native["libraries"].items():
             require(hashlib.sha256(archive.read(f"jni/{abi}/{filename}")).hexdigest() == info["sha256"],
                     f"AAR library hash mismatch: {abi}")
         with zipfile.ZipFile(io.BytesIO(archive.read("classes.jar"))) as classes:
             require("dev/hootkit/core/HootKitCore.class" in classes.namelist(), "Generated API absent from AAR")
         require("proguard.txt" in archive.namelist(), "Consumer R8 rules absent")
-    print("PASS: bindings AAR contains generated API, all four exact native libraries and consumer rules")
+    print("PASS: bindings AAR contains generated API, exact requested native libraries and consumer rules")
 
     candidates = list((Path.home() / ".gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.17.0").glob("*/*.aar"))
     require(bool(candidates), "JNA 5.17.0 AAR not resolved")

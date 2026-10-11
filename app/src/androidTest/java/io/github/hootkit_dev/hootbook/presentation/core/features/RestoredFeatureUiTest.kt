@@ -1,6 +1,12 @@
 package io.github.hootkit_dev.hootbook.presentation.core.features
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -86,14 +92,35 @@ class RestoredFeatureUiTest {
 
     @Test fun customCategorySwipeRequestsConfirmationWithoutRemovingTheRow() {
         val category = Category("swipe-id", CategoryKind.EXPENSE, null, "Travel", "Travel", "flight", "#334455", 0, false, emptyList())
+        val secondCategory = category.copy(id = "second-swipe-id", name = "Food", displayName = "Food")
         var requested = 0
+        var secondRequested = 0
+        var pending by mutableStateOf<String?>(null)
         rule.setContent { HootbookTheme(dynamicColor = false) {
-            CoreCategoryItem(category, onEdit = {}, onDetails = {}, onAddSubcategory = {}, onEditSubcategory = {}, onMove = {}, onDelete = { requested++ })
+            Column {
+                CoreCategoryItem(category, onEdit = {}, onDetails = {}, onAddSubcategory = {}, onEditSubcategory = {}, onMove = {}, onDelete = { requested++; pending = category.id })
+                CoreCategoryItem(secondCategory, onEdit = {}, onDetails = {}, onAddSubcategory = {}, onEditSubcategory = {}, onMove = {}, onDelete = { secondRequested++; pending = secondCategory.id })
+            }
+            if (pending != null) AlertDialog(onDismissRequest = { pending = null },
+                text = { Text("Confirm category deletion") },
+                confirmButton = { TextButton(onClick = { pending = null }) { Text("Cancel category deletion") } })
         } }
         rule.onNodeWithText("Travel").performTouchInput { swipeLeft() }
         rule.waitForIdle()
-        rule.runOnIdle { assertEquals(1, requested) }
+        rule.runOnIdle { assertEquals(1, requested); assertEquals(0, secondRequested) }
+        rule.onNodeWithText("Cancel category deletion").performClick()
         rule.onNodeWithText("Travel").assertIsDisplayed()
+        // No confirmed deletion: the same row remains actionable after dismissing confirmation.
+        rule.onNodeWithText("Travel").performTouchInput { swipeLeft() }
+        rule.waitForIdle()
+        rule.runOnIdle { assertEquals(2, requested); assertEquals(0, secondRequested) }
+        rule.onNodeWithText("Cancel category deletion").performClick()
+        rule.onNodeWithText("Food").performTouchInput { swipeLeft() }
+        rule.waitForIdle()
+        rule.runOnIdle { assertEquals(2, requested); assertEquals(1, secondRequested) }
+        rule.onNodeWithText("Cancel category deletion").performClick()
+        rule.onNodeWithText("Travel").assertIsDisplayed()
+        rule.onNodeWithText("Food").assertIsDisplayed()
     }
 
     @Test fun subscriptionSummaryDisplaysCoreMonthlyAndYearlyAndPartialState() {

@@ -27,6 +27,7 @@ jobs:
       - name: Validate Android-only CI helpers
         run: |
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/signing -p 'test_*.py'
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/core -p 'test_*.py'
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/core/validate_workflows.py
       - uses: android-actions/setup-android@v3
         with:

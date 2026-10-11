@@ -200,10 +200,17 @@ internal fun CoreCategoryItem(category: Category, enabled: Boolean = true, onEdi
     onDetails: () -> Unit, onAddSubcategory: () -> Unit, onEditSubcategory: (Subcategory) -> Unit, onMove: (Int) -> Unit, onDelete: (() -> Unit)? = null) {
     var menu by remember { mutableStateOf(false) }
     val color = runCatching { Color(android.graphics.Color.parseColor(category.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
-    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { target ->
-        if (target == SwipeToDismissBoxValue.EndToStart && enabled && category.builtinKey == null) onDelete?.invoke()
-        false // Only Core's confirmed delete removes a category.
-    })
+    val dismissState = rememberSwipeToDismissBoxState()
+    val deleteAction by rememberUpdatedState(onDelete)
+    val canDelete by rememberUpdatedState(enabled && category.builtinKey == null)
+    LaunchedEffect(dismissState.settledValue) {
+        if (dismissState.settledValue == SwipeToDismissBoxValue.EndToStart) {
+            // confirmValueChange is a repeatedly evaluated predicate, not a gesture event.
+            // Restore the row before requesting confirmation so cancelling allows another swipe.
+            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
+            if (canDelete) deleteAction?.invoke()
+        }
+    }
     SwipeToDismissBox(state = dismissState, enableDismissFromStartToEnd = false,
         enableDismissFromEndToStart = enabled && category.builtinKey == null && onDelete != null,
         backgroundContent = {
