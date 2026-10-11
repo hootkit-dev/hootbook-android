@@ -1,47 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="core_currencies_title">货币与汇率</string>
-    <string name="core_currencies_back">返回</string>
-    <string name="core_currencies_reload">重新加载／重试</string>
-    <string name="core_currencies_saving">正在保存，请稍候再离开。</string>
-    <string name="core_currencies_dismiss">关闭提示</string>
-    <string name="core_currencies_main_currency">主货币：%1$s</string>
-    <string name="core_currencies_provider">汇率来源</string>
-    <string name="core_currencies_download">下载最新汇率</string>
-    <string name="core_currencies_download_if_expired">过期时刷新</string>
-    <string name="core_currencies_not_needed">下载汇率尚未过期，无需下载。</string>
-    <string name="core_currencies_updated">已从 %1$s 更新 %2$s 条汇率。</string>
-    <string name="core_currencies_download_failed">下载失败（%1$s），已有汇率已保留。请重试或选择其他来源。</string>
-    <string name="core_currencies_no_status">无 HTTP 状态码</string>
     <string name="core_currencies_convert">换算</string>
     <string name="core_currencies_amount">金额</string>
     <string name="core_currencies_from">原币种</string>
     <string name="core_currencies_to">目标币种</string>
-    <string name="core_currencies_convert_note">Core 仅使用已存汇率；缺失汇率不按 1:1 换算，相关合计可能不完整。</string>
-    <string name="core_currencies_missing_rate">缺少 %1$s → %2$s 汇率，请下载或设置自定义汇率。</string>
-    <string name="core_currencies_direct">直接汇率</string>
-    <string name="core_currencies_inverse">反向汇率</string>
-    <string name="core_currencies_cross">交叉汇率</string>
-    <string name="core_currencies_custom">自定义</string>
-    <string name="core_currencies_expired">汇率已过期，Core 仍可使用，建议刷新。</string>
-    <string name="core_currencies_custom_currencies">自定义货币</string>
     <string name="core_currencies_add">新增</string>
-    <string name="core_currencies_edit">编辑</string>
-    <string name="core_currencies_delete">删除</string>
-    <string name="core_currencies_rates">已存汇率</string>
-    <string name="core_currencies_no_rates">尚无已存汇率，请下载或添加自定义汇率。</string>
-    <string name="core_currencies_updated_at">更新时间：%1$s</string>
-    <string name="core_currencies_expires_at">过期时间：%1$s</string>
-    <string name="core_currencies_override">设为自定义汇率</string>
     <string name="core_currencies_code">货币代码</string>
     <string name="core_currencies_name">货币名称</string>
     <string name="core_currencies_symbol">符号（最多 3 个字符）</string>
     <string name="core_currencies_save">保存</string>
-    <string name="core_currencies_cancel">取消</string>
-    <string name="core_currencies_custom_rate">自定义汇率</string>
-    <string name="core_currencies_custom_rate_note">1 单位原币种 = 输入汇率的目标币种。Core 校验并保存十进制值。</string>
-    <string name="core_currencies_rate">汇率</string>
-    <string name="core_currencies_delete_currency_note">仅删除名称和符号，账户、交易和汇率保持不变。</string>
-    <string name="core_currencies_delete_rate_note">删除此自定义汇率。Core 可能改用反向或交叉汇率，否则需再次下载。</string>
-    <string name="core_currencies_auto">自动</string>
 </resources>

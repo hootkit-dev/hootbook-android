@@ -1,47 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="core_currencies_title">Currencies and exchange rates</string>
-    <string name="core_currencies_back">Back</string>
-    <string name="core_currencies_reload">Reload / retry</string>
-    <string name="core_currencies_saving">Saving. Please wait before leaving.</string>
-    <string name="core_currencies_dismiss">Dismiss</string>
-    <string name="core_currencies_main_currency">Main currency: %1$s</string>
-    <string name="core_currencies_provider">Rate provider</string>
-    <string name="core_currencies_download">Download latest rates</string>
-    <string name="core_currencies_download_if_expired">Refresh if expired</string>
-    <string name="core_currencies_not_needed">Downloaded rates are still current; no download needed.</string>
-    <string name="core_currencies_updated">Updated from %1$s: %2$s rates.</string>
-    <string name="core_currencies_download_failed">Download failed (%1$s). Existing rates were retained. Retry or select another provider.</string>
-    <string name="core_currencies_no_status">No HTTP status</string>
     <string name="core_currencies_convert">Convert</string>
     <string name="core_currencies_amount">Amount</string>
     <string name="core_currencies_from">From currency</string>
     <string name="core_currencies_to">To currency</string>
-    <string name="core_currencies_convert_note">Core uses saved rates only. Missing rates are not treated as 1:1; totals may be incomplete.</string>
-    <string name="core_currencies_missing_rate">No saved rate for %1$s → %2$s. Download rates or add a custom rate.</string>
-    <string name="core_currencies_direct">Direct rate</string>
-    <string name="core_currencies_inverse">Inverse rate</string>
-    <string name="core_currencies_cross">Cross rate</string>
-    <string name="core_currencies_custom">Custom</string>
-    <string name="core_currencies_expired">Expired; still used by Core. Refresh recommended.</string>
-    <string name="core_currencies_custom_currencies">Custom currencies</string>
     <string name="core_currencies_add">Add</string>
-    <string name="core_currencies_edit">Edit</string>
-    <string name="core_currencies_delete">Delete</string>
-    <string name="core_currencies_rates">Saved rates</string>
-    <string name="core_currencies_no_rates">No saved rates. Download rates or add a custom rate.</string>
-    <string name="core_currencies_updated_at">Updated: %1$s</string>
-    <string name="core_currencies_expires_at">Expires: %1$s</string>
-    <string name="core_currencies_override">Set custom rate</string>
     <string name="core_currencies_code">Currency code</string>
     <string name="core_currencies_name">Currency name</string>
     <string name="core_currencies_symbol">Symbol (up to 3 characters)</string>
     <string name="core_currencies_save">Save</string>
-    <string name="core_currencies_cancel">Cancel</string>
-    <string name="core_currencies_custom_rate">Custom exchange rate</string>
-    <string name="core_currencies_custom_rate_note">1 source currency = entered rate in target currency. Core validates and stores the decimal value.</string>
-    <string name="core_currencies_rate">Exchange rate</string>
-    <string name="core_currencies_delete_currency_note">Remove the name and symbol only. Accounts, transactions and rates are retained.</string>
-    <string name="core_currencies_delete_rate_note">Remove this custom rate. Core may resolve an inverse or cross rate; otherwise download again.</string>
-    <string name="core_currencies_auto">Automatic</string>
 </resources>

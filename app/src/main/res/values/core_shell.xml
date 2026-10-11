@@ -8,16 +8,10 @@
     <string name="core_shell_retry">Retry</string>
     <string name="core_shell_recover_ui">Authenticate and recover UI</string>
     <string name="core_shell_device_security">Set up device screen lock</string>
-    <string name="core_shell_welcome">Welcome to Hootbook</string>
-    <string name="core_shell_onboarding_note">Choose a main currency and optional setup steps. Existing old databases are never read, exported, or erased automatically; choose your saved backup explicitly.</string>
-    <string name="core_shell_name">Display name</string>
     <string name="core_shell_profile">Profile</string>
-    <string name="core_shell_backup">File backup</string>
     <string name="core_shell_sync">Ledger sync</string>
     <string name="core_shell_notifications">Notifications</string>
-    <string name="core_shell_onboarding_failed">Setup failed; review input and retry. Nothing was marked complete.</string>
     <string name="core_shell_finish">Finish setup</string>
-    <string name="core_shell_home">Home</string>
     <string name="core_shell_share_failed">Shared content could not be read. Choose an external document and retry.</string>
     <string name="core_shell_close">Close</string>
     <string name="core_shell_investments">Brokerage</string>

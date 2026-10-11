@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="core_backup_title">文件备份与恢复</string>
-  <string name="core_backup_back">返回</string>
-  <string name="core_backup_local_only">只通过系统文件选择、保存或分享；不配置 Drive／WebDAV，不读取旧数据库。</string>
   <string name="core_backup_export">生成备份</string>
-  <string name="core_backup_attachments">包含附件与联系人头像</string>
-  <string name="core_backup_ai">包含 AI 设置与 Key</string>
-  <string name="core_backup_brokerage">包含券商连接与凭据</string>
   <string name="core_backup_password">口令（留空表示不加密）</string>
-  <string name="core_backup_secret_confirm">我确认：未设置口令时，敏感设置会以明文保存在备份中</string>
   <string name="core_backup_save">保存文件</string>
   <string name="core_backup_share">分享文件</string>
   <string name="core_backup_restore">恢复备份</string>
@@ -20,11 +13,8 @@
   <string name="core_backup_replace_confirm">我确认替换当前全部账本数据：Core 先创建安全备份，本机缺失的记录也会从其他同步设备删除</string>
   <string name="core_backup_sensitive_confirm">我确认恢复可能包含 AI Key／券商凭据；原文件保留，已有设置是否恢复由 Core 处理</string>
   <string name="core_backup_import">确认导入</string>
-  <string name="core_backup_platform_note">Android 恢复已验证的界面偏好、个人资料及商户图片；账本、加密和凭据由 Core 处理。未知资产与原文件持续保留。</string>
   <string name="core_backup_pending">恢复状态</string>
   <string name="core_backup_uncertain">上次导入在返回确认前中断：可能已提交。Core 暂无持久导入回执接口，已禁止自动重放和重复导入。请保留源副本，核对账本并导出当前数据。</string>
   <string name="core_backup_platform_retry">仅重试平台恢复（不重导账本）</string>
   <string name="core_backup_result">恢复结果</string>
-  <string name="core_backup_preferences_review">保存原始偏好供审阅</string>
-  <string name="core_backup_busy">正在处理，暂勿退出或重复提交。</string>
 </resources>

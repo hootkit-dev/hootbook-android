@@ -6,11 +6,9 @@
     <string name="investments_empty_body">Use the plus button to add a broker account: connect a broker to sync holdings, or keep a manual account. View reports only; no orders or transfers.</string>
     <string name="investments_connect_ibkr">Connect IBKR</string>
     <string name="investments_add">Add</string>
-    <string name="investments_net_worth">Investment net worth</string>
     <string name="investments_accounts">Accounts</string>
     <string name="investments_synced">Last synced: %1$s</string>
     <string name="investments_as_of">Report date: %1$s · Not live</string>
-    <string name="investments_market_total">Positions %1$s %2$s</string>
     <string name="investments_cash">Cash %1$s %2$s</string>
     <string name="investments_margin_debit">Margin debit %1$s %2$s</string>
     <string name="investments_snapshot_total">Snapshot %1$s %2$s</string>
@@ -28,15 +26,4 @@
     <string name="investments_help">IBKR setup instructions</string>
     <string name="investments_label">Connection name</string>
     <string name="investments_connect_sync">Connect and sync</string>
-    <string name="investments_error_credentials">Check the Flex Token and Query ID, and enable Flex Web Service.</string>
-    <string name="investments_error_expired">The token expired. Generate a new token in IBKR, disconnect this connection and add it again.</string>
-    <string name="investments_error_ip">IBKR restricted this IP. Check the token IP restrictions.</string>
-    <string name="investments_error_query">Use an XML Activity Flex Query with Open Positions (Summary) and all fields. Add Cash Report to include cash and margin.</string>
-    <string name="investments_error_pending">The report is not ready. Refresh later. Existing holdings are retained.</string>
-    <string name="investments_error_rate">Too many requests. Wait at least a minute before refreshing.</string>
-    <string name="investments_error_network">Connection failed. Check your network and retry. Existing holdings are retained.</string>
-    <string name="investments_error_report">Unexpected report format or fields. Check XML, date format and summary position fields. Existing holdings are retained.</string>
-    <string name="investments_error_provider">This app version does not support that provider yet.</string>
-    <string name="investments_error_storage">Encrypted storage failed. This operation was not saved. Retry; existing bookkeeping data is unchanged.</string>
-    <string name="investments_error_duplicate">This connection or brokerage account was already added. Refresh the existing connection.</string>
 </resources>

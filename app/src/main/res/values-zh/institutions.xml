@@ -12,7 +12,6 @@
     <string name="institution_choose_broker">选择券商</string>
     <string name="type_broker">券商</string>
     <string name="broker_name_label">券商名称</string>
-    <string name="broker_name_required">请从列表中选择券商，或在名称中包含券商名，这样账户才会计入投资。</string>
     <string name="broker_auto_sync_title">连接券商自动同步</string>
     <string name="broker_auto_sync_body">从券商只读同步持仓快照，不改动记账余额。</string>
     <string name="broker_auto_sync_connected">已连接 · %1$s</string>

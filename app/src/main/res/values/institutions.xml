@@ -12,7 +12,6 @@
     <string name="institution_choose_broker">Choose broker</string>
     <string name="type_broker">Broker</string>
     <string name="broker_name_label">Broker name</string>
-    <string name="broker_name_required">Choose a broker from the list, or use a name that includes one, so the account counts as an investment.</string>
     <string name="broker_auto_sync_title">Broker auto-sync</string>
     <string name="broker_auto_sync_body">Read-only holdings snapshots from the broker. Bookkeeping balances are not changed.</string>
     <string name="broker_auto_sync_connected">Connected · %1$s</string>

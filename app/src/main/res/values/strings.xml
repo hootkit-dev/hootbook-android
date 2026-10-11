@@ -19,18 +19,13 @@
     <string name="lock_timeout_1min">Lock after 1 minute in background</string>
     <string name="lock_timeout_minutes">Lock after %1$d minutes in background</string>
     <string name="export_data">Export Data</string>
-    <string name="import_cashew_backup">Import from Cashew</string>
-    <string name="import_cashew_backup_sub">Import SQLite or CSV files from Cashew app</string>
     <string name="immediately">Immediately</string>
     <string name="one_minute">1 minute</string>
     <string name="minutes_format">%1$d minutes</string>
     <string name="cancel">Cancel</string>
     <string name="export">Export</string>
     <string name="select_data_to_backup">Select data to backup:</string>
-    <string name="transactional_data">Transactional Data</string>
-    <string name="profile_data">Profile Data</string>
     <string name="budgets">Budgets</string>
-    <string name="app_preferences">App Preferences</string>
     <!-- NumberPad -->
     <string name="enter_amount">Enter Amount</string>
     <string name="done">Done</string>
@@ -38,7 +33,6 @@
     <!-- Merge Accounts Dialogs -->
     <!-- HistorySheet -->
     <string name="balance_history_title">Balance History</string>
-    <string name="records_count_latest_balance_note">%1$d records • Latest balance is shown in accounts</string>
     <string name="no_balance_history_available">No balance history available</string>
     <string name="delete_balance_record_title">Delete Balance Record</string>
     <string name="delete_balance_record_confirm">Are you sure you want to delete this balance record? This action cannot be undone.</string>
@@ -46,8 +40,6 @@
     <string name="edit">Edit</string>
     <string name="new_balance_label">New Balance</string>
     <string name="save">Save</string>
-    <string name="source_transaction">Transaction</string>
-    <string name="source_card_link">Card Link</string>
     <string name="source_manual">Manual</string>
     <string name="source_system">System</string>
     <!-- AccountDetailScreen -->
@@ -81,7 +73,6 @@
     <string name="outstanding_label">Outstanding</string>
     <string name="balance_label">Balance</string>
     <string name="available_credit_label">Available Credit: %1$s</string>
-    <string name="utilization_label">Utilization: %1$d%%</string>
     <string name="wallet_name_label">Wallet Name</string>
     <string name="bank_name_label">Bank Name</string>
     <string name="account_number_last_4_label">Account Number (Last 4)</string>
@@ -94,26 +85,11 @@
     <string name="add_account_prompt">Add an account to get started</string>
     <string name="section_wallets">Wallets</string>
     <string name="section_bank_accounts">Bank Accounts</string>
-    <string name="section_unlinked_cards">Unlinked Cards</string>
     <string name="section_credit_cards">Credit Cards</string>
     <string name="update_outstanding_title">Update Outstanding</string>
     <string name="update_balance">Update Balance</string>
     <string name="label_available">Available</string>
-    <string name="utilization_used">(%1$d%% used)</string>
-    <string name="linked_cards_label">Linked Cards</string>
-    <string name="label_inactive">(Inactive)</string>
-    <string name="unlink_card_desc">Unlink card</string>
     <string name="more_options_desc">More options</string>
-    <string name="link_to_account">Link to Account</string>
-    <string name="action_delete">Delete</string>
-    <string name="credit_card">Credit</string>
-    <string name="debit_card">Debit</string>
-    <string name="last_balance">Last Balance: %1$s</string>
-    <string name="link_card_title">Link Card</string>
-    <string name="no_accounts_found_link">No %1$s accounts found. Please add a corresponding bank account first.</string>
-    <string name="select_account_link_prompt">Select an account to link this card to:</string>
-    <string name="action_cancel">Cancel</string>
-    <string name="action_link">Link</string>
     <!-- SubscriptionTabContent & TransactionTabContent -->
     <string name="subscription_info">Track recurring expenses. You\'ll need to add transactions manually each month.</string>
     <string name="billing_cycle_label">Billing Cycle</string>
@@ -178,8 +154,6 @@
     <string name="no_transactions_yet">No transactions yet</string>
     <string name="budget_history_format">%1$s History</string>
     <string name="budget_history">Budget History</string>
-    <string name="budget_overspent_format">%1$s overspent of %2$s</string>
-    <string name="budget_left_format">%1$s left of %2$s</string>
     <string name="less_than_one_percent">&lt; 1%</string>
     <string name="select_budget_type">Select Budget Type</string>
     <string name="savings_budget">Savings budget</string>
@@ -194,13 +168,11 @@
     <string name="income_categories">Income Categories</string>
     <!-- Edit Category Sheet -->
     <string name="category_name">Category Name</string>
-    <string name="category_description_placeholder">description about the category</string>
     <string name="add_subcategory">Add Subcategory</string>
     <string name="preview">Preview</string>
     <string name="income">Income</string>
     <string name="name_label">Name</string>
     <string name="description_label">Description</string>
-    <string name="description_hint">e.g., Eating out, Swiggy, Zomato etc.</string>
     <string name="delete_category">Delete category</string>
     <string name="update_category">Update Category</string>
     <string name="create_category">Create Category</string>
@@ -212,18 +184,12 @@
     <string name="update_subcategory">Update Subcategory</string>
     <!-- Analytics -->
     <string name="total">Total</string>
-    <string name="suffix_million">M</string>
-    <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
     <string name="transactions_format">%1$d TXNS</string>
-    <string name="average">AVERAGE</string>
-    <string name="per_day"> /day</string>
-    <string name="percentage_of_total">%1$d%% OF TOTAL</string>
     <string name="analytics">Analytics</string>
     <string name="trends">Trends</string>
     <string name="top_categories">Top Categories</string>
-    <string name="top_merchants">Top Merchants</string>
     <string name="chart_type_line">Line</string>
     <string name="chart_type_bar">Bar</string>
     <string name="chart_type_heatmap">Heatmap</string>
@@ -271,14 +237,12 @@
     <string name="stay_informed">Stay Informed</string>
     <string name="continue_action">Continue</string>
     <!-- Mock Messages -->
-    <string name="notification">Notification</string>
     <!-- SubscriptionsScreen -->
     <string name="subscriptions">Subscriptions</string>
     <string name="total_subscriptions">Total Subscriptions</string>
     <string name="active_count_format">%1$d active</string>
     <string name="monthly">MONTHLY</string>
     <string name="yearly">YEARLY</string>
-    <string name="conversion_failure_message_format">%1$d subscription(s) couldn\'t be converted to %2$s, totals may be incomplete.</string>
     <string name="overdue">Overdue</string>
     <string name="due_today">Due today</string>
     <string name="due_tomorrow">Due tomorrow</string>
@@ -316,8 +280,6 @@
     <string name="transaction_updated_successfully">Transaction updated successfully</string>
     <string name="description_optional_label">Description (Optional)</string>
     <string name="transfer_action">Transfer</string>
-    <string name="update_existing_transactions_format">Update %1$d existing %2$s from \"%3$s\"</string>
-    <string name="preview_transaction_matches">Preview transaction matches</string>
     <string name="recurring_transaction">Recurring Transaction</string>
     <string name="mark_as_repeating_payment">Mark this as a repeating payment</string>
     <string name="billing_cycle">Billing Cycle</string>
@@ -328,34 +290,15 @@
     <string name="description">Description</string>
     <string name="from">FROM</string>
     <string name="to_destination">TO</string>
-    <string name="matches_preview">Matches Preview</string>
-    <string name="matches_selected_format">%1$d of %2$d selected • will be set to \"%3$s\"</string>
-    <string name="search_transactions_to_add">Search transactions to add...</string>
-    <string name="no_additional_transactions_found">No additional transactions found</string>
-    <string name="search_results">Search Results</string>
-    <string name="add_transaction_cd">Add transaction</string>
-    <string name="no_matching_transactions_found">No matching transactions found</string>
-    <string name="select_transactions_to_update">Select transactions to update</string>
-    <string name="apply_to_transactions_format">Apply to %1$d %2$s</string>
-    <string name="transactions_plural">transactions</string>
-    <string name="updated_transactions_format">Updated %1$d transactions</string>
     <string name="repeat_every">Repeat every</string>
     <string name="date">Date</string>
-    <string name="source">Source</string>
     <string name="account">Account</string>
     <!-- TransactionsFilterBottomSheet -->
     <string name="filters">Filters</string>
     <string name="reset">Reset</string>
     <string name="apply">Apply</string>
-    <string name="subcategories">Subcategories</string>
-    <string name="amount_range">Amount Range</string>
-    <string name="min_max">Min - Max</string>
     <string name="currencies">Currencies</string>
-    <string name="set_minimum_amount">Set Minimum Amount</string>
-    <string name="set_maximum_amount">Set Maximum Amount</string>
-    <string name="confirm">Confirm</string>
     <!-- TransactionsScreen -->
-    <string name="transactions_deleted_format">%1$d transactions deleted</string>
     <string name="items_selected_format">%1$d selected</string>
     <string name="deselect_all">Deselect All</string>
     <string name="select_all">Select All</string>
@@ -384,12 +327,7 @@
     <string name="terms_of_service_desc">Rules for using the app</string>
     <string name="licenses">Licenses</string>
     <string name="licenses_desc">Open source libraries</string>
-    <string name="delete_all_data">Delete All Data</string>
-    <string name="delete_all_data_desc">Permanently clear all records</string>
     <string name="built_with_love">Built with ❤️ for privacy</string>
-    <string name="delete_all_data_confirm_title">Delete All Data?</string>
-    <string name="delete_all_data_confirm_desc">This action will permanently delete all your transactions, budgets, subscriptions, and settings. This cannot be undone.</string>
-    <string name="delete_all">Delete All</string>
     <!-- Licenses Screen -->
     <string name="license_version_format">v%1$s, db-v%2$d</string>
     <string name="license_disclaimer_software">THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</string>
@@ -442,7 +380,6 @@
     <string name="delete_multiple_transactions_confirm">This action is irreversible. The selected transactions will be permanently deleted and cannot be recovered.</string>
     <string name="delete_account_title">Delete Account?</string>
     <string name="delete_account_confirm">Are you sure you want to delete this account?</string>
-    <string name="delete_account_warning">This will permanently delete all balance history for this account. Any linked cards will be unlinked. This action cannot be undone.</string>
     <string name="delete_category_title">Delete Category</string>
     <string name="delete_category_confirm_with_transactions">This action cannot be undone. All transactions under \u2018%1$s\u2019 must be moved to another category.</string>
     <string name="move_to_different_category">Move to Different Category</string>
@@ -462,7 +399,6 @@
     <string name="select_time">Select Time</string>
     <!-- Transactions, Indicators & Categories -->
     <string name="recurring">Recurring</string>
-    <string name="balance_after_format">Bal: %1$s</string>
     <string name="description_indicator_desc">Has description</string>
     <string name="attachments_indicator_desc">Has attachments</string>
     <string name="type_transfer">Transfer</string>
@@ -571,11 +507,8 @@
 <string name="amount_they_owe_me">The Amount they owe me</string>
 <string name="app_locked_title">Hootbook is Locked</string>
 <string name="appearance_title">Appearance</string>
-<string name="auth_failed_format">Authentication failed: %1$s</string>
 <string name="authenticate_desc">Authenticate to access your expense data</string>
-<string name="backup_retention_limit">Backup Retention Limit</string>
 <string name="backup_sync_title">Backup &amp; Sync</string>
-<string name="backup_uploaded_success">Backup successfully uploaded!</string>
 <string name="base_currency_hint">Base = default currency or main account\'s currency</string>
 <string name="batch_edit_amount">Amount</string>
 <string name="batch_edit_apply_format">Apply to %1$d Transactions</string>
@@ -592,7 +525,6 @@
 <string name="batch_edit_set_batch_amount">Set Batch Amount</string>
 <string name="batch_edit_time">Time</string>
 <string name="batch_edit_title">Batch Edit Transactions</string>
-<string name="batch_edit_toggle_hint">Toggle options below to apply across selected transactions:</string>
 <string name="batch_edit_updating_format">Updating %1$d selected items</string>
 <string name="biometric_setup_desc">Please disable app lock in device settings or set up biometric authentication.</string>
 <string name="biometric_unavailable_title">Biometric authentication unavailable</string>
@@ -606,10 +538,7 @@
 <string name="category_friends">Friends</string>
 <string name="category_other">Other</string>
 <string name="clear_due_date">Clear Due Date</string>
-<string name="cloud_snapshots">Cloud Snapshots</string>
 <string name="collapse_cd">Collapse</string>
-<string name="connection_failed_format">Connection failed: %1$s</string>
-<string name="connection_verified">Connection successfully verified!</string>
 <string name="contacts">Contacts</string>
 <string name="currency">Currency</string>
 <string name="currency_code">Currency Code</string>
@@ -628,66 +557,35 @@
 <string name="default_currency">Default Currency</string>
 <string name="default_currency_subtitle">Pre-select currency for new entries</string>
 <string name="default_label">Default</string>
-<string name="delete_cloud_snapshot_confirm">Are you sure you want to delete \u2018%1$s\u2019? This will permanently remove the backup snapshot from your cloud storage.</string>
-<string name="delete_cloud_snapshot_title">Delete Cloud Snapshot?</string>
 <string name="delete_multiple_persons_confirm">This action is irreversible. The selected persons and all associated ledger records will be permanently deleted and cannot be recovered.</string>
 <string name="delete_person">Delete Person</string>
 <string name="delete_person_confirm_desc">Are you sure you want to delete %1$s and all associated ledger records? This cannot be undone.</string>
 <string name="delete_person_confirm_title">Delete Person?</string>
 <string name="delete_record">Delete Record</string>
-<string name="delete_snapshot">Delete Snapshot</string>
 <string name="display_currency">Display Currency</string>
-<string name="downloading_snapshot">Downloading snapshot...</string>
 <string name="due_date">Due Date</string>
 <string name="duplicate_transaction">Duplicate Transaction</string>
-<string name="e2e_disabled_desc">Encrypt backups before uploading to cloud</string>
-<string name="e2e_enabled_desc">Backups encrypted with AES-256-GCM</string>
-<string name="e2e_encryption">End-to-End Encryption</string>
 <string name="earlier_lbl">Earlier</string>
 <string name="edit_person">Edit Person</string>
 <string name="edit_record">Edit Record</string>
 <string name="edit_selected_count_format">Edit — %1$d</string>
 <string name="edit_selected_transactions">Edit Selected Transactions</string>
-<string name="enable_and_save">Save</string>
-<string name="encrypted_backup_title">Encrypted Backup</string>
-<string name="enter_passphrase_desc">Enter a secure passphrase to encrypt all future cloud backups using AES-256-GCM:</string>
-<string name="err_accounts_different">Source and target accounts must be different</string>
-<string name="err_amount_positive">Amount must be greater than 0</string>
-<string name="err_amount_required">Amount is required</string>
-<string name="err_auth_failed_retry">Authentication failed. Please sign out and try again.</string>
-<string name="err_category_required">Category is required</string>
-<string name="err_invalid_amount">Invalid amount</string>
-<string name="err_network">Network error. Please check your connection.</string>
-<string name="err_save_subscription">Failed to save subscription</string>
-<string name="err_save_transaction">Failed to save transaction</string>
-<string name="err_service_required">Service name is required</string>
-<string name="err_source_target_required">Both source and target accounts are required for transfers</string>
-<string name="err_subscription_not_found">Subscription not found</string>
-<string name="err_token_null">Retrieved token is null</string>
-<string name="error_format">Error: %1$s</string>
-<string name="error_testing_connection_format">Error testing connection: %1$s</string>
 <string name="exchange_rate">Exchange Rate</string>
 <string name="exchange_rate_format">1 %1$s = %2$s %3$s</string>
 <string name="exchange_rate_hint">1 Base = X Custom currency</string>
 <string name="exchange_rates_notice_text">The exchange rates displayed within this app are for informational purposes only and should not be used for investment decisions. These rates are estimates and may not reflect actual rates. By using this app you acknowledge that you understand and accept these limitations.</string>
 <string name="exchange_rates_notice_title">Exchange Rates Notice</string>
 <string name="expand_cd">Expand</string>
-<string name="failed_list_backups_format">Failed to list remote backups: %1$s</string>
-<string name="failed_restore_snapshot">Failed to restore cloud snapshot</string>
 <string name="font_default_sub">System</string>
 <string name="font_snpro">SN Pro</string>
 <string name="font_snpro_sub">Modern Mono</string>
 <string name="fonts_title">Fonts</string>
 <string name="full_settlement">Full</string>
 <string name="gets_amount">Gets %1$s</string>
-<string name="google_signin_failed_no_email">Google sign-in failed: Could not retrieve email</string>
-<string name="google_signin_failed_null">Google sign-in failed: Account is null</string>
 <string name="home_title">Home</string>
 <string name="i_borrowed">I owe them</string>
 <string name="i_lent">They owe me</string>
 <string name="immediate_locking">immediate locking</string>
-<string name="keep_backups_format">Keep up to %1$d backups</string>
-<string name="keep_snapshots_format">Keep up to %1$d cloud snapshots</string>
 <string name="khata_title">Loans</string>
 <string name="lend_borrow_filter_lent">Lent</string>
 <string name="lend_borrow_filter_owed">Owed</string>
@@ -703,7 +601,6 @@
 <string name="manual_actions">Manual Actions</string>
 <string name="minute_timeout_format">%1$d minute timeout</string>
 <string name="net_worth_label">Net worth</string>
-<string name="no_cloud_snapshots">No remote backup snapshots found in cloud folder.</string>
 <string name="no_contacts_desc">No contacts added yet. Tap the View All button to add people.</string>
 <string name="no_due_date">No Due Date</string>
 <string name="no_persons_desc">Add a person to start tracking money lended or borrowed</string>
@@ -714,8 +611,6 @@
 <string name="overdue_tag">Overdue</string>
 <string name="owes_amount">Owes %1$s</string>
 <string name="partial_settlement">Partial</string>
-<string name="passphrase">Passphrase</string>
-<string name="password_or_token">Password or App Token</string>
 <string name="person_avatar">Avatar</string>
 <string name="person_name">Person Name *</string>
 <string name="phone_number_optional">Phone Number (Optional)</string>
@@ -725,18 +620,10 @@
 <string name="record_options">Record Options</string>
 <string name="reminder_message_format">Hi %1$s, friendly reminder regarding our ledger balance of %2$s.</string>
 <string name="remove_cd">Remove</string>
-<string name="restore">Restore</string>
-<string name="restore_passphrase_desc">This backup is encrypted. Enter the passphrase used when creating the backup:</string>
-<string name="restore_snapshot">Restore Snapshot</string>
-<string name="restoring_data_format">Restoring data... %1$d%%</string>
-<string name="retention_limit">Retention Limit</string>
-<string name="review">Review</string>
-<string name="save_configuration">Save</string>
 <string name="save_currency">Save Currency</string>
 <string name="search_currencies">Search currencies...</string>
 <string name="select_person">Select Person</string>
 <string name="selected_cd">Selected</string>
-<string name="server_url_hint">Server URL (e.g. https://cloud.example.com/remote.php/dav/files/user/)</string>
 <string name="settle_description">Settlement Note</string>
 <string name="settle_full_desc">Pay the entire outstanding balance in one go.</string>
 <string name="settle_partial_desc">Pay only a portion of the outstanding balance. You can settle the remaining amount later.</string>
@@ -745,26 +632,14 @@
 <string name="settlement_paid">Paid Back (Settlement)</string>
 <string name="settlement_received">Received Payment (Settlement)</string>
 <string name="share_receipt">Share Receipt</string>
-<string name="sign_in_with_google">Sign in with Google</string>
-<string name="sign_out">Sign Out</string>
-<string name="signed_in_as_format">Signed in as %1$s</string>
-<string name="signin_failed_code_format">Sign-In failed: %1$d</string>
-<string name="size_mb_format">%.2f MB</string>
-<string name="snapshot_restored_success">Snapshot successfully restored!</string>
-<string name="snapshot_subtitle_format">%1$s • %2$s</string>
 <string name="sort_amount_highest">Highest Amount</string>
-<string name="sort_amount_lowest">Lowest Amount</string>
 <string name="sort_date_newest">Newest First</string>
 <string name="sort_date_oldest">Oldest First</string>
-<string name="sort_merchant_az">Merchant (A-Z)</string>
-<string name="sort_merchant_za">Merchant (Z-A)</string>
-<string name="store_backups_local_desc">Store backups only on this device</string>
 <string name="style_default">Default</string>
 <string name="style_default_sub">Default Colors</string>
 <string name="style_dynamic">Dynamic</string>
 <string name="style_dynamic_sub">Wallpaper Colors</string>
 <string name="telegram_cd">Telegram</string>
-<string name="test_connection">Test Connection</string>
 <string name="theme_dark">Dark</string>
 <string name="theme_light">Light</string>
 <string name="theme_system">System</string>
@@ -781,22 +656,16 @@
 <string name="type_all">All</string>
 <string name="type_balance_update">Balance Update</string>
 <string name="type_borrowed">Borrowed</string>
-<string name="type_credit">Credit</string>
 <string name="type_lent">Lent</string>
 <string name="unified_currency">Unified Currency</string>
 <string name="unified_currency_subtitle">Display all amounts in a single currency</string>
-<string name="unknown_error">Unknown error</string>
 <string name="unlock">Unlock</string>
 <string name="upcoming_transactions_desc">Get reminders for upcoming payments</string>
 <string name="upcoming_transactions_section">Upcoming Transactions</string>
-<string name="uploading_to_cloud_format">Uploading to cloud... %1$d%%</string>
-<string name="username">Username</string>
-<string name="verification_failed">Verification failed.</string>
 <string name="whatsapp_cd">WhatsApp</string>
 <string name="yesterday_lbl">Yesterday</string>
 
     <!-- Added missing strings referenced by code -->
-    <string name="view_on_drive">View on Drive</string>
     <string name="delete_multiple_records_confirm">Are you sure you want to delete the selected records?</string>
     <string name="persons_deleted_format">%1$d persons deleted</string>
     <string name="select_multiple">Select multiple</string>
@@ -818,14 +687,8 @@
         <item quantity="other">Delete %1$d records?</item>
     </plurals>
 
-    <string name="account_already_exists">An account with this name and last four digits already exists.</string>
-    <string name="account_save_failed">Could not save the account. Your details are kept; please try again.</string>
     <string name="saving_account">Saving…</string>
-    <string name="balance_overdraft_title">Balance below zero</string>
-    <string name="balance_overdraft_message">This expense exceeds the book balance at the transaction date. The balance after this entry will be %1$s %2$s. Save anyway?</string>
-    <string name="balance_overdraft_continue">Save anyway</string>
     <string name="balance_calibration">Calibrate current balance</string>
-    <string name="balance_operation_failed">The change was not saved. Check the balance history: older entries may be missing their opening balance.</string>
     <string name="quick_add_templates">Quick templates</string>
     <string name="quick_templates_subtitle">One-tap entries for coffee, lunch and other regulars</string>
     <string name="quick_templates_empty">No quick templates yet. Turn on \"Save as quick template\" when adding a transaction, or use it from a transaction\'s menu.</string>

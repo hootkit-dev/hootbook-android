@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="core_host_standard_offline">Core-only debug · Offline · Firebase v2 adapter pending</string>
     <string name="core_host_open_failed">Core database failed to open</string>
     <string name="core_host_retry">Retry</string>
-    <string name="core_host_closed">Core session closed</string>
 </resources>

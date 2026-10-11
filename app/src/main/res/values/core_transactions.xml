@@ -1,5 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="core_transactions_title">Transactions</string>
-    <string name="core_transactions_limits">Filters, pagination, multi-selection, batch edits and deletion use Core APIs. Subcategory filtering, amount ranges, multiple currencies, smallest-first and merchant sorting are not exposed by this Core version; no page-local substitute is applied.</string>
-</resources>
