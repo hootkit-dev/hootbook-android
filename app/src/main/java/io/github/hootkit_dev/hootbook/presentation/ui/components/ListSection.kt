@@ -75,11 +75,14 @@ private fun ChevronTrailing(value: (@Composable () -> Unit)?) {
     }
 }
 
-/** A section heading: title-small in primary, announced as a heading, with an optional action. */
+/**
+ * A section heading: title-small in primary, announced as a heading, with an optional action.
+ * [indent] lines it up with list row content; pass 0 inside forms to line it up with the fields.
+ */
 @Composable
-fun SectionTitle(text: String, modifier: Modifier = Modifier, action: (@Composable () -> Unit)? = null) {
+fun SectionTitle(text: String, modifier: Modifier = Modifier, indent: androidx.compose.ui.unit.Dp = 16.dp, action: (@Composable () -> Unit)? = null) {
     Row(
-        modifier.fillMaxWidth().heightIn(min = 40.dp).padding(start = 16.dp),
+        modifier.fillMaxWidth().heightIn(min = 40.dp).padding(start = indent),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

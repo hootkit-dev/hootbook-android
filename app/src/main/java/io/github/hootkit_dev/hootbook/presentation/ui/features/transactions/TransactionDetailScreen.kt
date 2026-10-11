@@ -247,11 +247,11 @@ private fun LinkDebtSheet(state: CoreTransactionsUiState, onManagePeople: () -> 
             Text(stringResource(R.string.txn_link_no_people))
             OutlinedButton(onClick = { dismiss(); onManagePeople() }) { Text(stringResource(R.string.txn_manage_people)) }
         } else {
-            SectionTitle(stringResource(R.string.txn_link_person), Modifier.padding(start = 0.dp))
+            SectionTitle(stringResource(R.string.txn_link_person), indent = 0.dp)
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 state.people.forEach { person -> FilterChip(person.id == personId, { personId = person.id }, label = { Text(person.name) }) }
             }
-            SectionTitle(stringResource(R.string.txn_link_direction), Modifier.padding(start = 0.dp))
+            SectionTitle(stringResource(R.string.txn_link_direction), indent = 0.dp)
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(null to R.string.txn_link_direction_auto, DebtKind.LENT to R.string.type_lent, DebtKind.BORROWED to R.string.type_borrowed,
                     DebtKind.REPAID_TO_ME to R.string.txn_debt_repaid_to_me, DebtKind.REPAID_BY_ME to R.string.txn_debt_repaid_by_me).forEach { (value, label) ->

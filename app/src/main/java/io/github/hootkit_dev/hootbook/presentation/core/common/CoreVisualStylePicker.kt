@@ -46,3 +46,19 @@ fun CoreVisualStylePicker(icon: String, color: String, enabled: Boolean, onIcon:
             onColorChanged = { onColor("#%06X".format(it and 0xFFFFFF)) }) },
         confirmButton = { TextButton(onClick = { showColors = false }) { Text(stringResource(R.string.done)) } })
 }
+
+/** Just the color: one row with its swatch, opening the color picker. */
+@Composable
+fun CoreColorPickerRow(color: String, enabled: Boolean, onColor: (String) -> Unit) {
+    var showColors by remember { mutableStateOf(false) }
+    val swatch = runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(color)) }.getOrNull()
+    io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection {
+        item(headline = { Text(stringResource(R.string.core_visual_color)) },
+            trailing = { Box(Modifier.size(28.dp).background(swatch ?: MaterialTheme.colorScheme.surfaceVariant, androidx.compose.foundation.shape.CircleShape)) },
+            chevron = true, onClick = if (enabled) ({ showColors = true }) else null)
+    }
+    if (showColors) AlertDialog(onDismissRequest = { showColors = false }, title = { Text(stringResource(R.string.core_visual_color)) },
+        text = { ColorPickerContent(initialColor = runCatching { android.graphics.Color.parseColor(color) }.getOrDefault(android.graphics.Color.BLUE),
+            onColorChanged = { onColor("#%06X".format(it and 0xFFFFFF)) }) },
+        confirmButton = { TextButton(onClick = { showColors = false }) { Text(stringResource(R.string.done)) } })
+}

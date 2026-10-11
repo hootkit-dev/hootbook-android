@@ -3,30 +3,17 @@ package io.github.hootkit_dev.hootbook.presentation.core.budgets
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.font.FontWeight
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
-import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
-import io.github.hootkit_dev.hootbook.presentation.ui.components.GenericTypeSwitcher
-import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -36,13 +23,17 @@ import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.BudgetCategoryPieChart
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.BudgetHistoryLineChart
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreColorPickerRow
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon
-import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
-import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AmountInput
-import io.github.hootkit_dev.hootbook.presentation.ui.features.add.DecimalAmountPad
 import io.github.hootkit_dev.hootbook.presentation.core.plans.CorePlanDateField
+import io.github.hootkit_dev.hootbook.presentation.ui.components.*
+import io.github.hootkit_dev.hootbook.utils.DateFormats
 
-/** A String ID can open a detail directly; all nested back handling stays local. */
+/**
+ * Budgets: the cards, one budget's page (its card, category split and limits), and its period
+ * history. Edit is in the bar; history, details, pause and delete are behind ⋮.
+ */
 @Composable
 fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
     viewModel: CoreBudgetsViewModel = hiltViewModel()) {
@@ -53,115 +44,50 @@ fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
     LaunchedEffect(initialBudgetId) { initialBudgetId?.let(viewModel::select) }
     var deleting by remember { mutableStateOf<Budget?>(null) }
     LaunchedEffect(state.commandRevision) { deleting = null }
-    var actionMenu by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var pickLimit by remember { mutableStateOf(false) }
     var showTypeWizard by rememberSaveable { mutableStateOf(false) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
-        CustomTitleTopAppBar(title = state.selected?.name ?: stringResource(R.string.budgets),
-            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
-            hasBackButton = true, navigationContent = { NavigationContent(goBack) },
-            actionContent = {
-                state.selected?.let { selected ->
-                    IconButton(onClick = { viewModel.edit(selected) }, enabled = !state.saving) {
-                        Icon(Icons.Rounded.Edit, stringResource(R.string.edit_budget))
-                    }
-                    Box {
-                        IconButton(onClick = { actionMenu = true }, enabled = !state.saving) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.budget_details)) }
-                        DropdownMenu(actionMenu, { actionMenu = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.core_budgets_history)) }, leadingIcon = { Icon(Icons.Rounded.History, null) }, onClick = { actionMenu = false; viewModel.history(true) })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.budget_details)) }, leadingIcon = { Icon(Icons.Rounded.Info, null) }, onClick = { actionMenu = false; showInfo = true })
-                            DropdownMenuItem(text = { Text(stringResource(if (selected.active) R.string.core_budgets_pause else R.string.core_budgets_resume)) }, onClick = { actionMenu = false; viewModel.active(selected) })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.core_budgets_delete), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null) }, onClick = { actionMenu = false; viewModel.clearError(); deleting = selected })
-                        }
-                    }
-                }
-                IconButton(onClick = viewModel::refresh, enabled = !state.saving) {
-                    Icon(Icons.Rounded.Refresh, stringResource(R.string.core_budgets_refresh))
-                }
-            })
-    }, floatingActionButton = {
-        if (state.selectedId == null) ExtendedFloatingActionButton(onClick = { if (!state.saving) showTypeWizard = true },
-            icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.new_budget)) })
-    }) { padding ->
+    val selected = state.selected
+    val enabled = !state.saving
+    SecondaryScreen(
+        title = when {
+            selected != null && state.showHistory -> stringResource(R.string.core_budgets_history)
+            selected != null -> selected.name
+            else -> stringResource(R.string.budgets)
+        },
+        onBack = goBack,
+        actions = {
+            if (selected != null && !state.showHistory) {
+                TooltipIconButton(Icons.Rounded.Edit, stringResource(R.string.edit_budget), { viewModel.edit(selected) }, enabled = enabled)
+                OverflowMenu(enabled = enabled, actions = listOf(
+                    MenuAction(stringResource(R.string.core_budgets_history), Icons.Rounded.History) { viewModel.history(true) },
+                    MenuAction(stringResource(R.string.budget_details), Icons.Rounded.Info) { showInfo = true },
+                    MenuAction(stringResource(if (selected.active) R.string.core_budgets_pause else R.string.core_budgets_resume),
+                        if (selected.active) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility) { viewModel.active(selected) },
+                    MenuAction(stringResource(R.string.core_budgets_delete), Icons.Rounded.Delete, destructive = true) { viewModel.clearError(); deleting = selected },
+                ))
+            }
+        },
+        floatingActionButton = {
+            if (state.selectedId == null) ExtendedFloatingActionButton(onClick = { if (enabled) showTypeWizard = true },
+                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.new_budget)) })
+        },
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            state.errorResource?.let { Text(stringResource(it),color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(16.dp)) }
-            if (state.navigationBlocked) Text(stringResource(R.string.core_budgets_saving), modifier = Modifier.padding(16.dp))
-            state.error?.let { error -> Surface(color = MaterialTheme.colorScheme.errorContainer) { Row(Modifier.padding(12.dp)) {
-                Text(error, Modifier.weight(1f))
-                TextButton(onClick = viewModel::clearError) { Text(stringResource(R.string.core_budgets_clear_error)) }
-            } } }
-            val selected = state.selected
+            if (state.navigationBlocked) Text(stringResource(R.string.core_budgets_saving), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            (state.error ?: state.errorResource?.let { stringResource(it) })?.let {
+                ErrorBanner(it, viewModel::clearError, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
             when {
-                state.selectedId == null -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!state.loading && state.rows.isEmpty()) item {
-                        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 64.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text("🎯", style = MaterialTheme.typography.displayLarge)
-                            Text(stringResource(R.string.no_budgets_yet), style = MaterialTheme.typography.titleLarge)
-                            Text(stringResource(R.string.create_first_budget_desc), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Button(onClick = { showTypeWizard = true }) { Icon(Icons.Rounded.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.create_budget)) }
-                        }
-                    }
-                    items(state.rows, key = { it.id }) { row ->
-                        CoreBudgetCard(budget = row, onClick = { if (!state.saving) viewModel.select(row.id) },
-                            onHistoryClick = { id -> if (!state.saving) viewModel.selectHistory(id) })
-                    }
-                    item { Spacer(Modifier.height(90.dp)) }
-                }
-                selected != null && state.showHistory -> LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                    val detail = state.historyDetail
-                    if (detail != null) {
-                        item { CoreBudgetCard(budget = detail, onHistoryClick = { viewModel.history(true) }); CoreBudgetPeriodDivider(detail) }
-                        if (detail.current.byCategory.isNotEmpty()) item { BudgetCategoryPieChart(categories = detail.current.byCategory, currency = detail.amount.currency, references = state.categories) }
-                        item { Spacer(Modifier.height(24.dp)); CoreBudgetTransactionsUnavailable() }
-                    } else {
-                        if (state.history.isNotEmpty()) item {
-                            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                                Column(Modifier.padding(16.dp)) { BudgetHistoryLineChart(state.history.asReversed(), selected.amount.currency, selected.kind) }
-                            }
-                            Text(stringResource(R.string.core_history_read_only), Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
-                        }
-                        items(state.history, key = { it.start.budgetDateText() }) { row ->
-                            CoreBudgetHistoryRow(row, selected.amount.currency, ListItemPosition.from(state.history.indexOf(row), state.history.size)) { if (!state.saving) viewModel.historyPeriod(row) }
-                        }
-                        if (state.historyCursor != null) item { OutlinedButton(onClick = viewModel::loadMoreHistory, enabled = !state.loading && !state.historyLoading) { Text(stringResource(R.string.core_history_load_older)) } }
-                    }
-                }
-                selected != null -> LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    item { CoreBudgetCard(budget = selected, onHistoryClick = { viewModel.history(true) }); CoreBudgetPeriodDivider(selected) }
-                    if (selected.current.byCategory.isNotEmpty()) item { BudgetCategoryPieChart(categories = selected.current.byCategory, currency = selected.amount.currency, references = state.categories) }
-                    item {
-                        CoreBudgetLimitsCard(selected, state.categories, !state.saving, onAdd = { pickLimit = true },
-                            onEdit = { viewModel.editLimit(selected, it) }, onRemove = { viewModel.setLimit(selected, it, null) })
-                    }
-                    item { CoreBudgetTransactionsUnavailable() }
-                }
+                state.selectedId == null -> BudgetList(state, viewModel, onCreate = { showTypeWizard = true })
+                selected != null && state.showHistory -> BudgetHistory(selected, state, viewModel)
+                selected != null -> BudgetDetail(selected, state, viewModel, onAddLimit = { pickLimit = true })
             }
         }
     }
-    if (showInfo) state.selected?.let { selected -> HootbookModalBottomSheet(onDismissRequest = { showInfo = false }) {
-        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.budget_details), style = MaterialTheme.typography.headlineSmall)
-            BudgetSummary(selected, state.displayCurrency)
-            Text("${kindText(selected.kind)} · ${periodText(selected.period)}", style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(R.string.core_budgets_days, selected.current.daysTotal.toString(), selected.current.daysLeft.toString()))
-            Text("${stringResource(R.string.core_budgets_daily_spent)}: ${selected.amount.currency} ${selected.current.dailySpent.toPlainString()}")
-            Text(if (selected.accountIds == null) stringResource(R.string.core_budgets_all_accounts) else stringResource(R.string.core_budgets_accounts) + ": " + selected.accountIds.orEmpty().joinToString { id -> state.accounts.find { it.id == id }?.name ?: id })
-        }
-    } }
-    if (pickLimit) state.selected?.let { selected -> HootbookModalBottomSheet(onDismissRequest = { pickLimit = false }) {
-        Text(stringResource(R.string.add_limit), Modifier.padding(24.dp), style = MaterialTheme.typography.headlineSmall)
-        LazyColumn(Modifier.heightIn(max = 480.dp)) {
-            val categories = state.categories.filter { it.kind == if (selected.kind == BudgetKind.SAVINGS) CategoryKind.INCOME else CategoryKind.EXPENSE }
-            if (categories.isEmpty()) item { Text(stringResource(R.string.core_budgets_no_categories), Modifier.padding(16.dp)) }
-            items(categories, key = { it.id }) { category ->
-                ListItem(headlineContent = { Text(category.displayName) }, leadingContent = { CoreRecordIcon(category.icon, Modifier.size(36.dp)) },
-                    trailingContent = { IconButton(onClick = { pickLimit = false; viewModel.editLimit(selected, category) }, enabled = !state.saving) { Icon(Icons.Rounded.Add, stringResource(R.string.add_limit)) } })
-            }
-        }
+    if (showInfo) selected?.let { BudgetInfoSheet(it, state) { showInfo = false } }
+    if (pickLimit) selected?.let { budget -> CategoryPickerSheet(state.categories, budget.kind, { pickLimit = false }) { category ->
+        pickLimit = false; viewModel.editLimit(budget, category)
     } }
     if (showTypeWizard) HootbookModalBottomSheet(onDismissRequest = { showTypeWizard = false },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -171,145 +97,211 @@ fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
     }
     state.draft?.let { draft -> BudgetEditor(draft, state.accounts, state.categories, state.saving, state.error, viewModel::draftChanged, viewModel::dismissEditor,
         onSave = { defaultName -> viewModel.save(defaultName) }) }
-    deleting?.let { row -> AlertDialog(onDismissRequest = { if (!state.saving) deleting = null },
-        title = { Text(stringResource(R.string.core_budgets_delete)) }, text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.core_budgets_delete_message))
-                BudgetDialogError(state.error)
-            }
-        },
-        confirmButton = { TextButton(onClick = { viewModel.delete(row) }, enabled = !state.saving) { Text(stringResource(R.string.core_budgets_confirm)) } },
-        dismissButton = { TextButton(onClick = { deleting = null }, enabled = !state.saving) { Text(stringResource(R.string.core_budgets_cancel)) } }) }
-    state.limitDraft?.let { editor -> HootbookModalBottomSheet(onDismissRequest = viewModel::dismissLimit) {
-        Column(Modifier.fillMaxWidth().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(editor.name, style = MaterialTheme.typography.headlineSmall)
-            AmountInput(editor.amount, state.selected?.amount?.currency.orEmpty(), {}, enabled = !state.saving)
-            DecimalAmountPad(editor.amount, { if (!state.saving) viewModel.limitAmountChanged(it) })
-            BudgetDialogError(state.error)
-            Button(onClick = { viewModel.saveLimit() }, enabled = !state.saving, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.core_budgets_save)) }
-            if (editor.existing) TextButton(onClick = { viewModel.saveLimit(remove = true) }, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_budgets_limit_remove)) }
+    deleting?.let { row -> ConfirmDialog(stringResource(R.string.core_budgets_delete), stringResource(R.string.core_budgets_delete_message),
+        stringResource(R.string.delete), { viewModel.delete(row) }, { deleting = null }, destructive = true, enabled = enabled) }
+    state.limitDraft?.let { editor ->
+        FormSheet(editor.name, viewModel::dismissLimit, { viewModel.saveLimit() }, busy = state.saving, error = state.error,
+            confirmEnabled = editor.amount.toBigDecimalOrNull() != null,
+            titleAction = if (editor.existing) ({ TextButton(onClick = { viewModel.saveLimit(remove = true) }, enabled = enabled) {
+                Text(stringResource(R.string.core_budgets_limit_remove), color = MaterialTheme.colorScheme.error) } }) else null) {
+            FormTextField(editor.amount, stringResource(R.string.core_budgets_limit_amount), viewModel::limitAmountChanged, enabled = enabled, decimal = true,
+                supporting = state.selected?.amount?.currency)
         }
-    } }
-}
-
-@Composable private fun BudgetSummary(row: Budget, displayCurrency: String) {
-    Text("${row.current.start.budgetDateText()} — ${row.current.end.budgetDateText()}")
-    val fraction = budgetProgressFraction(row.current.spent, row.amount.amount)
-    LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth(), color = when {
-        row.kind == BudgetKind.SAVINGS -> MaterialTheme.colorScheme.primary
-        row.current.over -> MaterialTheme.colorScheme.error
-        fraction > 0.8f -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.primary
-    })
-    Text("${row.amount.currency} ${row.current.spent.toPlainString()} / ${row.amount.amount.toPlainString()}", style = MaterialTheme.typography.titleLarge)
-    Text("${stringResource(if (row.kind == BudgetKind.SAVINGS) R.string.core_budgets_saved else R.string.core_budgets_spent)}：${row.current.spent.toPlainString()}")
-    Text("${stringResource(R.string.core_budgets_remaining)}：${row.current.remaining.toPlainString()}")
-    if (!row.active) Text(stringResource(R.string.core_budgets_inactive))
-    if (row.accountIds?.isEmpty() == true) Text(stringResource(R.string.core_budgets_removed_accounts), color = MaterialTheme.colorScheme.error)
-    if (row.current.over) Text(stringResource(if (row.kind == BudgetKind.SAVINGS) R.string.core_budgets_goal else R.string.core_budgets_over),
-        color = if (row.kind == BudgetKind.SAVINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-    if (!row.current.complete) Text(stringResource(R.string.core_budgets_missing, row.current.missingCurrencies.joinToString()), color = MaterialTheme.colorScheme.error)
-    row.display?.let { Text(stringResource(R.string.core_budgets_display, it.currency, it.spent.toPlainString(), it.amount.toPlainString())) }
-    if (row.display == null && displayCurrency.isNotBlank() && displayCurrency != row.amount.currency) {
-        Text(stringResource(R.string.core_budgets_display_missing, displayCurrency))
     }
 }
 
-@Composable private fun BudgetDialogError(error: String?) {
-    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+@Composable
+private fun BudgetList(state: CoreBudgetsUiState, viewModel: CoreBudgetsViewModel, onCreate: () -> Unit) {
+    LazyColumn(contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (!state.loading && state.rows.isEmpty()) item(key = "empty") {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 64.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Rounded.Savings, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.no_budgets_yet), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.create_first_budget_desc), color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Button(onClick = onCreate, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.create_budget)) }
+            }
+        }
+        items(state.rows, key = { it.id }) { row ->
+            CoreBudgetCard(budget = row, onClick = { if (!state.saving) viewModel.select(row.id) },
+                onHistoryClick = { id -> if (!state.saving) viewModel.selectHistory(id) })
+        }
+    }
 }
 
+/** The budget's card and period, how it splits by category, then its category limits. */
+@Composable
+private fun BudgetDetail(budget: Budget, state: CoreBudgetsUiState, viewModel: CoreBudgetsViewModel, onAddLimit: () -> Unit) {
+    LazyColumn(contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
+        item(key = "card") { CoreBudgetCard(budget = budget, onHistoryClick = { viewModel.history(true) }); CoreBudgetPeriodDivider(budget) }
+        if (budget.current.byCategory.isNotEmpty()) item(key = "split") {
+            Surface(shape = MaterialTheme.shapes.largeIncreased, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                BudgetCategoryPieChart(Modifier.padding(16.dp), categories = budget.current.byCategory, currency = budget.amount.currency, references = state.categories)
+            }
+        }
+        item(key = "limits") {
+            CoreBudgetLimitsSection(budget, state.categories, !state.saving, onAdd = onAddLimit, onEdit = { viewModel.editLimit(budget, it) })
+        }
+    }
+}
+
+/** Past periods: a chart of all loaded, then one row each; a row opens that period's card. */
+@Composable
+private fun BudgetHistory(budget: Budget, state: CoreBudgetsUiState, viewModel: CoreBudgetsViewModel) {
+    LazyColumn(contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        val detail = state.historyDetail
+        if (detail != null) {
+            item(key = "card") { CoreBudgetCard(budget = detail, onHistoryClick = { viewModel.history(true) }); CoreBudgetPeriodDivider(detail) }
+            if (detail.current.byCategory.isNotEmpty()) item(key = "split") {
+                Surface(shape = MaterialTheme.shapes.largeIncreased, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.padding(top = 16.dp)) {
+                    BudgetCategoryPieChart(Modifier.padding(16.dp), categories = detail.current.byCategory, currency = detail.amount.currency, references = state.categories)
+                }
+            }
+            return@LazyColumn
+        }
+        if (state.history.isNotEmpty()) item(key = "chart") {
+            Surface(shape = MaterialTheme.shapes.largeIncreased, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Column(Modifier.padding(16.dp)) { BudgetHistoryLineChart(state.history.asReversed(), budget.amount.currency, budget.kind) }
+            }
+            Text(stringResource(R.string.core_history_read_only), Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        items(state.history, key = { it.start.budgetDateText() }) { row ->
+            CoreBudgetHistoryRow(row, budget.amount.currency, ListItemPosition.from(state.history.indexOf(row), state.history.size)) { if (!state.saving) viewModel.historyPeriod(row) }
+        }
+        if (state.historyCursor != null) item(key = "more") {
+            Box(Modifier.fillMaxWidth().padding(top = 12.dp), contentAlignment = Alignment.Center) {
+                TextButton(onClick = viewModel::loadMoreHistory, enabled = !state.loading && !state.historyLoading) { Text(stringResource(R.string.core_history_load_older)) }
+            }
+        }
+    }
+}
+
+/** The budget's numbers as label / value rows. */
+@Composable
+private fun BudgetInfoSheet(row: Budget, state: CoreBudgetsUiState, onDismiss: () -> Unit) {
+    val money = { amount: java.math.BigDecimal -> CoreMoneyPresentation.format(amount, row.amount.currency) }
+    HootbookModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.budget_details), Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.headlineSmall)
+            ListSection {
+                infoRow(R.string.core_budgets_kind, kindText(row.kind) + " · " + periodText(row.period))
+                infoRow(R.string.core_budgets_period, DateFormats.range(row.current.start.historyJavaDate(), row.current.end.historyJavaDate()))
+                infoRow(if (row.kind == BudgetKind.SAVINGS) R.string.core_budgets_saved else R.string.core_budgets_spent, money(row.current.spent))
+                infoRow(R.string.core_budgets_remaining, money(row.current.remaining))
+                infoRow(R.string.core_budgets_daily_spent, money(row.current.dailySpent))
+                item(headline = { Text(stringResource(R.string.core_budgets_days, row.current.daysTotal.toString(), row.current.daysLeft.toString())) })
+                item(headline = { Text(if (row.accountIds == null) stringResource(R.string.core_budgets_all_accounts) else stringResource(R.string.core_budgets_accounts)) },
+                    supporting = row.accountIds?.let { ids -> { Text(ids.joinToString { id -> state.accounts.find { it.id == id }?.name ?: id }) } })
+                row.display?.let { item(headline = { Text(stringResource(R.string.core_budgets_display, it.currency,
+                    CoreMoneyPresentation.format(it.spent, it.currency), CoreMoneyPresentation.format(it.amount, it.currency))) }) }
+            }
+            val notes = buildList {
+                if (!row.active) add(stringResource(R.string.core_budgets_inactive) to false)
+                if (row.accountIds?.isEmpty() == true) add(stringResource(R.string.core_budgets_removed_accounts) to true)
+                if (row.current.over) add(stringResource(if (row.kind == BudgetKind.SAVINGS) R.string.core_budgets_goal else R.string.core_budgets_over) to (row.kind != BudgetKind.SAVINGS))
+                if (!row.current.complete) add(stringResource(R.string.core_budgets_missing, row.current.missingCurrencies.joinToString()) to true)
+                if (row.display == null && state.displayCurrency.isNotBlank() && state.displayCurrency != row.amount.currency)
+                    add(stringResource(R.string.core_budgets_display_missing, state.displayCurrency) to false)
+            }
+            notes.forEach { (text, error) -> Text(text, Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.bodyMedium,
+                color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
+}
+
+private fun ListSectionScope.infoRow(label: Int, value: String) = item(
+    headline = { Text(stringResource(label), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+    trailing = { Text(value, style = MaterialTheme.typography.bodyLarge) },
+)
+
+/** The categories a limit can be set for: expense categories, or income ones for a savings goal. */
+@Composable
+private fun CategoryPickerSheet(categories: List<Category>, kind: BudgetKind, onDismiss: () -> Unit, onPick: (Category) -> Unit) {
+    val rows = categories.filter { it.kind == if (kind == BudgetKind.SAVINGS) CategoryKind.INCOME else CategoryKind.EXPENSE }
+    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Text(stringResource(R.string.add_limit), Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp), style = MaterialTheme.typography.headlineSmall)
+        LazyColumn(Modifier.heightIn(max = 520.dp), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
+            if (rows.isEmpty()) item { Text(stringResource(R.string.core_budgets_no_categories), Modifier.padding(16.dp)) }
+            else item { ListSection { rows.forEach { category ->
+                item(leading = { CoreRecordIcon(category.icon, Modifier.size(36.dp)) }, headline = { Text(category.displayName) }, onClick = { onPick(category) })
+            } } }
+        }
+    }
+}
+
+/** New or changed budget: amount, name, kind, period and dates, currency, color, accounts, limits. */
 @Composable private fun BudgetEditor(draft: CoreBudgetDraft, accounts: List<Account>, categories: List<Category>, saving: Boolean, error: String?,
     onChange: (CoreBudgetDraft) -> Unit, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     val defaultName = periodText(draft.period)
     var pickingCategory by remember { mutableStateOf(false) }
     var editingLimit by remember { mutableStateOf<String?>(null) }
     var limitAmount by remember { mutableStateOf("") }
-    HootbookModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(if (draft.id == null) R.string.new_budget else R.string.edit_budget), style = MaterialTheme.typography.headlineSmall)
-            val previewColor = runCatching { Color(android.graphics.Color.parseColor(draft.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
-            BudgetAnimatedGradientMeshCard(previewColor) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(draft.name.ifBlank { defaultName }, style = MaterialTheme.typography.labelLarge)
-                    OutlinedTextField(draft.amount, { onChange(draft.copy(amount = it)) },
-                        label = { Text(stringResource(R.string.core_budgets_amount)) }, singleLine = true, enabled = !saving,
-                        textStyle = MaterialTheme.typography.headlineLarge, modifier = Modifier.fillMaxWidth())
-                }
+    FormSheet(stringResource(if (draft.id == null) R.string.new_budget else R.string.edit_budget), onDismiss, { onSave(defaultName) },
+        busy = saving, error = error, confirmEnabled = draft.amount.toBigDecimalOrNull() != null) {
+        FormTextField(draft.amount, stringResource(R.string.core_budgets_amount), { onChange(draft.copy(amount = it)) }, enabled = !saving, decimal = true)
+        FormTextField(draft.name, stringResource(R.string.core_budgets_name), { onChange(draft.copy(name = it)) }, enabled = !saving)
+        GenericTypeSwitcher(listOf(BudgetKind.EXPENSE, BudgetKind.SAVINGS).indexOf(draft.kind).coerceAtLeast(0),
+            { if (!saving) onChange(draft.copy(kind = listOf(BudgetKind.EXPENSE, BudgetKind.SAVINGS)[it])) },
+            listOf(kindText(BudgetKind.EXPENSE), kindText(BudgetKind.SAVINGS)), Modifier.fillMaxWidth())
+        SectionTitle(stringResource(R.string.core_budgets_period), indent = 0.dp)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BudgetPeriod.entries.filter { it != BudgetPeriod.UNKNOWN }.forEach { period -> FilterChip(selected = draft.period == period,
+                onClick = { onChange(draft.copy(period = period)) }, enabled = !saving, label = { Text(periodText(period)) }) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.weight(1f)) { CorePlanDateField(draft.start, stringResource(R.string.core_budgets_start), saving, allowClear = false) { onChange(draft.copy(start = it)) } }
+            if (draft.period == BudgetPeriod.CUSTOM) Box(Modifier.weight(1f)) {
+                CorePlanDateField(draft.end, stringResource(R.string.core_budgets_end), saving, allowClear = false) { onChange(draft.copy(end = it)) }
             }
-            BudgetDialogError(error)
-            BudgetField(draft.name, R.string.core_budgets_name, saving) { onChange(draft.copy(name = it)) }
-            Text(stringResource(R.string.core_budgets_kind))
-            FlowRow { listOf(BudgetKind.EXPENSE, BudgetKind.SAVINGS).forEach { kind -> FilterChip(selected = draft.kind == kind,
-                onClick = { onChange(draft.copy(kind = kind)) }, enabled = !saving, label = { Text(kindText(kind)) }) } }
-            Text(stringResource(R.string.core_budgets_period))
-            FlowRow { BudgetPeriod.entries.filter { it != BudgetPeriod.UNKNOWN }.forEach { period -> FilterChip(selected = draft.period == period,
-                onClick = { onChange(draft.copy(period = period)) }, enabled = !saving, label = { Text(periodText(period)) }) } }
-            BudgetField(draft.currency, R.string.core_budgets_currency, saving) { onChange(draft.copy(currency = it)) }
-            CorePlanDateField(draft.start, stringResource(R.string.core_budgets_start), saving,allowClear=false) { onChange(draft.copy(start = it)) }
-            if (draft.period == BudgetPeriod.CUSTOM) CorePlanDateField(draft.end, stringResource(R.string.core_budgets_end), saving,allowClear=false) { onChange(draft.copy(end = it)) }
-            ColorPickerContent(initialColor = runCatching { android.graphics.Color.parseColor(draft.color) }.getOrDefault(0xff4caf50.toInt()),
-                onColorChanged = { if (!saving) onChange(draft.copy(color = String.format(java.util.Locale.ROOT, "#%06X", 0xffffff and it))) }, showTitle = true)
-            Row { Checkbox(draft.allAccounts, onCheckedChange = { onChange(draft.copy(allAccounts = it)) }, enabled = !saving)
-                Text(stringResource(R.string.core_budgets_all_accounts)) }
-            if (!draft.allAccounts) {
-                Text(stringResource(R.string.core_budgets_accounts))
-                if (accounts.isEmpty()) Text(stringResource(R.string.core_budgets_no_accounts))
-                accounts.forEach { account -> Row {
-                    Checkbox(account.id in draft.accountIds, onCheckedChange = { checked -> onChange(draft.copy(accountIds = if (checked) draft.accountIds + account.id else draft.accountIds - account.id)) }, enabled = !saving)
-                    Text(listOfNotNull(account.name, account.last4).joinToString(" · "))
-                } }
-                (draft.accountIds - accounts.map { it.id }.toSet()).forEach { id -> Row {
-                    Checkbox(true, onCheckedChange = { onChange(draft.copy(accountIds = draft.accountIds - id)) }, enabled = !saving)
-                    Text(stringResource(R.string.core_budgets_unavailable_account, id))
-                } }
+        }
+        FormTextField(draft.currency, stringResource(R.string.core_budgets_currency), { onChange(draft.copy(currency = it.uppercase())) }, enabled = !saving)
+        CoreColorPickerRow(draft.color, !saving) { onChange(draft.copy(color = it)) }
+        SectionTitle(stringResource(R.string.core_budgets_accounts), indent = 0.dp)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(draft.allAccounts, { onChange(draft.copy(allAccounts = true)) }, enabled = !saving,
+                label = { Text(stringResource(R.string.core_budgets_all_accounts)) })
+            accounts.forEach { account ->
+                FilterChip(!draft.allAccounts && account.id in draft.accountIds, {
+                    val ids = if (account.id in draft.accountIds && !draft.allAccounts) draft.accountIds - account.id else draft.accountIds + account.id
+                    onChange(draft.copy(allAccounts = ids.isEmpty(), accountIds = ids))
+                }, enabled = !saving, label = { Text(account.name) })
             }
-            if (draft.id == null) Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.category_limits), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        TextButton(onClick = { pickingCategory = true }, enabled = !saving) { Icon(Icons.Rounded.Add, null); Text(stringResource(R.string.add_limit)) }
-                    }
-                    if (draft.limits.isEmpty()) Text(stringResource(R.string.no_category_limits_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    draft.limits.forEach { limit ->
-                        val category = categories.find { it.id == limit.categoryId }
-                        Row(Modifier.fillMaxWidth().clickable(enabled = !saving) { editingLimit = limit.categoryId; limitAmount = limit.amount.toPlainString() }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(36.dp))
-                            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(category?.displayName ?: limit.categoryId); Text(CurrencyFormatter.formatCurrency(limit.amount, draft.currency), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
-                            IconButton(onClick = { onChange(draft.copy(limits = draft.limits.filterNot { it.categoryId == limit.categoryId })) }, enabled = !saving) { Icon(Icons.Rounded.Delete, stringResource(R.string.core_budgets_limit_remove)) }
-                        }
-                    }
-                }
-            } else Text(stringResource(R.string.core_budgets_limits_note))
-            Button(onClick = { onSave(defaultName) }, enabled = !saving, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Icon(Icons.Rounded.Done, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.core_budgets_save))
+            (draft.accountIds - accounts.map { it.id }.toSet()).forEach { id ->
+                FilterChip(true, { onChange(draft.copy(accountIds = draft.accountIds - id)) }, enabled = !saving,
+                    label = { Text(stringResource(R.string.core_budgets_unavailable_account, id)) })
             }
-            TextButton(onClick = onDismiss, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_budgets_cancel)) }
-            Spacer(Modifier.height(24.dp))
+        }
+        if (draft.id == null) ListSection(
+            title = stringResource(R.string.core_budgets_limits),
+            action = { TooltipIconButton(Icons.Rounded.Add, stringResource(R.string.add_limit), { pickingCategory = true }, enabled = !saving) },
+        ) {
+            if (draft.limits.isEmpty()) item(headline = { Text(stringResource(R.string.no_category_limits_desc), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant) })
+            draft.limits.forEach { limit ->
+                val category = categories.find { it.id == limit.categoryId }
+                item(leading = { CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(36.dp)) }, headline = { Text(category?.displayName ?: limit.categoryId) },
+                    trailing = { Text(CoreMoneyPresentation.format(limit.amount, draft.currency)) },
+                    onClick = { if (!saving) { editingLimit = limit.categoryId; limitAmount = limit.amount.toPlainString() } })
+            }
+        } else Text(stringResource(R.string.core_budgets_limits_note), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    if (pickingCategory) CategoryPickerSheet(categories, draft.kind, { pickingCategory = false }) { category ->
+        pickingCategory = false; editingLimit = category.id; limitAmount = draft.limits.find { it.categoryId == category.id }?.amount?.toPlainString().orEmpty()
+    }
+    editingLimit?.let { categoryId ->
+        val existing = draft.limits.any { it.categoryId == categoryId }
+        FormSheet(categories.find { it.id == categoryId }?.displayName ?: categoryId, { editingLimit = null }, {
+            limitAmount.toBigDecimalOrNull()?.let { amount -> onChange(draft.copy(limits = draft.limits.filterNot { it.categoryId == categoryId } + NewBudgetLimit(categoryId, amount))) }
+            editingLimit = null
+        }, confirmEnabled = limitAmount.toBigDecimalOrNull() != null,
+            titleAction = if (existing) ({ TextButton(onClick = { onChange(draft.copy(limits = draft.limits.filterNot { it.categoryId == categoryId })); editingLimit = null }) {
+                Text(stringResource(R.string.core_budgets_limit_remove), color = MaterialTheme.colorScheme.error) } }) else null) {
+            FormTextField(limitAmount, stringResource(R.string.core_budgets_limit_amount), { limitAmount = it }, decimal = true, supporting = draft.currency)
         }
     }
-    if (pickingCategory) HootbookModalBottomSheet(onDismissRequest = { pickingCategory = false }) {
-        Text(stringResource(R.string.add_limit), Modifier.padding(24.dp), style = MaterialTheme.typography.headlineSmall)
-        LazyColumn(Modifier.heightIn(max = 480.dp)) {
-            items(categories.filter { it.kind == if (draft.kind == BudgetKind.SAVINGS) CategoryKind.INCOME else CategoryKind.EXPENSE }, key = { it.id }) { category ->
-                ListItem(headlineContent = { Text(category.displayName) }, leadingContent = { CoreRecordIcon(category.icon, Modifier.size(36.dp)) }, modifier = Modifier.clickable(enabled = !saving) {
-                    pickingCategory = false; editingLimit = category.id; limitAmount = draft.limits.find { it.categoryId == category.id }?.amount?.toPlainString().orEmpty()
-                })
-            }
-        }
-    }
-    editingLimit?.let { categoryId -> HootbookModalBottomSheet(onDismissRequest = { editingLimit = null }) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(categories.find { it.id == categoryId }?.displayName ?: categoryId, style = MaterialTheme.typography.headlineSmall)
-            AmountInput(limitAmount, draft.currency, {}, enabled = !saving)
-            DecimalAmountPad(limitAmount, { if (!saving) limitAmount = it })
-            Button(onClick = { limitAmount.toBigDecimalOrNull()?.let { amount -> onChange(draft.copy(limits = draft.limits.filterNot { it.categoryId == categoryId } + NewBudgetLimit(categoryId, amount))); editingLimit = null } }, enabled = !saving && limitAmount.toBigDecimalOrNull() != null, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.save)) }
-        }
-    } }
 }
-@Composable private fun BudgetField(value: String, label: Int, saving: Boolean, change: (String) -> Unit) {
-    OutlinedTextField(value, change, label = { Text(stringResource(label)) }, enabled = !saving, singleLine = true, modifier = Modifier.fillMaxWidth())
-}
+
 @Composable private fun kindText(kind: BudgetKind) = stringResource(when (kind) {
     BudgetKind.EXPENSE -> R.string.core_budgets_expense; BudgetKind.SAVINGS -> R.string.core_budgets_savings; BudgetKind.UNKNOWN -> R.string.core_budgets_unknown
 })

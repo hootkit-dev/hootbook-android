@@ -181,7 +181,7 @@ private fun AnalyticsFilterSheet(query: CoreAnalyticsQuery, onDismiss: () -> Uni
     FormSheet(stringResource(R.string.txn_filter), onDismiss, { apply(draft); onDismiss() }, confirmLabel = stringResource(R.string.core_analytics_apply),
         confirmEnabled = draft.kinds.isNotEmpty(),
         titleAction = { TextButton(onClick = { draft = draft.copy(kinds = setOf(TransactionKind.EXPENSE), currency = "") }) { Text(stringResource(R.string.reset)) } }) {
-        SectionTitle(stringResource(R.string.txn_kind), Modifier.padding(start = 0.dp))
+        SectionTitle(stringResource(R.string.txn_kind), indent = 0.dp)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TransactionKind.entries.filter { it != TransactionKind.UNKNOWN }.forEach { kind ->
                 FilterChip(kind in draft.kinds, { draft = draft.copy(kinds = if (kind in draft.kinds) draft.kinds - kind else draft.kinds + kind) },

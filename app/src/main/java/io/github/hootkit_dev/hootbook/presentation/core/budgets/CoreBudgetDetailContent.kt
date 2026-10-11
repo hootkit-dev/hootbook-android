@@ -1,6 +1,10 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package io.github.hootkit_dev.hootbook.presentation.core.budgets
 
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TooltipIconButton
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,7 +29,6 @@ import io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.DashedLine
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 import java.time.LocalDate as JavaDate
 
@@ -33,8 +36,7 @@ import java.time.LocalDate as JavaDate
 @Composable internal fun CoreBudgetPeriodDivider(budget: Budget) {
     val start = JavaDate.parse(budget.current.start.budgetDateText())
     val end = JavaDate.parse(budget.current.end.budgetDateText())
-    val text = if (start.year == end.year) "${start.format(DateFormats.monthDayFormatter())} - ${end.format(DateFormats.monthDayFormatter())}, ${start.year}"
-        else "${start.format(DateFormats.fullDateFormatter())} - ${end.format(DateFormats.fullDateFormatter())}"
+    val text = DateFormats.range(start, end)
     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         DashedLine(Modifier.weight(1f), MaterialTheme.colorScheme.onSurface.copy(alpha = .2f))
         Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
@@ -42,41 +44,28 @@ import java.time.LocalDate as JavaDate
     }
 }
 
-/** Exact limit-card geometry from the original EditBudgetSheet, using Core limit statuses. */
-@Composable internal fun CoreBudgetLimitsCard(budget: Budget, categories: List<Category>, enabled: Boolean,
-    onAdd: () -> Unit, onEdit: (Category) -> Unit, onRemove: (String) -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.category_limits), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                TextButton(onClick = onAdd, enabled = enabled) { Icon(Icons.Rounded.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.add_limit)) }
-            }
-            if (budget.current.limits.isEmpty()) Text(stringResource(R.string.no_category_limits_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
-            budget.current.limits.forEachIndexed { index, limit ->
-                val category = categories.find { it.id == limit.categoryId }
-                val color = runCatching { Color(android.graphics.Color.parseColor(category?.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
-                Row(Modifier.fillMaxWidth().clickable(enabled = enabled && category != null) { category?.let(onEdit) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = .15f)), contentAlignment = Alignment.Center) { CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(18.dp)) }
-                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                        Text(category?.displayName ?: limit.categoryId, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(CurrencyFormatter.formatCurrency(limit.amount, budget.amount.currency), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                        Text(stringResource(R.string.core_budgets_limit_status, limit.spent.toPlainString(), limit.remaining.toPlainString()), style = MaterialTheme.typography.labelSmall, color = if (limit.over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { onRemove(limit.categoryId) }, enabled = enabled) { Icon(Icons.Rounded.Delete, stringResource(R.string.core_budgets_limit_remove), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                }
-                if (index != budget.current.limits.lastIndex) HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = .1f))
-            }
-        }
-    }
-}
-
-@Composable internal fun CoreBudgetTransactionsUnavailable() {
-    Text(stringResource(R.string.transactions), Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(8.dp))
-    Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.shapes.large).padding(24.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Icon(Icons.Rounded.ReceiptLong, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.core_history_transaction_gap), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+/** The budget's category limits: what each allows, what is spent and left; a row edits its limit. */
+@Composable internal fun CoreBudgetLimitsSection(budget: Budget, categories: List<Category>, enabled: Boolean,
+    onAdd: () -> Unit, onEdit: (Category) -> Unit) {
+    val currency = budget.amount.currency
+    ListSection(
+        title = stringResource(R.string.core_budgets_limits),
+        action = { TooltipIconButton(Icons.Rounded.Add, stringResource(R.string.add_limit), onAdd, enabled = enabled) },
+    ) {
+        if (budget.current.limits.isEmpty()) item(headline = { Text(stringResource(R.string.no_category_limits_desc), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant) })
+        budget.current.limits.forEach { limit ->
+            val category = categories.find { it.id == limit.categoryId }
+            val color = runCatching { Color(android.graphics.Color.parseColor(category?.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
+            item(
+                leading = { Box(Modifier.size(40.dp).clip(CircleShape).background(color.copy(alpha = .15f)), contentAlignment = Alignment.Center) {
+                    CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(24.dp)) } },
+                headline = { Text(category?.displayName ?: limit.categoryId, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                supporting = { Text(stringResource(R.string.core_budgets_limit_status, CoreMoneyPresentation.format(limit.spent, currency),
+                    CoreMoneyPresentation.format(limit.remaining, currency)), color = if (limit.over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant) },
+                trailing = { Text(CoreMoneyPresentation.format(limit.amount, currency), style = MaterialTheme.typography.titleMedium) },
+                onClick = if (enabled && category != null) ({ onEdit(category) }) else null,
+            )
         }
     }
 }
@@ -88,8 +77,8 @@ import java.time.LocalDate as JavaDate
     Surface(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(bottom = 1.5.dp), shape = position.toShape(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("${period.start.budgetDateText()} — ${period.end.budgetDateText()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("${CurrencyFormatter.formatCurrency(period.spent, currency)} / ${CurrencyFormatter.formatCurrency(period.amount, currency)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(DateFormats.range(period.start.historyJavaDate(), period.end.historyJavaDate()), style = MaterialTheme.typography.titleMedium)
+                Text("${CoreMoneyPresentation.format(period.spent, currency)} / ${CoreMoneyPresentation.format(period.amount, currency)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (!period.complete) Text(stringResource(R.string.core_budgets_history_incomplete), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.width(16.dp))

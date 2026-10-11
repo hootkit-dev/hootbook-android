@@ -13,7 +13,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetCard
-import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetLimitsCard
+import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetLimitsSection
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetHistoryRow
 import io.github.hootkit_dev.hootbook.presentation.core.categories.categoryRow
 import io.github.hootkit_dev.hootbook.presentation.core.debts.CorePersonRow
@@ -58,13 +58,10 @@ class RestoredFeatureUiTest {
         val progress = BudgetProgress(day, day, 1u, 1u, BigDecimal("12.34"), BigDecimal("87.66"), false, BigDecimal("87.66"), BigDecimal.ZERO, true, emptyList(), listOf(limit), emptyList())
         val budget = Budget("budget-id", "Budget", BudgetKind.EXPENSE, BudgetPeriod.MONTHLY, Money(BigDecimal("100"), "CNY"), day, null, null, true, "#4CAF50", progress, null, at, at)
         var edited: String? = null
-        var removed: String? = null
-        rule.setContent { HootbookTheme(dynamicColor = false) { CoreBudgetLimitsCard(budget, listOf(category), true, {}, { edited = it.id }, { removed = it }) } }
+        rule.setContent { HootbookTheme(dynamicColor = false) { CoreBudgetLimitsSection(budget, listOf(category), true, {}, { edited = it.id }) } }
         rule.onNodeWithText(money("34.56")).assertIsDisplayed()
         rule.onNodeWithText("Food").performClick()
         rule.runOnIdle { assertEquals("limit-category", edited) }
-        rule.onNodeWithContentDescription(context.getString(R.string.core_budgets_limit_remove)).performClick()
-        rule.runOnIdle { assertEquals("limit-category", removed) }
     }
 
     @Test fun budgetHistoryRingKeepsOverspendPercentageAndPeriodNavigation() {

@@ -85,7 +85,7 @@ fun TransactionsFilterBottomSheet(state: CoreTransactionsUiState, onDismiss: () 
 @Composable
 private fun ChipGroup(title: String, content: @Composable FlowRowScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        SectionTitle(title, Modifier.padding(start = 0.dp))
+        SectionTitle(title, indent = 0.dp)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
 }
