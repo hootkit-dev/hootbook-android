@@ -64,7 +64,7 @@ class CategoriesViewModel @Inject constructor(
         val editing = uiState.value.editingCategory
         command { api ->
             if (editing == null) api.create(NewCategory(if (isIncome) CategoryKind.INCOME else CategoryKind.EXPENSE, name, iconName, color))
-            else api.update(editing.id, CategoryPatch(name = name, color = color, icon = iconName))
+            else api.update(editing.id, CategoryPatch(name = name.takeUnless { it == editing.displayName }, color = color, icon = iconName))
             mutable.update { it.copy(showAddEditDialog = false, editingCategory = null) }
         }
     }
@@ -73,7 +73,7 @@ class CategoriesViewModel @Inject constructor(
         val parent = state.targetCategoryId ?: return
         command { api ->
             if (state.editingSubcategory == null) api.createSubcategory(NewSubcategory(parent, name, iconName, color))
-            else api.updateSubcategory(state.editingSubcategory.id, SubcategoryPatch(name = name, icon = iconName, color = color))
+            else api.updateSubcategory(state.editingSubcategory.id, SubcategoryPatch(name = name.takeUnless { it == state.editingSubcategory.displayName }, icon = iconName, color = color))
             mutable.update { it.copy(showSubcategoryDialog = false, editingSubcategory = null, targetCategoryId = null) }
         }
     }

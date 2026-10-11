@@ -15,12 +15,16 @@ class CategoriesViewModelTest : CoreViewModelTest() {
         var rows = listOf(category)
         var onCreate: suspend () -> Unit = {}
         var creates = 0
+        var patch: CategoryPatch? = null
+        var subPatch: SubcategoryPatch? = null
         var onCount: suspend (String) -> UInt = { 1u }
         var deletion: Pair<String, CategoryRef?>? = null
         override fun categories() = object : Categories(NoPointer) {
             override suspend fun list(kind: CategoryKind?, includeHidden: Boolean) = rows
             override suspend fun transactionCount(categoryId: String) = onCount(categoryId)
             override suspend fun create(input: NewCategory): String { creates++; onCreate(); return "new" }
+            override suspend fun update(categoryId: String, patch: CategoryPatch) { this@Fake.patch = patch }
+            override suspend fun updateSubcategory(subcategoryId: String, patch: SubcategoryPatch) { this@Fake.subPatch = patch }
             override suspend fun delete(categoryId: String, moveTo: CategoryRef?) { deletion = categoryId to moveTo }
         }
     }
@@ -56,4 +60,20 @@ class CategoriesViewModelTest : CoreViewModelTest() {
         awaitState { !vm.uiState.value.saving }
         assertEquals(category.id to CategoryRef("target", null), core.deletion)
     }
+    @Test fun unchangedBuiltinNamesDoNotBecomeLocaleOverrides() = runTest {
+        val core = Fake()
+        val vm = keep(CategoriesViewModel(CoreSession(backgroundScope) { core }, ChangeBus()))
+        val builtin = category.copy(builtinKey = "food", name = null, displayName = "餐饮")
+        vm.showEditDialog(builtin); vm.saveCategory("餐饮", "#123456", "food", false)
+        awaitState { !vm.uiState.value.saving }
+        assertNull(core.patch!!.name)
+        val sub = Subcategory("sub", builtin.id, "coffee", null, "咖啡", "coffee", "#123456", 0, false)
+        vm.showEditSubcategoryDialog(sub); vm.saveSubcategory("咖啡", 0, "coffee", "#123456")
+        awaitState { !vm.uiState.value.saving }
+        assertNull(core.subPatch!!.name)
+        vm.showEditDialog(builtin); vm.saveCategory("My food", "#123456", "food", false)
+        awaitState { !vm.uiState.value.saving }
+        assertEquals("My food", core.patch!!.name)
+    }
+
 }
