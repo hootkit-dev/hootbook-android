@@ -68,7 +68,6 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
             icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(if (state.selected == null) R.string.add_category else R.string.add_subcategory)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (state.navigationBlocked) Text(stringResource(R.string.core_categories_saving_navigation), modifier = Modifier.padding(16.dp))
             state.error?.let { error -> Surface(color = MaterialTheme.colorScheme.errorContainer) {
                 Row(Modifier.fillMaxWidth().padding(12.dp)) {
@@ -143,7 +142,6 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
                         Text(draft.name.ifBlank { stringResource(R.string.category_name) }, style = MaterialTheme.typography.titleMedium)
                     }
                 }
-                if (state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 CoreTextField(draft.name, stringResource(R.string.core_categories_20), state.saving) { viewModel.draftChanged(draft.copy(name = it)) }
                 if (draft.parentId == null && draft.id == null) GenericTypeSwitcher(

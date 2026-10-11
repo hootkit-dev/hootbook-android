@@ -91,7 +91,6 @@ fun CoreNotificationPreferencesScreen(onBack: () -> Unit, viewModel: CoreNotific
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState()).padding(padding)
                 .consumeWindowInsets(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                if (busy || !ready) LinearProgressIndicator(Modifier.fillMaxWidth())
                 error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error); TextButton(onClick = viewModel::reload) { Text(stringResource(R.string.core_system_retry)) } }
                 if (platformError) Text(stringResource(R.string.core_system_settings_unavailable), color = MaterialTheme.colorScheme.error)
                 if (!granted) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {

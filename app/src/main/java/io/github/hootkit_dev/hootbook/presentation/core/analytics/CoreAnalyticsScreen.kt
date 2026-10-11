@@ -80,7 +80,6 @@ fun CoreAnalyticsScreen(onBack: () -> Unit, onTransactions: (categoryId: String?
                             Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                if (state.loading || state.loadingDays) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                 state.error?.let { error -> item {
                     Text(stringResource(error), color = MaterialTheme.colorScheme.error)
                     TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.core_analytics_retry)) }

@@ -104,7 +104,6 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
             LazyColumn(Modifier.widthIn(max = 880.dp).fillMaxSize(), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                if (state.loading || state.configBusy || state.fileBusy || state.saving) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                 state.error?.let { error -> item { Surface(color = MaterialTheme.colorScheme.errorContainer) { Column(Modifier.padding(12.dp)) {
                     Text(error); FlowRow { TextButton(onClick = viewModel::clearError) { Text(stringResource(R.string.core_ai_dismiss)) }
                         TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.core_ai_refresh)) } }
@@ -137,7 +136,6 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
                         item { Text(stringResource(R.string.core_ai_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     CoreAiPhase.PREPARING, CoreAiPhase.RUNNING -> {
-                        item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                         item { RunningProgress(state) }
                     }
                     CoreAiPhase.REVIEW, CoreAiPhase.SAVED -> {
@@ -214,12 +212,10 @@ private tailrec fun Context.findActivity(): Activity? = when (this) { is Activit
             Button(onClick = vm::saveConfig, enabled = enabled && state.configDirty) { Text(stringResource(R.string.core_ai_save_configuration)) }
             OutlinedButton(onClick = { vm.loadModels(); pickingModel = true }, enabled = enabled && !state.modelLoading && !state.config.removeKey) { Text(stringResource(R.string.core_ai_models)) }
         }
-        if (state.modelLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (pickingModel) HootbookModalBottomSheet(onDismissRequest = { pickingModel = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.core_ai_models), style = MaterialTheme.typography.titleLarge)
                 OutlinedTextField(state.modelSearch, vm::modelSearch, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_search_models)) })
-                if (state.modelLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
                 LazyColumn(Modifier.heightIn(max = 480.dp)) {
                     items(state.models.filter { state.modelSearch.isBlank() || it.id.contains(state.modelSearch, true) || it.displayName.contains(state.modelSearch, true) }, key = { it.id }) { model ->
                         ListItem(headlineContent = { Text(model.displayName) }, supportingContent = { Text(model.id + if (model.readsImages) " ◉" else "") },

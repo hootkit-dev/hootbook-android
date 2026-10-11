@@ -187,7 +187,6 @@ private fun SubscriptionEditor(form: CoreSubscriptionForm, refs: CorePlanReferen
 })
 
 @Composable internal fun PlanStatus(loading: Boolean, saving: Boolean, blocked: Boolean, error: String?, clear: () -> Unit) {
-    if (loading || saving) LinearProgressIndicator(Modifier.fillMaxWidth())
     if (blocked) Text(stringResource(R.string.core_plans_saving_navigation), modifier = Modifier.padding(12.dp))
     error?.let { Surface(color = MaterialTheme.colorScheme.errorContainer) {
         Row(Modifier.fillMaxWidth().padding(12.dp)) {

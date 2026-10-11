@@ -89,7 +89,6 @@ fun CoreAccountsScreen(
             icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.add_account_fab_desc)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (state.navigationBlocked) Text(stringResource(R.string.core_accounts_saving_navigation), modifier = Modifier.padding(16.dp))
             state.error?.let { error ->
                 Surface(color = MaterialTheme.colorScheme.errorContainer) {
@@ -277,7 +276,6 @@ private fun PocketDialog(initial: PocketEditor, saving: Boolean, error: String?,
                 PocketAction.ADD -> stringResource(R.string.core_accounts_50); PocketAction.CALIBRATE -> stringResource(R.string.balance_calibration)
                 PocketAction.LIMIT -> stringResource(R.string.core_accounts_51); PocketAction.ANCHOR -> stringResource(R.string.core_accounts_52)
             }, style = MaterialTheme.typography.headlineSmall)
-            if (saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (editor.action == PocketAction.ADD) CoreTextField(editor.currency, stringResource(R.string.core_accounts_53), saving) { editor = editor.copy(currency = it) }
             else Text(editor.currency, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
@@ -315,7 +313,6 @@ private fun AccountHistoryPanel(state: CoreAccountsUiState, model: CoreAccountsV
             CoreTextField(state.historyTo, stringResource(R.string.core_full_history_to), state.saving) { model.historyInputs(state.historyFrom, it, state.balanceAtInput) }
             CoreTextField(state.balanceAtInput, stringResource(R.string.core_full_history_at), state.saving) { model.historyInputs(state.historyFrom, state.historyTo, it) }
             Button(enabled = !state.saving && !state.historyLoading, onClick = model::queryHistory) { Text(stringResource(R.string.core_full_history_query)) }
-            if (state.historyLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             state.historicalBalance?.let { Text(stringResource(R.string.core_full_balance_at, CoreMoneyPresentation.format(it, state.currency.orEmpty(), state.customSymbols))) }
             for (day in state.history) Text("${day.date.year}-${day.date.month}-${day.date.day} · ${CoreMoneyPresentation.format(day.balance, state.currency.orEmpty(), state.customSymbols)}")
         }

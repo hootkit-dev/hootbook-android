@@ -123,7 +123,6 @@ fun CoreOnboardingScreen(@Suppress("UNUSED_PARAMETER") session: CoreSession, pre
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            if (state.loading || busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (state.error || profileState.error != null) {
                 Text(stringResource(R.string.onboarding_operation_failed), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 24.dp))
                 TextButton(onClick = viewModel::refresh, enabled = !busy) { Text(stringResource(R.string.onboarding_try_again)) }

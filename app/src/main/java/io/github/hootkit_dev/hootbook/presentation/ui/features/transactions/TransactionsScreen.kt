@@ -97,7 +97,6 @@ fun TransactionsScreen(state: CoreTransactionsUiState, model: CoreTransactionsVi
                 items(periodChoices()) { period -> FilterChip(state.query.fromDate == period.from && state.query.toDateExclusive == period.to, { model.applyQuery(state.query.copy(fromDate = period.from, toDateExclusive = period.to)) }, label = { Text(stringResource(period.label)) }) }
                 item { FilterChip(false, { dateRange = true }, label = { Text(stringResource(R.string.time_period_custom_range)) }) }
             }
-            if (state.loading || state.writing || state.exporting) LinearProgressIndicator(Modifier.fillMaxWidth())
             state.error?.let { error -> Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(12.dp)) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) { Text(error, Modifier.weight(1f)); TextButton(onClick = model::clearError) { Text(stringResource(R.string.core_attachment_close)) } }
             } }

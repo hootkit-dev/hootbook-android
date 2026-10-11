@@ -66,7 +66,6 @@ fun CoreCurrenciesScreen(onBack: () -> Unit, initialCurrency: String? = null,
     }) { padding ->
         Column(Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState()).padding(padding).consumeWindowInsets(padding).padding(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (prefsBusy || !prefsReady || state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             prefsError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp)) }
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp)) }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -202,7 +201,6 @@ private fun CoreCurrencyRatesSheet(onBack: () -> Unit, initialCurrency: String? 
         Text(stringResource(R.string.exchange_rates), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (state.loading || state.saving) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (state.navigationBlocked) item { Text(stringResource(R.string.core_currencies_saving)) }
             if(state.downloadFailed)item{Text(stringResource(R.string.core_currency_download_failed),color=MaterialTheme.colorScheme.error)}
             state.error?.let { error -> item { Surface(color = MaterialTheme.colorScheme.errorContainer) { Column(Modifier.padding(12.dp)) {
@@ -233,7 +231,6 @@ private fun CoreCurrencyRatesSheet(onBack: () -> Unit, initialCurrency: String? 
                     label = { Text(stringResource(R.string.core_currencies_to)) })
                 Text(stringResource(R.string.core_currencies_convert_note))
                 TextButton(onClick = viewModel::convert, enabled = enabled) { Text(stringResource(R.string.core_currencies_convert)) }
-                if (state.previewLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.previewError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 state.preview?.let { preview ->
                     if (preview.amount == null) Text(stringResource(R.string.core_currencies_missing_rate, preview.input.from, preview.input.to), color = MaterialTheme.colorScheme.error)

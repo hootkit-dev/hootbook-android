@@ -54,7 +54,7 @@ fun CoreMerchantIconsScreen(onBack:()->Unit,merchant:String?=null,viewModel:Core
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),contentAlignment=androidx.compose.ui.Alignment.TopCenter){
             Column(Modifier.widthIn(max=720.dp).fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
                 OutlinedTextField(name,viewModel::name,label={Text(stringResource(R.string.core_ui_merchant_name))},enabled=!busy,singleLine=true,modifier=Modifier.fillMaxWidth())
-                if(busy)LinearProgressIndicator(Modifier.fillMaxWidth());error?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
+                error?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
                 icon?.let{AsyncImage(it,stringResource(R.string.core_ui_merchant_icons),Modifier.size(96.dp))}
                 Row{OutlinedButton(onClick={pick.launch(arrayOf("image/*"))},enabled=!busy&&name.isNotBlank()){Text(stringResource(R.string.core_ui_pick_image))};TextButton(onClick=viewModel::remove,enabled=!busy&&name.isNotBlank()){Text(stringResource(R.string.core_ui_remove))}}
                 Text(stringResource(R.string.core_ui_icon_search_note),style=MaterialTheme.typography.bodySmall)

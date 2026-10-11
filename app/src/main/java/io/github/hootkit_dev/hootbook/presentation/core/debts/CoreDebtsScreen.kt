@@ -134,7 +134,6 @@ fun CoreDebtsScreen(
             icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(if (state.selectedId == null) R.string.core_debts_add_person else R.string.core_debts_add_record)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            if (state.loading || state.saving || state.assetLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             state.platformError?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
             if (state.navigationBlocked) Text(stringResource(R.string.core_debts_saving), modifier = Modifier.padding(16.dp))
             state.error?.let { message -> Surface(color = MaterialTheme.colorScheme.errorContainer) {
@@ -417,7 +416,6 @@ private fun debtColor(value: String?): Color = Color(runCatching { android.graph
     HootbookModalBottomSheet(onDismissRequest = { if (!state.saving) dismiss() }) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            if (state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             content()
             Button(onClick = save, enabled = !state.saving && !state.assetLoading, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.core_debts_save)) }

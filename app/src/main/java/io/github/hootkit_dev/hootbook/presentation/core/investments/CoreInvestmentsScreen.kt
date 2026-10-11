@@ -80,7 +80,6 @@ fun CoreInvestmentsScreen(
                 }
                 if (linkedAccount(ref, state.connections)?.linkedAccountId != null) TextButton(enabled = !state.busy,
                     onClick = { viewModel.link(ref, null) }) { Text(stringResource(R.string.core_invest_unlink)) }
-                if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.error?.let { Text(investmentFailureText(it), color = MaterialTheme.colorScheme.error) }
             } },
             confirmButton = { TextButton(enabled = !state.busy, onClick = { viewModel.showLink(null) }) { Text(stringResource(R.string.core_invest_close)) } })
@@ -90,7 +89,6 @@ fun CoreInvestmentsScreen(
             title = { Text(stringResource(R.string.core_invest_disconnect)) },
             text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.core_invest_disconnect_warning))
-                if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.error?.let { Text(investmentFailureText(it), color = MaterialTheme.colorScheme.error) }
             } },
             confirmButton = { TextButton(enabled = !state.busy, onClick = { viewModel.disconnect(id) }) { Text(stringResource(R.string.core_invest_disconnect)) } },
@@ -126,13 +124,10 @@ internal fun CoreInvestmentsContent(
         PullToRefreshBox(isRefreshing = state.busy, onRefresh = { if (!state.busy) onRefreshAll() }, modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
         LazyColumn(Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (state.loading || state.busy) item("progress") {
+            if (state.busy) item("progress") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                    if (state.busy) {
-                        Text(stringResource(if (state.cancelling) R.string.core_invest_cancelling else R.string.core_invest_working))
-                        TextButton(enabled = !state.cancelling, onClick = onCancel) { Text(stringResource(R.string.core_invest_cancel_request)) }
-                    }
+                    Text(stringResource(if (state.cancelling) R.string.core_invest_cancelling else R.string.core_invest_working))
+                    TextButton(enabled = !state.cancelling, onClick = onCancel) { Text(stringResource(R.string.core_invest_cancel_request)) }
                 }
             }
             state.error?.let { error -> item("error") {

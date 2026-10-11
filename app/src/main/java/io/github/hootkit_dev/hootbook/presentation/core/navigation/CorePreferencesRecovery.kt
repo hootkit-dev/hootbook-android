@@ -31,7 +31,6 @@ import kotlinx.coroutines.launch
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
         Text(stringResource(R.string.core_shell_preferences_failed)); Text(stringResource(R.string.core_shell_recovery_note))
-        if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (failed) Text(stringResource(R.string.core_shell_recovery_auth_failed))
         Button(onClick = bootstrap::start, enabled = !busy) { Text(stringResource(R.string.core_shell_retry)) }
         OutlinedButton(enabled = activity != null && !busy, onClick = {
