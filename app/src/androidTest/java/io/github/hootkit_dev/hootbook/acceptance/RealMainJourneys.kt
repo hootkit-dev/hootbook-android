@@ -42,7 +42,7 @@ class RealMainJourneys {
             val starterName="${f.tag} Starter account"
             click(R.string.onboarding_start_fresh)
             if(originalAccounts.isEmpty()){
-                field(R.string.bank_name_hint,starterName)
+                field(R.string.onb_account_name,starterName)
                 field(R.string.balance,"0")
                 field(R.string.last_4_digits_hint,"1234")
             }

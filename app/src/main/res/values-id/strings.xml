@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Langganan</string>
     <string name="per_month">/ Bulan</string>
     <string name="edit_profile">Edit Profil</string>
-    <string name="gallery">Galeri</string>
     <string name="change_banner">Ganti Banner</string>
     <string name="financial_overview">Ikhtisar Keuangan</string>
     <string name="net_worth">Kekayaan Bersih</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Nama Bank (misalnya, HDFC, SBI)</string>
     <string name="last_4_digits_hint">4 Digit Terakhir Akun</string>
     <string name="last_4_digits_placeholder">misalnya 1234</string>
-    <string name="stay_informed">Tetap Terinformasi</string>
     <string name="continue_action">Lanjutkan</string>
     <string name="notification">Notifikasi</string>
     <string name="subscriptions">Langganan</string>

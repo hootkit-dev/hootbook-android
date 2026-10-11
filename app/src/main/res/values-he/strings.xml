@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d מנויים</string>
     <string name="per_month">/ חודש</string>
     <string name="edit_profile">ערוך פרופיל</string>
-    <string name="gallery">גלריה</string>
     <string name="change_banner">שנה באנר</string>
     <string name="financial_overview">סקירה פיננסית</string>
     <string name="net_worth">שווי נקי</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">שם הבנק (למשל, HDFC, SBI)</string>
     <string name="last_4_digits_hint">4 הספרות האחרונות של החשבון</string>
     <string name="last_4_digits_placeholder">למשל 1234</string>
-    <string name="stay_informed">השאר מעודכן</string>
     <string name="continue_action">המשך</string>
     <string name="notification">התראה</string>
     <string name="subscriptions">מנויים</string>

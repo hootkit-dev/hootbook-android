@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d সাবস্ক্রিপশন্স</string>
     <string name="per_month">/ মাস</string>
     <string name="edit_profile">প্রোফাইল সম্পাদনা করুন</string>
-    <string name="gallery">গ্যালারি</string>
     <string name="change_banner">ব্যানার পরিবর্তন করুন</string>
     <string name="financial_overview">আর্থিক সংক্ষিপ্ত পরিচিতি</string>
     <string name="net_worth">নেট ওয়ার্থ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">ব্যাংকের নাম (যেমন, HDFC, SBI)</string>
     <string name="last_4_digits_hint">অ্যাকাউন্টের শেষ ৪ সংখ্যা</string>
     <string name="last_4_digits_placeholder">যেমন 1234</string>
-    <string name="stay_informed">অবহিত থাকুন</string>
     <string name="continue_action">চালিয়ে যান</string>
     <string name="notification">নোটিফিকেশন</string>
     <string name="subscriptions">সাবস্ক্রিপশন</string>

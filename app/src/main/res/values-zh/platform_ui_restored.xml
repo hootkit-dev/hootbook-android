@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="platform_onboarding_account_ready">此设备已有账户。选择主货币后继续。</string>
-    <string name="platform_onboarding_import_body">先检查再安全恢复备份。兼容的旧版备份只能导入空账本。</string>
     <string name="platform_onboarding_profile_edit">选择头像与个人资料颜色</string>
 </resources>

@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d サブスクリプション</string>
     <string name="per_month">/ 月</string>
     <string name="edit_profile">プロファイルを編集</string>
-    <string name="gallery">ギャラリー</string>
     <string name="change_banner">バナーを変更</string>
     <string name="financial_overview">財務概要</string>
     <string name="net_worth">純価値</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">銀行名（例：HDFC、SBI）</string>
     <string name="last_4_digits_hint">Last 4 digits of Account</string>
     <string name="last_4_digits_placeholder">例: 1234</string>
-    <string name="stay_informed">常に情報を得る</string>
     <string name="continue_action">続ける</string>
     <string name="notification">通知</string>
     <string name="subscriptions">サブスクリプション</string>

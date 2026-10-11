@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d előfizetés</string>
     <string name="per_month">/ Hónap</string>
     <string name="edit_profile">Profil szerkesztése</string>
-    <string name="gallery">Galéria</string>
     <string name="change_banner">Bannerváltás</string>
     <string name="financial_overview">Pénzügyi áttekintés</string>
     <string name="net_worth">Nettó vagyon</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bank neve (pl. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Számla utolsó 4 számjegye</string>
     <string name="last_4_digits_placeholder">pl. 1234</string>
-    <string name="stay_informed">Maradjon tájékozott</string>
     <string name="continue_action">Folytatás</string>
     <string name="notification">Értesítés</string>
     <string name="subscriptions">Előfizetések</string>

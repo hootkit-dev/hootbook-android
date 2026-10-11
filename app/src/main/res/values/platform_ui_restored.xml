@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="platform_onboarding_account_ready">An account is already on this device. Choose the main currency, then continue.</string>
-    <string name="platform_onboarding_import_body">Inspect and restore your backup safely. Compatible legacy backups require an empty ledger.</string>
     <string name="platform_onboarding_profile_edit">Choose your photo and profile colors</string>
 </resources>

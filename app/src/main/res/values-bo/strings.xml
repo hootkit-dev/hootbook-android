@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d མངག་ཉོ་</string>
     <string name="per_month">/ ཟླ་</string>
     <string name="edit_profile">རྩོམ་སྒྲིག་གི་གསལ་སྡུད།</string>
-    <string name="gallery">པར་རིས་ཁང་།</string>
     <string name="change_banner">དར་ཆ་བསྒྱུར་བ།</string>
     <string name="financial_overview">ནོར་དོན་མདོར་བསྡུས།</string>
     <string name="net_worth">རིན་ཐང་ཁེར་གཙང་།</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">དངུལ་ཁང་གི་མིང་། (དཔེར་ན་HDFC, SBI)</string>
     <string name="last_4_digits_hint">རྩིས་ཐོའི་མཐའ་མཇུག་གི་གྲངས་ཀ་བཞི་</string>
     <string name="last_4_digits_placeholder">དཔེར་ན། 1234</string>
-    <string name="stay_informed">གནས་ཚུལ་མཁྱེན་རྟོགས་བྱེད་དགོས</string>
     <string name="continue_action">མུ་མཐུད་</string>
     <string name="notification">བརྡ་ཐོ་</string>
     <string name="subscriptions">མངག་ཉོ་བྱས་པ།</string>

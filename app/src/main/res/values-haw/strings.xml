@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d kau inoa</string>
     <string name="per_month">/ Mahina</string>
     <string name="edit_profile">Hoʻoponopono i ka moʻolelo</string>
-    <string name="gallery">Hale Hōʻikeʻike</string>
     <string name="change_banner">Hoʻololi i ka hae</string>
     <string name="financial_overview">ʻIke kālā</string>
     <string name="net_worth">Uuna Waiwai</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Inoa Bank (e laʻa, HDFC, SBI)</string>
     <string name="last_4_digits_hint">He 4 helu hope loa</string>
     <string name="last_4_digits_placeholder">e.g. 1234</string>
-    <string name="stay_informed">Noho ʻike</string>
     <string name="continue_action">E hoʻomau</string>
     <string name="notification">Hoolaha</string>
     <string name="subscriptions">Kau inoa</string>

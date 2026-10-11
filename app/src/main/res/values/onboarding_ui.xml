@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onb_existing_data">Already have data?</string>
+    <string name="onb_restore_body">Restore your ledger from a backup file</string>
+    <string name="onb_account_name">Account name</string>
+    <string name="onb_currency">Main currency</string>
+    <string name="onb_last4_help">Optional; tells cards of the same bank apart</string>
+    <string name="onb_profile_body">Only shown on this device</string>
+    <string name="onb_notifications_title">Turn on reminders</string>
+</resources>

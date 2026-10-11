@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d การสมัครสมาชิก</string>
     <string name="per_month">/ เดือน</string>
     <string name="edit_profile">แก้ไขโปรไฟล์</string>
-    <string name="gallery">แกลเลอรี</string>
     <string name="change_banner">เปลี่ยนแบนเนอร์</string>
     <string name="financial_overview">ภาพรวมทางการเงิน</string>
     <string name="net_worth">มูลค่าสุทธิ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">ชื่อธนาคาร (เช่น HDFC, SBI)</string>
     <string name="last_4_digits_hint">เลข 4 หลักสุดท้ายของบัญชี</string>
     <string name="last_4_digits_placeholder">เช่น 1234</string>
-    <string name="stay_informed">ติดตามข้อมูลล่าสุด</string>
     <string name="continue_action">ดำเนินการต่อ</string>
     <string name="notification">การแจ้งเตือน</string>
     <string name="subscriptions">การสมัครสมาชิก</string>

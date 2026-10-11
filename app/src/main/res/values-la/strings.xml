@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Subnotationes</string>
     <string name="per_month">/ Mensis</string>
     <string name="edit_profile">Profili Edita</string>
-    <string name="gallery">Phototheca</string>
     <string name="change_banner">Banner Mutare</string>
     <string name="financial_overview">Conspectus Financial</string>
     <string name="net_worth">Netius Valor</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Nomen Argentariae (exempli gratia, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Ultima 4 Digiti Rationis</string>
     <string name="last_4_digits_placeholder">exempli gratia 1234</string>
-    <string name="stay_informed">Mane Notus</string>
     <string name="continue_action">Continua</string>
     <string name="notification">Notitia</string>
     <string name="subscriptions">Subscriptiones</string>

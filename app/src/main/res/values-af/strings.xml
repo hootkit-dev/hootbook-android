@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Intekeninge</string>
     <string name="per_month">/ Maand</string>
     <string name="edit_profile">Wysig Profiel</string>
-    <string name="gallery">Galerij</string>
     <string name="change_banner">Verander Banier</string>
     <string name="financial_overview">Finansiële Oorsig</string>
     <string name="net_worth">Netto Waarde</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bank Naam (bv., HDFC, SBI)</string>
     <string name="last_4_digits_hint">Laaste 4 Syfers van Rekening</string>
     <string name="last_4_digits_placeholder">bv. 1234</string>
-    <string name="stay_informed">Bly ingelig</string>
     <string name="continue_action">Gaan voort</string>
     <string name="notification">Kennisgewing</string>
     <string name="subscriptions">Subskripsies</string>

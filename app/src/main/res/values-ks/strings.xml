@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d سبسکرپشنز</string>
     <string name="per_month">/ ریتھ</string>
     <string name="edit_profile">اؠڈِٹ کَرنہٕ آمُت پروفایل</string>
-    <string name="gallery">گیلری</string>
     <string name="change_banner">بینر تبدیل کٔرِو</string>
     <string name="financial_overview">مٲلی جٲیزٕ</string>
     <string name="net_worth">نیٹ ورتھ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">بینک ناو (مثلاً، HDFC، SBI)</string>
     <string name="last_4_digits_hint">کھاتُک ٲخری 4 ہندسہٕ</string>
     <string name="last_4_digits_placeholder">مثلاً 1234</string>
-    <string name="stay_informed">باخبر روٗزِو</string>
     <string name="continue_action">جٲری تھاوُن</string>
     <string name="notification">نوٹیفکیشن</string>
     <string name="subscriptions">سبسکرپشنز</string>

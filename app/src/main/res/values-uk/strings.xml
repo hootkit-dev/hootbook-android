@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Підписок</string>
     <string name="per_month">за місяць</string>
     <string name="edit_profile">Редагувати профіль</string>
-    <string name="gallery">Галерея</string>
     <string name="change_banner">Змінити банер</string>
     <string name="financial_overview">Фінансовий огляд</string>
     <string name="net_worth">Чиста вартість</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Назва банку (напр., HDFC, SBI)</string>
     <string name="last_4_digits_hint">Останні 4 цифри рахунку</string>
     <string name="last_4_digits_placeholder">напр. 1234</string>
-    <string name="stay_informed">Бути налаштованим</string>
     <string name="continue_action">Продовжити</string>
     <string name="notification">Сповіщення</string>
     <string name="subscriptions">Підписки</string>

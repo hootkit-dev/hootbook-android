@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d ਸਬਸਕ੍ਰਿਪਸ਼ਨਾਂ</string>
     <string name="per_month">/ ਮਹੀਨਾ</string>
     <string name="edit_profile">ਪ੍ਰੋਫਾਈਲ ਸੋਧੋ</string>
-    <string name="gallery">ਗੈਲਰੀ</string>
     <string name="change_banner">ਬੈਨਰ ਬਦਲੋ</string>
     <string name="financial_overview">ਵਿੱਤੀ ਜਾਇਜ਼ਾ</string>
     <string name="net_worth">ਸ਼ੁੱਧ ਮੌਲਤਾ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">ਬੈਂਕ ਦਾ ਨਾਮ (ਜਿਵੇਂ HDFC, SBI)</string>
     <string name="last_4_digits_hint">ਖਾਤੇ ਦੇ ਆਖਰੀ 4 ਅੰਕ</string>
     <string name="last_4_digits_placeholder">ਜਿਵੇਂ 1234</string>
-    <string name="stay_informed">ਸੂਚਿਤ ਰਹੋ</string>
     <string name="continue_action">ਜਾਰੀ ਰੱਖੋ</string>
     <string name="notification">ਸੂਚਨਾ</string>
     <string name="subscriptions">ਸਬਸਕ੍ਰਿਪਸ਼ਨ</string>

@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d naročnin</string>
     <string name="per_month">/ mesec</string>
     <string name="edit_profile">Uredi profil</string>
-    <string name="gallery">Galerija</string>
     <string name="change_banner">Zamenjaj pasico</string>
     <string name="financial_overview">Finančni pregled</string>
     <string name="net_worth">Neto premoženje</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Ime banke (npr. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Zadnje 4 številke računa</string>
     <string name="last_4_digits_placeholder">npr. 1234</string>
-    <string name="stay_informed">Ostani obveščen</string>
     <string name="continue_action">Nadaljuj</string>
     <string name="notification">Obvestilo</string>
     <string name="subscriptions">Naročnine</string>

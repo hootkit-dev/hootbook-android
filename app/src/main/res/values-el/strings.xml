@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Συνδρομές</string>
     <string name="per_month">/ Μήνα</string>
     <string name="edit_profile">Επεξεργασία Προφίλ</string>
-    <string name="gallery">Γκαλερί</string>
     <string name="change_banner">Αλλαγή Banner</string>
     <string name="financial_overview">Οικονομική Επισκόπηση</string>
     <string name="net_worth">Καθαρή Αξία</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Όνομα Τράπεζας (π.χ. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Τελευταία 4 Ψηφία Λογαριασμού</string>
     <string name="last_4_digits_placeholder">π.χ. 1234</string>
-    <string name="stay_informed">Μείνετε Ενημερωμένοι</string>
     <string name="continue_action">Συνέχεια</string>
     <string name="notification">Ειδοποίηση</string>
     <string name="subscriptions">Συνδρομές</string>

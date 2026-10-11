@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d prenumerationer</string>
     <string name="per_month">/ Månad</string>
     <string name="edit_profile">Redigera profil</string>
-    <string name="gallery">Galleri</string>
     <string name="change_banner">Byt banner</string>
     <string name="financial_overview">Finansiell översikt</string>
     <string name="net_worth">Nettovärde</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Banknamn (t.ex. HDFC, SBI)</string>
     <string name="last_4_digits_hint">De sista 4 siffrorna på kontot</string>
     <string name="last_4_digits_placeholder">T.ex. 1234</string>
-    <string name="stay_informed">Håll dig informerad</string>
     <string name="continue_action">Fortsätt</string>
     <string name="notification">Avisering</string>
     <string name="subscriptions">Prenumerationer</string>

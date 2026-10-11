@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d predplatných</string>
     <string name="per_month">/ mesiac</string>
     <string name="edit_profile">Upraviť profil</string>
-    <string name="gallery">Galéria</string>
     <string name="change_banner">Zmeniť banner</string>
     <string name="financial_overview">Finančný prehľad</string>
     <string name="net_worth">Čistý majetok</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Názov banky (napr. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Posledné 4 číslice účtu</string>
     <string name="last_4_digits_placeholder">napr. 1234</string>
-    <string name="stay_informed">Zostaňte informovaní</string>
     <string name="continue_action">Pokračovať</string>
     <string name="notification">Oznámenie</string>
     <string name="subscriptions">Predplatné</string>

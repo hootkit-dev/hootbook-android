@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d áskriftir</string>
     <string name="per_month">/ Mánuð</string>
     <string name="edit_profile">Breyta prófíl</string>
-    <string name="gallery">Myndasafn</string>
     <string name="change_banner">Breyta borða</string>
     <string name="financial_overview">Fjárhagsyfirlit</string>
     <string name="net_worth">Heildareignir</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Nafn bankans (t.d., HDFC, SBI)</string>
     <string name="last_4_digits_hint">Síðustu 4 tölustafir reiknings</string>
     <string name="last_4_digits_placeholder">t.d. 1234</string>
-    <string name="stay_informed">Vertu upplýstur</string>
     <string name="continue_action">Haltu áfram</string>
     <string name="notification">Tilkynning</string>
     <string name="subscriptions">Áskriftir</string>

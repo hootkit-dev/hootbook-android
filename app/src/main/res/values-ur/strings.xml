@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d سبسکرپشنز</string>
     <string name="per_month">/ مہینہ</string>
     <string name="edit_profile">پروفائل ترمیم کریں</string>
-    <string name="gallery">گیلری</string>
     <string name="change_banner">بینر تبدیل کریں</string>
     <string name="financial_overview">مالیاتی جائزہ</string>
     <string name="net_worth">کل دولت</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">بینک کا نام (مثلاً، HDFC، SBI)</string>
     <string name="last_4_digits_hint">اکاؤنٹ کے آخری 4 ہندسے</string>
     <string name="last_4_digits_placeholder">مثلاً 1234</string>
-    <string name="stay_informed">باخبر رہیں</string>
     <string name="continue_action">جاری رکھیں</string>
     <string name="notification">اطلاع</string>
     <string name="subscriptions">سبسکرپشنز</string>

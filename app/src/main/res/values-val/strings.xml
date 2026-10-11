@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Subscricions</string>
     <string name="per_month">/ Mes</string>
     <string name="edit_profile">Edita el Perfil</string>
-    <string name="gallery">Galeria</string>
     <string name="change_banner">Canvia el Banner</string>
     <string name="financial_overview">Resum Financer</string>
     <string name="net_worth">Patrimoni Net</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Nom del banc (p. ex., HDFC, SBI)</string>
     <string name="last_4_digits_hint">Últims 4 dígits del compte</string>
     <string name="last_4_digits_placeholder">p. ex. 1234</string>
-    <string name="stay_informed">Mantingueu-vos informat</string>
     <string name="continue_action">Continua</string>
     <string name="notification">Notificació</string>
     <string name="subscriptions">Subscripcions</string>

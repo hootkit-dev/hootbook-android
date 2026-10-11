@@ -243,7 +243,6 @@
     <string name="per_month">/ Month</string>
     <!-- Edit Profile & Profile -->
     <string name="edit_profile">Edit Profile</string>
-    <string name="gallery">Gallery</string>
     <string name="change_banner">Change Banner</string>
     <string name="financial_overview">Financial Overview</string>
     <string name="net_worth">Net Worth</string>
@@ -251,14 +250,13 @@
     <string name="active_subscriptions_singular">1 Sub</string>
     <string name="active_subscriptions_plural">%1$d Subs</string>
     <!-- Onboarding -->
-    <string name="set_up_your_profile">Set Up Your Profile</string>
+    <string name="set_up_your_profile">Set up your profile</string>
     <string name="what_should_we_call_you">What should we call you?</string>
-    <string name="add_your_main_account">Add Your Main Account</string>
+    <string name="add_your_main_account">Add your main account</string>
     <string name="enter_primary_account_details">Enter your primary account details to get started.</string>
-    <string name="bank_name_hint">Bank Name (e.g., HDFC, SBI)</string>
-    <string name="last_4_digits_hint">Last 4 Digits of Account</string>
+    <string name="bank_name_hint">Bank or card, e.g. Bank of China, Chase</string>
+    <string name="last_4_digits_hint">Last 4 digits</string>
     <string name="last_4_digits_placeholder">e.g. 1234</string>
-    <string name="stay_informed">Stay Informed</string>
     <string name="continue_action">Continue</string>
     <!-- Mock Messages -->
     <string name="notification">Notification</string>

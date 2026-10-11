@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Gói đăng ký</string>
     <string name="per_month">/ Tháng</string>
     <string name="edit_profile">Chỉnh sửa Hồ sơ</string>
-    <string name="gallery">Bộ sưu tập</string>
     <string name="change_banner">Thay đổi Biểu ngữ</string>
     <string name="financial_overview">Tổng quan Tài chính</string>
     <string name="net_worth">Giá trị Ròng</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Tên Ngân hàng (ví dụ: HDFC, SBI)</string>
     <string name="last_4_digits_hint">4 chữ số cuối của tài khoản</string>
     <string name="last_4_digits_placeholder">ví dụ: 1234</string>
-    <string name="stay_informed">Luôn được thông báo</string>
     <string name="continue_action">Tiếp tục</string>
     <string name="notification">Thông báo</string>
     <string name="subscriptions">Đăng ký</string>

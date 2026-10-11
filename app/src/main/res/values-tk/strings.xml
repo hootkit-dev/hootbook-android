@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Abonementler</string>
     <string name="per_month">/ Aý</string>
     <string name="edit_profile">Profile Düzet</string>
-    <string name="gallery">Galereýa</string>
     <string name="change_banner">Banneri Üýtget</string>
     <string name="financial_overview">Maliýe Gözlegi</string>
     <string name="net_worth">Net Bahasy</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bankyň ady (meselem, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Hasabyň soňky 4 belgisi</string>
     <string name="last_4_digits_placeholder">meselem 1234</string>
-    <string name="stay_informed">Maglumatly bolmak</string>
     <string name="continue_action">Dowam et</string>
     <string name="notification">Duýduryş</string>
     <string name="subscriptions">Abunalyklar</string>

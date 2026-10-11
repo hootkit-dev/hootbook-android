@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d اشتراک</string>
     <string name="per_month">/ ماه</string>
     <string name="edit_profile">ویرایش پروفایل</string>
-    <string name="gallery">گالری</string>
     <string name="change_banner">تغییر بنر</string>
     <string name="financial_overview">نمای کلی مالی</string>
     <string name="net_worth">ارزش خالص</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">نام بانک (مثلاً HDFC، SBI)</string>
     <string name="last_4_digits_hint">۴ رقم آخر حساب</string>
     <string name="last_4_digits_placeholder">مثلاً 1234</string>
-    <string name="stay_informed">به‌روز بمانید</string>
     <string name="continue_action">ادامه</string>
     <string name="notification">اطلاعیه</string>
     <string name="subscriptions">اشتراک‌ها</string>

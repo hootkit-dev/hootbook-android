@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d ସଦସ୍ୟତାଗୁଡିକ</string>
     <string name="per_month">/ ମାସ</string>
     <string name="edit_profile">ପ୍ରୋଫାଇଲ ସମ୍ପାଦନା କରନ୍ତୁ</string>
-    <string name="gallery">ଗ୍ୟାଲେରୀ</string>
     <string name="change_banner">ବ୍ୟାନର ପରିବର୍ତ୍ତନ କରନ୍ତୁ</string>
     <string name="financial_overview">ଆର୍ଥିକ ସମୀକ୍ଷା</string>
     <string name="net_worth">ଶୁଦ୍ଧ ମୂଲ୍ୟ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">ବ୍ୟାଙ୍କର ନାମ (ଉଦାହରଣ ସ୍ୱରୂପ, HDFC, SBI)</string>
     <string name="last_4_digits_hint">ଖାତାର ଶେଷ 4 ଅଙ୍କ</string>
     <string name="last_4_digits_placeholder">ଉଦାହରଣ ସ୍ୱରୂପ 1234</string>
-    <string name="stay_informed">ସୂଚନାଧାରୀ ରୁହନ୍ତୁ</string>
     <string name="continue_action">ଚାଲାନ୍ତୁ</string>
     <string name="notification">ସୂଚନା</string>
     <string name="subscriptions">ସବସ୍କ୍ରିପ୍ସନ୍</string>

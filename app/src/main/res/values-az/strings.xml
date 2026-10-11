@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Abunəliklər</string>
     <string name="per_month">/ Ay</string>
     <string name="edit_profile">Profilini Redaktə Et</string>
-    <string name="gallery">Qalereya</string>
     <string name="change_banner">Banneri Dəyiş</string>
     <string name="financial_overview">Maliyyə Baxışı</string>
     <string name="net_worth">Xalis Dəyər</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bankın adı (məsələn, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Hesabın son 4 rəqəmi</string>
     <string name="last_4_digits_placeholder">məsələn 1234</string>
-    <string name="stay_informed">Məlumatlı qalın</string>
     <string name="continue_action">Davam et</string>
     <string name="notification">Bildiriş</string>
     <string name="subscriptions">Abunəliklər</string>

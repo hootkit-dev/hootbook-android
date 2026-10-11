@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Abonnementer</string>
     <string name="per_month">/ Måned</string>
     <string name="edit_profile">Rediger Profil</string>
-    <string name="gallery">Galleri</string>
     <string name="change_banner">Skift Banner</string>
     <string name="financial_overview">Finansiel Oversigt</string>
     <string name="net_worth">Netto Værd</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Banknavn (f.eks. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Sidste 4 cifre på konto</string>
     <string name="last_4_digits_placeholder">f.eks. 1234</string>
-    <string name="stay_informed">Ophold Informeret</string>
     <string name="continue_action">Fortsæt</string>
     <string name="notification">Underretning</string>
     <string name="subscriptions">Abonnementer</string>

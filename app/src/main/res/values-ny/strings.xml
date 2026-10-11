@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Kulembetsa</string>
     <string name="per_month">/ Mwezi</string>
     <string name="edit_profile">Sinthani Mbiri</string>
-    <string name="gallery">Galero</string>
     <string name="change_banner">Sinthani Banner</string>
     <string name="financial_overview">Chidule cha Zachuma</string>
     <string name="net_worth">Net Worth</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Dzina la Banki (monga HDFC, SBI)</string>
     <string name="last_4_digits_hint">Manambala 4 Omaliza a Akaunti</string>
     <string name="last_4_digits_placeholder">mwachitsanzo 1234</string>
-    <string name="stay_informed">Khalani Odziwa</string>
     <string name="continue_action">Pitirizani</string>
     <string name="notification">Chidziwitso</string>
     <string name="subscriptions">Kulembetsa</string>

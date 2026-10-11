@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d اشتراك</string>
     <string name="per_month">/ شهر</string>
     <string name="edit_profile">تعديل الملف الشخصي</string>
-    <string name="gallery">المعرض</string>
     <string name="change_banner">تغيير البانر</string>
     <string name="financial_overview">نظرة مالية عامة</string>
     <string name="net_worth">صافي الثروة</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">اسم البنك (مثل HDFC، SBI)</string>
     <string name="last_4_digits_hint">آخر 4 أرقام من الحساب</string>
     <string name="last_4_digits_placeholder">مثال: 1234</string>
-    <string name="stay_informed">ابقَ على اطلاع</string>
     <string name="continue_action">متابعة</string>
     <string name="notification">إشعار</string>
     <string name="subscriptions">الاشتراكات</string>

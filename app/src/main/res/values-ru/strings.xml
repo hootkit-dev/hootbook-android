@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d подписки</string>
     <string name="per_month">/ Месяц</string>
     <string name="edit_profile">Редактировать профиль</string>
-    <string name="gallery">Галерея</string>
     <string name="change_banner">Изменить баннер</string>
     <string name="financial_overview">Финансовый обзор</string>
     <string name="net_worth">Чистая стоимость</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Название банка (например, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Последние 4 цифры счета</string>
     <string name="last_4_digits_placeholder">например, 1234</string>
-    <string name="stay_informed">Оставаться в курсе</string>
     <string name="continue_action">Продолжить</string>
     <string name="notification">Уведомление</string>
     <string name="subscriptions">Подписки</string>

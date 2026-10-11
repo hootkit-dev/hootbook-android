@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d abonnementen</string>
     <string name="per_month">/ Maand</string>
     <string name="edit_profile">Profiel bewerken</string>
-    <string name="gallery">Galerij</string>
     <string name="change_banner">Wijzig de banner</string>
     <string name="financial_overview">Financieel Overzicht</string>
     <string name="net_worth">Netto waarde</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Banknaam (bijv. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Laatste 4 rekeningcijfers</string>
     <string name="last_4_digits_placeholder">bijv. 1234</string>
-    <string name="stay_informed">Blijf op de hoogte</string>
     <string name="continue_action">Doorgaan</string>
     <string name="notification">Notificatie</string>
     <string name="subscriptions">Abonnementen</string>

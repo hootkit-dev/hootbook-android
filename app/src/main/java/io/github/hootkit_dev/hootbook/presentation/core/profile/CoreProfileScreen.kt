@@ -111,7 +111,7 @@ fun CoreProfileScreen(onBack: () -> Unit, onContacts: () -> Unit = {}, onMerchan
 
 /** The banner (or the bundled one) in a rounded card, the avatar over its bottom edge, then [details]. */
 @Composable
-private fun ProfileHeader(banner: Any?, avatar: Any?, background: Color, avatarSize: Dp = 96.dp, details: @Composable ColumnScope.() -> Unit = {}) {
+internal fun ProfileHeader(banner: Any?, avatar: Any?, background: Color, avatarSize: Dp = 96.dp, details: @Composable ColumnScope.() -> Unit = {}) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().height(140.dp + avatarSize / 2)) {
             Box(Modifier.fillMaxWidth().height(140.dp).clip(MaterialTheme.shapes.extraLarge)) {
@@ -127,7 +127,7 @@ private fun ProfileHeader(banner: Any?, avatar: Any?, background: Color, avatarS
 }
 
 @Composable
-private fun ProfileAvatar(model: Any?, color: Color, modifier: Modifier) {
+internal fun ProfileAvatar(model: Any?, color: Color, modifier: Modifier) {
     Box(modifier.clip(CircleShape).background(color)) {
         if (model != null) AsyncImage(model, stringResource(R.string.profile), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         else Image(painterResource(R.drawable.avatar_1), stringResource(R.string.profile), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -158,12 +158,7 @@ private fun EditProfileSheet(viewModel: CoreProfileViewModel, onDismiss: () -> U
                     if (avatarPath != null) TextButton(onClick = { avatarPath = null }, enabled = enabled) { Text(stringResource(R.string.ui_clear)) }
                 }
             })
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(CoreProfileViewModel.PRESET_AVATARS) { res ->
-                    Image(painterResource(res), stringResource(R.string.core_ui_avatar), Modifier.size(56.dp).clip(CircleShape)
-                        .clickable(enabled = enabled) { viewModel.presetAvatar(res) { avatarPath = it } })
-                }
-            }
+            AvatarPresets(enabled) { res -> viewModel.presetAvatar(res) { avatarPath = it } }
         }
         CoreColorPickerRow("#%06X".format(background and 0xFFFFFF), enabled, label = stringResource(R.string.profile_avatar_background)) { color ->
             background = runCatching { android.graphics.Color.parseColor(color) }.getOrDefault(background)
@@ -176,6 +171,17 @@ private fun EditProfileSheet(viewModel: CoreProfileViewModel, onDismiss: () -> U
                 if (bannerPath != null && showBanner) item(leading = { Icon(Icons.Rounded.HideImage, null) }, headline = { Text(stringResource(R.string.profile_default_banner)) },
                     onClick = if (enabled) { { bannerPath = null; showBanner = false } } else null)
             }
+        }
+    }
+}
+
+/** The bundled avatars in one scrolling row. */
+@Composable
+internal fun AvatarPresets(enabled: Boolean, onPick: (Int) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(CoreProfileViewModel.PRESET_AVATARS) { res ->
+            Image(painterResource(res), stringResource(R.string.core_ui_avatar), Modifier.size(56.dp).clip(CircleShape)
+                .clickable(enabled = enabled) { onPick(res) })
         }
     }
 }

@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Абонамента</string>
     <string name="per_month">/ Месец</string>
     <string name="edit_profile">Редактирай профила</string>
-    <string name="gallery">Галерия</string>
     <string name="change_banner">Смени банера</string>
     <string name="financial_overview">Финансов обзор</string>
     <string name="net_worth">Нетна стойност</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Име на банката (напр. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Последните 4 цифри на сметката</string>
     <string name="last_4_digits_placeholder">напр. 1234</string>
-    <string name="stay_informed">Бъдете информирани</string>
     <string name="continue_action">Продължете</string>
     <string name="notification">Известие</string>
     <string name="subscriptions">Абонаменти</string>

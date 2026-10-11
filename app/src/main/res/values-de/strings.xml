@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Abonnements</string>
     <string name="per_month">/ Monat</string>
     <string name="edit_profile">Profil bearbeiten</string>
-    <string name="gallery">Galerie</string>
     <string name="change_banner">Banner ändern</string>
     <string name="financial_overview">Finanzübersicht</string>
     <string name="net_worth">Nettowert</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bankname (z. B. HDFC, SBI)</string>
     <string name="last_4_digits_hint">Letzte 4 Ziffern des Kontos</string>
     <string name="last_4_digits_placeholder">z.B. 1234</string>
-    <string name="stay_informed">Bleib informiert</string>
     <string name="continue_action">Weiter</string>
     <string name="notification">Benachrichtigung</string>
     <string name="subscriptions">Abonnements</string>

@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d സബ്സ്ക്രിപ്ഷനുകൾ</string>
     <string name="per_month">/ മാസം</string>
     <string name="edit_profile">പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക</string>
-    <string name="gallery">ഗ്യാലറി</string>
     <string name="change_banner">ബാനർ മാറ്റുക</string>
     <string name="financial_overview">ധനകാര്യ അവലോകനം</string>
     <string name="net_worth">നികുതി മൂല്യം</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">ബാങ്കിന്റെ പേര് (ഉദാ: HDFC, SBI)</string>
     <string name="last_4_digits_hint">അക്കൗണ്ട് അവസാനത്തെ 4 അക്കങ്ങൾ</string>
     <string name="last_4_digits_placeholder">ഉദാ. 1234</string>
-    <string name="stay_informed">വിവരമറിയുക</string>
     <string name="continue_action">തുടരുക</string>
     <string name="notification">അറിയിപ്പ്</string>
     <string name="subscriptions">സബ്സ്ക്രിപ്ഷനുകൾ</string>

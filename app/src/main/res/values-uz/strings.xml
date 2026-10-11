@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d Obunalar</string>
     <string name="per_month">/ Oy</string>
     <string name="edit_profile">Profilni tahrirlash</string>
-    <string name="gallery">Galereya</string>
     <string name="change_banner">Bannerni o\'zgartirish</string>
     <string name="financial_overview">Moliyaviy ko\'rinish</string>
     <string name="net_worth">Sof qiymat</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Bank nomi (masalan, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Hisobning so\'nggi 4 raqami</string>
     <string name="last_4_digits_placeholder">masalan, 1234</string>
-    <string name="stay_informed">Yangiliklardan xabardor bo\'ling</string>
     <string name="continue_action">Davom etish</string>
     <string name="notification">Bildirishnoma</string>
     <string name="subscriptions">Obunalar</string>

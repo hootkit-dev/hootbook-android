@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d சந்தாக்கள்</string>
     <string name="per_month">/ மாதம்</string>
     <string name="edit_profile">சுயவிவரம் திருத்தவும்</string>
-    <string name="gallery">திரைப்படகாட்சி</string>
     <string name="change_banner">பேனர் மாற்றவும்</string>
     <string name="financial_overview">பைனான்ஷியல் ஒவர்வியூ</string>
     <string name="net_worth">நிகர மதிப்பு</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">வங்கி பெயர் (எ.கா., HDFC, SBI)</string>
     <string name="last_4_digits_hint">கணக்கின் கடைசி 4 இலக்கங்கள்</string>
     <string name="last_4_digits_placeholder">எ.கா. 1234</string>
-    <string name="stay_informed">தகவல்பெற தொடரவும்</string>
     <string name="continue_action">தொழர்ந்து செல்</string>
     <string name="notification">அறிவிப்பு</string>
     <string name="subscriptions">சந்தாக்கள்</string>

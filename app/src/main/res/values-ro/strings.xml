@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">Abonamente %1$d</string>
     <string name="per_month">/ lună</string>
     <string name="edit_profile">Editare profil</string>
-    <string name="gallery">Galerie</string>
     <string name="change_banner">Schimbă Steagul</string>
     <string name="financial_overview">Prezentare generală financiară</string>
     <string name="net_worth">Valoare netă</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">Numele băncii (de exemplu, HDFC, SBI)</string>
     <string name="last_4_digits_hint">Ultimele 4 cifre ale contului</string>
     <string name="last_4_digits_placeholder">ex. 1234</string>
-    <string name="stay_informed">Rămâi informat</string>
     <string name="continue_action">Continuă</string>
     <string name="notification">Notificare</string>
     <string name="subscriptions">Abonamente</string>

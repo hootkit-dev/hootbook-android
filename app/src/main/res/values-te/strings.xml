@@ -223,7 +223,6 @@
     <string name="subscriptions_count_format">%1$d సభ్యత్వాలు</string>
     <string name="per_month">/ నెల</string>
     <string name="edit_profile">ప్రొఫైల్ సవరించండి</string>
-    <string name="gallery">గ్యాలరీ</string>
     <string name="change_banner">బ్యానర్ మార్చండి</string>
     <string name="financial_overview">ఆర్థిక సమీక్ష</string>
     <string name="net_worth">నికర విలువ</string>
@@ -237,7 +236,6 @@
     <string name="bank_name_hint">బ్యాంక్ పేరు (ఉదా., HDFC, SBI)</string>
     <string name="last_4_digits_hint">ఖాతా చివరి 4 అంకెలు</string>
     <string name="last_4_digits_placeholder">ఉదా. 1234</string>
-    <string name="stay_informed">సమాచారంలో ఉండండి</string>
     <string name="continue_action">కొనసాగించండి</string>
     <string name="notification">నోటిఫికేషన్</string>
     <string name="subscriptions">సబ్‌స్క్రిప్షన్‌లు</string>
