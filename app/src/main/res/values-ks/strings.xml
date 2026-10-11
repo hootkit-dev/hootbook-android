@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d٪)</string>
     <string name="total_uppercase">کل</string>
-    <string name="transactions_format">٪1$d TXNS</string>
     <string name="average">اَوسَط</string>
     <string name="per_day">/دۄہ</string>
     <string name="percentage_of_total">%1$d٪ کُل</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">ذیلی زمرہٕ کٔرِو مِٹاونہٕ؟</string>
     <string name="delete_subcategory_confirm">کیا تُہۍ چھِو یژھان ڈیلیٹ کرُن \'%1$s\'؟ یہ عمل ہیکہِ نہٕ واپس کٔرِتھ۔</string>
     <string name="profile_desc">پروفائل امیج</string>
-    <string name="select_time">وقت ژٲرِو</string>
     <string name="recurring">بار بار یِنہٕ وول</string>
     <string name="balance_after_format">بال: %1$s</string>
     <string name="description_indicator_desc">تفصیل چھِ</string>

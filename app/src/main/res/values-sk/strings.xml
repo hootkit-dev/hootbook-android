@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">CELKOM</string>
-    <string name="transactions_format">%1$d TRANSAKCIÍ</string>
     <string name="average">PRIEMER</string>
     <string name="per_day">/deň</string>
     <string name="percentage_of_total">%1$d%% Z CELKU</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Vymazať podkategóriu?</string>
     <string name="delete_subcategory_confirm">Naozaj chcete vymazať ‘%1$s’? Túto akciu nie je možné vrátiť späť.</string>
     <string name="profile_desc">Profilový obrázok</string>
-    <string name="select_time">Vybrať čas</string>
     <string name="recurring">Opakujúce sa</string>
     <string name="balance_after_format">Zostatok: %1$s</string>
     <string name="description_indicator_desc">Má popis</string>

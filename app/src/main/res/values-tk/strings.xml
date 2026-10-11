@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%)</string>
     <string name="total_uppercase">JEMI</string>
-    <string name="transactions_format">%1$d TRANSAKSIÝA</string>
     <string name="average">ORTA</string>
     <string name="per_day">/gün</string>
     <string name="percentage_of_total">JEMI NÄDEREJE %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Subkategoriýany öçürmek?</string>
     <string name="delete_subcategory_confirm">‘%1$s’ öçürmek isleýärsiňizmi? Bu hereket yzyna gaýtarylamaz.</string>
     <string name="profile_desc">Profil suraty</string>
-    <string name="select_time">Wagty saýla</string>
     <string name="recurring">Gaýtalanýan</string>
     <string name="balance_after_format">Bal.: %1$s</string>
     <string name="description_indicator_desc">Düşündirişi bar</string>

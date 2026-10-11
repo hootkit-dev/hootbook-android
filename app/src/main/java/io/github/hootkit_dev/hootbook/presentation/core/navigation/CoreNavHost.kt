@@ -150,6 +150,8 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                     Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                         if (shareFailure) TextButton(onClick = ingress::dismissFailure) { Text(stringResource(R.string.core_shell_share_failed)) }
                         recordHint?.let { hint -> Row { Text(hint, Modifier.weight(1f)); TextButton(onClick = { recordHint = null }) { Text(stringResource(R.string.core_shell_close)) } } }
+                        // The Add FAB (56 dp and its 16 dp margin) lies over each screen's snackbars unless they leave room.
+                        CompositionLocalProvider(io.github.hootkit_dev.hootbook.presentation.ui.components.LocalHostFabClearance provides if (showAdd) 80.dp else 0.dp) {
                         Box(Modifier.weight(1f).fillMaxWidth().semantics { contentDescription = "core-screen-" + current?.destination?.route.orEmpty().substringBefore('?') }, contentAlignment = Alignment.TopCenter) {
                             NavHost(nav, startDestination = start, modifier = Modifier.fillMaxSize(),
                                 enterTransition = CoreNavigationMotion.enter,
@@ -192,6 +194,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                 composable("about") { AboutScreen(back,{go("licenses")},coreSchemaVersion=schema) }
                                 composable("licenses") { LicensesScreen(back) }
                             }
+                        }
                         }
                     }
                 }

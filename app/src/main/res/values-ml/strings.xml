@@ -190,7 +190,6 @@
     <string name="suffix_thousand">കേ</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">മൊത്തം</string>
-    <string name="transactions_format">%1$d ഇടപാടുകൾ</string>
     <string name="average">ശരാശരി</string>
     <string name="per_day">/ദിവസം</string>
     <string name="percentage_of_total">മൊത്തത്തിന്റെ %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">സബ്കാറ്റഗറി ഇല്ലാക്കണയോ?</string>
     <string name="delete_subcategory_confirm">നിങ്ങൾ ‘%1$s’ ഇല്ലാക്കാൻ ഉറപ്പുള്ളതാണോ? ഈ നടപടി തിരികെചെയ്യാനാകില്ല.</string>
     <string name="profile_desc">പ്രൊഫൈൽ ചിത്രം</string>
-    <string name="select_time">സമയം തിരഞ്ഞെടുക്കുക</string>
     <string name="recurring">പുനരാവൃത്തിയുള്ള</string>
     <string name="balance_after_format">ബാലൻസ്: %1$s</string>
     <string name="description_indicator_desc">വിവരണം ഉണ്ട്</string>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">HEILD</string>
-    <string name="transactions_format">%1$d FYRIRSKRIFTIR</string>
     <string name="average">MEÐAL</string>
     <string name="per_day">/dag</string>
     <string name="percentage_of_total">%1$d%% AF HEILD</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Eyða undirflokki?</string>
     <string name="delete_subcategory_confirm">Ertu viss um að þú viljir eyða „%1$s“? Þetta skref er ekki hægt að afturkalla.</string>
     <string name="profile_desc">Prófílmynd</string>
-    <string name="select_time">Veldu tíma</string>
     <string name="recurring">Endurtekning</string>
     <string name="balance_after_format">Staða: %1$s</string>
     <string name="description_indicator_desc">Hefur lýsingu</string>

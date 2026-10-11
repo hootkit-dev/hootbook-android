@@ -28,6 +28,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDisplayMode
+import androidx.compose.material3.TimePickerDialogDefaults
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -41,6 +44,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
@@ -174,7 +180,7 @@ fun DateTimeField(
     )
     if (pickingDate) DayPicker(dateTime?.toLocalDate(), { pickingDate = false }) { pickedDay = it }
     pickedDay?.let { day ->
-        ClockPicker(dateTime?.toLocalTime(), { pickedDay = null }) { onValueChange(day.atTime(it).toString()) }
+        TimeDialog(dateTime?.toLocalTime(), { pickedDay = null }) { onValueChange(day.atTime(it).toString()) }
     }
 }
 
@@ -197,20 +203,32 @@ fun TimeField(
         onClear = if (allowClear && time != null) ({ onValueChange("") }) else null,
         onClick = { picking = true }, modifier = modifier,
     )
-    if (picking) ClockPicker(time, { picking = false }) { onValueChange(it.toString()) }
+    if (picking) TimeDialog(time, { picking = false }) { onValueChange(it.toString()) }
 }
 
+/**
+ * The Material time picker dialog: the clock dial, or hour and minute fields after the keyboard
+ * toggle. [initial] null starts at the current time.
+ */
 @Composable
-private fun ClockPicker(initial: LocalTime?, onDismiss: () -> Unit, onPicked: (LocalTime) -> Unit) {
+fun TimeDialog(initial: LocalTime?, onDismiss: () -> Unit, is24Hour: Boolean = true, onPicked: (LocalTime) -> Unit) {
     val start = initial ?: LocalTime.now()
-    val clock = rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute, is24Hour = true)
-    AlertDialog(
+    val clock = rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute, is24Hour = is24Hour)
+    var mode by remember { mutableStateOf(TimePickerDisplayMode.Picker) }
+    androidx.compose.material3.TimePickerDialog(
         onDismissRequest = onDismiss,
-        containerColor = HootbookDialogDefaults.containerColor,
-        text = { TimePicker(clock) },
+        title = { TimePickerDialogDefaults.Title(displayMode = mode) },
+        modeToggleButton = {
+            TimePickerDialogDefaults.DisplayModeToggle(displayMode = mode, onDisplayModeChange = {
+                mode = if (mode == TimePickerDisplayMode.Picker) TimePickerDisplayMode.Input else TimePickerDisplayMode.Picker
+            })
+        },
         dismissButton = { DialogDismissButton(stringResource(R.string.cancel), onDismiss) },
         confirmButton = { DialogConfirmButton(stringResource(R.string.ok), { onPicked(LocalTime.of(clock.hour, clock.minute)); onDismiss() }) },
-    )
+        containerColor = HootbookDialogDefaults.containerColor,
+    ) {
+        if (mode == TimePickerDisplayMode.Picker) TimePicker(clock) else TimeInput(clock)
+    }
 }
 
 @Composable
@@ -249,8 +267,10 @@ private fun PickerField(
         )
         // The field itself is read-only; this layer makes it one button. It stops short of the
         // clear button so that stays reachable.
+        // It carries the field's label and value, which the read-only field only exposes as a hint.
         Box(Modifier.matchParentSize().padding(end = if (onClear != null) 56.dp else 0.dp)
-            .clickable(enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick))
+            .clickable(enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label; stateDescription = text })
     }
 }
 

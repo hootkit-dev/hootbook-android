@@ -190,7 +190,6 @@
     <string name="suffix_thousand">కె</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">మొత్తం</string>
-    <string name="transactions_format">%1$d లావాదేవీలు</string>
     <string name="average">సగటు</string>
     <string name="per_day">/రోజు</string>
     <string name="percentage_of_total">మొత్తానికి %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">సబ్‌క్యాటగరీని తొలగించాలా?</string>
     <string name="delete_subcategory_confirm">మీరు నిజంగా ‘%1$s’ ను తొలగించాలా? ఈ చర్యను రద్దు చేయలేరు.</string>
     <string name="profile_desc">ప్రొఫైల్ చిత్రం</string>
-    <string name="select_time">సమయం ఎంచుకోండి</string>
     <string name="recurring">పునరావృతం</string>
     <string name="balance_after_format">సమతుల్యం: %1$s</string>
     <string name="description_indicator_desc">వివరణ ఉంది</string>

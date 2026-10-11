@@ -8,8 +8,6 @@
     <string name="core_system_retry">重试</string>
     <string name="core_system_permission_granted">Android 已允许通知。</string>
     <string name="core_system_master">启用每日与订阅提醒</string>
-    <string name="core_system_hour">小时（0–23）</string>
-    <string name="core_system_minute">分钟（0–59）</string>
     <string name="core_system_subscriptions">订阅提醒</string>
     <string name="core_system_no_subscriptions">暂无订阅。</string>
 </resources>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">কে</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">মোট</string>
-    <string name="transactions_format">%1$dটি লেনদেন</string>
     <string name="average">গড়</string>
     <string name="per_day">/দিন</string>
     <string name="percentage_of_total">মোটের %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">সাবক্যাটেগরি মুছে ফেলবেন?</string>
     <string name="delete_subcategory_confirm">আপনি কি নিশ্চিত যে আপনি \'%1$s\' মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফিরানো যাবে না।</string>
     <string name="profile_desc">প্রোফাইল ছবি</string>
-    <string name="select_time">সময় নির্বাচন করুন</string>
     <string name="recurring">পুনরাবৃত্তি</string>
     <string name="balance_after_format">অবশিষ্ঠ: %1$s</string>
     <string name="description_indicator_desc">বর্ণনা আছে</string>

@@ -129,9 +129,8 @@ fun CoreDebtsScreen(
             }
         },
         floatingActionButton = {
-            if (!selectionMode && state.personForm == null && state.debtForm == null && state.settlement == null) ExtendedFloatingActionButton(
-                onClick = { if (state.selectedId == null) viewModel.editPerson() else viewModel.editDebt() },
-                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(if (state.selectedId == null) R.string.core_debts_add_person else R.string.core_debts_add_record)) })
+            if (!selectionMode && state.personForm == null && state.debtForm == null && state.settlement == null) AddFab(stringResource(if (state.selectedId == null) R.string.core_debts_add_person else R.string.core_debts_add_record),
+                { if (state.selectedId == null) viewModel.editPerson() else viewModel.editDebt() })
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

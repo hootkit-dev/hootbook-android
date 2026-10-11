@@ -37,6 +37,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.NoticeCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ScreenContentPadding
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SecondaryScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionSpacing
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TimeDialog
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -121,12 +122,8 @@ fun CoreNotificationPreferencesScreen(onBack: () -> Unit, viewModel: CoreNotific
             }
         }
     }
-    if (showTimePicker) {
-        val time = rememberTimePickerState(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60, android.text.format.DateFormat.is24HourFormat(context))
-        io.github.hootkit_dev.hootbook.presentation.ui.components.TimePicker(onDismiss = { showTimePicker = false }, onConfirm = {
-            viewModel.update { it.copy(reminderMinutes = time.hour * 60 + time.minute) }; showTimePicker = false
-        }, timePickerState = time)
-    }
+    if (showTimePicker) TimeDialog(LocalTime.of(preferences.reminderMinutes / 60, preferences.reminderMinutes % 60), { showTimePicker = false },
+        android.text.format.DateFormat.is24HourFormat(context)) { time -> viewModel.update { it.copy(reminderMinutes = time.hour * 60 + time.minute) } }
 }
 
 /** Notifications are off at the system level: say so and offer to turn them on. */

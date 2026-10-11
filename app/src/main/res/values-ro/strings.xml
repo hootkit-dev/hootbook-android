@@ -190,7 +190,6 @@
     <string name="suffix_thousand">l</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">TXNS %1$d</string>
     <string name="average">MEDIU</string>
     <string name="per_day"> /zi</string>
     <string name="percentage_of_total">%1$d%% din totalul</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Ștergeți subcategoria?</string>
     <string name="delete_subcategory_confirm">Sunteţi sigur că doriţi să ştergeţi \u2018%1$s\u2019? Această acţiune nu poate fi anulată.</string>
     <string name="profile_desc">Imagine de profil</string>
-    <string name="select_time">Selectează ora</string>
     <string name="recurring">Recurent</string>
     <string name="balance_after_format">Sold: %1$s</string>
     <string name="description_indicator_desc">Are descriere</string>

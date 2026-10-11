@@ -2,7 +2,6 @@
 <resources>
   <string name="core_ui_profile">个人资料</string>
   <string name="core_ui_appearance">外观与显示</string>
-  <string name="core_ui_save">保存</string>
   <string name="core_ui_retry">重试</string>
   <string name="core_ui_name">姓名</string>
   <string name="core_ui_avatar">头像</string>

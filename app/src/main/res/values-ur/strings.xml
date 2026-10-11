@@ -190,7 +190,6 @@
     <string name="suffix_thousand">کے</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">کل</string>
-    <string name="transactions_format">%1$d لین دین</string>
     <string name="average">اوسط</string>
     <string name="per_day">/دن</string>
     <string name="percentage_of_total">کل کا %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">سب کیٹیگری حذف کریں؟</string>
     <string name="delete_subcategory_confirm">کیا آپ واقعی \'%1$s\' کو حذف کرنا چاہتے ہیں؟ اس عمل کو واپس نہیں کیا جا سکتا۔</string>
     <string name="profile_desc">پروفائل تصویر</string>
-    <string name="select_time">وقت منتخب کریں</string>
     <string name="recurring">دہرایا جانے والا</string>
     <string name="balance_after_format">بیلنس: %1$s</string>
     <string name="description_indicator_desc">تفصیل موجود ہے</string>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">JAMI</string>
-    <string name="transactions_format">%1$d TXNS</string>
     <string name="average">O\'RTACHA</string>
     <string name="per_day">/kun</string>
     <string name="percentage_of_total">JAMI %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Pastki kategoriyani o‘chirmoqchimisiz?</string>
     <string name="delete_subcategory_confirm">‘%1$s’ni o‘chirmoqchi ekanligingizga ishonchingiz komilmi? Bu amalni qaytarib bo‘lmaydi.</string>
     <string name="profile_desc">Profil rasmi</string>
-    <string name="select_time">Vaqtni tanlang</string>
     <string name="recurring">Takrorlanuvchi</string>
     <string name="balance_after_format">Balans: %1$s</string>
     <string name="description_indicator_desc">Tavsif mavjud</string>

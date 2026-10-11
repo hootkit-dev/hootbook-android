@@ -25,7 +25,6 @@
     <string name="core_currencies_custom">自定义</string>
     <string name="core_currencies_expired">已过期</string>
     <string name="core_currencies_custom_currencies">自定义货币</string>
-    <string name="core_currencies_add">新增</string>
     <string name="core_currencies_edit">编辑</string>
     <string name="core_currencies_delete">删除</string>
     <string name="core_currencies_rates">已存汇率</string>
@@ -36,7 +35,6 @@
     <string name="core_currencies_code">货币代码</string>
     <string name="core_currencies_name">货币名称</string>
     <string name="core_currencies_symbol">符号（最多 3 个字符）</string>
-    <string name="core_currencies_save">保存</string>
     <string name="core_currencies_cancel">取消</string>
     <string name="core_currencies_custom_rate">自定义汇率</string>
     <string name="core_currencies_custom_rate_note">1 单位原币种等于多少目标币种。</string>

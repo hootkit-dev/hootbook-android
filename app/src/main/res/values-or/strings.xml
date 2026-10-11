@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">ମୋଟ</string>
-    <string name="transactions_format">%1$d ଟି TXNS</string>
     <string name="average">ସାଧାରଣ</string>
     <string name="per_day">/ଦିନ</string>
     <string name="percentage_of_total">ମୋଟର %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">ସବ୍କ୍ୟାଟେଗୋରୀ ଡିଲିଟ୍ କରିବେ?</string>
     <string name="delete_subcategory_confirm">ଆପଣ ପ୍ରକୃତରେ ‘%1$s’ ଡିଲିଟ୍ କରିବାକୁ ଚାହାଁଛନ୍ତି କି? ଏହି କାର୍ଯ୍ୟ ଅପରିବର୍ତ୍ୟନୀୟ।</string>
     <string name="profile_desc">ପ୍ରୋଫାଇଲ୍ ଚିତ୍ର</string>
-    <string name="select_time">ସମୟ ଚୟନ କରନ୍ତୁ</string>
     <string name="recurring">ପୁନରାବୃତ୍ତି</string>
     <string name="balance_after_format">ବ୍ୟାଲୋନ୍ସ: %1$s</string>
     <string name="description_indicator_desc">ବିବରଣୀ ରହିଛି</string>

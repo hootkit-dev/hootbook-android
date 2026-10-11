@@ -61,8 +61,7 @@ fun CoreTemplatesScreen(onBack: () -> Unit, onUseTemplate: (templateId: String) 
             }
         },
         floatingActionButton = {
-            if (state.selectedId == null && state.form == null) ExtendedFloatingActionButton(onClick = viewModel::create,
-                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.plan_template_new)) })
+            if (state.selectedId == null && state.form == null) AddFab(stringResource(R.string.plan_template_new), viewModel::create)
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

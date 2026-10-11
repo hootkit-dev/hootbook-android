@@ -190,7 +190,6 @@
     <string name="suffix_thousand">ק\'</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">סך הכל</string>
-    <string name="transactions_format">%1$d עסקאות</string>
     <string name="average">ממוצע</string>
     <string name="per_day">/יום</string>
     <string name="percentage_of_total">%1$d%% מסך הכל</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">למחוק תת-קטגוריה?</string>
     <string name="delete_subcategory_confirm">האם אתה בטוח שברצונך למחוק את \'%1$s\'? פעולה זו אינה ניתנת לביטול.</string>
     <string name="profile_desc">תמונת פרופיל</string>
-    <string name="select_time">בחר זמן</string>
     <string name="recurring">חוזר</string>
     <string name="balance_after_format">יתרה: %1$s</string>
     <string name="description_indicator_desc">כולל תיאור</string>

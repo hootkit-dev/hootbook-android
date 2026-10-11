@@ -190,7 +190,6 @@
     <string name="suffix_thousand">mw</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">%1$d TRANS</string>
     <string name="average">MÉDIA</string>
     <string name="per_day"> /dia</string>
     <string name="percentage_of_total">%1$d%% do TOTAL</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Excluir Subcategoria?</string>
     <string name="delete_subcategory_confirm">Tem certeza que deseja excluir \u2018%1$s\u2019? Esta ação não pode ser desfeita.</string>
     <string name="profile_desc">Imagem do perfil</string>
-    <string name="select_time">Selecione o horário</string>
     <string name="recurring">Recorrentes</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Tem descrição</string>

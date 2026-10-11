@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">ΣΥΝΟΛΟ</string>
-    <string name="transactions_format">%1$d ΣΥΝΑΛΛΑΓΕΣ</string>
     <string name="average">ΜΕΣΟΣ ΟΡΟΣ</string>
     <string name="per_day">/ημέρα</string>
     <string name="percentage_of_total">%1$d%% ΤΟΥ ΣΥΝΟΛΟΥ</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Διαγραφή Υποκατηγορίας;</string>
     <string name="delete_subcategory_confirm">Είστε σίγουροι ότι θέλετε να διαγράψετε το ‘%1$s’; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</string>
     <string name="profile_desc">Εικόνα Προφίλ</string>
-    <string name="select_time">Επιλέξτε Ώρα</string>
     <string name="recurring">Επαναλαμβανόμενο</string>
     <string name="balance_after_format">Υπόλοιπο: %1$s</string>
     <string name="description_indicator_desc">Έχει περιγραφή</string>

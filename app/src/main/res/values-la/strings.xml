@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTALE</string>
-    <string name="transactions_format">%1$d TRANSACTIONES</string>
     <string name="average">MEDIA</string>
     <string name="per_day">/die</string>
     <string name="percentage_of_total">%1$d%% DE TOTALE</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Subcategoria Delere?</string>
     <string name="delete_subcategory_confirm">Esne certus vis dele ‘%1$s’? Haec actio revocari non potest.</string>
     <string name="profile_desc">Imago Profilis</string>
-    <string name="select_time">Tempus Select</string>
     <string name="recurring">Recurrens</string>
     <string name="balance_after_format">Aequilibrium: %1$s</string>
     <string name="description_indicator_desc">Habent descriptionem</string>

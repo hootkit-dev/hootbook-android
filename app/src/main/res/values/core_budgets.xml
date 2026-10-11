@@ -12,7 +12,6 @@
   <string name="core_budgets_delete_message">Deletes the budget and its category limits. Transactions stay.</string>
   <string name="core_budgets_cancel">Cancel</string>
   <string name="core_budgets_confirm">Confirm</string>
-  <string name="core_budgets_save">Save</string>
   <string name="core_budgets_pause">Hide on home</string>
   <string name="core_budgets_resume">Show on home</string>
   <string name="core_budgets_inactive">Hidden on home (transactions still count)</string>

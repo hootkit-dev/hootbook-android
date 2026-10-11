@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">GESAMT</string>
-    <string name="transactions_format">%1$d TRANS</string>
     <string name="average">VERFÜGBARE</string>
     <string name="per_day"> /Tag</string>
     <string name="percentage_of_total">%1$d%% VON GESAMT</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Unterkategorie löschen?</string>
     <string name="delete_subcategory_confirm">Sind Sie sicher, dass Sie \u2018%1$s\u2019löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="profile_desc">Profilbild</string>
-    <string name="select_time">Zeit auswählen</string>
     <string name="recurring">Wiederkehrende</string>
     <string name="balance_after_format">Bsp: %1$s</string>
     <string name="description_indicator_desc">Hat Beschreibung</string>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TỔNG</string>
-    <string name="transactions_format">%1$d GIAO DỊCH</string>
     <string name="average">TRUNG BÌNH</string>
     <string name="per_day">/ngày</string>
     <string name="percentage_of_total">%1$d%% TỔNG</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Xóa Danh Mục Con?</string>
     <string name="delete_subcategory_confirm">Bạn có chắc chắn muốn xóa ‘%1$s’ không? Hành động này không thể hoàn tác.</string>
     <string name="profile_desc">Ảnh Hồ Sơ</string>
-    <string name="select_time">Chọn Thời gian</string>
     <string name="recurring">Định kỳ</string>
     <string name="balance_after_format">Số dư: %1$s</string>
     <string name="description_indicator_desc">Có mô tả</string>

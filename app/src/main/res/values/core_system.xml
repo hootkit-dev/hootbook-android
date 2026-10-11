@@ -8,8 +8,6 @@
     <string name="core_system_retry">Retry</string>
     <string name="core_system_permission_granted">Notifications are allowed by Android.</string>
     <string name="core_system_master">Enable daily and subscription reminders</string>
-    <string name="core_system_hour">Hour (0–23)</string>
-    <string name="core_system_minute">Minute (0–59)</string>
     <string name="core_system_subscriptions">Subscription reminders</string>
     <string name="core_system_no_subscriptions">No subscriptions yet.</string>
 </resources>

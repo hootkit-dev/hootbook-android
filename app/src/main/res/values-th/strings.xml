@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">รวมทั้งหมด</string>
-    <string name="transactions_format">%1$d รายการ</string>
     <string name="average">ค่าเฉลี่ย</string>
     <string name="per_day">/วัน</string>
     <string name="percentage_of_total">%1$d%% ของทั้งหมด</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">ลบหมวดหมู่ย่อย?</string>
     <string name="delete_subcategory_confirm">คุณแน่ใจหรือว่าต้องการลบ ‘%1$s’? การดำเนินการนี้ไม่สามารถย้อนกลับได้</string>
     <string name="profile_desc">รูปโปรไฟล์</string>
-    <string name="select_time">เลือกเวลา</string>
     <string name="recurring">เกิดซ้ำ</string>
     <string name="balance_after_format">ยอดคงเหลือ: %1$s</string>
     <string name="description_indicator_desc">มีคำอธิบาย</string>

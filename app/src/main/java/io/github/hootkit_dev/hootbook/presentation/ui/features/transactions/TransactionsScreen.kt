@@ -51,6 +51,11 @@ fun TransactionsScreen(state: CoreTransactionsUiState, model: CoreTransactionsVi
         last >= 0 && last >= listState.layoutInfo.totalItemsCount - 5
     } }
     LaunchedEffect(nearEnd, state.page?.items?.size, state.loading) { if (nearEnd && !state.loading) model.loadMore() }
+    // Scrolling the results or opening a sheet ends typing in the search field, so the keyboard
+    // does not cover the list (or come back when the sheet closes).
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+    LaunchedEffect(listState.isScrollInProgress) { if (listState.isScrollInProgress) focus.clearFocus() }
+    LaunchedEffect(exportSheet, bulkEditor) { if (exportSheet || bulkEditor) focus.clearFocus() }
     val snackbar = remember { SnackbarHostState() }
     val deletedText = stringResource(R.string.transaction_deleted)
     val undoText = stringResource(R.string.undo)

@@ -22,8 +22,6 @@
     <string name="core_full_clear_selection">清空选择</string>
     <string name="core_full_delete_selected">所选移至回收站</string>
     <string name="core_full_empty_recycle">清空整个回收站</string>
-    <string name="core_full_export_all_pages">导出全部匹配页面到 CSV</string>
-    <string name="core_full_export_count">完整 CSV 已生成：%1$s 条交易</string>
     <string name="core_full_save_csv">通过系统选择器保存 CSV</string>
     <string name="core_full_export_failed">CSV 保存或分享失败，已生成的完整缓存仍保留</string>
     <string name="core_full_permanent_confirm">确认永久删除</string>

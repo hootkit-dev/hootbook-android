@@ -190,7 +190,6 @@
     <string name="suffix_thousand">ك</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">الإجمالي</string>
-    <string name="transactions_format">%1$d معاملات</string>
     <string name="average">المتوسط</string>
     <string name="per_day">/اليوم</string>
     <string name="percentage_of_total">%1$d%% من الإجمالي</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">حذف الفئة الفرعية؟</string>
     <string name="delete_subcategory_confirm">هل أنت متأكد أنك تريد حذف ‘%1$s’؟ لا يمكن التراجع عن هذا الإجراء.</string>
     <string name="profile_desc">صورة الملف الشخصي</string>
-    <string name="select_time">اختر الوقت</string>
     <string name="recurring">متكرر</string>
     <string name="balance_after_format">الرصيد: %1$s</string>
     <string name="description_indicator_desc">يحتوي على وصف</string>

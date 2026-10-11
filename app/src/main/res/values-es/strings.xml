@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">%1$d TRANSACCIONES</string>
     <string name="average">PROMEDIO</string>
     <string name="per_day">/día</string>
     <string name="percentage_of_total">%1$d%% DEL TOTAL</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">¿Eliminar subcategoría?</string>
     <string name="delete_subcategory_confirm">¿Está seguro de que desea eliminar ‘%1$s’? Esta acción no se puede deshacer.</string>
     <string name="profile_desc">Imagen de perfil</string>
-    <string name="select_time">Seleccionar hora</string>
     <string name="recurring">Recurrente</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Tiene descripción</string>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">I ALT</string>
-    <string name="transactions_format">%1$d TRANSAKTIONER</string>
     <string name="average">GNSNIT</string>
     <string name="per_day"> /dag</string>
     <string name="percentage_of_total">%1$d%% AF I ALT</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Slet Underkategori?</string>
     <string name="delete_subcategory_confirm">Er du sikker på, at du vil slette \u2018%1$s\u2019? Denne handling kan ikke fortrydes.</string>
     <string name="profile_desc">Profil Billede</string>
-    <string name="select_time">Vælg Tid</string>
     <string name="recurring">Gentagelse</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Har beskrivelse</string>

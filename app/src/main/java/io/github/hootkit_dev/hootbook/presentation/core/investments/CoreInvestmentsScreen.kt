@@ -125,8 +125,7 @@ internal fun CoreInvestmentsContent(
         actions = { if (state.selected == null && state.connections.isNotEmpty())
             TooltipIconButton(Icons.Rounded.Refresh, stringResource(R.string.investments_refresh), onRefreshAll, enabled = enabled) },
         floatingActionButton = {
-            if (!state.loading && state.selected == null) ExtendedFloatingActionButton(onClick = onAddInvestment,
-                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.investments_add)) })
+            if (!state.loading && state.selected == null) AddFab(stringResource(R.string.investments_add), onAddInvestment)
         },
     ) { padding ->
         PullToRefreshBox(isRefreshing = state.busy, onRefresh = { if (enabled) onRefreshAll() }, modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

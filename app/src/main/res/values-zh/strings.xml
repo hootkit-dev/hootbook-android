@@ -190,7 +190,6 @@
     <string name="suffix_thousand">千</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">总计</string>
-    <string name="transactions_format">%1$d 笔交易</string>
     <string name="average">平均</string>
     <string name="per_day">/天</string>
     <string name="percentage_of_total">占总数的 %1$d%%</string>
@@ -379,7 +378,6 @@
     <string name="delete_subcategory_title">删除子类别？</string>
     <string name="delete_subcategory_confirm">您确定要删除 ‘%1$s’ 吗？此操作无法撤销。</string>
     <string name="profile_desc">个人资料图片</string>
-    <string name="select_time">选择时间</string>
     <string name="recurring">经常发生的</string>
     <string name="balance_after_format">余额: %1$s</string>
     <string name="description_indicator_desc">有描述</string>

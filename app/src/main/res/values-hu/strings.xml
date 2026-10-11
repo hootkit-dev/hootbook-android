@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%)</string>
     <string name="total_uppercase">ÖSSZESEN</string>
-    <string name="transactions_format">%1$d TRANZAKCIÓ</string>
     <string name="average">ÁTLAG</string>
     <string name="per_day">/nap</string>
     <string name="percentage_of_total">A TELJES ÖSSZEG %1$d%%-A</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Alkategória törlése?</string>
     <string name="delete_subcategory_confirm">Biztosan törölni szeretné a(z) \'%1$s\' alkategóriát? Ez a művelet nem vonható vissza.</string>
     <string name="profile_desc">Profilkép</string>
-    <string name="select_time">Idő kiválasztása</string>
     <string name="recurring">Ismétlődő</string>
     <string name="balance_after_format">Egyenleg: %1$s</string>
     <string name="description_indicator_desc">Van leírás</string>

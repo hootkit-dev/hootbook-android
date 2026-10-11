@@ -48,7 +48,6 @@
   <string name="core_debts_account_missing">The original account is unavailable; the link is preserved: %1$s</string>
   <string name="core_debts_person">Person</string>
   <string name="core_debts_full_settle">Settle the full net amount</string>
-  <string name="core_debts_save">Save</string>
   <string name="core_debts_cancel">Cancel</string>
   <string name="core_debts_dismiss">Dismiss</string>
   <string name="core_debts_delete_person_title">Delete %1$s?</string>

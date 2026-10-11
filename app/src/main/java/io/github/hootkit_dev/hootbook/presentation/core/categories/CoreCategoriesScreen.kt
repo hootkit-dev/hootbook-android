@@ -51,8 +51,8 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
         title = selected?.displayName ?: stringResource(R.string.categories), onBack = goBack,
         actions = { if (selected != null) CategoryActions(selected, enabled, viewModel, onDelete = { deletion = it }) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { if (enabled) selected?.let(viewModel::createSubcategory) ?: viewModel.createCategory() },
-                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(if (selected == null) R.string.add_category else R.string.add_subcategory)) })
+            AddFab(stringResource(if (selected == null) R.string.add_category else R.string.add_subcategory),
+                { if (enabled) selected?.let(viewModel::createSubcategory) ?: viewModel.createCategory() })
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

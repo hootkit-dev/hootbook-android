@@ -69,8 +69,7 @@ fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
             }
         },
         floatingActionButton = {
-            if (state.selectedId == null) ExtendedFloatingActionButton(onClick = { if (enabled) showTypeWizard = true },
-                icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.new_budget)) })
+            if (state.selectedId == null) AddFab(stringResource(R.string.new_budget), { if (enabled) showTypeWizard = true })
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

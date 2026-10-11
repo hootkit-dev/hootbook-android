@@ -190,7 +190,6 @@
     <string name="suffix_thousand">к</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">ЗАГАЛЬНІ</string>
-    <string name="transactions_format">%1$d ТРАН</string>
     <string name="average">АВерегія</string>
     <string name="per_day"> /день</string>
     <string name="percentage_of_total">%1$d%% ВІД ЗАГАЛЬНОЇ СУМИ</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Видалити підкатегорію?</string>
     <string name="delete_subcategory_confirm">Ви впевнені, що хочете видалити «%1$s»? Цю дію неможливо скасувати.</string>
     <string name="profile_desc">Зображення профілю</string>
-    <string name="select_time">Оберіть час</string>
     <string name="recurring">Повторюються</string>
     <string name="balance_after_format">Баланс: %1$s</string>
     <string name="description_indicator_desc">Має опис</string>

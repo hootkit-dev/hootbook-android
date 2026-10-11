@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">བསྡོམས་གྲངས་</string>
-    <string name="transactions_format">%1$d TXNS</string>
     <string name="average">ཆ་སྙོམས་</string>
     <string name="per_day">/ཉིན་</string>
     <string name="percentage_of_total">%1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">དབྱེ་རིམ་འོག་མ་བསུབ་པ་ཡིན་ནམ།</string>
     <string name="delete_subcategory_confirm">ཁྱོད་ཀྱིས་དངོས་གནས་\'1$s\'བསུབ་འདོད་དམ། བྱ་སྤྱོད་དེ་ཕྱིར་འཐེན་བྱེད་མི་ཉན།</string>
     <string name="profile_desc">ངོ་བོའི་པར་རིས་</string>
-    <string name="select_time">དུས་ཚོད་འདེམས་སྒྲུག་བྱས་པ།</string>
     <string name="recurring">བསྐྱར་ཟློས་ཀྱི་གནས་ཚུལ།</string>
     <string name="balance_after_format">Bal: %1$s</string>
     <string name="description_indicator_desc">གསལ་བཤད་ཡོད།</string>

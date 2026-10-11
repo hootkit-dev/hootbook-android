@@ -22,8 +22,6 @@
     <string name="core_full_clear_selection">Clear selection</string>
     <string name="core_full_delete_selected">Move selected to recycle bin</string>
     <string name="core_full_empty_recycle">Empty entire recycle bin</string>
-    <string name="core_full_export_all_pages">Export all matching pages to CSV</string>
-    <string name="core_full_export_count">Complete CSV ready: %1$s transactions</string>
     <string name="core_full_save_csv">Save CSV with system picker</string>
     <string name="core_full_export_failed">CSV save/share failed; the complete cached export is retained</string>
     <string name="core_full_permanent_confirm">Confirm permanent deletion</string>

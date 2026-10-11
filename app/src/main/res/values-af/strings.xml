@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAAL</string>
-    <string name="transactions_format">%1$d TRANSAKSIES</string>
     <string name="average">GEMIDDELDE</string>
     <string name="per_day">/dag</string>
     <string name="percentage_of_total">%1$d%% VAN TOTAAL</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Verwyder Subkategorie?</string>
     <string name="delete_subcategory_confirm">Is jy seker jy wil ‘%1$s’ verwyder? Hierdie aksie kan nie ongedaan gemaak word nie.</string>
     <string name="profile_desc">Profielfoto</string>
-    <string name="select_time">Kies Tyd</string>
     <string name="recurring">Terugkerend</string>
     <string name="balance_after_format">Balans: %1$s</string>
     <string name="description_indicator_desc">Het beskrywing</string>

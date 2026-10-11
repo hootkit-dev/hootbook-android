@@ -190,7 +190,6 @@
     <string name="suffix_thousand">க</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">மொத்தம்</string>
-    <string name="transactions_format">%1$d பரிவர்த்தனைகள்</string>
     <string name="average">சராசரி</string>
     <string name="per_day">/நாள்</string>
     <string name="percentage_of_total">மொத்த %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">உபவகையை அழிக்கவா?</string>
     <string name="delete_subcategory_confirm">நீங்கள் ‘%1$s’ ஐ அழிக்க விருமா? இந்த செயலை மீண்டும் பிரதி செய்ய முடியாது.</string>
     <string name="profile_desc">சுயவிபரப் படம்</string>
-    <string name="select_time">நேரத்தைத் தேர்ந்தெடுக்கவும்</string>
     <string name="recurring">மறுபடி நிகழும்</string>
     <string name="balance_after_format">மொத்தம்: %1$s</string>
     <string name="description_indicator_desc">விளக்கம் உள்ளடக்கப்பட்டுள்ளது</string>

@@ -2,7 +2,6 @@
 <resources>
   <string name="core_ui_profile">Profile</string>
   <string name="core_ui_appearance">Appearance and display</string>
-  <string name="core_ui_save">Save</string>
   <string name="core_ui_retry">Retry</string>
   <string name="core_ui_name">Name</string>
   <string name="core_ui_avatar">Profile image</string>

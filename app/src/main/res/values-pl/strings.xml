@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">OGÓŁEM</string>
-    <string name="transactions_format">%1$d TRANSAKCJI</string>
     <string name="average">Średnie</string>
     <string name="per_day"> /dzień</string>
     <string name="percentage_of_total">%1$d%% OGÓŁEM</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Usunąć podkategorię?</string>
     <string name="delete_subcategory_confirm">Czy na pewno chcesz usunąć \u2018%1$s\u2019? Tej akcji nie można cofnąć.</string>
     <string name="profile_desc">Zdjęcie profilowe</string>
-    <string name="select_time">Wybierz czas</string>
     <string name="recurring">Powtarzające się</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Ma opis</string>

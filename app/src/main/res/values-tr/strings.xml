@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOPLAM</string>
-    <string name="transactions_format">%1$d İŞLEM</string>
     <string name="average">ORTALAMA</string>
     <string name="per_day">/gün</string>
     <string name="percentage_of_total">TOPLAMIN %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Alt Kategoriyi Silmek mi?</string>
     <string name="delete_subcategory_confirm">‘%1$s’ alt kategorisini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</string>
     <string name="profile_desc">Profil Resmi</string>
-    <string name="select_time">Zamanı Seç</string>
     <string name="recurring">Tekrarlayan</string>
     <string name="balance_after_format">Bakiye: %1$s</string>
     <string name="description_indicator_desc">Açıklama var</string>

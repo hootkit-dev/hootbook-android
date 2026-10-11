@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">KA HUI</string>
-    <string name="transactions_format">%1$d TXNS</string>
     <string name="average">AVERAGE</string>
     <string name="per_day">/lā</string>
     <string name="percentage_of_total">%1$d%% O KA HUI</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Holoi i ka ʻāpana ʻāpana?</string>
     <string name="delete_subcategory_confirm">Makemake ʻoe e holoi i \u2018%1$s\u2019? ʻAʻole hiki ke hoʻopau ʻia kēia hana.</string>
     <string name="profile_desc">Kiʻi Profile</string>
-    <string name="select_time">E koho i ka manawa</string>
     <string name="recurring">Ke hoʻomau nei</string>
     <string name="balance_after_format">Bal: %1$s</string>
     <string name="description_indicator_desc">Loaʻa ka wehewehe</string>

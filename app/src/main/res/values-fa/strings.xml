@@ -190,7 +190,6 @@
     <string name="suffix_thousand">ک</string>
     <string name="percentage_format">(٪1$d٪)</string>
     <string name="total_uppercase">مجموع</string>
-    <string name="transactions_format">%1$d تراکنش</string>
     <string name="average">میانگین</string>
     <string name="per_day">/روز</string>
     <string name="percentage_of_total">%1$d%% از کل</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">حذف زیر دسته؟</string>
     <string name="delete_subcategory_confirm">آیا مطمئن هستید که می‌خواهید \'%1$s\' را حذف کنید؟ این عمل قابل بازگشت نیست.</string>
     <string name="profile_desc">تصویر پروفایل</string>
-    <string name="select_time">انتخاب زمان</string>
     <string name="recurring">تکرارشونده</string>
     <string name="balance_after_format">مانده: %1$s</string>
     <string name="description_indicator_desc">دارای توضیح</string>

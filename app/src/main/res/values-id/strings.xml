@@ -190,7 +190,6 @@
     <string name="suffix_thousand">ribu</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">%1$d TRANSAKSI</string>
     <string name="average">RATA-RATA</string>
     <string name="per_day">/hari</string>
     <string name="percentage_of_total">%1$d%% DARI TOTAL</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Hapus Subkategori?</string>
     <string name="delete_subcategory_confirm">Apakah Anda yakin ingin menghapus \'‘%1$s’\'? Tindakan ini tidak dapat dibatalkan.</string>
     <string name="profile_desc">Gambar Profil</string>
-    <string name="select_time">Pilih Waktu</string>
     <string name="recurring">Berulang</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Memiliki deskripsi</string>

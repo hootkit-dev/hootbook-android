@@ -25,7 +25,6 @@
     <string name="core_currencies_custom">Custom</string>
     <string name="core_currencies_expired">Expired</string>
     <string name="core_currencies_custom_currencies">Custom currencies</string>
-    <string name="core_currencies_add">Add</string>
     <string name="core_currencies_edit">Edit</string>
     <string name="core_currencies_delete">Delete</string>
     <string name="core_currencies_rates">Saved rates</string>
@@ -36,7 +35,6 @@
     <string name="core_currencies_code">Currency code</string>
     <string name="core_currencies_name">Currency name</string>
     <string name="core_currencies_symbol">Symbol (up to 3 characters)</string>
-    <string name="core_currencies_save">Save</string>
     <string name="core_currencies_cancel">Cancel</string>
     <string name="core_currencies_custom_rate">Custom exchange rate</string>
     <string name="core_currencies_custom_rate_note">1 unit of the source currency equals this many of the target currency.</string>

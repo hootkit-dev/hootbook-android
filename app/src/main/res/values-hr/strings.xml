@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">UKUPNO</string>
-    <string name="transactions_format">%1$d TRANS.</string>
     <string name="average">PROSJEČNO</string>
     <string name="per_day">/dan</string>
     <string name="percentage_of_total">%1$d%% OD UKUPNOG</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Obrisati potkategoriju?</string>
     <string name="delete_subcategory_confirm">Jeste li sigurni da želite obrisati \'%1$s\'? Ova radnja se ne može opozvati.</string>
     <string name="profile_desc">Profilna slika</string>
-    <string name="select_time">Odaberite vrijeme</string>
     <string name="recurring">Ponavljajući</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Ima opis</string>

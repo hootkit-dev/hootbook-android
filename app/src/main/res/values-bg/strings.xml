@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">ОБЩО</string>
-    <string name="transactions_format">%1$d ТРАНЗАКЦИИ</string>
     <string name="average">СРЕДНО</string>
     <string name="per_day">/ден</string>
     <string name="percentage_of_total">%1$d%% ОТ ОБЩОТО</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Изтриване на подкатегория?</string>
     <string name="delete_subcategory_confirm">Сигурни ли сте, че искате да изтриете ‘%1$s’? Това действие не може да бъде отменено.</string>
     <string name="profile_desc">Профилна снимка</string>
-    <string name="select_time">Избор на час</string>
     <string name="recurring">Повтарящ се</string>
     <string name="balance_after_format">Баланс: %1$s</string>
     <string name="description_indicator_desc">Има описание</string>

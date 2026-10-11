@@ -190,7 +190,6 @@
     <string name="suffix_thousand">के</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">कुल</string>
-    <string name="transactions_format">%1$d लेनदेनहरू</string>
     <string name="average">औसत</string>
     <string name="per_day">/दिन</string>
     <string name="percentage_of_total">कुलको %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">उपश्रेणी मेटाउने?</string>
     <string name="delete_subcategory_confirm">के तपाइँ निश्चित हुनुहुन्छ कि ‘%1$s’ मेटाउन चाहनुहुन्छ? यस कार्यलाई उल्टाउन सकिँदैन।</string>
     <string name="profile_desc">प्रोफाइल छवि</string>
-    <string name="select_time">समय चयन गर्नुहोस्</string>
     <string name="recurring">पुनरावृत्ती हुने</string>
     <string name="balance_after_format">ब्यालेन्स: %1$s</string>
     <string name="description_indicator_desc">विवरण छ</string>

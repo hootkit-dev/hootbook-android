@@ -190,7 +190,6 @@
     <string name="suffix_thousand">ಕೆ</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">ಒಟ್ಟು</string>
-    <string name="transactions_format">%1$d ವ್ಯವಹಾರಗಳು</string>
     <string name="average">ಸರಾಸರಿ</string>
     <string name="per_day">/ದಿನ</string>
     <string name="percentage_of_total">ಒಟ್ಟುದ %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">ಉಪವರ್ಗವನ್ನು ಅಳಿಸಬೇಕೆ?</string>
     <string name="delete_subcategory_confirm">\u2018%1$s\u2019 ಅನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ? ಈ ಕ್ರಿಯೆಯನ್ನು ರದ್ದುಗೊಳಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
     <string name="profile_desc">ಪ್ರೊಫೈಲ್ ಇಮೇಜ್</string>
-    <string name="select_time">ಸಮಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="recurring">ಪುನರಾವೃತ</string>
     <string name="balance_after_format">ಬ್ಯಾಲೆನ್ಸ್: %1$s</string>
     <string name="description_indicator_desc">ವಿವರಣೆ ಇದೆ</string>

@@ -190,7 +190,6 @@
     <string name="suffix_thousand">के</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">एकूण</string>
-    <string name="transactions_format">%1$d व्यवहार</string>
     <string name="average">सरासरी</string>
     <string name="per_day">/दिवस</string>
     <string name="percentage_of_total">एकूण %1$d%%</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">उपवर्ग हटवायचा आहे का?</string>
     <string name="delete_subcategory_confirm">आपल्याला निश्चित आहे का की आपण ‘%1$s’ हटवू इच्छिता? ही क्रिया उलटता येणार नाही.</string>
     <string name="profile_desc">प्रोफाइल प्रतिमा</string>
-    <string name="select_time">वेळ निवडा</string>
     <string name="recurring">पुनरावृत्ती</string>
     <string name="balance_after_format">शेष: %1$s</string>
     <string name="description_indicator_desc">वर्णन आहे</string>

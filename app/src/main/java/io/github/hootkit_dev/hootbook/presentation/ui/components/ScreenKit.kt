@@ -2,6 +2,9 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +53,12 @@ import io.github.hootkit_dev.hootbook.R
 /** Padding of a secondary screen's scrolling content: 16 dp margins, room for a FAB below. */
 val ScreenContentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 112.dp)
 
+/**
+ * Room a FAB drawn by the host (outside this screen's Scaffold) takes at the bottom end. Snackbars
+ * of [SecondaryScreen] sit above it, so the FAB never covers their action.
+ */
+val LocalHostFabClearance = androidx.compose.runtime.compositionLocalOf { 0.dp }
+
 /** Space between the sections of a screen. */
 val SectionSpacing = 24.dp
 
@@ -89,9 +98,20 @@ fun SecondaryScreen(
             )
         },
         floatingActionButton = floatingActionButton,
-        snackbarHost = snackbarHost,
+        snackbarHost = { Box(Modifier.padding(bottom = LocalHostFabClearance.current)) { snackbarHost() } },
         content = content,
     )
+}
+
+/**
+ * The screen's add action: an extended FAB with an add icon. The label is also set as the button's
+ * description, because the Material 3 extended FAB keeps its text out of the accessibility tree.
+ */
+@Composable
+fun AddFab(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    androidx.compose.material3.ExtendedFloatingActionButton(onClick = onClick,
+        modifier = modifier.semantics { contentDescription = label },
+        icon = { Icon(androidx.compose.material.icons.Icons.Rounded.Add, null) }, text = { Text(label) })
 }
 
 /** An error the user can dismiss, with an optional recovery action. */

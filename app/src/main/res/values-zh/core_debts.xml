@@ -48,7 +48,6 @@
   <string name="core_debts_account_missing">原账户不在可选列表中，当前关联已保留：%1$s</string>
   <string name="core_debts_person">借贷人</string>
   <string name="core_debts_full_settle">全额结清</string>
-  <string name="core_debts_save">保存</string>
   <string name="core_debts_cancel">取消</string>
   <string name="core_debts_dismiss">关闭</string>
   <string name="core_debts_delete_person_title">删除 %1$s？</string>

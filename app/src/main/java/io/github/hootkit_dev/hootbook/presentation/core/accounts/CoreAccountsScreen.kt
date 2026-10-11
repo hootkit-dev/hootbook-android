@@ -42,6 +42,7 @@ import dev.hootkit.core.BalanceAnchor
 import dev.hootkit.core.Pocket
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.LocalWindowLayout
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddFab
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ConfirmDialog
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ErrorBanner
 import io.github.hootkit_dev.hootbook.presentation.ui.components.MenuAction
@@ -95,10 +96,7 @@ fun CoreAccountsScreen(
         title = title, onBack = goBack,
         actions = { if (account != null) AccountActions(account, !state.saving, viewModel, onDelete = { deleteAccount = it }) },
         floatingActionButton = {
-            if (state.selectedId == null || wide) ExtendedFloatingActionButton(
-                onClick = { addAccount() }, icon = { Icon(Icons.Rounded.Add, null) },
-                text = { Text(stringResource(R.string.add_account_fab_desc)) },
-            )
+            if (state.selectedId == null || wide) AddFab(stringResource(R.string.add_account_fab_desc), { addAccount() })
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {

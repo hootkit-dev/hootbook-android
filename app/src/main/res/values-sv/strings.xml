@@ -190,7 +190,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTALT</string>
-    <string name="transactions_format">%1$d TRANSAKTIONER</string>
     <string name="average">GENOMSNITT</string>
     <string name="per_day">/dag</string>
     <string name="percentage_of_total">%1$d%% AV TOTALEN</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Radera underkategori?</string>
     <string name="delete_subcategory_confirm">Är du säker på att du vill radera ‘%1$s’? Denna åtgärd kan inte ångras.</string>
     <string name="profile_desc">Profilbild</string>
-    <string name="select_time">Välj tid</string>
     <string name="recurring">Återkommande</string>
     <string name="balance_after_format">Saldo: %1$s</string>
     <string name="description_indicator_desc">Har beskrivning</string>

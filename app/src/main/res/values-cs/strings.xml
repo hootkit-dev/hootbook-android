@@ -190,7 +190,6 @@
     <string name="suffix_thousand">K</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">CELKEM</string>
-    <string name="transactions_format">%1$d transakcí</string>
     <string name="average">PRŮMĚRNÁ</string>
     <string name="per_day"> /den</string>
     <string name="percentage_of_total">%1$d%% z CELKEM</string>
@@ -377,7 +376,6 @@
     <string name="delete_subcategory_title">Odstranit podkategorii?</string>
     <string name="delete_subcategory_confirm">Jste si jisti, že chcete odstranit \u2018%1$s\u2019? Tuto akci nelze vrátit zpět.</string>
     <string name="profile_desc">Profil obrázek</string>
-    <string name="select_time">Vyberte čas</string>
     <string name="recurring">Opakování</string>
     <string name="balance_after_format">Bil: %1$s</string>
     <string name="description_indicator_desc">Obsahuje popis</string>

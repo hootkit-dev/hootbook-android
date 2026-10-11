@@ -12,7 +12,6 @@
   <string name="core_budgets_delete_message">删除预算及其类别额度，交易不受影响。</string>
   <string name="core_budgets_cancel">取消</string>
   <string name="core_budgets_confirm">确认</string>
-  <string name="core_budgets_save">保存</string>
   <string name="core_budgets_pause">暂停首页展示</string>
   <string name="core_budgets_resume">恢复首页展示</string>
   <string name="core_budgets_inactive">已暂停首页展示（交易仍计入）</string>

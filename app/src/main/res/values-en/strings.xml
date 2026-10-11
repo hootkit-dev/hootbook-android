@@ -206,7 +206,6 @@
     <string name="suffix_thousand">k</string>
     <string name="percentage_format">(%1$d%%)</string>
     <string name="total_uppercase">TOTAL</string>
-    <string name="transactions_format">%1$d TXNS</string>
     <string name="average">AVERAGE</string>
     <string name="per_day"> /day</string>
     <string name="percentage_of_total">%1$d%% OF TOTAL</string>
@@ -437,7 +436,6 @@
     <!-- Rules Dialogs -->
     <!-- SMS Scanning & Workers -->
     <!-- Time Selection -->
-    <string name="select_time">Select Time</string>
     <!-- Transactions, Indicators & Categories -->
     <string name="recurring">Recurring</string>
     <string name="balance_after_format">Bal: %1$s</string>

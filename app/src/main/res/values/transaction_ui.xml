@@ -4,7 +4,6 @@
     <string name="transaction_minimum">Minimum</string>
     <string name="transaction_maximum">Maximum</string>
     <string name="transaction_filter_invalid">Check the dates and filter values.</string>
-    <string name="transaction_page_position">%1$s–%2$s of %3$s</string>
     <string name="transaction_currency_summary">Totals by currency</string>
     <string name="transaction_unsupported_merchant">Filtering by exact merchant is not available yet. Search for the merchant name instead.</string>
     <string name="transaction_load_more">Load more</string>
