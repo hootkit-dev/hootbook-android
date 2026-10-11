@@ -53,6 +53,36 @@ class AnalyticsViewModelTest {
     }
 
     @Test
+    fun mixedSelectionsExposeBothExactCoreTotalsIncludingSelectedCurrency() = fixture { store ->
+        val native = summary("45.50").copy(income = BigDecimal("6000"),
+            perCurrency = listOf(CurrencyTotals("USD", BigDecimal("900"), BigDecimal("7"))))
+        val vm = AnalyticsViewModel(ChangeBus(), ledger = {
+            api { method, _ -> when (method) {
+                "summary" -> native
+                "list" -> TransactionPage(emptyList(), 2u)
+                else -> error(method)
+            } }
+        })
+        store.put("vm", vm)
+        vm.toggleTransactionTypeFilter(io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter.ALL)
+        runCurrent()
+        val both = listOf(io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter.INCOME,
+            io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter.EXPENSE)
+        assertEquals(both, trendTypes(vm.uiState.value.types))
+        val point = vm.uiState.value.trend.values.first()
+        assertSame(native, point)
+        assertEquals(BigDecimal("6000"), point.chartAmount("CNY", true))
+        assertEquals(BigDecimal("45.50"), point.chartAmount("CNY", false))
+        assertEquals(BigDecimal("900"), point.chartAmount("USD", true))
+        assertEquals(BigDecimal("7"), point.chartAmount("USD", false))
+        vm.toggleTransactionTypeFilter(both[0])
+        vm.toggleTransactionTypeFilter(both[1])
+        runCurrent()
+        assertEquals(both, trendTypes(vm.uiState.value.types))
+        assertSame(native, vm.uiState.value.trend.values.first())
+    }
+
+    @Test
     fun initialLoadKeepsExactCoreRecordsAndRefreshesRelevantChanges() = fixture { store ->
         val returned = summary("123.45")
         var calls = 0

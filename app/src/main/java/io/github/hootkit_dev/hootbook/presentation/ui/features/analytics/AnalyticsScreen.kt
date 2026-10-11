@@ -138,6 +138,8 @@ fun AnalyticsScreen(
         // Chart Selection State
         var selectedChartType by remember { mutableStateOf(ChartType.LINE) }
         var showChartTypeSelector by remember { mutableStateOf(false) }
+        val mixedTrend = trendTypes(transactionTypeFilter).size > 1
+        val chartType = if (mixedTrend && selectedChartType == ChartType.HEATMAP) ChartType.LINE else selectedChartType
         var selectedBreakdownType by remember { mutableStateOf(BreakdownType.PIE) }
 
         // Calculate active filter count
@@ -379,7 +381,7 @@ fun AnalyticsScreen(
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(
-                                                    imageVector = selectedChartType.icon,
+                                                    imageVector = chartType.icon,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(14.dp),
                                                 )
@@ -389,7 +391,7 @@ fun AnalyticsScreen(
                                                         stringResource(
                                                             R.string.chart_format,
                                                             stringResource(
-                                                                selectedChartType.labelRes
+                                                                chartType.labelRes
                                                             ),
                                                         ),
                                                     style = MaterialTheme.typography.bodySmall,
@@ -431,7 +433,7 @@ fun AnalyticsScreen(
                                                 ),
                                         ) {
                                             Column {
-                                                ChartType.entries.forEach { type ->
+                                                ChartType.entries.filter { !mixedTrend || it != ChartType.HEATMAP }.forEach { type ->
                                                     Row(
                                                         modifier =
                                                             Modifier.fillMaxWidth()
@@ -454,7 +456,7 @@ fun AnalyticsScreen(
                                                                 imageVector = type.icon,
                                                                 contentDescription = null,
                                                                 tint =
-                                                                    if (selectedChartType == type)
+                                                                    if (chartType == type)
                                                                         MaterialTheme.colorScheme
                                                                             .primary
                                                                     else
@@ -470,19 +472,19 @@ fun AnalyticsScreen(
                                                                     MaterialTheme.typography
                                                                         .bodyMedium,
                                                                 color =
-                                                                    if (selectedChartType == type)
+                                                                    if (chartType == type)
                                                                         MaterialTheme.colorScheme
                                                                             .primary
                                                                     else
                                                                         MaterialTheme.colorScheme
                                                                             .onSurfaceVariant,
                                                                 fontWeight =
-                                                                    if (selectedChartType == type)
+                                                                    if (chartType == type)
                                                                         FontWeight.Bold
                                                                     else FontWeight.Normal,
                                                             )
                                                         }
-                                                        if (selectedChartType == type) {
+                                                        if (chartType == type) {
                                                             Icon(
                                                                 imageVector = Icons.Default.Check,
                                                                 contentDescription = null,
@@ -512,7 +514,7 @@ fun AnalyticsScreen(
                                         .animateContentSize()
                             ) {
                                 Column {
-                                    when (selectedChartType) {
+                                    when (chartType) {
                                         ChartType.LINE ->
                                             AnimatedVisibility(
                                                 visible = true,
@@ -523,7 +525,6 @@ fun AnalyticsScreen(
                                                     data = uiState.trend.entries.toList(),
                                                     currency = uiState.currency,
                                                     typeFilters = transactionTypeFilter,
-                                                    incomeOnly = uiState.incomeOnly,
                                                 )
                                             }
                                         ChartType.BAR ->
@@ -536,7 +537,6 @@ fun AnalyticsScreen(
                                                     data = uiState.trend.entries.toList(),
                                                     currency = uiState.currency,
                                                     typeFilters = transactionTypeFilter,
-                                                    incomeOnly = uiState.incomeOnly,
                                                 )
                                             }
                                         ChartType.HEATMAP ->

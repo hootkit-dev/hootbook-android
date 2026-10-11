@@ -72,19 +72,14 @@ fun SpendingLineChart(
     data: List<Map.Entry<LocalDate, LedgerSummary>>,
     currency: String,
     typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE),
-    incomeOnly: Boolean = false,
 ) {
     if (data.isEmpty()) return
     val themeColors = MaterialTheme.colorScheme
-    val totalLabel = stringResource(R.string.total)
-    val filterLabelStrings = typeFilters.map { stringResource(it.labelRes) }
+    val series = trendTypes(typeFilters)
+    val seriesLabels = series.associateWith { stringResource(it.labelRes) }
 
-    val cashFlowData =
-        remember(data, incomeOnly, currency) {
-            data.map { it.value.chartAmount(currency, incomeOnly)?.toDouble() ?: 0.0 }
-        }
     val labels =
-        remember(data, incomeOnly, currency) {
+        remember(data, series, currency, themeColors) {
             val isYearly = data.size > 1 && data.all { it.key.dayOfYear == 1 }
             val isMonthly = !isYearly && data.all { it.key.dayOfMonth == 1 }
             val spansMultipleYears =
@@ -107,19 +102,13 @@ fun SpendingLineChart(
     LineChart(
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = Spacing.md),
         data =
-            listOf(
+            series.map { type ->
+                val color = if (type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
                 Line(
-                    label =
-                        if (
-                            typeFilters.contains(TransactionTypeFilter.ALL) || typeFilters.size > 2
-                        ) {
-                            totalLabel
-                        } else {
-                            filterLabelStrings.joinToString(" & ")
-                        },
-                    values = cashFlowData,
-                    color = SolidColor(themeColors.primary),
-                    firstGradientFillColor = themeColors.primary.copy(alpha = 0.3f),
+                    label = seriesLabels.getValue(type),
+                    values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
+                    color = SolidColor(color),
+                    firstGradientFillColor = color.copy(alpha = 0.3f),
                     secondGradientFillColor = Color.Transparent,
                     strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
                     gradientAnimationDelay = 750,
@@ -128,13 +117,13 @@ fun SpendingLineChart(
                     dotProperties =
                         DotProperties(
                             enabled = true,
-                            color = SolidColor(themeColors.primary),
+                            color = SolidColor(color),
                             strokeWidth = 3.dp,
                             radius = 4.dp,
                             strokeColor = SolidColor(themeColors.surface),
                         ),
                 )
-            ),
+            },
         dividerProperties =
             DividerProperties(
                 enabled = true,
@@ -151,7 +140,7 @@ fun SpendingLineChart(
             ),
         indicatorProperties =
             HorizontalIndicatorProperties(
-                enabled = true,
+                enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
                 textStyle =
                     TextStyle.Default.copy(
                         fontSize = 10.sp,
@@ -218,15 +207,14 @@ fun SpendingBarChart(
     data: List<Map.Entry<LocalDate, LedgerSummary>>,
     currency: String,
     typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE),
-    incomeOnly: Boolean = false,
 ) {
     if (data.isEmpty()) return
     val themeColors = MaterialTheme.colorScheme
-    val totalLabel = stringResource(R.string.total)
-    val filterLabelStrings = typeFilters.map { stringResource(it.labelRes) }
+    val series = trendTypes(typeFilters)
+    val seriesLabels = series.associateWith { stringResource(it.labelRes) }
 
     val columnData =
-        remember(data, incomeOnly, currency) {
+        remember(data, series, currency, themeColors, seriesLabels) {
             val isYearly = data.size > 1 && data.all { it.key.dayOfYear == 1 }
             val isMonthly = !isYearly && data.all { it.key.dayOfMonth == 1 }
             val spansMultipleYears =
@@ -245,34 +233,22 @@ fun SpendingBarChart(
                     }
                 Bars(
                     label = label,
-                    values =
-                        listOf(
-                            Bars.Data(
-                                label =
-                                    if (
-                                        typeFilters.contains(TransactionTypeFilter.ALL) ||
-                                            typeFilters.size > 2
-                                    ) {
-                                        totalLabel
-                                    } else {
-                                        filterLabelStrings.joinToString(" & ")
-                                    },
-                                value =
-                                    point.value.chartAmount(currency, incomeOnly)?.toDouble()
-                                        ?: 0.0,
-                                color = SolidColor(themeColors.primary.copy(alpha = 0.8f)),
-                            )
-                        ),
+                    values = series.map { type ->
+                        Bars.Data(
+                            label = seriesLabels.getValue(type),
+                            value = point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0,
+                            color = SolidColor((if (type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary).copy(alpha = 0.8f)),
+                        )
+                    },
                 )
             }
         }
 
-    val maxValue =
-        remember(data, incomeOnly, currency) {
-            (data.maxDoubleOrNull { point: Map.Entry<LocalDate, LedgerSummary> ->
-                (point.value.chartAmount(currency, incomeOnly)?.toDouble() ?: 0.0)
-            } ?: 0.0) * 1.2
-        }
+    val maxValue = remember(data, series, currency) {
+        data.flatMap { point -> series.map { type ->
+            point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0
+        } }.maxOrNull()?.times(1.2) ?: 0.0
+    }
 
     ColumnChart(
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = Spacing.md),
@@ -306,7 +282,7 @@ fun SpendingBarChart(
             ),
         indicatorProperties =
             HorizontalIndicatorProperties(
-                enabled = true,
+                enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
                 textStyle =
                     TextStyle.Default.copy(
                         fontSize = 10.sp,
@@ -657,10 +633,15 @@ fun SpendingHeatmap(
 }
 
 /** Select a Core-returned amount; never add kinds or convert money in chart code. */
-private fun LedgerSummary.chartAmount(currency: String, incomeOnly: Boolean): BigDecimal? =
+internal fun LedgerSummary.chartAmount(currency: String, incomeOnly: Boolean): BigDecimal? =
     if (currency == this.currency) {
         if (incomeOnly) income else expense
     } else
         perCurrency
             .find { it.currency == currency }
             ?.let { if (incomeOnly) it.income else it.expense }
+
+/** Each mixed trend uses the two totals returned by Core, with no combined gross total. */
+internal fun trendTypes(types: Set<TransactionTypeFilter>): List<TransactionTypeFilter> =
+    if (TransactionTypeFilter.ALL in types) listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE)
+    else listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE).filter { it in types }
