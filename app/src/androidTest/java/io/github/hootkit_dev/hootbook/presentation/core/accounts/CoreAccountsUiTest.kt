@@ -94,7 +94,7 @@ class CoreAccountsUiTest {
         rule.runOnIdle { assertEquals(accountId, model.state.value.selectedId) }
         rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("-1234567.89"), "CNY")).assertIsDisplayed()
         val label = InstrumentationRegistry.getInstrumentation().targetContext
-            .getString(R.string.core_accounts_view_transactions)
+            .getString(R.string.account_all_transactions)
         rule.onNodeWithText(label).performScrollTo().performClick()
         rule.runOnIdle { assertEquals(accountId, target) }
     }
@@ -120,7 +120,7 @@ class CoreAccountsUiTest {
             assertEquals(0, returns)
         }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        rule.onNodeWithText(context.getString(R.string.core_accounts_33)).assertIsSelected()
+        rule.onNodeWithText(context.getString(R.string.account_kind_investment)).assertIsSelected()
         rule.onNodeWithText(context.getString(R.string.cancel)).performClick()
         rule.waitUntil(5_000) { returns == 1 }
         rule.runOnIdle {

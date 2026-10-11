@@ -417,21 +417,21 @@ class RealMainJourneys {
         f.note("ui-ledger-pages","native206 unique Page fixture rows, actual UI textfilter/selectAll206/bulkamount1.25/CSV206/continuous Load more; CSV contains final generatedID; seed writes not UI")
     }
     @Test fun uiCreditCardPocketCalibrationArchiveAndDefault()=runBlocking{
-        val c=f.core();home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc);click(R.string.core_accounts_31)
-        val name="${f.tag} UI card";field(R.string.core_accounts_37,name);field(R.string.core_accounts_38,"8679");field(R.string.core_accounts_40,"20")
-        field(R.string.core_accounts_43,"1000");field(R.string.core_accounts_44,"15");field(R.string.core_accounts_45,"2");click(R.string.save)
+        val c=f.core();home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc);click(R.string.account_kind_credit_card)
+        val name="${f.tag} UI card";field(R.string.account_name,name);field(R.string.account_last4,"8679");field(R.string.account_opening_debt,"20")
+        field(R.string.account_credit_limit,"1000");field(R.string.account_statement_day,"15");field(R.string.account_due_day,"2");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.overview().accounts.any{row->row.name==name}}}}
         val id=c.accounts().use{it.overview().accounts.single{row->row.name==name}.id};val card=c.accounts().use{it.get(id)}
         assertEquals(AccountKind.CREDIT_CARD,card.kind);assertEquals(0,card.creditLimit!!.compareTo(BigDecimal("1000")));assertEquals(15.toUByte(),card.statementDay);assertEquals(2.toUByte(),card.dueDay)
-        click(R.string.edit);field(R.string.core_accounts_37,"$name Edited");click(R.string.save)
+        click(R.string.edit);field(R.string.account_name,"$name Edited");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).name=="$name Edited"}}}
-        click(R.string.core_accounts_14);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.core_accounts_13)
-        click(R.string.core_accounts_12);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.core_accounts_11)
-        click(R.string.core_accounts_18);field(R.string.core_accounts_53,"USD");field(R.string.new_balance_label,"3");click(R.string.save)
+        click(R.string.account_set_default);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.account_clear_default)
+        click(R.string.account_archive);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.account_unarchive)
+        click(R.string.account_currency_add);field(R.string.account_currency_code,"USD");field(R.string.new_balance_label,"3");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).pockets.any{pocket->pocket.currency=="USD"}}}}
-        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.core_accounts_19);field(R.string.new_balance_label,"25");click(R.string.save)
+        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.account_calibrate);field(R.string.new_balance_label,"25");click(R.string.save)
         click(R.string.balance_history_title);field(R.string.core_full_history_from,JavaDate.now().minusDays(7).toString());field(R.string.core_full_history_to,JavaDate.now().toString());click(R.string.core_full_history_query)
-        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.core_accounts_15);click(R.string.core_accounts_25)
+        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.account_delete);click(R.string.account_delete_with_transactions)
         awaitCondition{runBlocking{c.accounts().use{it.overview().accounts.none{row->row.id==id}}}}
         f.note("ui-accounts-advanced","real card create/nameedit/default/archive/unarchive/USD pocket/calibrate/history/zero-refdelete UI and Core queries; balance/missing-rate output remains Core")
     }
@@ -536,7 +536,7 @@ class RealMainJourneys {
     @Test fun uiCreatesWalletAndProfileSurvivesActivityRecreation()=runBlocking {
         home();click(R.string.core_complete_accounts);click(R.string.add_account_fab_desc)
         val name="${f.tag} UI wallet"
-        field(R.string.core_accounts_37,name);click(R.string.core_accounts_32);field(R.string.core_accounts_41,"25")
+        field(R.string.account_name,name);click(R.string.account_kind_wallet);field(R.string.account_opening_balance,"25")
         click(R.string.save)
         awaitCondition{nodes().any{it.text?.toString()?.contains(name)==true}}
         val wallets=f.core().accounts().use{it.overview().accounts}

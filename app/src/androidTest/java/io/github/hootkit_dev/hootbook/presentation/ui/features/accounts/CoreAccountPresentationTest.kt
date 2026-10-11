@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
 import java.math.BigDecimal
 import org.junit.Assert.assertEquals
@@ -19,9 +20,11 @@ class CoreAccountPresentationTest {
     @Test fun multiCurrencyCardUsesNativeAppCurrencyTotalAndStringId() {
         val account = fixtureAccount()
         var selected: String? = null
-        rule.setContent { HootbookTheme(dynamicColor = false) { CompactAccountCard(account, emptyMap(), { selected = account.id }) } }
+        rule.setContent { HootbookTheme(dynamicColor = false) {
+            ListSection { accountRow(account, emptyMap(), null) { selected = account.id } }
+        } }
         rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("735.00"), "CNY")).assertIsDisplayed()
-        rule.onNodeWithText("USD · HKD").assertIsDisplayed()
+        rule.onNodeWithText("USD/HKD", substring = true).assertIsDisplayed()
         rule.onNodeWithTag("account_${account.id}").performClick()
         rule.runOnIdle { assertEquals("account-core-uuid", selected) }
     }

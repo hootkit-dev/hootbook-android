@@ -89,7 +89,7 @@ fun CoreProfileScreen(onBack: () -> Unit, onContacts: () -> Unit = {}, onMerchan
                                 ProfileMetric(R.string.expense, ledger.summary?.let { CurrencyFormatter.formatCurrency(it.expense, it.currency) } ?: "—", Modifier.weight(1f))
                                 ProfileMetric(R.string.income, ledger.summary?.let { CurrencyFormatter.formatCurrency(it.income, it.currency) } ?: "—", Modifier.weight(1f))
                             }
-                            if (ledger.overview?.netWorthComplete == false) Text(stringResource(R.string.core_accounts_5), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            if (ledger.overview?.netWorthComplete == false) Text(stringResource(R.string.account_valuation_incomplete_detail), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                             ledger.summary?.takeIf { !it.complete }?.let { Text(stringResource(R.string.core_analytics_missing, it.missingCurrencies.joinToString()), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                         }
                     }

@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.hootkit.core.Account
 import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
@@ -99,15 +98,11 @@ fun AccountCard(
                 // Balance: an account in several currencies shows their sum, then each currency
                 Text(
                     text = CoreMoneyPresentation.format(account.total.amount, account.total.currency, customSymbols),
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-                if (!account.totalComplete) Text(stringResource(R.string.core_accounts_9), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
-                AccountCurrencyPills(account, customSymbols, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                if (!account.totalComplete) Text(stringResource(R.string.account_total_incomplete), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
 
                 // Bottom Section (Bank Info)
                 Column {
