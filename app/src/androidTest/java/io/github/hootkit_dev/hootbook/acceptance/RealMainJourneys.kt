@@ -172,15 +172,19 @@ class RealMainJourneys {
             Thread.sleep(850)
         }
     }
-    private fun clickBelow(scope:String,id:Int){
+    /** The control labelled [id] (text or description) on the same row as the text [scope]. */
+    private fun clickInRow(scope:String,id:Int){
         showText(scope)
         val current=nodes();val heading=current.first{it.text?.toString()==scope};val hb=Rect();heading.getBoundsInScreen(hb)
-        val label=current.filter{it.text?.toString()==f.text(id)&&it.isVisibleToUser}.filter{node->val b=Rect();node.getBoundsInScreen(b);b.top>=hb.bottom}
-            .minByOrNull{node->val b=Rect();node.getBoundsInScreen(b);b.top}
-        checkNotNull(label){"Missing scoped action below $scope"};val lb=Rect();label.getBoundsInScreen(lb)
-        val action=current.filter{node->val b=Rect();node.getBoundsInScreen(b);node.isClickable&&node.isEnabled&&b.contains(lb.centerX(),lb.centerY())}
+        val label=f.text(id)
+        val target=current.firstOrNull{node->val b=Rect();node.getBoundsInScreen(b)
+            node.isVisibleToUser&&(node.text?.toString()==label||node.contentDescription?.toString()==label)&&b.top<hb.bottom&&b.bottom>hb.top}
+        val tb=Rect();target?.getBoundsInScreen(tb)
+        val action=if(target==null)null else current.filter{node->val b=Rect();node.getBoundsInScreen(b)
+            node.isClickable&&node.isEnabled&&node.isVisibleToUser&&b.contains(tb.centerX(),tb.centerY())}
             .minByOrNull{node->val b=Rect();node.getBoundsInScreen(b);b.width().toLong()*b.height()}
-        checkNotNull(action);check(action.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(850)
+        if(action==null){runCatching{shot("failed-row-action");layout("failed-row-action")};error("Missing $label on the row of $scope")}
+        check(action.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(850)
     }
     private fun field(id:Int,value:String,last:Boolean=false,label:String=f.text(id)){
         var target:AccessibilityNodeInfo?=null;var count=0
@@ -473,7 +477,7 @@ class RealMainJourneys {
     @Test fun uiOwnedCategoryChildDeletionAndProtectedBuiltinSurface()=runBlocking{
         val c=f.core();val category=c.categories().use{it.list(CategoryKind.EXPENSE,true).first{row->row.builtinKey==null&&row.displayName.startsWith("Acceptance-")&&row.subcategories.isNotEmpty()}}
         home();click(R.string.core_complete_categories);categoryDetails(category.displayName)
-        val child=category.subcategories.first();clickBelow(child.displayName,R.string.more_options);click(R.string.delete);click(R.string.delete)
+        val child=category.subcategories.first();clickInRow(child.displayName,R.string.more_options);click(R.string.delete);click(R.string.delete)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).single{row->row.id==category.id}.subcategories.none{row->row.id==child.id}}}}
         click(R.string.more_options);click(R.string.delete);click(R.string.cat_delete_confirm)
         awaitCondition{runBlocking{c.categories().use{it.list(CategoryKind.EXPENSE,true).none{row->row.id==category.id}}}}
@@ -494,8 +498,8 @@ class RealMainJourneys {
     @Test fun uiSubscriptionHideSchedulePaidAndConfirmedLedgerPayment()=runBlocking{
         val c=f.core();val today=JavaDate.now().nativeDate();val sub=c.plans().use{it.subscriptions(today,true).first{row->row.name.contains("UI subscription")&&!row.ended}}
         home();click(R.string.core_complete_subscriptions);field(R.string.core_detail_name_filter,sub.name);clickText(sub.name)
-        click(R.string.core_plans_hide);awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.hidden}}}
-        click(R.string.core_plans_unhide);click(R.string.core_plans_mark_paid);click(R.string.core_plans_confirm)
+        click(R.string.more_options);click(R.string.core_plans_hide);awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.hidden}}}
+        click(R.string.more_options);click(R.string.core_plans_unhide);click(R.string.core_plans_mark_paid);click(R.string.core_plans_mark_paid)
         awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.lastPaid==today}}}
         val all=TransactionFilter(null,null,emptyList(),emptyList(),emptyList(),null,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)
         val before=c.ledger().use{it.list(all,PageRequest(0u,1u)).total};click(R.string.core_plans_record_payment)
