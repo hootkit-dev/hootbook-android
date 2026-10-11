@@ -27,6 +27,22 @@ class ManageAccountsViewModelTest : CoreViewModelTest() {
         awaitState { vm.uiState.value.overview?.netWorth?.amount == BigDecimal("777") }
         assertEquals(core.opened.get(), core.closed.get())
     }
+    @Test fun unlinkedBrokerageSnapshotsAreVisibleAndRefreshOnBrokerageChanges() = runTest {
+        val core = FakeAccountsCore(); val changes = ChangeBus()
+        val snapshot = BrokerageAccount("U123", LocalDate(2026, 10u, 11u), emptyList(),
+            listOf(CashBalance("USD", BigDecimal("10093"), null)), null,
+            listOf(Money(BigDecimal("10093"), "USD")), Money(BigDecimal("77777"), "GBP"), true)
+        val connection = BrokerageConnection(42, "ibkr_flex", "IBKR", core.now, null, listOf(snapshot))
+        core.connections = listOf(connection)
+        val vm = keep(ManageAccountsViewModel(CoreSession(backgroundScope) { core }, changes))
+        awaitState { !vm.uiState.value.isLoading }
+        assertSame(connection, vm.uiState.value.connections.single())
+        assertSame(snapshot.total, vm.uiState.value.connections.single().accounts.single().total)
+        assertNull(snapshot.linkedAccountId)
+        core.connections = emptyList(); changes.changed(Table.BROKERAGE)
+        awaitState { vm.uiState.value.connections.isEmpty() }
+        assertEquals(core.opened.get(), core.closed.get())
+    }
     @Test fun creationForwardsPocketInputsAndGuardsDoubleSubmitAndErrors() = runTest {
         val core = FakeAccountsCore(); val gate = CompletableDeferred<Unit>(); var saved = 0
         core.onCommand = { gate.await(); error("save error") }

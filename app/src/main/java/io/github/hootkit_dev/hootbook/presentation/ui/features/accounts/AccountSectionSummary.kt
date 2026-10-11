@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -35,7 +36,8 @@ internal fun AccountSectionSummary(
     modifier: Modifier = Modifier,
     expanded: Boolean = false,
     onToggle: (() -> Unit)? = null,
-    titleOverride: Int? = null
+    titleOverride: Int? = null,
+    connectionCount: Int = 0
 ) {
     val (title, icon) = when (kind) {
         AccountCategory.WALLETS -> R.string.section_wallets to Icons.Rounded.AccountBalanceWallet
@@ -66,7 +68,10 @@ internal fun AccountSectionSummary(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (onToggle != null) Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (onToggle != null) Text(stringResource(titleOverride ?: title), style = MaterialTheme.typography.titleLargeEmphasized, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.overview_count, accounts.size), style = MaterialTheme.typography.bodyMedium)
+                Text(listOfNotNull(
+                    stringResource(R.string.overview_count, accounts.size).takeIf { accounts.isNotEmpty() || connectionCount == 0 },
+                    if (connectionCount > 0) pluralStringResource(R.plurals.broker_connections, connectionCount, connectionCount) else null,
+                ).joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
                 if (onToggle != null) {
                     val toggleLabel = stringResource(if (expanded) R.string.account_section_collapse_all else R.string.account_section_expand_all, stringResource(title))
                     val toggleState = stringResource(if (expanded) R.string.account_section_expanded else R.string.account_section_collapsed)

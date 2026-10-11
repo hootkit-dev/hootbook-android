@@ -5,6 +5,7 @@ import io.github.hootkit_dev.hootbook.presentation.data.ConvertedMoney
 
 data class HomeUiState(
     val overview: AccountsOverview? = null,
+    val connections: List<BrokerageConnection> = emptyList(),
     val summary: LedgerSummary? = null,
     val lastSummary: LedgerSummary? = null,
     val budgets: List<Budget> = emptyList(),

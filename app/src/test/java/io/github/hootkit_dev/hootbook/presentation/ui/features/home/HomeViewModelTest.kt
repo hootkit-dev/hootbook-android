@@ -30,8 +30,11 @@ class HomeViewModelTest {
     @Test fun initialLoadQueriesRecentDueHeatmapAndCoreDisplayConversion()=runTest{
         Dispatchers.setMain(StandardTestDispatcher(testScheduler));val store=ViewModelStore()
         try{val prefs=CoreUiPreferencesStore(context());prefs.update{it.copy(unifiedDisplayEnabled=true,unifiedDisplayCurrency="USD")};val core=WidgetCore()
+            val connection = BrokerageConnection(42, "ibkr_flex", "IBKR", null, null, emptyList())
+            core.connections = listOf(connection)
             val vm=HomeViewModel(CoreSession(backgroundScope){core},ChangeBus(),prefs,io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets(ApplicationProvider.getApplicationContext()));store.put("vm",vm)
             val state=vm.uiState.first{!it.loading&&it.displayNetWorth!=null}
+            assertSame(connection, state.connections.single())
             assertSame(core.category,state.categories["category"]);assertSame(core.subcategory,state.subcategories["subcategory"]);
             assertSame(core.transaction,state.recent.single());assertSame(core.subscription,state.upcoming.single())
             assertEquals(BigDecimal("1.25"),state.displayNetWorth!!.amount);assertTrue(core.conversions.contains(Triple(BigDecimal("100"),"CNY","USD")))
@@ -160,6 +163,8 @@ private class WidgetCore:HootKitCore(NoPointer){
     var conversion:suspend(BigDecimal,String,String)->BigDecimal?={_,_,_->BigDecimal("1.25")}
     val subcategory = Subcategory("subcategory", "category", null, "Detail", "Detail", "", "", 0, false)
     val category = Category("category", CategoryKind.EXPENSE, null, "Category", "Category", "", "", 0, false, listOf(subcategory))
+    var connections = emptyList<BrokerageConnection>()
+    override fun brokerage(): Brokerage {opened++;return object:Brokerage(NoPointer){override suspend fun connections()=this@WidgetCore.connections;private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun categories(): Categories {opened++;return object:Categories(NoPointer){override suspend fun list(kind:CategoryKind?,includeHidden:Boolean)=listOf(category);private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun accounts():Accounts {opened++;return object:Accounts(NoPointer){override suspend fun overview():AccountsOverview { if (overviewError) error("Overview failed"); return this@WidgetCore.overview };private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun ledger():Ledger {opened++;return object:Ledger(NoPointer){

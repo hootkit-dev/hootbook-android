@@ -19,6 +19,7 @@ internal val accountTables = setOf(Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Tab
 
 data class ManageAccountsUiState(
     val overview: AccountsOverview? = null,
+    val connections: List<BrokerageConnection> = emptyList(),
     val institutions: List<Institution> = emptyList(),
     val customCurrencies: List<CustomCurrency> = emptyList(),
     val defaultCurrency: String = "CNY",
@@ -44,11 +45,13 @@ class ManageAccountsViewModel @Inject constructor(
                     val institutions = core.catalog().use { it.all() }
                     val currency = core.settings().use { it.mainCurrency() }
                     val custom = core.currency().use { it.customCurrencies() }
-                    ManageAccountsUiState(overview, institutions, custom, currency, isLoading = false)
+                    val connections = core.brokerage().use { it.connections() }
+                    ManageAccountsUiState(overview = overview, connections = connections, institutions = institutions,
+                        customCurrencies = custom, defaultCurrency = currency, isLoading = false)
                 }
             }.collect { result ->
                 result.fold(
-                    onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview,
+                    onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview, connections = snapshot.connections,
                         institutions = snapshot.institutions, customCurrencies = snapshot.customCurrencies,
                         defaultCurrency = snapshot.defaultCurrency, isLoading = false) } },
                     onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = coreFailureText(failure)) } },

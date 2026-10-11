@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -150,7 +151,6 @@ internal fun MonthCard(
     val colors = moneyColors
     val today = LocalDate.now()
     val monthName = today.format(DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月" else "MMMM", locale))
-    val daysLeft = today.lengthOfMonth() - today.dayOfMonth
     val converted = display.filterKeys { it != "monthly" }
     val showConverted = converted.isNotEmpty() && converted.values.all { it.complete }
     val currency = if (showConverted) converted.values.first().currency else summary.currency
@@ -167,7 +167,6 @@ internal fun MonthCard(
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.home_month_title, monthName), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.home_days_left, daysLeft), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(12.dp))
@@ -284,6 +283,7 @@ private fun AccountCategory.icon(): ImageVector = when (this) {
 internal fun AccountCategoryList(
     overview: AccountsOverview?,
     onOpen: (AccountCategory) -> Unit,
+    connections: List<BrokerageConnection> = emptyList(),
     // The nearest card payment due, said on the credit card row
     modifier: Modifier = Modifier
 ) {
@@ -298,6 +298,7 @@ internal fun AccountCategoryList(
             val top = if (index == 0) 24.dp else 6.dp
             val bottom = if (index == shown.lastIndex) 24.dp else 6.dp
             val investments = item.key == AccountCategory.INVESTMENTS
+            val empty = item.value.isEmpty() && (!investments || connections.isEmpty())
             Surface(
                 onClick = { onOpen(item.key) },
                 shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom),
@@ -322,7 +323,8 @@ internal fun AccountCategoryList(
                         Text(stringResource(item.key.titleRes), style = MaterialTheme.typography.bodyLarge)
                         Text(
                             when {
-                                item.value.isEmpty() -> stringResource(R.string.home_connect_hint)
+                                empty -> stringResource(R.string.home_connect_hint)
+                                investments && connections.isNotEmpty() -> pluralStringResource(R.plurals.broker_connections, connections.size, connections.size)
                                 item.key == AccountCategory.CREDIT_CARDS && nextCardDue != null ->
                                     stringResource(R.string.home_cards_due, item.value.size, nextCardDue.coreDateText(DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)))
                                 else -> stringResource(R.string.overview_count, item.value.size)
@@ -332,11 +334,14 @@ internal fun AccountCategoryList(
                         )
                     }
                     if (item.key == AccountCategory.CREDIT_CARDS) overview?.creditAvailable?.let { available ->
-                        Text(stringResource(R.string.available_credit_label,
-                            CurrencyFormatter.formatCurrency(available.amount, available.currency)),
-                            style = MaterialTheme.typography.titleMedium.tabular())
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                            Text(CurrencyFormatter.formatCurrency(available.amount, available.currency),
+                                style = MaterialTheme.typography.titleMedium.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.label_available), style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
-                    if (item.value.isEmpty()) OutlinedButton(onClick = { onOpen(item.key) }, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(32.dp)) {
+                    if (empty) OutlinedButton(onClick = { onOpen(item.key) }, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(32.dp)) {
                         Text(stringResource(R.string.home_connect))
                     } else Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

@@ -136,7 +136,7 @@ fun SharedTransitionScope.HomeScreen(
     val subcategoriesMap = uiState.subcategories
     val openCategory: (io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountCategory) -> Unit = {
         val investments = io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountCategory.INVESTMENTS
-        if (it == investments && uiState.overview?.accounts.orEmpty().none { a -> a.category() == investments })
+        if (it == investments && uiState.connections.isEmpty() && uiState.overview?.accounts.orEmpty().none { a -> a.category() == investments })
             navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.AddAccount(investments.name))
         else if (it == investments) navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.Investments)
         else navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.AccountCategoryRoute(it.name))
@@ -272,8 +272,8 @@ fun SharedTransitionScope.HomeScreen(
                                 if (showAccountBreakdown) {
                                     item(key = "account_overview") {
                                         AccountCategoryList(
-                                            uiState.overview, openCategory,
-                                            Modifier.padding(horizontal = Dimensions.Padding.content).animateItem()
+                                            uiState.overview, openCategory, connections = uiState.connections,
+                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem()
                                         )
                                     }
                                 }

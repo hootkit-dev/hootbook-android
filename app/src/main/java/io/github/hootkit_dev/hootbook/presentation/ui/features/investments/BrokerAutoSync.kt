@@ -57,6 +57,7 @@ import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 @Composable
 fun BrokerAutoSyncSection(
     modifier: Modifier = Modifier,
+    onOpenConnection: (BrokerageConnection) -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -75,6 +76,7 @@ fun BrokerAutoSyncSection(
         error = error.takeIf { connecting == null },
         onConnect = viewModel::showConnect,
         onDisconnect = { viewModel.showDisconnect(it.id) },
+        onOpenConnection = onOpenConnection,
         modifier = modifier,
     )
 
@@ -123,6 +125,7 @@ internal fun BrokerAutoSyncContent(
     onConnect: (String) -> Unit,
     onDisconnect: (BrokerageConnection) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenConnection: (BrokerageConnection) -> Unit = {},
 ) {
     val language = LocalConfiguration.current.locales[0].language
     val context = LocalContext.current
@@ -198,6 +201,7 @@ internal fun BrokerAutoSyncContent(
                     is BrokerageConnection ->
                         ListItem(
                             modifier = Modifier.testTag("broker_connection_${row.id}"),
+                            onClick = { onOpenConnection(row) },
                             headline = { Text(row.label) },
                             supporting = {
                                 Text(

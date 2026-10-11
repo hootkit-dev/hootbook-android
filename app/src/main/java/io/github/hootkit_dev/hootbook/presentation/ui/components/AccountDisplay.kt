@@ -140,6 +140,7 @@ fun RowScope.AccountRowContent(account: Account, showBalance: Boolean = true, no
             maxLines = if (note != null) 2 else 1,
             overflow = TextOverflow.Ellipsis
         )
+        if (showBalance && !account.totalComplete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.labelSmall)
     }
     if (showBalance) {
         Spacer(Modifier.width(Spacing.sm))
@@ -150,7 +151,6 @@ fun RowScope.AccountRowContent(account: Account, showBalance: Boolean = true, no
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
-            if (!account.totalComplete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.labelSmall)
             val currencies = accountCurrenciesText(account)
             if (currencies != null) {
                 Text(

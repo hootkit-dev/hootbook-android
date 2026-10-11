@@ -55,6 +55,7 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun query(core: HootKitCoreInterface, today: JavaDate, display: String?, hidden: Set<HomeWidget>): HomeUiState {
         val overview = core.accounts().use { it.overview() }
+        val connections = core.brokerage().use { it.connections() }
         val month = today.withDayOfMonth(1)
         fun period(from: JavaDate, to: JavaDate) = emptyTransactionFilter().copy(from = from.atStartOfDay().coreTime(), to = to.atStartOfDay().coreTime())
         val (summary, lastSummary, activity) = core.ledger().use { ledger ->
@@ -95,7 +96,7 @@ class HomeViewModel @Inject constructor(
                 }
         }
         return HomeUiState(
-            overview = overview, summary = summary, lastSummary = lastSummary,
+            overview = overview, connections = connections, summary = summary, lastSummary = lastSummary,
             budgets = budgets, subscriptions = subscriptions, debts = debts,
             recent = recent, upcoming = upcoming, heatmap = heatmap,
             accounts = overview.accounts.associateBy { it.id }, categories = categories, subcategories = subcategories,

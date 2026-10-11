@@ -10,6 +10,7 @@ internal open class FakeAccountsCore : HootKitCore(NoPointer) {
         listOf(Pocket("GBP", BigDecimal("10"), null, null), Pocket("USD", BigDecimal("20"), null, null)),
         Money(BigDecimal("123.45"), "GBP"), false, null, null, null, null, null, null,
         "type_finance_bank", "#33B5E5", false, false, 0, now)
+    var connections = emptyList<BrokerageConnection>()
     var overview = AccountsOverview(listOf(account), Money(BigDecimal("987.65"), "GBP"), false, null, null)
     var onOverview: suspend () -> AccountsOverview = { overview }
     var onGet: suspend (String) -> Account = { account.copy(id = it) }
@@ -36,6 +37,13 @@ internal open class FakeAccountsCore : HootKitCore(NoPointer) {
     var institutions = listOf(Institution("bank", "银行", "Bank", listOf("alias"), InstitutionKind.BANK, "GB", "GBP", "type_finance_bank", "#123456"))
     val opened = AtomicInteger()
     val closed = AtomicInteger()
+    override fun brokerage(): Brokerage {
+        opened.incrementAndGet()
+        return object : Brokerage(NoPointer) {
+            override suspend fun connections() = this@FakeAccountsCore.connections
+            override fun destroy() { closed.incrementAndGet(); super.destroy() }
+        }
+    }
     override fun accounts(): Accounts {
         opened.incrementAndGet()
         return object : Accounts(NoPointer) {

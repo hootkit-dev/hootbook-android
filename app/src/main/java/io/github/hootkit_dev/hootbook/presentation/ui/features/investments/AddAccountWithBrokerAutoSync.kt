@@ -46,6 +46,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.Naviga
 fun AddAccountWithBrokerAutoSync(
     onNavigateBack: () -> Unit,
     initialCategory: AccountCategory? = null,
+    onOpenConnection: (dev.hootkit.core.BrokerageConnection) -> Unit = {},
     investmentsViewModel: InvestmentsViewModel = hiltViewModel(),
     manageAccountsViewModel: ManageAccountsViewModel = hiltViewModel(),
 ) {
@@ -97,7 +98,7 @@ fun AddAccountWithBrokerAutoSync(
                         showHeading = false, // the top bar already shows the title
                         institutions = uiState.institutions,
                         brokerAutoSync = {
-                            BrokerAutoSyncSection(viewModel = investmentsViewModel)
+                            BrokerAutoSyncSection(viewModel = investmentsViewModel, onOpenConnection = onOpenConnection)
                         },
                         onDismiss = {
                             if (!uiState.isSavingAccount && !brokerState.busy) onNavigateBack()

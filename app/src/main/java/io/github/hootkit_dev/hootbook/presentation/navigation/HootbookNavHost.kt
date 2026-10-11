@@ -368,6 +368,7 @@ fun HootbookNavHost(
                                 val route = entry.toRoute<AddAccount>()
                                 ReadableWidth {
                                     AddAccountWithBrokerAutoSync(onNavigateBack = back,
+                                        onOpenConnection = { connection -> go(Investments(connection.id.toString(), connection.accounts.firstOrNull()?.accountId)) },
                                         initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category })
                                 }
                             }

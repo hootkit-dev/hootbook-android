@@ -128,6 +128,7 @@ fun ManageAccountsScreen(
 ) {
     val uiState by manageAccountsViewModel.uiState.collectAsStateWithLifecycle()
     val accounts = uiState.overview?.accounts.orEmpty().filter { category == null || it.category() == category }
+    val connections = uiState.connections.takeIf { category == null || category == AccountCategory.INVESTMENTS }.orEmpty()
     val sections = remember(accounts) { accounts.accountSections() }
     var expanded by remember { mutableStateOf(emptySet<AccountCategory>()) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -162,7 +163,7 @@ fun ManageAccountsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         Box(Modifier.fillMaxSize()) {
-            if (accounts.isEmpty() && !uiState.isLoading) {
+            if (accounts.isEmpty() && connections.isEmpty() && !uiState.isLoading) {
                 Column(Modifier.fillMaxSize().padding(paddingValues), verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Rounded.AccountBalance, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -179,9 +180,9 @@ fun ManageAccountsScreen(
                         bottom = 96.dp + paddingValues.calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     sections.forEach { (kind, members) ->
-                        if (members.isNotEmpty()) {
+                        if (members.isNotEmpty() || (kind == AccountCategory.INVESTMENTS && connections.isNotEmpty())) {
                             item(key = "summary_$kind", contentType = "section_summary") {
-                                AccountSectionSummary(kind = kind, accounts = members, expanded = kind in expanded,
+                                AccountSectionSummary(kind = kind, accounts = members, connectionCount = if (kind == AccountCategory.INVESTMENTS) connections.size else 0, expanded = kind in expanded,
                                     onToggle = if (category == null) ({ expanded = if (kind in expanded) expanded - kind else expanded + kind }) else null)
                             }
                             if (category != null || kind in expanded) items(members, key = { it.id }, contentType = { "account" }) { account ->
@@ -192,6 +193,22 @@ fun ManageAccountsScreen(
                                             Text(stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText())
                                         }
                                     }
+                                }
+                            }
+                            if (kind == AccountCategory.INVESTMENTS && (category != null || kind in expanded)) {
+                                connections.forEach { connection ->
+                                    items(connection.accounts, key = { "broker:${connection.id}:${it.accountId}" }, contentType = { "broker_connection" }) { snapshot ->
+                                        io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
+                                            connection, snapshot, onClick = { onBrokerage(connection.id, snapshot.accountId) })
+                                    }
+                                    if (connection.accounts.isEmpty()) item(key = "broker:${connection.id}") {
+                                        io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
+                                            headline = { Text(connection.label) },
+                                            onClick = { onBrokerage(connection.id, "") })
+                                    }
+                                }
+                                item(key = "investment_add") {
+                                    InvestmentsEmptySection(onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) }, showTitle = false)
                                 }
                             }
                         } else if (kind == AccountCategory.INVESTMENTS && category == null) {
