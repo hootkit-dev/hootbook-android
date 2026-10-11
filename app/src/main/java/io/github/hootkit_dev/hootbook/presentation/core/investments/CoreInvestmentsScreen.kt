@@ -2,6 +2,20 @@ package io.github.hootkit_dev.hootbook.presentation.core.investments
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem as InvestmentListItem
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
+import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +39,7 @@ fun CoreInvestmentsScreen(
     onManageAccounts: () -> Unit,
     onAccountHistory: (String) -> Unit,
     viewModel: CoreInvestmentsViewModel = hiltViewModel(),
+    onAddInvestment: () -> Unit = { onManageAccounts() },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.reload() }
@@ -44,7 +59,7 @@ fun CoreInvestmentsScreen(
         onConnect = viewModel::showConnect, onSelect = viewModel::selectAccount,
         onHolding = viewModel::selectHolding, onLink = viewModel::showLink,
         onDisconnect = viewModel::showDisconnect, onManageAccounts = { if (!state.busy) onManageAccounts() },
-        onAccountHistory = { if (!state.busy) onAccountHistory(it) })
+        onAccountHistory = { if (!state.busy) onAccountHistory(it) }, onAddInvestment = { if (!state.busy) onAddInvestment() })
 
     state.connectProvider?.let { id -> state.providers.find { it.id == id }?.let { provider ->
         CoreBrokerConnectDialog(provider, providerName(id), state,
@@ -93,14 +108,23 @@ internal fun CoreInvestmentsContent(
     onSelect: (BrokerAccountRef?) -> Unit, onHolding: (CoreHoldingKey?) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit, onDisconnect: (Long?) -> Unit,
     onManageAccounts: () -> Unit, onAccountHistory: (String) -> Unit,
+    onAddInvestment: () -> Unit = onManageAccounts,
 ) {
     var filter by remember(state.selected) { mutableStateOf("") }
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(state.selectedHolding?.symbol ?: state.account?.accountId ?: stringResource(R.string.core_invest_title)) },
-            navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.core_invest_back)) } },
-            actions = { TextButton(enabled = !state.busy, onClick = onReload) { Text(stringResource(R.string.core_invest_read_cache)) } })
+    var managementOpen by remember { mutableStateOf(false) }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
+        CustomTitleTopAppBar(title = state.selectedHolding?.symbol ?: state.account?.accountId ?: stringResource(R.string.overview_investments),
+            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent(onBack) }, actionContent = {
+                IconButton(onClick = onRefreshAll, enabled = !state.busy && state.connections.isNotEmpty()) { Icon(Icons.Rounded.Refresh, stringResource(R.string.investments_refresh)) }
+                IconButton(onClick = onReload, enabled = !state.busy) { Icon(Icons.Rounded.Cached, stringResource(R.string.core_invest_read_cache)) }
+            })
+    }, floatingActionButton = {
+        if (!state.loading && state.selected == null) FloatingActionButton(onClick = onAddInvestment) { Icon(Icons.Rounded.Add, stringResource(R.string.investments_add)) }
     }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding),
+        PullToRefreshBox(isRefreshing = state.busy, onRefresh = { if (!state.busy) onRefreshAll() }, modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+        LazyColumn(Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (state.loading || state.busy) item("progress") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -139,15 +163,7 @@ internal fun CoreInvestmentsContent(
                 val holdings = account.holdings.filter { filter.isBlank() || it.symbol.contains(filter, true) || it.description.contains(filter, true) }
                 if (holdings.isEmpty()) item("no_holdings") { Text(stringResource(R.string.core_invest_no_holdings)) }
                 items(holdings, key = { listOf(it.instrumentId, it.currency, it.model).joinToString("|") { part -> "${part.length}:$part" } }) { value ->
-                    ElevatedCard(onClick = { if (!state.busy) onHolding(CoreHoldingKey.of(value)) }, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${value.symbol} · ${value.currency}", style = MaterialTheme.typography.titleMedium)
-                            Text(value.description)
-                            Text(stringResource(R.string.core_invest_quantity, investmentDecimal(value.quantity)))
-                            Text(stringResource(R.string.core_invest_market_value, "${investmentDecimal(value.marketValue)} ${value.currency}"))
-                            if (value.model.isNotBlank()) Text(stringResource(R.string.core_invest_model, value.model))
-                        }
-                    }
+                    CoreHoldingRow(value, ListItemPosition.from(holdings.indexOf(value), holdings.size)) { if (!state.busy) onHolding(CoreHoldingKey.of(value)) }
                 }
                 item("cash_title") { Text(stringResource(R.string.core_invest_cash), style = MaterialTheme.typography.titleMedium) }
                 if (account.cash.isEmpty()) item("no_cash") { Text(stringResource(R.string.core_invest_no_cash)) }
@@ -158,9 +174,28 @@ internal fun CoreInvestmentsContent(
                     } }
                 }
             } else {
-                item("note") { Text(stringResource(R.string.core_invest_report_note)) }
-                item("refresh_all") { Button(enabled = !state.busy && state.connections.isNotEmpty(), onClick = onRefreshAll) { Text(stringResource(R.string.core_invest_refresh_all)) } }
-                if (state.connections.isEmpty() && !state.loading) item("empty") { Text(stringResource(R.string.core_invest_no_connections)) }
+                if (state.connections.isNotEmpty() || state.investmentAccounts.isNotEmpty()) item("net_worth_banner") {
+                    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.investments_net_worth), style = MaterialTheme.typography.titleSmall)
+                            state.investmentAccounts.forEach { ledger ->
+                                Text(ledger.name, style = MaterialTheme.typography.labelMedium)
+                                Text(CurrencyFormatter.formatCurrency(ledger.total.amount, ledger.total.currency), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            }
+                            state.connections.forEach { connection -> connection.accounts.filter { it.linkedAccountId == null }.forEach { account ->
+                                Text("${connection.label} · ${account.accountId}", style = MaterialTheme.typography.labelMedium)
+                                account.total?.let { Text(CurrencyFormatter.formatCurrency(it.amount, it.currency), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) }
+                                    ?: Text(stringResource(R.string.core_invest_total_unavailable))
+                            } }
+                            Text(stringResource(R.string.core_parity_investment_total), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                item("note") { Text(stringResource(R.string.core_invest_report_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (state.connections.isEmpty() && state.investmentAccounts.isEmpty() && !state.loading) item("empty") {
+                    InvestmentListItem(headline = { Text(stringResource(R.string.investments_empty_title), fontWeight = FontWeight.Medium) },
+                        supporting = { Text(stringResource(R.string.investments_empty_body)) }, shape = ListItemPosition.Single.toShape(), padding = PaddingValues(0.dp))
+                }
                 state.connections.forEach { connection ->
                     item("connection:${connection.id}") {
                         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -195,7 +230,11 @@ internal fun CoreInvestmentsContent(
                     } }
                 }
                 item("manual_add") { OutlinedButton(enabled = !state.busy, onClick = onManageAccounts) { Text(stringResource(R.string.core_invest_manage_accounts)) } }
-                item("providers_title") { Text(stringResource(R.string.core_invest_providers), style = MaterialTheme.typography.titleLarge) }
+                item("providers_title") { TextButton(onClick = { managementOpen = !managementOpen }) {
+                    Icon(if (managementOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
+                    Text(stringResource(R.string.core_invest_providers))
+                } }
+                if (managementOpen) {
                 if (state.providers.isEmpty() && !state.loading) item("no_providers") { Text(stringResource(R.string.core_invest_no_providers)) }
                 items(state.providers, key = { "provider:${it.id}" }) { provider ->
                     OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
@@ -204,7 +243,9 @@ internal fun CoreInvestmentsContent(
                         Button(enabled = !state.busy, onClick = { onConnect(provider.id) }) { Text(stringResource(R.string.core_invest_connect)) }
                     } }
                 }
+                }
             }
+        }
         }
     }
 }
@@ -214,7 +255,7 @@ private fun SnapshotCard(account: BrokerageAccount) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(account.accountId, style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.core_invest_as_of, investmentDate(account.asOf)))
-        account.total?.let { Text(stringResource(R.string.core_invest_snapshot_total, "${investmentDecimal(it.amount)} ${it.currency}")) }
+        account.total?.let { Text(CurrencyFormatter.formatCurrency(it.amount, it.currency), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
             ?: Text(stringResource(R.string.core_invest_total_unavailable))
         if (!account.complete) Text(stringResource(R.string.core_invest_incomplete), color = MaterialTheme.colorScheme.error)
         account.valueByCurrency.forEach { Text(stringResource(R.string.core_invest_original_value, "${investmentDecimal(it.amount)} ${it.currency}")) }
@@ -262,3 +303,26 @@ internal fun investmentFailureText(failure: CoreInvestmentFailure): String = str
         else -> R.string.core_invest_error_unknown
     }
 })
+
+
+/** The original grouped holding row. Quantity, value and P&L remain Core-provided decimals. */
+@Composable
+internal fun CoreHoldingRow(holding: Holding, position: ListItemPosition, onClick: () -> Unit = {}) {
+    val pnlColor = when {
+        holding.unrealizedPnl == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        holding.unrealizedPnl!!.signum() >= 0 -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.error
+    }
+    InvestmentListItem(headline = { Text(holding.symbol, fontWeight = FontWeight.Medium) }, supporting = {
+        Text(buildString {
+            append(holding.description)
+            if (holding.model.isNotBlank()) append(" · ").append(holding.model)
+            append("\n").append(stringResource(R.string.investments_quantity, investmentDecimal(holding.quantity)))
+        })
+    }, trailing = {
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.investments_value, holding.currency, investmentDecimal(holding.marketValue)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.investments_pnl, holding.currency, investmentDecimal(holding.unrealizedPnl)), style = MaterialTheme.typography.bodySmall, color = pnlColor)
+        }
+    }, onClick = onClick, shape = position.toShape(), padding = PaddingValues(0.dp))
+}

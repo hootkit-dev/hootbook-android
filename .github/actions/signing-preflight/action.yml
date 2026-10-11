@@ -1,0 +1,19 @@
+name: Signing preflight
+description: Decode the release keystore and prove private-key signing readiness before SDK setup or builds.
+outputs:
+  keystore-path:
+    description: Restricted-permission keystore to reuse for this job; remove it in an always() cleanup step.
+    value: ${{ steps.verify.outputs.keystore-path }}
+runs:
+  using: composite
+  steps:
+    - name: Validate and unlock signing key
+      id: verify
+      shell: bash
+      env:
+        # Existing public release identity, also checked on built APKs.
+        RELEASE_CERT_SHA256: 23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726
+      run: |
+        set +x
+        python3 "$GITHUB_ACTION_PATH/../../../scripts/signing/preflight.py" \
+          --keystore-out "$RUNNER_TEMP/hootbook-release.keystore"

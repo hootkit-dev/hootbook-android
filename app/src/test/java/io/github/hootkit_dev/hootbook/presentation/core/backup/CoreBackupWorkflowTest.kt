@@ -52,6 +52,17 @@ class CoreBackupWorkflowTest {
     private fun workflow(access: BackupTestAccess, files: CoreBackupFiles = CoreBackupFiles(root)) =
         CoreBackupWorkflow(access, files, BackupOperationJournal(files), root)
     private suspend fun source(files: CoreBackupFiles) = files.stage { ByteArrayInputStream("source-original".toByteArray()) }
+    @Test fun separatePreviewSummarySurvivesUncertainCommitJournal() = runTest {
+        val files = CoreBackupFiles(root); val source = source(files)
+        val journal = BackupOperationJournal(files)
+        val preview = BackupOperation(source, true, BackupPhase.PREPARED, legacySummary = BackupTestAccess().legacySummary)
+        journal.writePreview(preview)
+        journal.write(preview.copy(phase = BackupPhase.IMPORTING, legacySummary = null))
+        val recovered = workflow(BackupTestAccess(), files).recover().single()
+        assertEquals(BackupPhase.UNCERTAIN, recovered.phase)
+        assertNull(recovered.legacySummary)
+        assertEquals(preview, journal.readPreview(source.operationId))
+    }
     @Test fun mergeCallsCoreOnceAndPreservesOriginal() = runTest {
         val access = BackupTestAccess(); val files = CoreBackupFiles(root); val source = source(files)
         val operation = workflow(access, files).restore(source, false, ImportMode.MERGE, "secret", false)

@@ -3,6 +3,28 @@ package io.github.hootkit_dev.hootbook.presentation.core.currencies
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -19,8 +42,151 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 
+/** Original two-card settings layout; preferences only select presentation, Core performs every conversion. */
 @Composable
 fun CoreCurrenciesScreen(onBack: () -> Unit, initialCurrency: String? = null,
+    viewModel: CoreCurrenciesViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val appearance: io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceViewModel = hiltViewModel()
+    val prefs by appearance.preferences.state.collectAsStateWithLifecycle()
+    val prefsReady by appearance.preferences.loaded.collectAsStateWithLifecycle()
+    val prefsBusy by appearance.busy.collectAsStateWithLifecycle()
+    val prefsError by appearance.error.collectAsStateWithLifecycle()
+    var showRates by rememberSaveable { mutableStateOf(initialCurrency != null) }
+    var picker by rememberSaveable { mutableStateOf<String?>(null) }
+    val enabled = prefsReady && !prefsBusy
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val haze = remember { HazeState() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
+    LaunchedEffect(initialCurrency) { viewModel.initialCurrency(initialCurrency) }
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
+        CustomTitleTopAppBar(title = stringResource(R.string.currency_settings_title),
+            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll, hazeState = haze,
+            hasBackButton = true, navigationContent = { NavigationContent(onBack) })
+    }) { padding ->
+        Column(Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState()).padding(padding).consumeWindowInsets(padding).padding(top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (prefsBusy || !prefsReady || state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            prefsError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp)) }
+            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp)) }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                CurrencySettingsGridCard(stringResource(R.string.currency), prefs.unifiedDisplayCurrency ?: state.mainCurrency,
+                    Icons.Rounded.AttachMoney, { picker = "display" }, Modifier.weight(1f), enabled)
+                CurrencySettingsGridCard(stringResource(R.string.exchange_rates), stringResource(R.string.rates_info_subtitle),
+                    Icons.AutoMirrored.Filled.ShowChart, { showRates = true }, Modifier.weight(1f), state.loaded)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                CurrencyPreference(stringResource(R.string.unified_currency), stringResource(R.string.unified_currency_subtitle), prefs.unifiedDisplayEnabled,
+                    enabled, ListItemPosition.Top) { value ->
+                    appearance.update { it.copy(unifiedDisplayEnabled = value, unifiedDisplayCurrency = it.unifiedDisplayCurrency ?: state.mainCurrency.takeIf(String::isNotBlank)) }
+                }
+                AnimatedVisibility(prefs.unifiedDisplayEnabled) {
+                    CurrencyChoiceRow(stringResource(R.string.display_currency), prefs.unifiedDisplayCurrency ?: state.mainCurrency,
+                        ListItemPosition.Middle, enabled) { picker = "display" }
+                }
+                CurrencyPreference(stringResource(R.string.default_currency), stringResource(R.string.default_currency_subtitle), prefs.defaultEntryEnabled,
+                    enabled, if (prefs.defaultEntryEnabled) ListItemPosition.Middle else ListItemPosition.Bottom) { value ->
+                    appearance.update { it.copy(defaultEntryEnabled = value, defaultEntryCurrency = it.defaultEntryCurrency ?: state.mainCurrency.takeIf(String::isNotBlank)) }
+                }
+                AnimatedVisibility(prefs.defaultEntryEnabled) {
+                    CurrencyChoiceRow(stringResource(R.string.default_label), prefs.defaultEntryCurrency ?: state.mainCurrency,
+                        ListItemPosition.Bottom, enabled) { picker = "entry" }
+                }
+            }
+            Text(stringResource(R.string.core_currencies_main_currency, state.mainCurrency), Modifier.padding(horizontal = 32.dp),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+    if (showRates) CoreCurrencyRatesSheet(onBack = { showRates = false }, initialCurrency = initialCurrency, viewModel = viewModel)
+    picker?.let { target ->
+        CoreCurrencyPickerSheet(selectedCurrency = if (target == "entry") prefs.defaultEntryCurrency ?: state.mainCurrency else prefs.unifiedDisplayCurrency ?: state.mainCurrency,
+            currencies = state.customCurrencies, enabled = enabled, onDismiss = { picker = null }, onSelect = { code ->
+                appearance.update { if (target == "entry") it.copy(defaultEntryCurrency = code) else it.copy(unifiedDisplayCurrency = code) }
+                picker = null
+            })
+    }
+}
+
+@Composable
+private fun CurrencySettingsGridCard(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier, enabled: Boolean) {
+    Card(onClick = onClick, enabled = enabled, modifier = modifier.height(130.dp), shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            Column {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyPreference(title: String, subtitle: String, checked: Boolean, enabled: Boolean, position: ListItemPosition, onChange: (Boolean) -> Unit) {
+    ListItem(headline = { Text(title) }, supporting = { Text(subtitle) },
+        trailing = { HootbookSwitch(checked, null, enabled = enabled) }, toggled = checked, onToggle = if (enabled) onChange else null,
+        shape = position.toShape(), padding = PaddingValues(horizontal = 16.dp))
+}
+
+@Composable
+private fun CurrencyChoiceRow(title: String, currency: String, position: ListItemPosition, enabled: Boolean, onClick: () -> Unit) {
+    ListItem(headline = { Text(title, style = MaterialTheme.typography.bodyMedium) },
+        trailing = { Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(currency, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+            Icon(Icons.Rounded.ChevronRight, null)
+        } }, onClick = if (enabled) onClick else null, shape = position.toShape(), padding = PaddingValues(horizontal = 16.dp))
+}
+
+/** Currency names and symbols are display metadata; supported custom records are supplied by Core. */
+@Composable
+internal fun CoreCurrencyPickerSheet(selectedCurrency: String, currencies: List<CustomCurrency> = emptyList(), enabled: Boolean = true,
+    onDismiss: () -> Unit, onSelect: (String) -> Unit) {
+    var search by rememberSaveable { mutableStateOf("") }
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    val popular = listOf("CNY", "HKD", "USD", "SGD", "EUR", "GBP", "JPY", "TWD", "AUD", "CAD", "CHF", "KRW", "NZD", "MYR", "THB")
+    val locale = LocalConfiguration.current.locales[0]
+    val codes = remember(currencies, locale) {
+        (popular + java.util.Currency.getAvailableCurrencies().map { it.currencyCode }.sorted() + currencies.map { it.code }).distinct()
+    }
+    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.background) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).navigationBarsPadding()) {
+            Text(stringResource(R.string.currencies), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
+            OutlinedTextField(search, { search = it }, singleLine = true, label = { Text(stringResource(R.string.search_currencies)) },
+                leadingIcon = { Icon(Icons.Rounded.Search, null) }, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
+            val filtered = codes.filter { code ->
+                val name = currencies.firstOrNull { it.code == code }?.name ?: runCatching { java.util.Currency.getInstance(code).getDisplayName(locale) }.getOrDefault(code)
+                (search.isBlank() && (showAll || code in popular || currencies.any { it.code == code })) ||
+                    (search.isNotBlank() && (code.contains(search, true) || name.contains(search, true)))
+            }
+            LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
+                if (filtered.isEmpty()) item { Text(stringResource(R.string.currency_not_available)) }
+                items(filtered.chunked(3)) { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { code ->
+                        val custom = currencies.firstOrNull { it.code == code }
+                        val system = remember(code) { runCatching { java.util.Currency.getInstance(code) }.getOrNull() }
+                        Card(onClick = { onSelect(code) }, enabled = enabled, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (code == selectedCurrency) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow)) {
+                            Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(custom?.symbol ?: system?.getSymbol(locale).orEmpty(), style = MaterialTheme.typography.titleLarge)
+                                Text(code, fontWeight = FontWeight.Bold)
+                                Text(custom?.name ?: system?.getDisplayName(locale).orEmpty(), style = MaterialTheme.typography.labelSmall, maxLines = 2, textAlign = TextAlign.Center)
+                            }
+                        }
+                    }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                } }
+                if (!showAll && search.isBlank()) item { TextButton(onClick = { showAll = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.view_all)) } }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoreCurrencyRatesSheet(onBack: () -> Unit, initialCurrency: String? = null,
     viewModel: CoreCurrenciesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val goBack: () -> Unit = { if (!viewModel.back()) onBack() }
@@ -31,10 +197,11 @@ fun CoreCurrenciesScreen(onBack: () -> Unit, initialCurrency: String? = null,
     var deletingRate by remember { mutableStateOf<ExchangeRate?>(null) }
     LaunchedEffect(state.commandRevision) { deletingCurrency = null; deletingRate = null }
     val enabled = state.loaded && !state.saving
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.core_currencies_title)) },
-        navigationIcon = { TextButton(onClick = goBack, enabled = !state.saving) { Text(stringResource(R.string.core_currencies_back)) } },
-        actions = { TextButton(onClick = { viewModel.clearError(); viewModel.refresh() }, enabled = !state.saving) { Text(stringResource(R.string.core_currencies_reload)) } }) }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    HootbookModalBottomSheet(onDismissRequest = goBack, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.background) {
+        Text(stringResource(R.string.exchange_rates), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp))
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (state.loading || state.saving) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (state.navigationBlocked) item { Text(stringResource(R.string.core_currencies_saving)) }
             if(state.downloadFailed)item{Text(stringResource(R.string.core_currency_download_failed),color=MaterialTheme.colorScheme.error)}

@@ -185,6 +185,26 @@ class CoreDebtsViewModelTest {
             assertNull(model.state.value.selectedId)
         }
     }
+    @Test fun bulkPersonDeletionStopsAtFailureAndRefreshesRemainingCoreRows() = runTest {
+        val rows = mutableListOf(person("first"), person("second"), person("third"))
+        val deleted = mutableListOf<String>()
+        withModel({ method, args -> when (method) {
+            "people" -> rows.toList()
+            "deletePerson" -> {
+                val id = args[0] as String
+                if (id == "second") throw CoreException.NotFound(Entity.PERSON, id)
+                deleted += id; rows.removeAll { it.id == id }; Unit
+            }
+            else -> query(method)
+        } }) { model, _ ->
+            model.deletePeople(linkedSetOf("first", "second", "third", "unknown")); runCurrent()
+            assertEquals(listOf("first"), deleted)
+            assertEquals(listOf("second", "third"), model.state.value.people.map { it.id })
+            assertNotNull(model.state.value.error)
+            assertFalse(model.state.value.saving)
+            assertEquals(0L, model.state.value.commandRevision)
+        }
+    }
     @Test fun deletedPersonNeverLeavesStaleDetailVisible() = runTest {
         withModel({ method, args -> when (method) {
             "person" -> throw CoreException.NotFound(Entity.PERSON, args[0] as String)

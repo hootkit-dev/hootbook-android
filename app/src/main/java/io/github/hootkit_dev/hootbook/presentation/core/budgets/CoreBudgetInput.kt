@@ -19,11 +19,12 @@ data class CoreBudgetDraft(
     val allAccounts: Boolean = true,
     val accountIds: Set<String> = emptySet(),
     val color: String = "#4CAF50",
+    val limits: List<NewBudgetLimit> = emptyList(),
 ) {
     fun newBudget(defaultName: String) = NewBudget(
         name.trim().ifEmpty { defaultName }, kind, period, money(), budgetDate(start),
         if (period == BudgetPeriod.CUSTOM) budgetDate(end) else null,
-        if (allAccounts) null else accountIds.toList(), color.trim(), emptyList(),
+        if (allAccounts) null else accountIds.toList(), color.trim(), limits,
     )
     fun patch(defaultName: String) = BudgetPatch(
         name = name.trim().ifEmpty { defaultName }, kind = kind, period = period, amount = money(),

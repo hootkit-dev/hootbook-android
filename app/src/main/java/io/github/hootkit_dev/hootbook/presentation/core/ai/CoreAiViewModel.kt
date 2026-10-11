@@ -104,13 +104,19 @@ class CoreAiViewModel private constructor(
         ++modelsRevision; modelsJob?.cancel()
         mutable.update { it.copy(config = change(it.config), configDirty = true, modelLoading = false, models = emptyList()) }
     }
-    fun protocol(protocol: AiProtocol) {
+    fun protocol(protocol: AiProtocol, baseUrl: String? = null) {
         if (state.value.configBusy || state.value.saving || state.value.phase != CoreAiPhase.COMPOSE) return
         val revision = ++modelsRevision; modelsJob?.cancel()
         viewModelScope.launch {
             try { val defaults = withAi { it.protocolDefaults(protocol) }
                 if (revision != modelsRevision || state.value.phase != CoreAiPhase.COMPOSE || state.value.configBusy) return@launch
-                configChanged { it.copy(protocol = protocol, baseUrl = defaults.baseUrl, model = defaults.model) }
+                configChanged { draft ->
+                    val targetUrl = baseUrl ?: defaults.baseUrl
+                    val changedProvider = draft.protocol != protocol || draft.baseUrl.trimEnd('/') != targetUrl.trimEnd('/')
+                    draft.copy(protocol = protocol, baseUrl = targetUrl, model = defaults.model,
+                        apiKey = if (changedProvider) "" else draft.apiKey,
+                        removeKey = if (changedProvider) true else draft.removeKey)
+                }
             } catch (error: Throwable) { mutable.update { it.copy(error = aiFailureText(error)) } }
         }
     }
@@ -134,7 +140,7 @@ class CoreAiViewModel private constructor(
         }
     }
     fun loadModels() {
-        if (state.value.configBusy || state.value.saving || state.value.phase != CoreAiPhase.COMPOSE) return
+        if (state.value.configBusy || state.value.saving || state.value.phase != CoreAiPhase.COMPOSE || state.value.config.removeKey) return
         val revision = ++modelsRevision; modelsJob?.cancel(); val draft = state.value.config
         mutable.update { it.copy(modelLoading = true, error = null) }
         modelsJob = viewModelScope.launch {

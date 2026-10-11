@@ -27,6 +27,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
             CoreBootstrapState.CORE_FAILED -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
                 Text(stringResource(R.string.core_host_open_failed)); Button(onClick = bootstrap::start) { Text(stringResource(R.string.core_shell_retry)) }
             }
+            CoreBootstrapState.LEGACY_UPGRADE -> CoreAppLockGate(lock) { LegacyUpgradeScreen(onContinue = bootstrap::start) }
             CoreBootstrapState.READY -> CoreAppLockGate(lock) { CoreNavHost(session, capabilities, prefs, ingress) }
             else -> Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         }

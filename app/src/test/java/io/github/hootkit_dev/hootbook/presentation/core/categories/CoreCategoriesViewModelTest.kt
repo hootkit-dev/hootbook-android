@@ -26,7 +26,7 @@ class CoreCategoriesViewModelTest {
             val new = category("income-uuid", CategoryKind.INCOME)
             val model = CoreCategoriesViewModel(ChangeBus()) { api { method, args ->
                 check(method == "list")
-                if (args[0] == CategoryKind.EXPENSE) {
+                if (args[0] == null) {
                     @Suppress("UNCHECKED_CAST")
                     old = args.last() as Continuation<List<Category>>
                     COROUTINE_SUSPENDED
@@ -103,7 +103,7 @@ class CoreCategoriesViewModelTest {
             model.draftChanged(model.state.value.draft!!.copy(name = "子分类")); model.save(); runCurrent()
             assertTrue(model.back())
             model.filter(CategoryKind.INCOME); model.select("other-uuid")
-            assertEquals(CategoryKind.EXPENSE, model.state.value.kind)
+            assertNull(model.state.value.kind)
             assertEquals(row.id, model.state.value.selectedId)
             assertEquals(row.id, model.state.value.draft!!.parentId)
             assertTrue(model.state.value.navigationBlocked)

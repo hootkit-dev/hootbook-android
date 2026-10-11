@@ -3,6 +3,25 @@ package io.github.hootkit_dev.hootbook.presentation.core.plans
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -31,33 +50,53 @@ fun CoreTemplatesScreen(onBack: () -> Unit, onUseTemplate: (templateId: String) 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     var deleteId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(state.commandRevision) { deleteId = null }
+    val scroll = TopAppBarDefaults.pinnedScrollBehavior()
+    var ordered by remember(state.templates) { mutableStateOf(state.templates) }
+    val listState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(listState) { from, to ->
+        if (!state.saving) {
+            val fromIndex = ordered.indexOfFirst { it.id == from.key }
+            val toIndex = ordered.indexOfFirst { it.id == to.key }
+            if (fromIndex >= 0 && toIndex >= 0) ordered = ordered.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
+        }
+    }
     Scaffold(topBar = {
-        TopAppBar(title = { Text(state.selected?.name ?: stringResource(R.string.core_plans_templates)) },
-            navigationIcon = { TextButton(onClick = back, enabled = !state.saving) { Text(stringResource(R.string.core_plans_back)) } },
-            actions = { TextButton(onClick = viewModel::refresh, enabled = !state.saving) { Text(stringResource(R.string.core_plans_refresh)) } })
+        CustomTitleTopAppBar(title = state.selected?.name ?: stringResource(R.string.quick_add_templates), scrollBehaviorSmall = scroll, scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent(back) }, actionContent = {
+                IconButton(onClick = viewModel::refresh, enabled = !state.saving) { Icon(Icons.Rounded.Refresh, stringResource(R.string.core_plans_refresh)) }
+            })
     }, floatingActionButton = {
         if (state.selectedId == null && state.form == null) FloatingActionButton(onClick = viewModel::create) { Text("＋") }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             state.errorResource?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(12.dp))}
             PlanStatus(state.loading, state.saving, state.navigationBlocked, state.error, viewModel::clearError)
-            if (state.form != null) TemplateEditor(state.form!!, state.references, state.saving, viewModel::updateForm, viewModel::save)
-            else if (state.selectedId == null) {
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state.selectedId == null) {
+                LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item { Text(stringResource(R.string.core_plans_template_boundary), style = MaterialTheme.typography.bodySmall) }
-                    if (!state.loading && state.templates.isEmpty()) item { Text(stringResource(R.string.core_plans_empty_templates)) }
-                    items(state.templates, key = { it.id }) { row ->
-                        Card(onClick = { viewModel.select(row.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp)) {
-                                CoreMerchantIcon(row.merchant,platform.assets,Modifier.size(48.dp))
-                                Text(row.name, style = MaterialTheme.typography.titleLarge)
-                                Text("${CoreKindLabel(row.kind)} · ${row.merchant}")
-                                row.amount?.let { Text("${row.currency.orEmpty()} ${it.toPlainString()}") }
-                                FlowRow {
-                                    TextButton(onClick = { if (viewModel.canNavigate()) onUseTemplate(row.id) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_use_template)) }
-                                    TextButton(onClick = { viewModel.move(row, -1) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_move_up)) }
-                                    TextButton(onClick = { viewModel.move(row, 1) }, enabled = !state.saving) { Text(stringResource(R.string.core_plans_move_down)) }
+                    if (!state.loading && state.templates.isEmpty()) item {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Rounded.Bolt, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp)); Text(stringResource(R.string.quick_templates_empty))
+                        }
+                    }
+                    items(ordered, key = { it.id }) { row ->
+                        ReorderableItem(state = reorderState, key = row.id) { dragging ->
+                            val elevation by animateDpAsState(if (dragging) 8.dp else 0.dp, label = "templateDrag")
+                            Row(Modifier.fillMaxWidth().shadow(elevation, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow).clickable(enabled = !state.saving) { viewModel.select(row.id) }
+                                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                CoreMerchantIcon(row.merchant, platform.assets, Modifier.size(40.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(row.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    val category = state.references.categories.find { it.id == row.categoryId }?.displayName
+                                    val notPrefilled = stringResource(R.string.quick_template_amount_not_prefilled)
+                                    Text(listOfNotNull(category, row.amount?.let { CurrencyFormatter.formatCurrency(it, row.currency ?: state.references.mainCurrency) + if (row.prefillAmount) "" else " ($notPrefilled)" }).joinToString(" • "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
+                                IconButton(onClick = { viewModel.edit(row) }, enabled = !state.saving) { Icon(Icons.Rounded.Edit, stringResource(R.string.edit)) }
+                                IconButton(onClick = { deleteId = row.id }, enabled = !state.saving) { Icon(Icons.Rounded.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error) }
+                                Icon(Icons.Default.DragHandle, stringResource(R.string.reorder), Modifier.draggableHandle(onDragStopped = { viewModel.reorder(ordered.map { it.id }) }).padding(horizontal = 8.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -94,11 +133,16 @@ fun CoreTemplatesScreen(onBack: () -> Unit, onUseTemplate: (templateId: String) 
             }
         }
     }
+    state.form?.let { form -> HootbookModalBottomSheet(onDismissRequest = { if (!state.saving) viewModel.back() }) {
+        Text(stringResource(if (form.id == null) R.string.core_plans_templates else R.string.edit), Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.headlineSmall)
+        state.error?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
+        TemplateEditor(form, state.references, state.saving, viewModel::updateForm, viewModel::save)
+    } }
     if (deleteId != null) AlertDialog(onDismissRequest = { if (!state.saving) deleteId = null },
         title = { Text(stringResource(R.string.core_plans_delete_template_title)) },
         text = { Column { Text(stringResource(R.string.core_plans_delete_template_body)); state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
         dismissButton = { TextButton(onClick = { deleteId = null }, enabled = !state.saving) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onClick = viewModel::delete, enabled = !state.saving && deleteId == state.selected?.id) { Text(stringResource(R.string.delete)) } })
+        confirmButton = { TextButton(onClick = { deleteId?.let(viewModel::delete) }, enabled = !state.saving) { Text(stringResource(R.string.delete)) } })
 }
 
 @Composable
@@ -125,6 +169,6 @@ private fun TemplateEditor(form: CoreTemplateForm, refs: CorePlanReferences, sav
             subcategory = { update(form.copy(subcategoryId = it)) })
         CoreTextField(form.notes, stringResource(R.string.core_plans_notes), saving) { update(form.copy(notes = it)) }
         Text(stringResource(R.string.core_plans_template_boundary), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = save, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
+        Button(onClick = save, enabled = !saving, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.save)) }
     }
 }

@@ -3,6 +3,22 @@ package io.github.hootkit_dev.hootbook.presentation.core.plans
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.GenericTypeSwitcher
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SubtitleTag
+import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AmountInput
+import io.github.hootkit_dev.hootbook.presentation.ui.features.add.DecimalAmountPad
+import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +46,7 @@ fun CoreSubscriptionsScreen(
     viewModel: CoreSubscriptionsViewModel = hiltViewModel(),
     platform: CorePlanPlatformViewModel = hiltViewModel(),
     initialCreate: Boolean = false,
+    onNewTransaction: (() -> Unit)? = null,
 ) {
     var nameFilter by rememberSaveable {mutableStateOf("")}
     var sortName by rememberSaveable {mutableStateOf(false)}
@@ -45,12 +62,13 @@ fun CoreSubscriptionsScreen(
     var deleteId by remember { mutableStateOf<String?>(null) }
     var markPaidId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(state.commandRevision) { deleteId = null; markPaidId = null }
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(state.selected?.name ?: stringResource(R.string.core_plans_subscriptions)) },
-            navigationIcon = { TextButton(onClick = back, enabled = !state.saving) { Text(stringResource(R.string.core_plans_back)) } },
-            actions = { TextButton(onClick = viewModel::refresh, enabled = !state.saving) { Text(stringResource(R.string.core_plans_refresh)) } })
-    }, floatingActionButton = {
-        if (state.selectedId == null && state.form == null) FloatingActionButton(onClick = viewModel::create) { Text("＋") }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
+        CustomTitleTopAppBar(title = stringResource(if (state.form != null) R.string.add_subscription else R.string.core_plans_subscriptions),
+            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent(back) }, actionContent = {
+                IconButton(onClick = viewModel::refresh, enabled = !state.saving) { Icon(Icons.Rounded.Refresh, stringResource(R.string.core_plans_refresh)) }
+            })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             state.errorResource?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(12.dp))}
@@ -58,8 +76,12 @@ fun CoreSubscriptionsScreen(
             state.undoHiddenId?.let {
                 TextButton(onClick = viewModel::undoHidden, enabled = !state.saving) { Text(stringResource(R.string.core_plans_undo_hidden)) }
             }
-            if (state.form != null) SubscriptionEditor(state.form!!, state.references, state.saving, viewModel::updateForm, viewModel::save)
-            else if (state.selectedId == null) {
+            if (state.form != null) {
+                if (state.form!!.id == null && onNewTransaction != null) GenericTypeSwitcher(selectedIndex = 1,
+                    onIndexChange = { if (it == 0 && viewModel.canNavigate()) onNewTransaction() },
+                    options = listOf(stringResource(R.string.transaction), stringResource(R.string.subscription)), modifier = Modifier.padding(horizontal = 16.dp))
+                SubscriptionEditor(state.form!!, state.references, state.saving, viewModel::updateForm, viewModel::save)
+            } else {
                 Row(Modifier.padding(horizontal = 16.dp)) {
                     FilterChip(selected = state.includeHidden, onClick = { viewModel.includeHidden(!state.includeHidden) },
                         enabled = !state.saving, label = { Text(stringResource(R.string.core_plans_show_hidden)) })
@@ -67,24 +89,19 @@ fun CoreSubscriptionsScreen(
                 OutlinedTextField(nameFilter,{nameFilter=it},label={Text(stringResource(R.string.core_detail_name_filter))},enabled=!state.saving,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp),singleLine=true)
                 FilterChip(selected=sortName,onClick={sortName=!sortName},label={Text(stringResource(R.string.core_detail_sort_name))})
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    state.summary?.let { summary -> item {
-                        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.core_plans_summary, summary.count.toString()), style = MaterialTheme.typography.titleMedium)
-                            Text(stringResource(R.string.core_plans_monthly, summary.currency, summary.monthly.toPlainString()))
-                            Text(stringResource(R.string.core_plans_yearly, summary.currency, summary.yearly.toPlainString()))
-                            Text(stringResource(R.string.core_plans_upcoming, summary.currency, summary.upcoming.toPlainString()))
-                            if (!summary.complete) Text(stringResource(R.string.core_plans_missing_rates, summary.missingCurrencies.joinToString()), color = MaterialTheme.colorScheme.error)
-                        } }
-                    } }
+                    state.summary?.let { summary -> item { CoreSubscriptionSummary(summary) } }
                     if (!state.loading && state.subscriptions.isEmpty()) item { Text(stringResource(R.string.core_plans_empty_subscriptions)) }
-                    items(state.subscriptions.filter{it.name.contains(nameFilter,ignoreCase=true)}.let{if(sortName)it.sortedBy{row->row.name.lowercase(java.util.Locale.ROOT)}else it}, key = { it.id }) { row ->
-                        Card(onClick = { viewModel.select(row.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {CoreMerchantIcon(row.name,platform.assets,Modifier.size(48.dp));SubscriptionDescription(row) }
-                        }
+                    items(state.subscriptions.filter { (state.includeHidden || !it.hidden) && it.name.contains(nameFilter, ignoreCase = true) }.let { if (sortName) it.sortedBy { row -> row.name.lowercase(java.util.Locale.ROOT) } else it }, key = { it.id }) { row ->
+                        CoreSubscriptionRow(row, platform, state.references, !state.saving,
+                            onClick = { viewModel.select(row.id) }, onEdit = { viewModel.edit(row) }, onHide = { viewModel.toggleHidden(row) })
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
-            } else state.selected?.let { row ->
+            }
+        }
+    }
+    if (state.form == null) state.selected?.let { row ->
+        HootbookModalBottomSheet(onDismissRequest = { viewModel.select(null) }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
                 Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     CoreMerchantIcon(row.name,platform.assets,Modifier.size(64.dp))
                     SubscriptionDescription(row)
@@ -102,7 +119,6 @@ fun CoreSubscriptionsScreen(
                     OutlinedButton(onClick = { markPaidId = row.id }, enabled = !state.saving && row.cycle.unit != CycleUnit.UNKNOWN && !row.ended) { Text(stringResource(R.string.core_plans_mark_paid)) }
                     Text(stringResource(R.string.core_plans_payment_boundary), style = MaterialTheme.typography.bodySmall)
                 }
-            }
         }
     }
     if (deleteId != null) AlertDialog(onDismissRequest = { if (!state.saving) deleteId = null },
@@ -133,9 +149,10 @@ private fun SubscriptionDescription(row: Subscription) {
 @Composable
 private fun SubscriptionEditor(form: CoreSubscriptionForm, refs: CorePlanReferences, saving: Boolean,
     update: (CoreSubscriptionForm) -> Unit, save: () -> Unit) {
-    Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        CoreTextField(form.name, stringResource(R.string.core_plans_name), saving) { update(form.copy(name = it)) }
-        CoreTextField(form.amount, stringResource(R.string.core_plans_amount), saving) { update(form.copy(amount = it)) }
+    var amountPad by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        AmountInput(form.amount, CurrencyFormatter.getCurrencySymbol(form.currency), onClick = { amountPad = true }, enabled = !saving)
+        CoreTextField(form.name, stringResource(R.string.service_name_required), saving) { update(form.copy(name = it)) }
         CoreTextField(form.currency, stringResource(R.string.core_plans_currency), saving) { update(form.copy(currency = it)) }
         CoreTextField(form.every, stringResource(R.string.core_plans_cycle_every), saving) { update(form.copy(every = it)) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -150,7 +167,16 @@ private fun SubscriptionEditor(form: CoreSubscriptionForm, refs: CorePlanReferen
             account = { update(form.copy(accountId = it)) }, category = { update(form.copy(categoryId = it, subcategoryId = null)) },
             subcategory = { update(form.copy(subcategoryId = it)) })
         CoreTextField(form.notes, stringResource(R.string.core_plans_notes), saving) { update(form.copy(notes = it)) }
-        Button(onClick = save, enabled = !saving && form.unit != CycleUnit.UNKNOWN, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save)) }
+        Text(stringResource(R.string.core_parity_subscription_attachments), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = save, enabled = !saving && form.unit != CycleUnit.UNKNOWN, modifier = Modifier.fillMaxWidth().height(56.dp)) { Icon(Icons.Rounded.Done, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.save)) }
+        Spacer(Modifier.height(48.dp))
+    }
+    if (amountPad) HootbookModalBottomSheet(onDismissRequest = { amountPad = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AmountInput(form.amount, CurrencyFormatter.getCurrencySymbol(form.currency), {}, enabled = false)
+            DecimalAmountPad(form.amount, { if (!saving) update(form.copy(amount = it)) })
+            Button(onClick = { amountPad = false }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_plans_confirm)) }
+        }
     }
 }
 
@@ -182,24 +208,106 @@ private fun SubscriptionEditor(form: CoreSubscriptionForm, refs: CorePlanReferen
 /** Picks generated String IDs; a missing/deleted reference is displayed rather than silently discarded. */
 @Composable internal fun PlanReferencePicker(refs: CorePlanReferences, accountId: String?, categoryId: String?, subcategoryId: String?,
     kind: CategoryKind?, saving: Boolean, account: (String?) -> Unit, category: (String?) -> Unit, subcategory: (String?) -> Unit) {
-    Text(stringResource(R.string.core_plans_account), style = MaterialTheme.typography.titleSmall)
-    PlanChoice(accountId == null, stringResource(R.string.core_plans_none), saving) { account(null) }
-    refs.accounts.forEach { row -> PlanChoice(accountId == row.id, "${row.name} · ${row.mainCurrency}", saving) { account(row.id) } }
+    val none = stringResource(R.string.core_plans_none)
+    PlanReferenceField(stringResource(R.string.core_plans_account), refs.accounts.find { it.id == accountId }?.name ?: accountId ?: none,
+        accountId, listOf(null to none) + refs.accounts.map { it.id to it.name }, !saving, account)
     if (accountId != null && refs.accounts.none { it.id == accountId }) Text(stringResource(R.string.core_plans_missing_reference, accountId), color = MaterialTheme.colorScheme.error)
-    if (kind != null) {
-        Text(stringResource(R.string.core_plans_category), style = MaterialTheme.typography.titleSmall)
-        PlanChoice(categoryId == null, stringResource(R.string.core_plans_none), saving) { category(null) }
-        refs.categories.filter { it.kind == kind }.forEach { row -> PlanChoice(categoryId == row.id, row.displayName, saving) { category(row.id) } }
-        val selected = refs.categories.find { it.id == categoryId }
-        if (categoryId != null && selected == null) Text(stringResource(R.string.core_plans_missing_reference, categoryId), color = MaterialTheme.colorScheme.error)
-        selected?.let { row ->
-            Text(stringResource(R.string.core_plans_subcategory), style = MaterialTheme.typography.titleSmall)
-            PlanChoice(subcategoryId == null, stringResource(R.string.core_plans_none), saving) { subcategory(null) }
-            row.subcategories.forEach { sub -> PlanChoice(subcategoryId == sub.id, sub.displayName, saving) { subcategory(sub.id) } }
-            if (subcategoryId != null && row.subcategories.none { it.id == subcategoryId }) Text(stringResource(R.string.core_plans_missing_reference, subcategoryId), color = MaterialTheme.colorScheme.error)
+    val categories = refs.categories.filter { kind == null || it.kind == kind }
+    val selected = categories.find { it.id == categoryId }
+    PlanReferenceField(stringResource(R.string.core_plans_category), selected?.displayName ?: categoryId ?: none,
+        categoryId, listOf(null to none) + categories.map { it.id to it.displayName }, !saving, category)
+    if (categoryId != null && selected == null) Text(stringResource(R.string.core_plans_missing_reference, categoryId), color = MaterialTheme.colorScheme.error)
+    if (selected != null) {
+        PlanReferenceField(stringResource(R.string.core_plans_subcategory), selected.subcategories.find { it.id == subcategoryId }?.displayName ?: subcategoryId ?: none,
+            subcategoryId, listOf(null to none) + selected.subcategories.map { it.id to it.displayName }, !saving, subcategory)
+        if (subcategoryId != null && selected.subcategories.none { it.id == subcategoryId }) Text(stringResource(R.string.core_plans_missing_reference, subcategoryId), color = MaterialTheme.colorScheme.error)
+    }
+}
+
+@Composable
+private fun PlanReferenceField(label: String, value: String, selected: String?, options: List<Pair<String?, String>>, enabled: Boolean, change: (String?) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    Surface(onClick = { choosing = true }, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) { Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value) }
+            Icon(Icons.Rounded.ArrowDropDown, null)
+        }
+    }
+    if (choosing) HootbookModalBottomSheet(onDismissRequest = { choosing = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Text(label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+        LazyColumn(Modifier.heightIn(max = 480.dp), contentPadding = PaddingValues(16.dp)) {
+            items(options) { (id, name) ->
+                ListItem(headlineContent = { Text(name) }, leadingContent = { RadioButton(id == selected, onClick = { change(id); choosing = false }, enabled = enabled) },
+                    modifier = Modifier.fillMaxWidth())
+            }
         }
     }
 }
+
 @Composable private fun PlanChoice(selected: Boolean, label: String, saving: Boolean, onClick: () -> Unit) {
     TextButton(onClick = onClick, enabled = !saving) { Text("${if (selected) "✓ " else ""}$label") }
+}
+
+
+@Composable
+internal fun CoreSubscriptionSummary(summary: SubscriptionSummary) {
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.total_subscriptions), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.active_count_format, summary.count.toInt()), style = MaterialTheme.typography.bodySmall)
+                }
+                Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Subscriptions, null) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(R.string.monthly to summary.monthly, R.string.yearly to summary.yearly).forEach { (label, amount) ->
+                    Column(Modifier.weight(1f).background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .7f), MaterialTheme.shapes.large).padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(label), style = MaterialTheme.typography.labelSmall)
+                        Spacer(Modifier.height(8.dp))
+                        Text(CurrencyFormatter.formatCurrency(amount, summary.currency), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            Text(stringResource(R.string.core_plans_upcoming, summary.currency, summary.upcoming.toPlainString()), style = MaterialTheme.typography.bodySmall)
+            if (!summary.complete) Text(stringResource(R.string.core_plans_missing_rates, summary.missingCurrencies.joinToString()), color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun CoreSubscriptionRow(row: Subscription, platform: CorePlanPlatformViewModel, refs: CorePlanReferences,
+    enabled: Boolean, onClick: () -> Unit, onEdit: () -> Unit, onHide: () -> Unit) {
+    val swipe = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+        if (enabled) when (value) { SwipeToDismissBoxValue.StartToEnd -> onHide(); SwipeToDismissBoxValue.EndToStart -> onEdit(); else -> Unit }
+        false
+    })
+    SwipeToDismissBox(state = swipe, enableDismissFromStartToEnd = enabled, enableDismissFromEndToStart = enabled,
+        backgroundContent = { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.shapes.extraLarge).padding(16.dp),
+            contentAlignment = if (swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) {
+            Icon(if (swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Icons.Rounded.VisibilityOff else Icons.Rounded.Edit, null)
+        } }) {
+        Card(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                CoreMerchantIcon(row.name, platform.assets, Modifier.size(48.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(row.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        SubtitleTag(text = when {
+                            row.ended -> stringResource(R.string.core_plans_ended)
+                            row.overdue -> stringResource(R.string.overdue)
+                            row.daysUntil == 0 -> stringResource(R.string.due_today)
+                            row.daysUntil == 1 -> stringResource(R.string.due_tomorrow)
+                            else -> row.nextDue?.planDateText() ?: stringResource(R.string.core_plans_none)
+                        }, color = if (row.overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                        SubtitleTag(text = "${row.cycle.every} ${cycleLabel(row.cycle.unit)}", color = MaterialTheme.colorScheme.tertiary)
+                        refs.categories.find { it.id == row.categoryId }?.let { SubtitleTag(text = it.displayName, color = MaterialTheme.colorScheme.secondary) }
+                    }
+                }
+                Text(CurrencyFormatter.formatCurrency(row.amount.amount, row.amount.currency), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
 }

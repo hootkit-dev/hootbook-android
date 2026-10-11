@@ -39,12 +39,22 @@ class CoreAiViewModelTest {
         assertEquals("actual-model", vm.state.value.config.model); assertEquals("", vm.state.value.config.apiKey)
         assertTrue(vm.state.value.settings!!.hasKey); assertFalse(vm.state.value.loading)
     }
-    @Test fun protocolDefaultsComeFromCoreAndKeyIsPreservedOnlyInDraft() = runModel { store ->
+    @Test fun changingProviderUsesCoreDefaultsAndRequiresItsOwnCredential() = runModel { store ->
         val ai = FakeAi(); val vm = model(store, ai); runCurrent(); vm.configChanged { it.copy(apiKey = "private-secret") }
         vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE); runCurrent()
         assertEquals("core-default-url", vm.state.value.config.baseUrl); assertEquals("core-default-model", vm.state.value.config.model)
         assertEquals(AiProtocol.OPEN_AI_COMPATIBLE, vm.state.value.config.protocol)
-        assertFalse(vm.state.value.toString().contains("private-secret")); assertEquals("private-secret", vm.state.value.config.apiKey)
+        assertFalse(vm.state.value.toString().contains("private-secret")); assertEquals("", vm.state.value.config.apiKey)
+        assertTrue(vm.state.value.config.removeKey)
+    }
+    @Test fun providerShortcutDoesNotSendTheOldProvidersKeyToItsNewEndpoint() = runModel { store ->
+        val ai = FakeAi(); val vm = model(store, ai); runCurrent(); vm.configChanged { it.copy(apiKey = "old-provider-key") }
+        vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE, "https://openrouter.ai/api/v1"); runCurrent()
+        assertEquals("https://openrouter.ai/api/v1", vm.state.value.config.baseUrl)
+        assertEquals("", vm.state.value.config.apiKey)
+        assertTrue(vm.state.value.config.removeKey)
+        vm.loadModels(); runCurrent(); assertFalse(vm.state.value.modelLoading)
+        assertTrue(vm.state.value.models.isEmpty())
     }
     @Test fun configSavesCoreSettingsThenKeyAndNeverReadsStoredKey() = runModel { store ->
         val ai = FakeAi(); val vm = model(store, ai); runCurrent(); vm.configChanged { it.copy(apiKey = "replacement-key", model = "selected") }

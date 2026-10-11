@@ -113,7 +113,7 @@ internal fun CoreTransactionFullActions(state: CoreTransactionsUiState, model: C
     }
     preview?.let { ref -> model.attachmentStore?.let { CoreAttachmentPreview(ref, it, onDismiss = { preview = null }) } }
     LaunchedEffect(state.selectedIds) { if (state.selectedIds.isEmpty()) bulkEditor = false }
-    if (bulkEditor) CoreBulkEditor(state, { bulkEditor = false }) { form -> model.bulkUpdate(form) }
+    if (bulkEditor) io.github.hootkit_dev.hootbook.presentation.ui.components.BatchEditTransactionsBottomSheet(state, { bulkEditor = false }) { form -> model.bulkUpdate(form) }
     deletion?.let { action -> AlertDialog(onDismissRequest = { if (!state.writing) deletion = null },
         title = { Text(stringResource(if (action == "delete") R.string.core_full_delete_selected else R.string.core_full_permanent_confirm)) },
         text = { Text(stringResource(if (action == "delete") R.string.core_full_delete_note else if (action == "purgeAll") R.string.core_full_purge_all_note else R.string.core_full_purge_note)) },
@@ -123,33 +123,6 @@ internal fun CoreTransactionFullActions(state: CoreTransactionsUiState, model: C
         }) { Text(stringResource(R.string.core_full_confirm)) } },
         dismissButton = { TextButton(enabled = !state.writing, onClick = { deletion = null }) { Text(stringResource(R.string.cancel)) } }) }
     if (subscriptionEditor) CoreSubscriptionFromTransactionDialog(state.writing, { subscriptionEditor = false }) { cycle, end -> model.createSubscription(cycle, end); subscriptionEditor = false }
-}
-
-@Composable
-private fun CoreBulkEditor(state: CoreTransactionsUiState, dismiss: () -> Unit, submit: (CoreTransactionBulkForm) -> Unit) {
-    var form by remember { mutableStateOf(CoreTransactionBulkForm()) }
-    AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(R.string.core_full_bulk_edit)) },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.core_full_bulk_note))
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            for ((label, value, update) in listOf(
-                Triple(R.string.core_full_bulk_date, form.date) { v: String -> form = form.copy(date = v) },
-                Triple(R.string.core_full_bulk_time, form.time) { v: String -> form = form.copy(time = v) },
-                Triple(R.string.core_full_bulk_amount, form.amount) { v: String -> form = form.copy(amount = v) })) {
-                OutlinedTextField(value, onValueChange = update, label = { Text(stringResource(label)) }, modifier = Modifier.fillMaxWidth())
-            }
-            Text(stringResource(R.string.core_full_bulk_category))
-            for (category in state.categories.filterNot { it.hidden }) {
-                Row { RadioButton(form.categoryId == category.id, onClick = { form = form.copy(categoryId = category.id, subcategoryId = null) }); Text(category.displayName) }
-                if (form.categoryId == category.id) category.subcategories.filterNot { it.hidden }.forEach { child ->
-                    TextButton(onClick = { form = form.copy(subcategoryId = child.id) }) { Text("${if (form.subcategoryId == child.id) "✓ " else ""}${child.displayName}") }
-                }
-            }
-            TextButton(onClick = { form = form.copy(categoryId = null, subcategoryId = null) }) { Text(stringResource(R.string.core_full_keep_category)) }
-            Row { Checkbox(form.replaceNotes, onCheckedChange = { form = form.copy(replaceNotes = it) }); Text(stringResource(R.string.core_full_replace_notes)) }
-            if (form.replaceNotes) OutlinedTextField(form.notes, { form = form.copy(notes = it) }, label = { Text(stringResource(R.string.core_full_notes)) })
-        } }, confirmButton = { TextButton(enabled = !state.writing, onClick = { submit(form) }) { Text(stringResource(R.string.core_full_confirm)) } },
-        dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable

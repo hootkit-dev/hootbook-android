@@ -1,7 +1,21 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package io.github.hootkit_dev.hootbook.presentation.core.accounts
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
+import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountCard
+import io.github.hootkit_dev.hootbook.presentation.ui.components.BalanceChart
+import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
+import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.LocalWindowLayout
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreVisualStylePicker
@@ -30,7 +45,10 @@ fun CoreAccountsScreen(
     viewModel: CoreAccountsViewModel = hiltViewModel(),
     initialAccountId: String? = null,
     initialHistory: Boolean = false,
+    initialKind: AccountKind? = null,
     onBrokerage: (Long, String) -> Unit = { _, _ -> },
+    onConnectBroker: () -> Unit = {},
+    initialCreate: Boolean = false,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(initialAccountId, initialHistory) { viewModel.initialize(initialAccountId, initialHistory) }
@@ -38,18 +56,37 @@ fun CoreAccountsScreen(
     BackHandler(onBack = goBack)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
     var pocketDialog by remember { mutableStateOf<PocketEditor?>(null) }
+    var historySheet by rememberSaveable { mutableStateOf(initialHistory) }
     var deleteAccount by remember { mutableStateOf<Account?>(null) }
     var deletePocket by remember { mutableStateOf<Pocket?>(null) }
     var deleteAnchor by remember { mutableStateOf<BalanceAnchor?>(null) }
     LaunchedEffect(state.commandRevision) {
         pocketDialog = null; deleteAccount = null; deletePocket = null; deleteAnchor = null
     }
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(state.account?.name ?: stringResource(R.string.accounts)) },
-            navigationIcon = { TextButton(onClick = goBack, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_1)) } },
-            actions = { TextButton(onClick = { viewModel.refresh() }, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_2)) } })
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val wide = LocalWindowLayout.current.widthDp >= 720
+    fun addAccount(kind: AccountKind? = initialKind) { viewModel.edit(); kind?.let { viewModel.state.value.draft?.let { draft -> viewModel.draftChanged(draft.copy(kind = it)) } } }
+    var openedInitialCreate by rememberSaveable { mutableStateOf(false) }
+    var observedInitialDraft by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialCreate, state.loading) {
+        if (initialCreate && !state.loading && !openedInitialCreate) {
+            openedInitialCreate = true
+            if (state.draft == null) addAccount()
+        }
+    }
+    LaunchedEffect(initialCreate, state.draft != null, state.saving) {
+        if (initialCreate) {
+            if (state.draft != null) observedInitialDraft = true
+            else if (observedInitialDraft && !state.saving) onBack()
+        }
+    }
+    Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
+        LargeFlexibleTopAppBar(title = { Text(if (!wide && state.account != null) state.account!!.name else stringResource(initialKind?.let(::accountKindTitle) ?: R.string.title_accounts)) },
+            navigationIcon = { IconButton(onClick = goBack, enabled = !state.saving) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.account_navigate_back)) } },
+            actions = { IconButton(onClick = viewModel::refresh, enabled = !state.saving) { Icon(Icons.Rounded.Refresh, stringResource(R.string.core_accounts_2)) } }, scrollBehavior = scrollBehavior)
     }, floatingActionButton = {
-        if (state.selectedId == null) FloatingActionButton(onClick = { viewModel.edit() }) { Text("＋") }
+        if (state.selectedId == null || wide) ExtendedFloatingActionButton(onClick = { addAccount() },
+            icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.add_account_fab_desc)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -63,43 +100,23 @@ fun CoreAccountsScreen(
                 }
             }
             val account = state.account
-            if (state.selectedId == null) {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    state.overview?.let { overview -> item {
-                        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(20.dp)) {
-                            Text(stringResource(R.string.core_accounts_4), style = MaterialTheme.typography.labelLarge)
-                            Text("${overview.netWorth.currency} ${overview.netWorth.amount.toPlainString()}", style = MaterialTheme.typography.headlineMedium)
-                            if (!overview.netWorthComplete) Text(stringResource(R.string.core_accounts_5))
-                            overview.creditAvailable?.let { Text(stringResource(R.string.core_full_credit_available, CoreMoneyPresentation.format(it.amount, it.currency, state.customSymbols))) }
-                            overview.nearestDue?.let { Text(stringResource(R.string.core_full_nearest_due, "${it.dueDate.year}-${it.dueDate.month}-${it.dueDate.day}")) }
-                        } }
-                    } }
-                    if (state.overview?.accounts?.isEmpty() == true) item { Text(stringResource(R.string.add_account_prompt)) }
-                    items(state.overview?.accounts.orEmpty(), key = { it.id }) { row ->
-                        Card(onClick = { viewModel.select(row.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                CoreRecordIcon(row.icon, Modifier.size(40.dp))
-                                Text(listOfNotNull(row.name, row.last4).joinToString(" · "), style = MaterialTheme.typography.titleMedium)
-                                Text("${kindText(row.kind)}${if (row.isDefault) stringResource(R.string.core_full_label_79) else ""}${if (row.archived) stringResource(R.string.core_full_label_80) else ""}")
-                                Text(CoreMoneyPresentation.format(row.total.amount, row.total.currency, state.customSymbols), style = MaterialTheme.typography.titleLarge)
-                                state.displayValues[row.id]?.let { money -> Text(CoreMoneyPresentation.format(money.amount, money.currency, state.customSymbols)); if (!money.complete) Text(stringResource(R.string.core_full_conversion_missing)) }
-                                if (!row.totalComplete) Text(stringResource(R.string.core_accounts_6))
-                                FlowRow {
-                                    TextButton(onClick = { viewModel.move(row, -1) }, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_7)) }
-                                    TextButton(onClick = { viewModel.move(row, 1) }, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_8)) }
-                                }
-                            }
-                        }
-                    }
-                    item { Spacer(Modifier.height(80.dp)) }
-                }
-            } else if (account != null) {
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxSize()) {
+            if (state.selectedId == null || wide) {
+                ManageAccountsList(state, initialKind, viewModel::select, { addAccount(it) }, Modifier.weight(1f).fillMaxHeight())
+            }
+            if (account != null) {
+
+                LazyColumn(modifier = Modifier.weight(if (wide) 1.35f else 1f).fillMaxHeight(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     item {
-                        Text("${account.total.currency} ${account.total.amount.toPlainString()}", style = MaterialTheme.typography.headlineMedium)
+                        AccountCard(account, customSymbols = state.customSymbols)
+                        Spacer(Modifier.height(12.dp))
+                        state.displayValues[account.id]?.let { converted ->
+                            Text(CoreMoneyPresentation.format(converted.amount, converted.currency, state.customSymbols), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (!converted.complete) Text(stringResource(R.string.core_full_conversion_missing), color = MaterialTheme.colorScheme.error)
+                        }
                         if (!account.totalComplete) Text(stringResource(R.string.core_accounts_9))
                         if (account.kind == AccountKind.CREDIT_CARD) Text(stringResource(R.string.core_accounts_10))
-                        CoreRecordIcon(account.icon, Modifier.size(48.dp))
+
                         account.broker?.let { broker -> TextButton(enabled = !state.saving, onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) }) { Text(stringResource(R.string.core_full_open_broker, broker.brokerAccountId)) } }
                         account.securities?.let { Text(stringResource(R.string.core_full_securities, CoreMoneyPresentation.format(it.amount, it.currency, state.customSymbols))) }
                         FlowRow {
@@ -109,7 +126,15 @@ fun CoreAccountsScreen(
                         }
                         Text(stringResource(R.string.core_accounts_transaction_count, state.transactionCount.toString()))
                         TextButton(onClick = { viewModel.transactionNavigationTarget()?.let(onTransactions) }, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_view_transactions)) }
-                        TextButton(onClick = { deleteAccount = account }, enabled = !state.saving) { Text(stringResource(R.string.core_accounts_15), color = MaterialTheme.colorScheme.error) }
+                        var showActions by remember { mutableStateOf(false) }
+                        Box {
+                            TextButton(onClick = { showActions = true }, enabled = !state.saving) { Icon(Icons.Rounded.MoreVert, null); Text(stringResource(R.string.more_options)) }
+                            DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.core_accounts_7)) }, onClick = { viewModel.move(account, -1); showActions = false })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.core_accounts_8)) }, onClick = { viewModel.move(account, 1); showActions = false })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.core_accounts_15), color = MaterialTheme.colorScheme.error) }, onClick = { deleteAccount = account; showActions = false })
+                            }
+                        }
                     }
                     state.cardStatus?.let { card -> item {
                         Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
@@ -140,7 +165,7 @@ fun CoreAccountsScreen(
                             }
                         }
                     }
-                    item { AccountHistoryPanel(state, viewModel) }
+                    item { OutlinedButton(onClick = { viewModel.openHistory(); historySheet = true }, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.balance_history_title)) } }
                     item { Text(stringResource(R.string.core_full_anchors, state.currency.orEmpty()), style = MaterialTheme.typography.titleLarge) }
                     if (state.anchors.isEmpty()) item { Text(stringResource(R.string.core_accounts_22)) }
                     items(state.anchors, key = { it.id }) { anchor ->
@@ -157,9 +182,16 @@ fun CoreAccountsScreen(
                     }
                 }
             }
+            }
         }
     }
-    state.draft?.let { draft -> AccountEditor(draft, state.institutions, state.saving, state.error, viewModel::draftChanged, viewModel::dismissEditor, viewModel::saveAccount) }
+    if (historySheet) HootbookModalBottomSheet(onDismissRequest = { if (!state.saving) historySheet = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp)) {
+            Text(stringResource(R.string.balance_history_title), style = MaterialTheme.typography.headlineSmall)
+            AccountHistoryPanel(state, viewModel)
+        }
+    }
+    state.draft?.let { draft -> AccountEditor(draft, state.institutions, state.saving, state.error, viewModel::draftChanged, viewModel::dismissEditor, viewModel::saveAccount, onConnectBroker) }
     pocketDialog?.let { editor -> PocketDialog(editor, state.saving, state.error, { pocketDialog = null }) { value ->
         val id = state.selectedId ?: return@PocketDialog
         when (value.action) {
@@ -193,11 +225,15 @@ private fun kindText(kind: AccountKind) = when (kind) {
 
 @Composable
 private fun AccountEditor(draft: CoreAccountDraft, institutions: List<Institution>, saving: Boolean, error: String?,
-    changed: (CoreAccountDraft) -> Unit, dismiss: () -> Unit, save: () -> Unit) {
+    changed: (CoreAccountDraft) -> Unit, dismiss: () -> Unit, save: () -> Unit, onConnectBroker: () -> Unit) {
     var institutionsOpen by remember { mutableStateOf(false) }
     val chinese = LocalConfiguration.current.locales[0].language == "zh"
-    AlertDialog(onDismissRequest = dismiss, title = { Text(if (draft.id == null) stringResource(R.string.core_accounts_35) else stringResource(R.string.core_accounts_36)) },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    HootbookModalBottomSheet(onDismissRequest = { if (!saving) dismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Text(if (draft.id == null) stringResource(R.string.add_account_title) else stringResource(R.string.edit_account_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
+        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (draft.kind == AccountKind.INVESTMENT && draft.id == null) {
+                InvestmentsEmptySection(onAdd = { if (!saving) { dismiss(); onConnectBroker() } }, showTitle = false)
+            }
             if (saving) Text(stringResource(R.string.core_accounts_saving_navigation))
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             CoreTextField(draft.name, stringResource(R.string.core_accounts_37), saving) { changed(draft.copy(name = it)) }
@@ -216,18 +252,18 @@ private fun AccountEditor(draft: CoreAccountDraft, institutions: List<Institutio
                 CoreTextField(draft.dueDay, stringResource(R.string.core_accounts_45), saving) { changed(draft.copy(dueDay = it)) }
             }
             TextButton(onClick = { institutionsOpen = !institutionsOpen }, enabled = !saving) { Text(stringResource(R.string.core_full_institution, institutions.find { it.key == draft.institutionKey }?.let { if (chinese) it.chineseName else it.englishName } ?: stringResource(R.string.core_full_none))) }
-            if (institutionsOpen) {
-                TextButton(onClick = { changed(draft.copy(institutionKey = "")); institutionsOpen = false }) { Text(stringResource(R.string.core_accounts_46)) }
-                CoreTextField(draft.institutionKey, stringResource(R.string.core_accounts_47), saving) { changed(draft.copy(institutionKey = it)) }
-                institutions.filter { draft.kind != AccountKind.INVESTMENT || it.kind == InstitutionKind.BROKER }.filter { draft.institutionKey.isBlank() || it.key.contains(draft.institutionKey, true) || it.chineseName.contains(draft.institutionKey) || it.englishName.contains(draft.institutionKey, true) }.take(20).forEach { institution ->
-                    TextButton(onClick = { changed(draft.copy(institutionKey = institution.key, currency = if (draft.id == null) institution.currency else draft.currency, icon = institution.iconName, color = institution.color)); institutionsOpen = false }) { Text(if (chinese) institution.chineseName else institution.englishName) }
-                }
-            }
-            CoreTextField(draft.icon, stringResource(R.string.core_accounts_48), saving) { changed(draft.copy(icon = it)) }
-            CoreTextField(draft.color, stringResource(R.string.core_accounts_49), saving) { changed(draft.copy(color = it)) }
             CoreVisualStylePicker(draft.icon, draft.color, !saving, { changed(draft.copy(icon = it)) }, { changed(draft.copy(color = it)) })
-        } }, confirmButton = { TextButton(onClick = save, enabled = !saving && draft.name.isNotBlank()) { Text(stringResource(R.string.save)) } },
-        dismissButton = { TextButton(onClick = dismiss, enabled = !saving) { Text(stringResource(R.string.cancel)) } })
+        }
+        Row(Modifier.fillMaxWidth().padding(24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(onClick = dismiss, enabled = !saving, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.cancel)) }
+            Button(onClick = save, enabled = !saving && draft.name.isNotBlank(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.save)) }
+        }
+    }
+    if (institutionsOpen) InstitutionPicker(institutions, draft.kind == AccountKind.INVESTMENT, { institution ->
+        changed(draft.copy(institutionKey = institution.key, name = if (draft.name.isBlank()) { if (chinese) institution.chineseName else institution.englishName } else draft.name,
+            currency = if (draft.id == null) institution.currency else draft.currency, icon = institution.iconName, color = institution.color))
+        institutionsOpen = false
+    }, { institutionsOpen = false })
 }
 
 private enum class PocketAction { ADD, CALIBRATE, LIMIT, ANCHOR }
@@ -235,20 +271,30 @@ private data class PocketEditor(val action: PocketAction, val currency: String =
 @Composable
 private fun PocketDialog(initial: PocketEditor, saving: Boolean, error: String?, dismiss: () -> Unit, save: (PocketEditor) -> Unit) {
     var editor by remember(initial) { mutableStateOf(initial) }
-    AlertDialog(onDismissRequest = { if (!saving) dismiss() }, title = { Text(when (editor.action) {
-        PocketAction.ADD -> stringResource(R.string.core_accounts_50); PocketAction.CALIBRATE -> stringResource(R.string.core_accounts_19); PocketAction.LIMIT -> stringResource(R.string.core_accounts_51); PocketAction.ANCHOR -> stringResource(R.string.core_accounts_52)
-    }) }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (saving) Text(stringResource(R.string.core_accounts_saving_navigation))
+    HootbookModalBottomSheet(onDismissRequest = { if (!saving) dismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(when (editor.action) {
+                PocketAction.ADD -> stringResource(R.string.core_accounts_50); PocketAction.CALIBRATE -> stringResource(R.string.balance_calibration)
+                PocketAction.LIMIT -> stringResource(R.string.core_accounts_51); PocketAction.ANCHOR -> stringResource(R.string.core_accounts_52)
+            }, style = MaterialTheme.typography.headlineSmall)
+            if (saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (editor.action == PocketAction.ADD) CoreTextField(editor.currency, stringResource(R.string.core_accounts_53), saving) { editor = editor.copy(currency = it) } else Text(editor.currency)
-        CoreTextField(editor.balance, if (editor.action == PocketAction.LIMIT) stringResource(R.string.core_accounts_54) else stringResource(R.string.core_accounts_55), saving) { editor = editor.copy(balance = it) }
-        if (editor.action != PocketAction.LIMIT) {
-            CoreTextField(editor.at, stringResource(R.string.core_accounts_56), saving) { editor = editor.copy(at = it) }
-            Text(stringResource(R.string.core_accounts_57), style = MaterialTheme.typography.bodySmall)
+            if (editor.action == PocketAction.ADD) CoreTextField(editor.currency, stringResource(R.string.core_accounts_53), saving) { editor = editor.copy(currency = it) }
+            else Text(editor.currency, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            OutlinedTextField(editor.balance, { editor = editor.copy(balance = it) }, enabled = !saving, singleLine = true,
+                textStyle = MaterialTheme.typography.headlineMedium, label = { Text(stringResource(if (editor.action == PocketAction.LIMIT) R.string.core_accounts_54 else R.string.new_balance_label)) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+            if (editor.action != PocketAction.LIMIT) {
+                CoreTextField(editor.at, stringResource(R.string.core_accounts_56), saving) { editor = editor.copy(at = it) }
+                Text(stringResource(R.string.core_accounts_57), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (editor.action == PocketAction.ANCHOR) CoreTextField(editor.note, stringResource(R.string.core_accounts_58), saving) { editor = editor.copy(note = it) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = dismiss, enabled = !saving, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.cancel)) }
+                Button(onClick = { save(editor) }, enabled = !saving, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.save)) }
+            }
         }
-        if (editor.action == PocketAction.ANCHOR) CoreTextField(editor.note, stringResource(R.string.core_accounts_58), saving) { editor = editor.copy(note = it) }
-    } }, dismissButton = { TextButton(onClick = dismiss, enabled = !saving) { Text(stringResource(R.string.core_accounts_24)) } },
-        confirmButton = { TextButton(onClick = { save(editor) }, enabled = !saving) { Text(stringResource(R.string.core_accounts_59)) } })
+    }
 }
 
 @Composable
@@ -262,6 +308,9 @@ private fun AccountHistoryPanel(state: CoreAccountsUiState, model: CoreAccountsV
         TextButton(enabled = !state.saving, onClick = model::openHistory) { Text(stringResource(R.string.core_full_cash_history)) }
         if (state.historyOpen) {
             Text(stringResource(R.string.core_full_cash_history_note), style = MaterialTheme.typography.bodySmall)
+            if (state.history.isNotEmpty()) BalanceChart(primaryCurrency = state.currency.orEmpty(), balanceHistory = state.history.map { day ->
+                BalancePoint(java.time.LocalDate.of(day.date.year, day.date.month.toInt(), day.date.day.toInt()).atStartOfDay(), day.balance, state.currency.orEmpty())
+            }, height = 180)
             CoreTextField(state.historyFrom, stringResource(R.string.core_full_history_from), state.saving) { model.historyInputs(it, state.historyTo, state.balanceAtInput) }
             CoreTextField(state.historyTo, stringResource(R.string.core_full_history_to), state.saving) { model.historyInputs(state.historyFrom, it, state.balanceAtInput) }
             CoreTextField(state.balanceAtInput, stringResource(R.string.core_full_history_at), state.saving) { model.historyInputs(state.historyFrom, state.historyTo, it) }

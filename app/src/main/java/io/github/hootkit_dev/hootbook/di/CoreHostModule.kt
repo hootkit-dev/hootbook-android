@@ -53,10 +53,12 @@ object CoreHostModule {
         factory: AndroidCoreFactory,
         capabilities: CoreCapabilities,
         locale: CoreLocaleController,
+        legacy: io.github.hootkit_dev.hootbook.core.migration.LegacyUpgradeGuard,
     ): CoreSession {
         check(!CoreProcess.isCrashProcess(context)) { "Core is disabled in the crash process" }
         // Constructing the binding is cheap. Only awaitCore opens native code, on the factory's IO dispatcher.
         return CoreSession(scope) {
+            legacy.requireCoreReady()
             // Resolves the durable UI-only selection before Activity/AppCompat async locale restoration.
             factory.open(locale.resolveStartupTag(), capabilities.auth, capabilities.remote)
         }

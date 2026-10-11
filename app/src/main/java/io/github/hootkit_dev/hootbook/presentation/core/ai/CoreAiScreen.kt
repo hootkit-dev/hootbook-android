@@ -10,6 +10,22 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreRecordIcon
+import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
+import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -50,22 +66,65 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
     }
     BackHandler(onBack = back)
     val files = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments(), viewModel::addFiles)
-    Scaffold(contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.core_ai_title)) },
-            navigationIcon = { TextButton(onClick = back) { Text(stringResource(R.string.core_ai_back)) } }) }) { padding ->
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val listState = rememberLazyListState()
+    var logOpen by rememberSaveable { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val savedMessage = stringResource(R.string.core_ai_saved, state.applied?.saved?.toInt() ?: 0)
+    val undoLabel = stringResource(R.string.core_ai_undo)
+    LaunchedEffect(state.phase) {
+        if (state.phase == CoreAiPhase.SAVED && snackbar.showSnackbar(savedMessage, undoLabel, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) viewModel.undo()
+    }
+    LaunchedEffect(state.steps.size) {
+        if (state.phase == CoreAiPhase.RUNNING && listState.layoutInfo.totalItemsCount > 0) listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+    }
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection).imePadding(), contentWindowInsets = WindowInsets.safeDrawing,
+        snackbarHost = { SnackbarHost(snackbar) },
+        topBar = { CustomTitleTopAppBar(title = stringResource(R.string.ai_assistant_title), scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent(back) }) },
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                    when (state.phase) {
+                        CoreAiPhase.COMPOSE -> Button(onClick = viewModel::analyze, enabled = !state.loading && !state.fileBusy && !state.configBusy && !state.configDirty && state.settings?.configured == true && (state.request.isNotBlank() || state.files.isNotEmpty())) { Text(stringResource(R.string.core_ai_analyze)) }
+                        CoreAiPhase.PREPARING, CoreAiPhase.RUNNING -> OutlinedButton(onClick = viewModel::cancel) { Text(stringResource(R.string.core_ai_cancel)) }
+                        CoreAiPhase.REVIEW -> {
+                            TextButton(onClick = { confirmRestart = true }, enabled = !state.saving) { Text(stringResource(R.string.core_ai_restart)) }
+                            Button(onClick = { confirmSave = true }, enabled = !state.saving && state.items.any { it.keep }) { Text(stringResource(R.string.core_ai_apply)) }
+                        }
+                        CoreAiPhase.SAVED -> {
+                            TextButton(onClick = viewModel::undo, enabled = !state.saving) { Text(stringResource(R.string.core_ai_undo)) }
+                            OutlinedButton(onClick = { confirmRestart = true }, enabled = !state.saving) { Text(stringResource(R.string.core_ai_restart)) }
+                            Button(onClick = onBack, enabled = !state.saving) { Text(stringResource(R.string.core_ai_done)) }
+                        }
+                    }
+                }
+            }
+        }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
-            LazyColumn(Modifier.widthIn(max = 880.dp).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item { Text(stringResource(R.string.core_ai_privacy)) }
+            LazyColumn(Modifier.widthIn(max = 880.dp).fillMaxSize(), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 if (state.loading || state.configBusy || state.fileBusy || state.saving) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                 state.error?.let { error -> item { Surface(color = MaterialTheme.colorScheme.errorContainer) { Column(Modifier.padding(12.dp)) {
                     Text(error); FlowRow { TextButton(onClick = viewModel::clearError) { Text(stringResource(R.string.core_ai_dismiss)) }
                         TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.core_ai_refresh)) } }
                 } } } }
                 if (state.navigationBlocked) item { Text(stringResource(R.string.core_ai_wait_write)) }
-                item { TextButton(onClick = { settingsOpen = !settingsOpen }, enabled = state.phase == CoreAiPhase.COMPOSE && !state.configBusy) {
-                    Text(stringResource(R.string.core_ai_configuration) + " · " + (state.settings?.model ?: "—"))
-                } }
-                if (settingsOpen || state.settings?.configured != true) item { Configuration(state, viewModel) }
+                if (state.phase == CoreAiPhase.COMPOSE) item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary)
+                                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                                    Text(stringResource(R.string.core_ai_configuration), style = MaterialTheme.typography.titleMedium)
+                                    Text(state.settings?.model ?: "—", style = MaterialTheme.typography.bodySmall)
+                                }
+                                TextButton(onClick = { settingsOpen = !settingsOpen }, enabled = !state.configBusy) { Text(stringResource(R.string.core_ai_edit)) }
+                            }
+                            if (settingsOpen || state.settings?.configured != true) Configuration(state, viewModel)
+                        }
+                    }
+                }
                 when (state.phase) {
                     CoreAiPhase.COMPOSE -> {
                         item { OutlinedTextField(state.request, viewModel::request, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_request)) }, minLines = 3) }
@@ -74,39 +133,33 @@ fun CoreAiScreen(onBack: () -> Unit, viewModel: CoreAiViewModel = hiltViewModel(
                             Text(file.name); Text("${file.mimeType} · ${file.size} B")
                             TextButton(onClick = { viewModel.removeFile(file.id) }, enabled = !state.fileBusy) { Text(stringResource(R.string.core_ai_remove)) }
                         } } }
-                        item { FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = viewModel::analyze, enabled = !state.loading && !state.fileBusy && !state.configBusy && !state.configDirty &&
-                                state.settings?.configured == true && (state.request.isNotBlank() || state.files.isNotEmpty())) { Text(stringResource(R.string.core_ai_analyze)) }
-                            TextButton(onClick = { confirmRestart = true }, enabled = !state.fileBusy && !state.configBusy) { Text(stringResource(R.string.core_ai_restart)) }
-                        } }
                         if (state.configDirty) item { Text(stringResource(R.string.core_ai_save_config_first)) }
-                        item { Text(stringResource(R.string.core_ai_session_lifetime)) }
+                        item { Text(stringResource(R.string.core_ai_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     CoreAiPhase.PREPARING, CoreAiPhase.RUNNING -> {
                         item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                         item { RunningProgress(state) }
-                        item { Button(onClick = viewModel::cancel) { Text(stringResource(R.string.core_ai_cancel)) } }
                     }
                     CoreAiPhase.REVIEW, CoreAiPhase.SAVED -> {
                         state.review?.summary?.let { summary -> item { Text(summary) } }
                         if (state.review?.stoppedAtLimit == true) item { Text(stringResource(R.string.core_ai_limit)) }
                         if (state.phase == CoreAiPhase.SAVED) item { Text(stringResource(R.string.core_ai_saved, state.applied?.saved?.toInt() ?: 0)) }
-                        item { FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (state.phase == CoreAiPhase.REVIEW) Button(onClick = { confirmSave = true }, enabled = !state.saving) { Text(stringResource(R.string.core_ai_apply)) }
-                            else Button(onClick = viewModel::undo, enabled = !state.saving) { Text(stringResource(R.string.core_ai_undo)) }
-                            OutlinedButton(onClick = { confirmRestart = true }, enabled = !state.saving) { Text(stringResource(R.string.core_ai_restart)) }
-                        } }
                         val groups = listOf(0 to R.string.core_ai_accounts, 1 to R.string.core_ai_additions, 2 to R.string.core_ai_updates, 3 to R.string.core_ai_deletions)
                         groups.forEach { (group, label) ->
-                            val entries = state.items.filter { proposalGroup(it.proposal.change) == group }
+                            val entries = state.items.filter { proposalGroup(it.proposal.change) == group && (state.phase != CoreAiPhase.SAVED || it.keep) }
                             if (entries.isNotEmpty()) item { Text(stringResource(label), style = MaterialTheme.typography.titleLarge) }
                             items(entries, key = { it.proposal.index.toString() }) { entry -> ProposalCard(entry, state, { viewModel.keep(entry.proposal.index, it) }, { editing = entry }) }
                         }
                         if (state.items.isEmpty()) item { Text(stringResource(R.string.core_ai_no_changes)) }
                     }
                 }
-                if (state.steps.isNotEmpty()) item { Text(stringResource(R.string.core_ai_timeline), style = MaterialTheme.typography.titleLarge) }
-                items(state.steps.size, key = { "step-$it" }) { index -> StepCard(state.steps[index]) }
+                if (state.steps.isNotEmpty()) item {
+                    TextButton(onClick = { logOpen = !logOpen }) {
+                        Icon(if (logOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
+                        Text(stringResource(R.string.core_ai_timeline))
+                    }
+                }
+                if (state.phase in setOf(CoreAiPhase.PREPARING, CoreAiPhase.RUNNING) || logOpen) items(state.steps.size, key = { "step-$it" }) { index -> StepCard(state.steps[index]) }
             }
         }
     }
@@ -140,7 +193,13 @@ private tailrec fun Context.findActivity(): Activity? = when (this) { is Activit
 
 @Composable private fun Configuration(state: CoreAiUiState, vm: CoreAiViewModel) {
     val enabled = !state.loading && !state.configBusy && state.phase == CoreAiPhase.COMPOSE
+    var pickingModel by remember { mutableStateOf(false) }
     OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(state.config.protocol == AiProtocol.CLAUDE, { vm.protocol(AiProtocol.CLAUDE) }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_claude)) })
+            FilterChip(state.config.protocol == AiProtocol.OPEN_AI_COMPATIBLE && state.config.baseUrl.contains("openrouter.ai"), { vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE, "https://openrouter.ai/api/v1") }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_openrouter)) })
+            FilterChip(state.config.protocol == AiProtocol.OPEN_AI_COMPATIBLE && !state.config.baseUrl.contains("openrouter.ai"), { vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE, "") }, enabled = enabled, label = { Text(stringResource(R.string.ai_preset_custom)) })
+        }
         FlowRow { AiProtocol.entries.forEach { protocol -> FilterChip(selected = state.config.protocol == protocol, onClick = { vm.protocol(protocol) }, enabled = enabled,
             label = { Text(if (protocol == AiProtocol.CLAUDE) "Claude" else "OpenAI compatible") }) } }
         OutlinedTextField(state.config.baseUrl, { value -> vm.configChanged { it.copy(baseUrl = value) } }, Modifier.fillMaxWidth(), enabled = enabled,
@@ -153,13 +212,20 @@ private tailrec fun Context.findActivity(): Activity? = when (this) { is Activit
             Text(stringResource(R.string.core_ai_delete_key), Modifier.weight(1f)) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = vm::saveConfig, enabled = enabled && state.configDirty) { Text(stringResource(R.string.core_ai_save_configuration)) }
-            OutlinedButton(onClick = vm::loadModels, enabled = enabled && !state.modelLoading && !state.config.removeKey) { Text(stringResource(R.string.core_ai_models)) }
+            OutlinedButton(onClick = { vm.loadModels(); pickingModel = true }, enabled = enabled && !state.modelLoading && !state.config.removeKey) { Text(stringResource(R.string.core_ai_models)) }
         }
         if (state.modelLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
-        if (state.models.isNotEmpty()) {
-            OutlinedTextField(state.modelSearch, vm::modelSearch, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_search_models)) })
-            state.models.filter { state.modelSearch.isBlank() || it.id.contains(state.modelSearch, true) || it.displayName.contains(state.modelSearch, true) }.forEach { model ->
-                TextButton(onClick = { vm.selectModel(model.id) }, enabled = enabled) { Text("${model.displayName} · ${model.id}" + if (model.readsImages) " ◉" else "") }
+        if (pickingModel) HootbookModalBottomSheet(onDismissRequest = { pickingModel = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.core_ai_models), style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(state.modelSearch, vm::modelSearch, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.core_ai_search_models)) })
+                if (state.modelLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                LazyColumn(Modifier.heightIn(max = 480.dp)) {
+                    items(state.models.filter { state.modelSearch.isBlank() || it.id.contains(state.modelSearch, true) || it.displayName.contains(state.modelSearch, true) }, key = { it.id }) { model ->
+                        ListItem(headlineContent = { Text(model.displayName) }, supportingContent = { Text(model.id + if (model.readsImages) " ◉" else "") },
+                            leadingContent = { RadioButton(state.config.model == model.id, onClick = { vm.selectModel(model.id); pickingModel = false }, enabled = enabled) })
+                    }
+                }
             }
         }
     } }
@@ -173,13 +239,38 @@ private tailrec fun Context.findActivity(): Activity? = when (this) { is Activit
 }
 private fun proposalGroup(change: AiChange) = when (change) { is AiChange.AddTransaction -> 1; is AiChange.UpdateTransaction -> 2; is AiChange.DeleteTransaction -> 3; else -> 0 }
 @Composable private fun ProposalCard(item: CoreAiReviewItem, state: CoreAiUiState, onKeep: (Boolean) -> Unit, onEdit: () -> Unit) {
-    OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(item.keep, onKeep, enabled = !state.saving && state.phase == CoreAiPhase.REVIEW)
-            Text("#${item.proposal.index}", style = MaterialTheme.typography.titleMedium) }
-        Text(proposalText(item.edited?.let { AiChange.AddTransaction(it, (item.proposal.change as? AiChange.AddTransaction)?.possibleDuplicate) } ?: item.proposal.change, state))
-        (item.proposal.change as? AiChange.AddTransaction)?.possibleDuplicate?.let { Text(stringResource(R.string.core_ai_duplicate, it)) }
-        if (item.proposal.change is AiChange.AddTransaction) TextButton(onClick = onEdit, enabled = !state.saving && state.phase == CoreAiPhase.REVIEW) { Text(stringResource(R.string.core_ai_edit)) }
-    } }
+    val change = item.proposal.change
+    val draft = item.edited ?: (change as? AiChange.AddTransaction)?.draft
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (state.phase == CoreAiPhase.REVIEW) Checkbox(item.keep, onKeep, enabled = !state.saving)
+            if (draft != null) {
+                val category = state.categories.find { it.id == draft.categoryId }
+                CoreRecordIcon(category?.icon.orEmpty(), Modifier.size(40.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(draft.merchant.ifBlank { category?.displayName ?: CoreKindLabel(draft.kind) }, style = MaterialTheme.typography.titleSmall)
+                    Text("${draft.dateTime.year}-${draft.dateTime.month}-${draft.dateTime.day} · ${category?.displayName.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+                    (change as? AiChange.AddTransaction)?.possibleDuplicate?.let { Text(stringResource(R.string.core_ai_duplicate, it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error) }
+                }
+                Text(CurrencyFormatter.formatCurrency(draft.amount, draft.currency), fontWeight = FontWeight.SemiBold)
+                IconButton(onClick = onEdit, enabled = !state.saving && state.phase == CoreAiPhase.REVIEW) { Icon(Icons.Rounded.Edit, stringResource(R.string.core_ai_edit)) }
+            } else Column(Modifier.weight(1f)) {
+                when (change) {
+                    is AiChange.UpdateTransaction -> {
+                        Text("${change.before.merchant} → ${change.after.merchant}", style = MaterialTheme.typography.titleSmall)
+                        Text(CurrencyFormatter.formatCurrency(change.before.amount, change.before.currency))
+                        Text(proposalText(change, state), style = MaterialTheme.typography.bodySmall)
+                    }
+                    is AiChange.DeleteTransaction -> {
+                        Text(change.before.merchant, style = MaterialTheme.typography.titleSmall)
+                        Text(CurrencyFormatter.formatCurrency(change.before.amount, change.before.currency), color = MaterialTheme.colorScheme.error)
+                        change.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    }
+                    else -> Text(proposalText(change, state), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
 }
 private fun proposalText(change: AiChange, state: CoreAiUiState): String {
     fun account(id: String) = state.accounts.find { it.id == id }?.name ?: id
@@ -202,23 +293,31 @@ private fun proposalText(change: AiChange, state: CoreAiUiState): String {
         is AiStep.Replied -> stringResource(R.string.core_ai_step_replied, step.turn.toInt(), step.durationMs.toInt())
         is AiStep.Searched -> stringResource(R.string.core_ai_step_searched, step.found?.toString() ?: "—")
         is AiStep.Proposed -> "${step.tool} · #${step.changeIndexes.joinToString()}" + if (step.rejected) " ⚠" else "" }
-    OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-        TextButton(onClick = { expanded = !expanded }) { Text(title) }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(32.dp)) {
+                Box(contentAlignment = Alignment.Center) { Icon(when (step) { is AiStep.Sent -> Icons.Rounded.Send; is AiStep.Asking -> Icons.Rounded.AutoAwesome; is AiStep.Replied -> Icons.Rounded.ChatBubbleOutline; is AiStep.Searched -> Icons.Rounded.Search; is AiStep.Proposed -> Icons.Rounded.Check }, null, Modifier.size(18.dp)) }
+            }
+            Box(Modifier.width(2.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
+        }
+        Column(Modifier.weight(1f)) {
+        TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(0.dp)) { Text(title, Modifier.weight(1f)); Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null) }
         if (expanded) when (step) {
-            is AiStep.Sent -> { Text(step.userText.take(8000)); Text(step.systemPrompt.take(8000)) }
+            is AiStep.Sent -> { Text(step.userText); Text(step.systemPrompt) }
             is AiStep.Asking -> Text(title)
-            is AiStep.Replied -> { Text(step.text.orEmpty().take(8000)); Text(step.thinking.orEmpty().take(8000))
+            is AiStep.Replied -> { Text(step.text.orEmpty()); Text(step.thinking.orEmpty())
                 Text("tokens: ${step.inputTokens ?: "—"} / ${step.outputTokens ?: "—"} · truncated: ${step.truncated}")
-                step.toolCalls.forEach { Text("${it.id} · ${it.name}"); Text(it.arguments.take(8000)) } }
-            is AiStep.Searched -> { Text("${step.from.orEmpty()} → ${step.to.orEmpty()} · ${step.text.orEmpty()}"); Text(step.arguments.take(8000)); Text(step.result.take(8000)) }
-            is AiStep.Proposed -> { Text(step.arguments.take(8000)); Text(step.result.take(8000)) }
+                step.toolCalls.forEach { Text("${it.id} · ${it.name}"); Text(it.arguments) } }
+            is AiStep.Searched -> { Text("${step.from.orEmpty()} → ${step.to.orEmpty()} · ${step.text.orEmpty()}"); Text(step.arguments); Text(step.result) }
+            is AiStep.Proposed -> { Text(step.arguments); Text(step.result) }
         }
     } }
 }
 @Composable private fun DraftDialog(index: UInt, draft: AiTransactionDraft, state: CoreAiUiState, onDismiss: () -> Unit, onSave: (CoreAiDraftForm) -> Unit) {
     var form by remember(index) { mutableStateOf(CoreAiDraftForm.from(draft)) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.core_ai_edit) + " #$index") },
-        text = { Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.core_ai_edit), style = MaterialTheme.typography.headlineSmall)
             Picker(stringResource(R.string.core_ai_kind), form.kind.name, listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER).map { it to it.name }) { form = form.copy(kind = it) }
             AiField(stringResource(R.string.core_ai_amount), form.amount, true) { form = form.copy(amount = it) }
             AiField(stringResource(R.string.core_ai_currency), form.currency) { form = form.copy(currency = it) }
@@ -240,8 +339,10 @@ private fun proposalText(change: AiChange, state: CoreAiUiState): String {
                 AiField(stringResource(R.string.core_ai_to_currency), form.toCurrency) { form = form.copy(toCurrency = it) }
                 AiField(stringResource(R.string.core_ai_to_amount), form.toAmount, true) { form = form.copy(toAmount = it) }
             }
-        } }, confirmButton = { TextButton(onClick = { onSave(form) }) { Text(stringResource(R.string.core_ai_done)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.core_ai_cancel)) } })
+            Button(onClick = { onSave(form) }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.core_ai_done)) }
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_ai_cancel)) }
+        }
+    }
 }
 @Composable private fun AiField(label: String, value: String, decimal: Boolean = false, onValue: (String) -> Unit) {
     OutlinedTextField(value, onValue, Modifier.fillMaxWidth(), label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Text))

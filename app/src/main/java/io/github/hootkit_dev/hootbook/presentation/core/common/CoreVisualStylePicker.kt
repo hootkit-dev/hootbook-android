@@ -1,6 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.core.common
 
 import androidx.compose.foundation.Image
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
+import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,9 +20,9 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.IconSelector
 @Composable
 fun CoreRecordIcon(name: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val resource = remember(name) { context.resources.getIdentifier(name, "drawable", context.packageName) }
+    val resource = remember(context, name) { IconResolutionUtils.nameToResId(context, name) }
     if (resource != 0) Image(painterResource(resource), contentDescription = null, modifier = modifier)
-    else Text(name.ifBlank { "◇" }, modifier)
+    else Icon(Icons.Default.Category, contentDescription = null, modifier = modifier)
 }
 
 @Composable

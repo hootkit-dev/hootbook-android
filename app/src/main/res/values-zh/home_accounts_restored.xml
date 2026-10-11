@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_trend_unavailable">暂不支持净资产历史趋势。打开账户可查看各币种的余额历史。</string>
+</resources>

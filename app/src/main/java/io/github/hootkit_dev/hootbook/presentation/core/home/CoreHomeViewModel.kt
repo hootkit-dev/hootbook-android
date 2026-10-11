@@ -26,12 +26,15 @@ import kotlinx.coroutines.launch
 data class CoreHomeUiState(
     val overview: AccountsOverview? = null,
     val summary: LedgerSummary? = null,
+    val previousSummary: LedgerSummary? = null,
     val budgets: List<Budget> = emptyList(),
     val subscriptions: SubscriptionSummary? = null,
     val debts: DebtSummary? = null,
     val displayNetWorth:CoreDisplayedMoney?=null,
     val customSymbols:Map<String,String> = emptyMap(),
     val recent: List<Transaction> = emptyList(),
+    val categories: List<Category> = emptyList(),
+    val recentDisplay: Map<String, CoreDisplayedMoney> = emptyMap(),
     val upcoming: List<Subscription> = emptyList(),
     val heatmap: List<CoreDayCount> = emptyList(),
     val widgetsLoading: Boolean = false,
@@ -72,13 +75,17 @@ class CoreHomeViewModel private constructor(private val session: CoreSession, ch
             try {
                 val core = session.awaitCore()
                 val overview = core.accounts().use { it.overview() }
-                val summary = core.ledger().use { it.summary(CoreTransactionQuery().toFilter()) }
+                val monthStart = java.time.LocalDate.now().withDayOfMonth(1)
+                val summary = core.ledger().use { it.summary(CoreTransactionQuery(
+                    fromDate = monthStart.toString(), toDateExclusive = monthStart.plusMonths(1).toString()).toFilter()) }
+                val previousSummary = core.ledger().use { it.summary(CoreTransactionQuery(
+                    fromDate = monthStart.minusMonths(1).toString(), toDateExclusive = monthStart.toString()).toFilter()) }
                 val today = java.time.LocalDate.now().let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
                 val prefs = preferences?.ready()
                 val display = prefs?.unifiedDisplayCurrency?.takeIf { prefs.unifiedDisplayEnabled }
                 val budgets = core.budgets().use { it.list(today, true, display) }
                 val (subscriptions, debts) = core.plans().use { it.subscriptionSummary(today) to it.debtSummary(today) }
-                if (mine == version) mutableState.value = CoreHomeUiState(overview = overview, summary = summary,
+                if (mine == version) mutableState.value = CoreHomeUiState(overview = overview, summary = summary, previousSummary = previousSummary,
                     budgets = budgets, subscriptions = subscriptions, debts = debts, loading = false, widgetsLoading = widgetQueries)
                 if (widgetQueries && mine == version) {
                     try {
@@ -92,9 +99,15 @@ class CoreHomeViewModel private constructor(private val session: CoreSession, ch
                         val hidden = prefs?.hiddenHomeWidgets.orEmpty()
                         val date = java.time.LocalDate.now()
                         val recent = if (HomeWidget.RECENT_TRANSACTIONS !in hidden) core.ledger().use { it.list(emptyCoreFilter(), PageRequest(0u, 6u)).items } else emptyList()
-                        val upcoming = if (HomeWidget.UPCOMING_SUBSCRIPTIONS !in hidden) core.plans().use { it.dueSubscriptions(today, date.plusDays(7).coreDate()) } else emptyList()
+                        val categories = if (recent.isNotEmpty()) core.categories().use { it.list(null, true) } else emptyList()
+                        val recentDisplay = core.currency().use { currencyApi ->
+                            recent.filter { it.currency != overview.netWorth.currency }.associate { transaction ->
+                                transaction.id to CoreMoneyPresentation.convert(currencyApi, transaction.amount, transaction.currency, overview.netWorth.currency)
+                            }
+                        }
+                        val upcoming = if (HomeWidget.UPCOMING_SUBSCRIPTIONS !in hidden) core.plans().use { it.subscriptions(today, false).filterNot { row -> row.ended || row.hidden } } else emptyList()
                         val heatmap = if (HomeWidget.TRANSACTION_HEATMAP !in hidden) core.ledger().use { queryDayCounts(it, date.minusWeeks(26).with(java.time.DayOfWeek.MONDAY), date) } else emptyList()
-                        if (mine == version) mutableState.update { it.copy(recent = recent, upcoming = upcoming, heatmap = heatmap, customSymbols=customSymbols,displayNetWorth=convertedNetWorth,widgetsLoading = false) }
+                        if (mine == version) mutableState.update { it.copy(recent = recent, categories = categories, recentDisplay = recentDisplay, upcoming = upcoming, heatmap = heatmap, customSymbols=customSymbols,displayNetWorth=convertedNetWorth,widgetsLoading = false) }
                     } catch(cancelled: CancellationException) { throw cancelled }
                     catch(_: Exception) { if(mine == version) mutableState.update { it.copy(widgetsLoading = false, widgetError = R.string.core_complete_widgets_failed) } }
                 }

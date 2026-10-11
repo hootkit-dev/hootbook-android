@@ -110,6 +110,11 @@ class CoreBudgetsViewModel private constructor(
         if (blocked()) return
         mutable.update { it.copy(selectedId = id, selected = null, history = emptyList(), showHistory = false) }; refresh()
     }
+    fun selectHistory(id: String) {
+        if (blocked()) return
+        select(id)
+        mutable.update { it.copy(showHistory = true) }
+    }
     fun history(show: Boolean) { if (!blocked()) {if(!show){++detailRevision;detailQuery?.cancel()};mutable.update { it.copy(showHistory = show,historyDetail=null,historyDetailLoading=false) }} }
     fun loadMoreHistory(){
         val before=mutable.value;val row=before.selected?:return;val cursor=before.historyCursor?:return

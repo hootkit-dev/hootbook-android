@@ -37,7 +37,7 @@ data class CoreCategoriesUiState(
     val navigationBlocked: Boolean = false,
     val error: String? = null,
     val categories: List<Category> = emptyList(),
-    val kind: CategoryKind = CategoryKind.EXPENSE,
+    val kind: CategoryKind? = null,
     val selectedId: String? = null,
     val selected: Category? = null,
     val transactionCount: UInt = 0u,
@@ -87,7 +87,7 @@ class CoreCategoriesViewModel private constructor(
         }
     }
     fun select(id: String?) { if (rejectNavigationWhileSaving()) return; mutable.update { it.copy(selectedId = id, selected = null) }; refresh() }
-    fun filter(kind: CategoryKind) { if (rejectNavigationWhileSaving()) return; mutable.update { it.copy(kind = kind, selectedId = null, selected = null) }; refresh() }
+    fun filter(kind: CategoryKind?) { if (rejectNavigationWhileSaving()) return; mutable.update { it.copy(kind = kind, selectedId = null, selected = null) }; refresh() }
     /** true consumes back locally; false lets the host pop this screen. */
     fun back(): Boolean {
         if (rejectNavigationWhileSaving()) return true
@@ -101,7 +101,7 @@ class CoreCategoriesViewModel private constructor(
         return true
     }
     fun clearError() { mutable.update { it.copy(error = null) } }
-    fun createCategory() { if (!mutable.value.saving) { mutable.update { it.copy(draft = CoreCategoryDraft(kind = it.kind)) }; persistDraft() } }
+    fun createCategory() { if (!mutable.value.saving) { mutable.update { it.copy(draft = CoreCategoryDraft(kind = it.kind ?: CategoryKind.EXPENSE)) }; persistDraft() } }
     fun editCategory(category: Category) { if (!mutable.value.saving) mutable.update { it.copy(draft = CoreCategoryDraft(category.id, kind = category.kind,
         name = category.displayName, icon = category.icon, color = category.color)) }; persistDraft() }
     fun createSubcategory(category: Category) { if (!mutable.value.saving) mutable.update { it.copy(draft = CoreCategoryDraft(parentId = category.id,

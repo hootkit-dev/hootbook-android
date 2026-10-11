@@ -21,6 +21,11 @@ class CoreBudgetInputTest {
         assertEquals(listOf("account-uuid"), input.accountIds)
         assertNull(input.end)
     }
+    @Test fun creationPassesCategoryLimitsToTheSingleCoreCreateCommand() {
+        val limits = listOf(NewBudgetLimit("category-id", BigDecimal("12.3456789")))
+        val input = CoreBudgetDraft(amount = "100", limits = limits).newBudget("Budget")
+        assertEquals(limits, input.limits)
+    }
     @Test fun unchangedAnchorNotPassedButExplicitDateChangeIs() {
         val draft = CoreBudgetDraft(id = "budget-uuid", amount = "100", start = "2026-01-31", originalStart = "2026-01-31")
         assertNull(draft.patch("预算").start)

@@ -139,3 +139,20 @@ Fork PR 不获得 Secrets：Tests 两个 job 与 Debug build job 显式跳过 fo
 - 签名指纹不一致：确认上传的是原发布 keystore 和 alias，不修改工作流中的预期指纹来掩盖换 key。
 
 参考：[GitHub 创建 PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)、[Actions Secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)、[gh secret set](https://cli.github.com/manual/gh_secret_set)、[actions/checkout 跨私库示例](https://github.com/actions/checkout#checkout-multiple-repos-private)。
+
+## Early signing verification
+
+Testing and release workflows run `.github/actions/signing-preflight` immediately after Java setup,
+before the private Core checkout, Rust/NDK work, or Gradle build. The validator checks Base64,
+keystore loading, password/private-key alias, signing and verification, and the existing release
+certificate fingerprint. A successful decode is not sufficient proof that the keystore password is
+correct. Credentials remain in environment variables; they are not put into Gradle command-line
+arguments. Final APKs are independently checked with apksigner and aapt2.
+
+If preflight rejects a secret, an authorized administrator must correct it. Do not repeatedly run
+full builds to diagnose a known signing failure. This change does not inspect or modify repository
+secrets. No Core or Spec source/version change is required. The source pin remains in
+`core-bindings/core.lock.json`; the versioned SDK consumer is deferred until an authorized SDK exists.
+
+Public workflow caches are limited to downloaded Gradle dependencies and the wrapper. Private Core
+Rust intermediates and Gradle build output caches are not published to Actions cache.

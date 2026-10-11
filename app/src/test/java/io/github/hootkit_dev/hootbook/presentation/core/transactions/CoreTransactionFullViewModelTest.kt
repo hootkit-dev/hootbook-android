@@ -159,4 +159,46 @@ class CoreTransactionFullViewModelTest {
             core.assertHandlesReleased()
         } finally { store.clear(); Dispatchers.resetMain() }
     }
+    @Test fun transferEstimateUsesCoreAndNeverOverwritesExplicitReceivedAmount() = fixture { core, model ->
+        core.onConvert = { amount, from, to ->
+            assertEquals(BigDecimal("1000.000000001"), amount)
+            assertEquals("CNY", from); assertEquals("USD", to)
+            BigDecimal("140.123456789")
+        }
+        runCurrent(); model.newTransaction(TransactionKind.TRANSFER); runCurrent()
+        model.updateForm(model.state.value.form!!.copy(amount = "1000.000000001", currency = "CNY", toCurrency = "USD", toAmount = "137.987654321")); runCurrent()
+        assertEquals(BigDecimal("140.123456789"), model.state.value.transferEstimate)
+        assertEquals("137.987654321", model.state.value.form!!.toAmount)
+        core.assertHandlesReleased()
+    }
+    @Test fun lateTransferEstimateCannotReplaceChangedDraft() = fixture { core, model ->
+        val old = CompletableDeferred<Unit>()
+        core.onConvert = { _, _, target -> if (target == "USD") withContext(NonCancellable) { old.await(); BigDecimal("100") } else BigDecimal("200") }
+        runCurrent(); model.newTransaction(TransactionKind.TRANSFER); runCurrent()
+        model.updateForm(model.state.value.form!!.copy(amount = "1000", toCurrency = "USD")); runCurrent()
+        model.updateForm(model.state.value.form!!.copy(toCurrency = "EUR", toAmount = "201.000000001")); runCurrent()
+        assertEquals(BigDecimal("200"), model.state.value.transferEstimate)
+        old.complete(Unit); runCurrent()
+        assertEquals(BigDecimal("200"), model.state.value.transferEstimate)
+        assertEquals("201.000000001", model.state.value.form!!.toAmount)
+        core.assertHandlesReleased()
+    }
+
+    @Test fun continuousListLoadsCompleteCorePrefixAndPreservesServerSummary() = fixture { core, model ->
+        val rows = (1..125).map { core.transaction.copy(id = "core/$it") }
+        core.onList = { filter, request ->
+            assertEquals("merchant search", filter.text)
+            TransactionPage(rows.drop(request.offset.toInt()).take(request.limit.toInt()), rows.size.toUInt())
+        }
+        model.applyQuery(CoreTransactionQuery(text = "merchant search")); runCurrent()
+        assertEquals(50, model.state.value.page!!.items.size)
+        model.loadMore(); runCurrent()
+        assertEquals(rows.take(100), model.state.value.page!!.items)
+        assertEquals(core.summary, model.state.value.summary)
+        model.loadMore(); runCurrent()
+        assertEquals(rows, model.state.value.page!!.items)
+        assertEquals(125u, model.state.value.page!!.total)
+        core.assertHandlesReleased()
+    }
+
 }

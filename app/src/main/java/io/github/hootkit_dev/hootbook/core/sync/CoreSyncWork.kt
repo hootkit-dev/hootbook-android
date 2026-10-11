@@ -35,9 +35,11 @@ class CoreSyncWorkScheduler @Inject constructor(@ApplicationContext private val 
 }
 @HiltWorker
 class CoreSyncWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
-    private val coordinator: CoreSyncCoordinator, private val scheduler: CoreSyncWorkScheduler) : CoroutineWorker(context, params) {
+    private val coordinator: CoreSyncCoordinator, private val scheduler: CoreSyncWorkScheduler,
+    private val legacy: io.github.hootkit_dev.hootbook.core.migration.LegacyUpgradeGuard) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         scheduler.started()
+        if (legacy.required()) return Result.success()
         return try { coordinator.backgroundRound(); Result.success() }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Throwable) { Result.failure() } // Never invent a second retry schedule outside Core status.

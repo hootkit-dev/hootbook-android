@@ -93,21 +93,12 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-deps-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
-      - uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            gradle-build-cache-${{ github.job }}-
-            gradle-build-cache-
+            ${{ runner.os }}-deps-v2-
+      # Private compilation outputs stay on this runner; cache dependencies only.
       - name: Build candidate and tests
         env:
           GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache
@@ -184,22 +175,12 @@ jobs:
         if: steps.apk.outputs.cache-hit != 'true'
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-deps-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
-      - uses: actions/cache@v4
-        if: steps.apk.outputs.cache-hit != 'true'
-        with:
-          path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            gradle-build-cache-${{ github.job }}-
-            gradle-build-cache-
+            ${{ runner.os }}-deps-v2-
+      # Private compilation outputs stay on this runner; cache dependencies only.
       - name: Build baseline
         if: steps.apk.outputs.cache-hit != 'true'
         env:
@@ -381,21 +362,12 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-deps-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
-      - uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            gradle-build-cache-${{ github.job }}-
-            gradle-build-cache-
+            ${{ runner.os }}-deps-v2-
+      # Private compilation outputs stay on this runner; cache dependencies only.
       - name: Build profiling app and tests
         env:
           GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache

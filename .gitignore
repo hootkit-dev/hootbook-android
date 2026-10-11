@@ -70,3 +70,7 @@ deploy.sh
 
 # Local persistent debug signing configuration (private)
 .debug-signing/
+
+# Python validation bytecode
+__pycache__/
+*.py[cod]

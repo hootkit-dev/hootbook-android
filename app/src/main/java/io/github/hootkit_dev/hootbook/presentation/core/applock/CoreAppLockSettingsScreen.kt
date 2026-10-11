@@ -10,6 +10,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem as SettingsListItem
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -32,17 +49,45 @@ class CoreAppLockSettingsViewModel @Inject constructor(val controller:CoreAppLoc
     }}
 }
 @Composable
-fun CoreAppLockSettingsScreen(onBack:()->Unit,viewModel:CoreAppLockSettingsViewModel=hiltViewModel()){
+fun CoreAppLockSettingsScreen(onBack:()->Unit,viewModel:CoreAppLockSettingsViewModel=hiltViewModel(), dataPrivacy: Boolean = false){
     val activity=coreFragmentActivity(androidx.compose.ui.platform.LocalContext.current)
     val p by viewModel.preferences.state.collectAsStateWithLifecycle();val busy by viewModel.busy.collectAsStateWithLifecycle();val error by viewModel.error.collectAsStateWithLifecycle()
-    Scaffold(topBar={TopAppBar(title={Text(stringResource(R.string.core_ui_app_lock))},navigationIcon={TextButton(onClick=onBack,enabled=!busy){Text(stringResource(R.string.core_ui_back))}})}){padding->
-        Column(Modifier.fillMaxSize().padding(padding).padding(16.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
-            Text(stringResource(R.string.core_ui_lock_subtitle));error?.let{Text(stringResource(it),color=MaterialTheme.colorScheme.error)}
-            UiSwitch(R.string.core_ui_app_lock,p.appLockEnabled,!busy){viewModel.enabled(it,activity)}
-            Text(stringResource(R.string.core_ui_lock_timeout));var expanded by remember{mutableStateOf(false)}
-            OutlinedButton(onClick={expanded=true},enabled=!busy){Text(if(p.appLockTimeoutMinutes==0)stringResource(R.string.core_ui_immediately)else stringResource(R.string.core_ui_minutes,p.appLockTimeoutMinutes))}
-            DropdownMenu(expanded,{expanded=false}){listOf(0,1,5,15,30,60).forEach{minutes->DropdownMenuItem(text={Text(if(minutes==0)stringResource(R.string.core_ui_immediately)else stringResource(R.string.core_ui_minutes,minutes))},onClick={expanded=false;viewModel.timeout(minutes)})}}
-            OutlinedButton(onClick=viewModel.controller::lockNow,enabled=p.appLockEnabled&&!busy){Text(stringResource(R.string.core_ui_lock_now))}
+    var showTimeout by remember { mutableStateOf(false) }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
+        CustomTitleTopAppBar(title = stringResource(if (dataPrivacy) R.string.data_privacy_title else R.string.app_lock),
+            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent { if (!busy) onBack() } })
+    }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.security_section), Modifier.padding(start = 16.dp, top = 16.dp), style = MaterialTheme.typography.titleMedium)
+            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+            Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+                PreferenceSwitch(title = stringResource(R.string.app_lock), subtitle = stringResource(R.string.core_ui_lock_subtitle),
+                    checked = p.appLockEnabled, onCheckedChange = { if (!busy) viewModel.enabled(it, activity) },
+                    leadingIcon = { Box(Modifier.size(48.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Lock, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    } }, padding = PaddingValues(0.dp), isFirst = true, isSingle = !p.appLockEnabled)
+                AnimatedVisibility(p.appLockEnabled) {
+                    SettingsListItem(headline = { Text(stringResource(R.string.lock_timeout)) }, supporting = {
+                        Text(if (p.appLockTimeoutMinutes == 0) stringResource(R.string.lock_timeout_immediate) else stringResource(R.string.lock_timeout_minutes, p.appLockTimeoutMinutes))
+                    }, trailing = { Icon(Icons.Rounded.ChevronRight, null) }, onClick = if (!busy) ({ showTimeout = true }) else null,
+                        shape = ListItemPosition.Bottom.toShape(), padding = PaddingValues(0.dp))
+                }
+            }
+            OutlinedButton(onClick = viewModel.controller::lockNow, enabled = p.appLockEnabled && !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.core_ui_lock_now)) }
         }
     }
+    if (showTimeout) AlertDialog(onDismissRequest = { showTimeout = false }, title = { Text(stringResource(R.string.lock_timeout)) }, text = {
+        Column {
+            listOf(0, 1, 5, 15, 30, 60).forEach { minutes ->
+                Row(Modifier.fillMaxWidth().selectable(selected = p.appLockTimeoutMinutes == minutes, enabled = !busy,
+                    onClick = { viewModel.timeout(minutes); showTimeout = false }).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(p.appLockTimeoutMinutes == minutes, null)
+                    Text(if (minutes == 0) stringResource(R.string.immediately) else stringResource(R.string.minutes_format, minutes), Modifier.padding(start = 8.dp))
+                }
+            }
+        }
+    }, confirmButton = { TextButton(onClick = { showTimeout = false }) { Text(stringResource(R.string.close)) } })
 }

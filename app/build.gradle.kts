@@ -75,8 +75,16 @@ android {
     }
     signingConfigs {
         create("release") {
+            // CI preflight writes a private runner-temp keystore. Passwords stay out of argv.
+            val ciKeystore = providers.environmentVariable("KEYSTORE_FILE").orNull
+            if (!ciKeystore.isNullOrBlank()) {
+                storeFile = file(ciKeystore)
+                storePassword = providers.environmentVariable("KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("KEY_PASSWORD").get()
+            }
             val localPropertiesFile = rootProject.file("local.properties")
-            if (localPropertiesFile.exists()) {
+            if (ciKeystore.isNullOrBlank() && localPropertiesFile.exists()) {
                 val localProperties = Properties()
                 localProperties.load(localPropertiesFile.inputStream())
                 val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
@@ -186,7 +194,11 @@ android {
         }
     }
     packaging {
-        jniLibs { useLegacyPackaging = true }
+        jniLibs {
+            useLegacyPackaging = true
+            // Preserve the pinned source build's already-stripped, hash-verified native bytes.
+            keepDebugSymbols += "**/libuniffi_hootkit_core.so"
+        }
         resources {
             excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/*.kotlin_module")
             // Lookup tables for BouncyCastle's post-quantum ciphers (4 MB), which pdfbox never uses
@@ -270,6 +282,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
+    // Original encrypted-settings wire format; read-only legacy migration uses Tink primitives.
+    implementation("com.google.crypto.tink:tink-android:1.8.0")
     // Sync (docs/sync.md): Firebase and Credential Manager stay in the standard source set.
     // No google-services plugin: FirebaseApp is built from FirebaseSyncConfig (src/standard),
     // so build types with another applicationId still build.

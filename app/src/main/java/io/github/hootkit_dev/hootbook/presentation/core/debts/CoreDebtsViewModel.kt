@@ -184,6 +184,16 @@ class CoreDebtsViewModel private constructor(
         val form = mutable.value.settlement ?: return
         command { it.settle(form.personId, form.toDraft()); mutable.update { state -> state.copy(settlement = null) } }
     }
+    // Each item uses Core's own delete command. A failure stops the sequence; refresh in command()
+    // exposes remaining rows, so the UI never implies that these separate writes are atomic.
+    fun deletePeople(ids: Set<String>) {
+        val existing = mutable.value.people.map { it.id }.toSet().intersect(ids)
+        if (existing.isNotEmpty()) command { api -> existing.forEach { api.deletePerson(it) } }
+    }
+    fun deleteDebts(ids: Set<String>) {
+        val existing = mutable.value.debts.map { it.id }.toSet().intersect(ids)
+        if (existing.isNotEmpty()) command { api -> existing.forEach { api.deleteDebt(it) } }
+    }
     fun deleteDebt(entry: DebtEntry) = command { it.deleteDebt(entry.id) }
     fun unlinkDebt(entry: DebtEntry) = command { it.unlinkDebt(entry.id) }
     fun linkTransaction(transactionId: String, personId: String, kind: DebtKind?) = command {

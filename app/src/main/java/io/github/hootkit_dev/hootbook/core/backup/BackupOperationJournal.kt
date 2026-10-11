@@ -21,7 +21,10 @@ data class BackupOperation(
 
 /** No passwords, keys, URI permissions or raw exception details are written to the journal. */
 class BackupOperationJournal(private val files: CoreBackupFiles) {
-    fun write(operation: BackupOperation) {
+    fun write(operation: BackupOperation) = writeFile(operation, "journal.json")
+    internal fun writePreview(operation: BackupOperation) = writeFile(operation, "preview-journal.json")
+    internal fun readPreview(id: String): BackupOperation? = readFile(id, "preview-journal.json")
+    private fun writeFile(operation: BackupOperation, name: String) {
         val json = JSONObject().put("version", 1).put("id", operation.source.operationId)
             .put("source", operation.source.file.name).put("sha256", operation.source.sha256)
             .put("size", operation.source.size).put("legacy", operation.legacy).put("phase", operation.phase.name)
@@ -34,13 +37,14 @@ class BackupOperationJournal(private val files: CoreBackupFiles) {
             .put("imported", countJson(s.imported)).put("dropped", countJson(s.dropped))
             .put("currency", s.mainCurrency).put("preferences", s.preferencesJson ?: JSONObject.NULL)
             .put("files", JSONArray(s.platformFiles)).put("renamed", JSONObject(s.renamedCurrencies))) }
-        val atomic = AtomicFile(CoreBackupFiles.safeChild(files.operation(operation.source.operationId), "journal.json"))
+        val atomic = AtomicFile(CoreBackupFiles.safeChild(files.operation(operation.source.operationId), name))
         val output = atomic.startWrite()
         try { output.write(json.toString().toByteArray(Charsets.UTF_8)); atomic.finishWrite(output) }
         catch (failure: Throwable) { atomic.failWrite(output); throw failure }
     }
-    fun read(id: String): BackupOperation? {
-        val atomic = AtomicFile(CoreBackupFiles.safeChild(files.operation(id), "journal.json"))
+    fun read(id: String): BackupOperation? = readFile(id, "journal.json")
+    private fun readFile(id: String, name: String): BackupOperation? {
+        val atomic = AtomicFile(CoreBackupFiles.safeChild(files.operation(id), name))
         if (!atomic.baseFile.exists() && !File(atomic.baseFile.path + ".bak").exists()) return null
         val json = atomic.openRead().use { JSONObject(it.readBytes().toString(Charsets.UTF_8)) }
         require(json.getInt("version") == 1 && json.getString("id") == id)

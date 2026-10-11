@@ -72,7 +72,12 @@ class CoreTemplatesViewModel private constructor(
     }
     fun select(id: String?) { if (blockNavigation()) return; mutable.update { it.copy(selectedId = id, selected = null, error = null) }; refresh() }
     fun create() { if (blockNavigation()) return; mutable.update { it.copy(form = CoreTemplateForm(), error = null) } }
-    fun edit() { if (blockNavigation()) return; mutable.value.selected?.let { row -> mutable.update { it.copy(form = CoreTemplateForm.from(row), error = null) } } }
+    fun edit() { mutable.value.selected?.let(::edit) }
+    fun edit(row: QuickTemplate) { if (blockNavigation()) return; mutable.update { it.copy(form = CoreTemplateForm.from(row), error = null) } }
+    fun reorder(ids: List<String>) {
+        if (ids == mutable.value.templates.map { it.id }) return
+        command { it.reorderTemplates(ids) }
+    }
     fun useSuggestion(row: TemplateSuggestion) { if (blockNavigation()) return; mutable.update { it.copy(form = CoreTemplateForm.from(row), error = null) } }
     fun updateForm(form: CoreTemplateForm) { if (!mutable.value.saving) mutable.update { it.copy(form = form, error = null) } }
     fun back(): Boolean {
@@ -94,8 +99,10 @@ class CoreTemplatesViewModel private constructor(
             mutable.update { it.copy(form = null, selectedId = id, selected = null) }
         }
     }
-    fun delete() { val row = mutable.value.selected ?: return
-        command { it.deleteTemplate(row.id); mutable.update { state -> state.copy(selectedId = null, selected = null) } }
+    fun delete() { mutable.value.selected?.let { delete(it.id) } }
+    fun delete(id: String) {
+        if (mutable.value.templates.none { it.id == id } && mutable.value.selected?.id != id) return
+        command { it.deleteTemplate(id); mutable.update { state -> state.copy(selectedId = null, selected = null) } }
     }
     fun move(row: QuickTemplate, direction: Int) {
         val ids = moveTemplateIds(mutable.value.templates, row.id, direction) ?: return

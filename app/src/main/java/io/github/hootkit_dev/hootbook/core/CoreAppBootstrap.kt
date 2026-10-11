@@ -17,10 +17,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class CoreBootstrapState { PREFERENCES, PREFERENCES_FAILED, OPENING, CORE_FAILED, READY }
+enum class CoreBootstrapState { PREFERENCES, PREFERENCES_FAILED, OPENING, CORE_FAILED, LEGACY_UPGRADE, READY }
 @Singleton
 class CoreAppBootstrap @Inject constructor(@ApplicationContext private val context: Context,
     private val prefs: CoreUiPreferencesStore, private val session: Provider<CoreSession>,
+    val legacyUpgrade: io.github.hootkit_dev.hootbook.core.migration.LegacyUpgradeGuard,
     private val startup: CoreStartupCoordinator, private val lock: Provider<CoreAppLockController>,
     private val sync: Provider<CoreSyncCoordinator>, private val system: Provider<CoreSystemCoordinator>,
     @ApplicationScope private val scope: CoroutineScope) {
@@ -33,6 +34,11 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
             mutable.value = CoreBootstrapState.PREFERENCES
             try { prefs.ready() } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Throwable) { mutable.value = CoreBootstrapState.PREFERENCES_FAILED; return@launch }
+            if (legacyUpgrade.required()) {
+                lock.get().retryLoading()
+                mutable.value = CoreBootstrapState.LEGACY_UPGRADE
+                return@launch
+            }
             mutable.value = CoreBootstrapState.OPENING
             try {
                 val native = session.get()
@@ -50,6 +56,10 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
     }
     fun foregroundChanged(value: Boolean) {
         foreground = value; startup.onForegroundChanged(value)
+        if (state.value == CoreBootstrapState.LEGACY_UPGRADE) {
+            if (value) lock.get().onForeground() else lock.get().onBackground()
+            return
+        }
         if (state.value != CoreBootstrapState.READY || CoreProcess.isCrashProcess(context)) return
         if (value) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh() }
         else { lock.get().onBackground(); sync.get().backgrounded() }

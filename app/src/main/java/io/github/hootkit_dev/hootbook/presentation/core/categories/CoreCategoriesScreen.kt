@@ -3,6 +3,23 @@ package io.github.hootkit_dev.hootbook.presentation.core.categories
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SearchBarBox
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.GenericTypeSwitcher
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -31,12 +48,24 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
     var deletion by remember { mutableStateOf<Category?>(null) }
     var subDeletion by remember { mutableStateOf<Subcategory?>(null) }
     LaunchedEffect(state.commandRevision) { deletion = null; subDeletion = null }
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(state.selected?.displayName ?: stringResource(R.string.core_categories_1)) },
-            navigationIcon = { TextButton(onClick = goBack, enabled = !state.saving) { Text(stringResource(R.string.core_categories_2)) } },
-            actions = { TextButton(onClick = viewModel::refresh, enabled = !state.saving) { Text(stringResource(R.string.core_categories_3)) } })
+    var search by rememberSaveable { mutableStateOf("") }
+    var filterMenu by remember { mutableStateOf(false) }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(modifier = Modifier.nestedScroll(scroll.nestedScrollConnection), topBar = {
+        CustomTitleTopAppBar(title = state.selected?.displayName ?: stringResource(R.string.categories),
+            scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior(), scrollBehaviorLarge = scroll,
+            hasBackButton = true, navigationContent = { NavigationContent(goBack) }, actionContent = {
+                IconButton(onClick = { filterMenu = true }, enabled = !state.saving) { Icon(Icons.Rounded.FilterList, stringResource(R.string.filters)) }
+                DropdownMenu(filterMenu, { filterMenu = false }) {
+                    listOf(null to R.string.all, CategoryKind.EXPENSE to R.string.expense, CategoryKind.INCOME to R.string.income).forEach { (kind, label) ->
+                        DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = { viewModel.filter(kind); filterMenu = false })
+                    }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.core_categories_3)) }, onClick = { viewModel.refresh(); filterMenu = false })
+                }
+            })
     }, floatingActionButton = {
-        FloatingActionButton(onClick = { state.selected?.let(viewModel::createSubcategory) ?: viewModel.createCategory() }) { Text("＋") }
+        ExtendedFloatingActionButton(onClick = { if (!state.saving) state.selected?.let(viewModel::createSubcategory) ?: viewModel.createCategory() },
+            icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(if (state.selected == null) R.string.add_category else R.string.add_subcategory)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -48,24 +77,19 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
                 }
             } }
             if (state.selectedId == null) {
-                Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FilterChip(selected = state.kind == CategoryKind.EXPENSE, onClick = { viewModel.filter(CategoryKind.EXPENSE) }, label = { Text(stringResource(R.string.core_categories_5)) }, enabled = !state.saving)
-                    FilterChip(selected = state.kind == CategoryKind.INCOME, onClick = { viewModel.filter(CategoryKind.INCOME) }, label = { Text(stringResource(R.string.core_categories_6)) }, enabled = !state.saving)
-                }
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    item {
+                        SearchBarBox(searchQuery = TextFieldValue(search), onSearchQueryChange = { search = it.text },
+                            label = { Text(stringResource(R.string.search_fruits)) },
+                            trailingIcon = { if (search.isNotEmpty()) IconButton(onClick = { search = "" }) { Icon(Icons.Rounded.Close, stringResource(R.string.clear_search)) } })
+                    }
                     if (!state.loading && state.categories.isEmpty()) item { Text(stringResource(R.string.core_categories_7)) }
-                    items(state.categories, key = { it.id }) { category ->
-                        Card(onClick = { viewModel.select(category.id) }, modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp)) {
-                                CoreRecordIcon(category.icon, Modifier.size(40.dp))
-                                Text(category.displayName, style = MaterialTheme.typography.titleLarge)
-                                Text("${if (category.builtinKey != null) stringResource(R.string.core_full_label_74) else stringResource(R.string.core_full_label_75)} · ${stringResource(R.string.core_full_child_count, category.subcategories.size.toString())}${if (category.hidden) stringResource(R.string.core_full_label_76) else ""}")
-                                FlowRow {
-                                    TextButton(onClick = { viewModel.move(category, -1) }, enabled = !state.saving) { Text(stringResource(R.string.core_categories_8)) }
-                                    TextButton(onClick = { viewModel.move(category, 1) }, enabled = !state.saving) { Text(stringResource(R.string.core_categories_9)) }
-                                }
-                            }
-                        }
+                    items(state.categories.filter { category -> search.isBlank() || category.displayName.contains(search, true) || category.subcategories.any { it.displayName.contains(search, true) } }, key = { it.id }) { category ->
+                        CoreCategoryItem(category, !state.saving,
+                            onEdit = { viewModel.editCategory(category) }, onDetails = { viewModel.select(category.id) },
+                            onAddSubcategory = { viewModel.createSubcategory(category) }, onEditSubcategory = { viewModel.editSubcategory(category, it) },
+                            onMove = { direction -> viewModel.move(category, direction) },
+                            onDelete = { viewModel.select(category.id); deletion = category })
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -109,20 +133,35 @@ fun CoreCategoriesScreen(onBack: () -> Unit, viewModel: CoreCategoriesViewModel 
             }
         }
     }
-    state.draft?.let { draft -> AlertDialog(onDismissRequest = viewModel::dismissEditor,
-        title = { Text(if (draft.parentId != null) stringResource(R.string.core_categories_15) else stringResource(R.string.core_categories_19)) },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.saving) Text(stringResource(R.string.core_categories_saving_navigation))
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            CoreTextField(draft.name, stringResource(R.string.core_categories_20), state.saving) { viewModel.draftChanged(draft.copy(name = it)) }
-            CoreTextField(draft.icon, stringResource(R.string.core_categories_21), state.saving) { viewModel.draftChanged(draft.copy(icon = it)) }
-            CoreTextField(draft.color, stringResource(R.string.core_categories_22), state.saving) { viewModel.draftChanged(draft.copy(color = it)) }
-            CoreVisualStylePicker(draft.icon, draft.color, !state.saving,
-                { viewModel.draftChanged(draft.copy(icon = it)) }, { viewModel.draftChanged(draft.copy(color = it)) })
-            Text(stringResource(R.string.core_categories_23), style = MaterialTheme.typography.bodySmall)
-        } }, dismissButton = { TextButton(onClick = viewModel::dismissEditor, enabled = !state.saving) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onClick = viewModel::save, enabled = !state.saving && draft.name.isNotBlank()) { Text(stringResource(R.string.save)) } }) }
-    deletion?.let { category -> CategoryDeletionDialog(category, state.categories, state.transactionCount, state.saving,
+    state.draft?.let { draft ->
+        HootbookModalBottomSheet(onDismissRequest = viewModel::dismissEditor, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                val color = runCatching { Color(android.graphics.Color.parseColor(draft.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
+                Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.large) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.size(64.dp).background(color.copy(alpha = .2f), MaterialTheme.shapes.large), contentAlignment = Alignment.Center) { CoreRecordIcon(draft.icon, Modifier.size(40.dp)) }
+                        Text(draft.name.ifBlank { stringResource(R.string.category_name) }, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                if (state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
+                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                CoreTextField(draft.name, stringResource(R.string.core_categories_20), state.saving) { viewModel.draftChanged(draft.copy(name = it)) }
+                if (draft.parentId == null && draft.id == null) GenericTypeSwitcher(
+                    selectedIndex = if (draft.kind == CategoryKind.INCOME) 1 else 0,
+                    onIndexChange = { if (!state.saving) viewModel.draftChanged(draft.copy(kind = if (it == 0) CategoryKind.EXPENSE else CategoryKind.INCOME)) },
+                    options = listOf(stringResource(R.string.expense), stringResource(R.string.income)))
+                Text(stringResource(R.string.core_parity_category_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                CoreVisualStylePicker(draft.icon, draft.color, !state.saving,
+                    { viewModel.draftChanged(draft.copy(icon = it)) }, { viewModel.draftChanged(draft.copy(color = it)) })
+                ColorPickerContent(initialColor = runCatching { android.graphics.Color.parseColor(draft.color) }.getOrDefault(0xff33b5e5.toInt()),
+                    onColorChanged = { if (!state.saving) viewModel.draftChanged(draft.copy(color = String.format(java.util.Locale.ROOT, "#%06X", 0xffffff and it))) })
+                Text(stringResource(R.string.core_categories_23), style = MaterialTheme.typography.bodySmall)
+                Button(onClick = viewModel::save, enabled = !state.saving && draft.name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.save)) }
+                TextButton(onClick = viewModel::dismissEditor, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.cancel)) }
+            }
+        }
+    }
+    deletion?.let { category -> CategoryDeletionDialog(category, state.categories, state.transactionCount, state.saving || state.loading || state.selected?.id != category.id,
         dismiss = { deletion = null }, confirm = { viewModel.delete(category, it) }) }
     subDeletion?.let { row -> AlertDialog(onDismissRequest = { if (!state.saving) subDeletion = null },
         title = { Text(stringResource(R.string.core_full_delete_child_name, row.displayName)) }, text = { Text(stringResource(R.string.core_categories_24)) },
@@ -152,4 +191,50 @@ private fun CategoryDeletionDialog(category: Category, rows: List<Category>, cou
             }
         } }, dismissButton = { TextButton(onClick = dismiss, enabled = !saving) { Text(stringResource(R.string.core_categories_25)) } },
         confirmButton = { TextButton(onClick = { confirm(target) }, enabled = !saving) { Text(stringResource(R.string.core_categories_28)) } })
+}
+
+
+/** Original category card with a horizontal subcategory chip strip, using generated Core records. */
+@Composable
+internal fun CoreCategoryItem(category: Category, enabled: Boolean = true, onEdit: () -> Unit,
+    onDetails: () -> Unit, onAddSubcategory: () -> Unit, onEditSubcategory: (Subcategory) -> Unit, onMove: (Int) -> Unit, onDelete: (() -> Unit)? = null) {
+    var menu by remember { mutableStateOf(false) }
+    val color = runCatching { Color(android.graphics.Color.parseColor(category.color)) }.getOrDefault(MaterialTheme.colorScheme.primary)
+    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { target ->
+        if (target == SwipeToDismissBoxValue.EndToStart && enabled && category.builtinKey == null) onDelete?.invoke()
+        false // Only Core's confirmed delete removes a category.
+    })
+    SwipeToDismissBox(state = dismissState, enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = enabled && category.builtinKey == null && onDelete != null,
+        backgroundContent = {
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.error, RoundedCornerShape(20.dp)).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterEnd) {
+                Icon(Icons.Rounded.Delete, stringResource(R.string.delete), tint = MaterialTheme.colorScheme.onError)
+            }
+        }) {
+    Card(onClick = onEdit, enabled = enabled, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(48.dp).background(color.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) { CoreRecordIcon(category.icon, Modifier.size(32.dp)) }
+            Column(Modifier.weight(1f)) {
+                Text(category.displayName, style = MaterialTheme.typography.titleMedium)
+                if (category.hidden) Text(stringResource(R.string.core_categories_10), style = MaterialTheme.typography.labelSmall)
+            }
+            if (category.subcategories.isEmpty()) IconButton(onClick = onAddSubcategory, enabled = enabled) { Icon(Icons.Rounded.AddCircle, stringResource(R.string.add_subcategory), tint = MaterialTheme.colorScheme.primary) }
+            Box {
+                IconButton(onClick = { menu = true }, enabled = enabled) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.core_categories_19)) }
+                DropdownMenu(menu, { menu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.core_categories_19)) }, onClick = { menu = false; onDetails() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.core_categories_8)) }, onClick = { menu = false; onMove(-1) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.core_categories_9)) }, onClick = { menu = false; onMove(1) })
+                }
+            }
+        }
+        if (category.subcategories.isNotEmpty()) LazyRow(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(category.subcategories, key = { it.id }) { row ->
+                AssistChip(onClick = { onEditSubcategory(row) }, enabled = enabled, label = { Text(row.displayName) }, leadingIcon = { CoreRecordIcon(row.icon, Modifier.size(18.dp)) })
+            }
+            item { AssistChip(onClick = onAddSubcategory, enabled = enabled, label = { Icon(Icons.Rounded.Add, stringResource(R.string.add_subcategory)) }) }
+        }
+    }
+}
 }

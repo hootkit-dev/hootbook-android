@@ -67,6 +67,7 @@ data class CoreTransactionsUiState(
     val createdSubscriptionId: String? = null,
     val customSymbols: Map<String, String> = emptyMap(),
     val displayValues: Map<String, CoreDisplayedMoney> = emptyMap(),
+    val transferEstimate: java.math.BigDecimal? = null,
 )
 
 @HiltViewModel
@@ -76,6 +77,7 @@ class CoreTransactionsViewModel @Inject constructor(
     private val savedState: SavedStateHandle? = null,
     private val uiPreferences: CoreUiPreferencesStore? = null,
     val attachmentStore: CoreAttachmentStore? = null,
+    val platformAssets: io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets? = null,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(CoreTransactionsUiState(form = restoreTransactionForm(savedState?.get("transaction_draft"))))
     val state = mutableState.asStateFlow()
@@ -85,12 +87,15 @@ class CoreTransactionsViewModel @Inject constructor(
     private var sourceJob: Job? = null
     private var sourceVersion = 0L
     private var referencesReady = false
+    private var visibleLimit = PAGE_SIZE
     private var draftDefaultsReady = true
     private var writeJob: Job? = null
     private var auxiliaryJob: Job? = null
     private var auxiliaryVersion = 0L
     private var exportJob: Job? = null
     private var editorIdentity = 0L
+    private var conversionJob: Job? = null
+    private var conversionVersion = 0L
 
     init { viewModelScope.launch { changes.observe(TRANSACTION_TABLES).collect { refresh() } } }
 
@@ -108,7 +113,18 @@ class CoreTransactionsViewModel @Inject constructor(
 
     fun applyQuery(query: CoreTransactionQuery) {
         if (state.value.writing) return
+        visibleLimit = PAGE_SIZE
         mutableState.update { it.copy(query = query, offset = 0u, page = null, summary = null, selectedIds = emptySet(), duplicateCandidates = emptyList()) }
+        refresh()
+    }
+
+    /** Grow the displayed Core result, preserving the original continuous list interaction. */
+    fun loadMore() {
+        val current = state.value
+        val page = current.page ?: return
+        if (current.loading || current.writing || current.queryFailure != null || page.items.size.toUInt() >= page.total) return
+        visibleLimit += PAGE_SIZE
+        mutableState.update { it.copy(offset = 0u) }
         refresh()
     }
 
@@ -131,6 +147,7 @@ class CoreTransactionsViewModel @Inject constructor(
         val requestVersion = ++version
         queryJob?.cancel()
         val snapshot = state.value
+        val requestedLimit = visibleLimit
         mutableState.update { it.copy(loading = true, queryFailure = null,
             error = it.commandFailure ?: if (preserveError) it.error else null) }
         queryJob = viewModelScope.launch {
@@ -155,6 +172,19 @@ class CoreTransactionsViewModel @Inject constructor(
                     if (offset > 0u && offset >= page.total) {
                         offset = if (page.total == 0u) 0u else ((page.total - 1u) / PAGE_SIZE) * PAGE_SIZE
                         page = ledger.list(filter, PageRequest(offset, PAGE_SIZE))
+                    }
+                    if (offset == 0u && requestedLimit > PAGE_SIZE) {
+                        val visible = page.items.toMutableList()
+                        val total = page.total
+                        while (visible.size.toUInt() < minOf(requestedLimit, total)) {
+                            currentCoroutineContext().ensureActive()
+                            val remaining = minOf(PAGE_SIZE, requestedLimit - visible.size.toUInt())
+                            val next = ledger.list(filter, PageRequest(visible.size.toUInt(), remaining))
+                            check(next.total == total && next.items.isNotEmpty()) { "Ledger changed while loading transactions" }
+                            visible += next.items
+                        }
+                        check(visible.map(Transaction::id).distinct().size == visible.size) { "Ledger changed while loading transactions" }
+                        page = TransactionPage(visible, total)
                     }
                     val summary = ledger.summary(filter)
                     val detail = snapshot.detailId?.let { ledger.get(it) }
@@ -236,8 +266,38 @@ class CoreTransactionsViewModel @Inject constructor(
             draftDefaultsReady = true // Explicit user edits outrank all pending defaults.
             mutableState.update { it.copy(form = form, error = null, commandFailure = null, queryFailure = null, duplicateCandidates = emptyList()) }; persistDraft()
             requestMerchantSuggestions(form.merchant)
+            requestTransferEstimate(form)
         }
     }
+
+    private fun requestTransferEstimate(form: CoreTransactionForm) {
+        val mine = ++conversionVersion
+        conversionJob?.cancel()
+        mutableState.update { it.copy(transferEstimate = null) }
+        val amount = form.amount.toBigDecimalOrNull() ?: return
+        if (form.kind != TransactionKind.TRANSFER || form.toCurrency.isBlank() || form.currency == form.toCurrency) return
+        conversionJob = viewModelScope.launch {
+            try {
+                val estimate = session.awaitCore().currency().use { it.convert(amount, form.currency, form.toCurrency) }
+                if (mine == conversionVersion && state.value.form == form) mutableState.update { it.copy(transferEstimate = estimate) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { /* An unavailable estimate never replaces explicit received money. */ }
+        }
+    }
+
+    fun addTargetCurrency(accountId: String, currency: String) {
+        val form = state.value.form ?: return
+        if (form.toAccountId != accountId || form.kind != TransactionKind.TRANSFER) return
+        write {
+            session.awaitCore().accounts().use { it.addCurrency(accountId, currency.trim().uppercase(), null, null) }
+            mutableState.update { it.copy(form = it.form?.copy(toCurrency = currency.trim().uppercase(), toAmount = "")) }
+            persistDraft()
+        }
+    }
+
+    fun reportUnsupportedMerchantFilter(message: String) { mutableState.update { it.copy(commandFailure = message, error = message) } }
+
+    fun dismissNotice() { mutableState.update { it.copy(notice = null) } }
 
     /** Returns true when the inner detail/editor consumed Back. */
     fun back(): Boolean {

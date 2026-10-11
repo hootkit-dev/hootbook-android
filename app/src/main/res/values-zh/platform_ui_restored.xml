@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="platform_unavailable">暂不可用</string>
+    <string name="platform_sync_advanced">高级同步设置</string>
+    <string name="platform_sync_advanced_note">冲突规则、用云端数据替换、重设加密及旧协议数据</string>
+    <string name="platform_backup_local_body">创建完整备份，或先检查备份再恢复。加密与账本变更均由 Core 处理。</string>
+    <string name="platform_backup_local_provider">通过 Android 文件选择器保存或分享</string>
+    <string name="platform_backup_cloud_unavailable">当前 Core 集成暂不支持。可先导出备份，再通过 Android 文件选择器选择存储服务。</string>
+    <string name="platform_backup_restore_body">检查 HootKit 备份，或将兼容的旧版备份导入空账本</string>
+    <string name="platform_backup_cashew_unavailable">暂不可用：当前 Core 未提供 Cashew 导入接口，不会在应用中自行转换。</string>
+    <string name="platform_onboarding_account_ready">此设备已有账户。选择主货币后继续。</string>
+    <string name="platform_onboarding_import_body">先检查再安全恢复备份。兼容的旧版备份只能导入空账本。</string>
+    <string name="platform_onboarding_profile_edit">选择头像与个人资料颜色</string>
+    <string name="platform_provider_google_drive">Google Drive</string>
+    <string name="platform_provider_webdav">WebDAV</string>
+</resources>

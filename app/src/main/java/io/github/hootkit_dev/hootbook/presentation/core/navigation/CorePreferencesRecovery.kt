@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 @Composable internal fun CorePreferencesRecovery(prefs: CoreUiPreferencesStore, bootstrap: CoreAppBootstrap) {
     CoreSecureWindow()
     val context = LocalContext.current; val activity = context.fragmentActivity(); val scope = rememberCoroutineScope()
+    val recoveryTitle = stringResource(R.string.core_shell_recover_ui)
     var busy by remember { mutableStateOf(false) }; var failed by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
@@ -45,7 +46,7 @@ import kotlinx.coroutines.launch
                 }
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { busy = false; failed = true }
             })
-            try { prompt.authenticate(BiometricPrompt.PromptInfo.Builder().setTitle(context.getString(R.string.core_shell_recover_ui)).setAllowedAuthenticators(authenticators).build()) }
+            try { prompt.authenticate(BiometricPrompt.PromptInfo.Builder().setTitle(recoveryTitle).setAllowedAuthenticators(authenticators).build()) }
             catch (_: Exception) { busy = false; failed = true }
         }) { Text(stringResource(R.string.core_shell_recover_ui)) }
         TextButton(onClick = { try { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) } catch (_: Exception) { failed = true } }) {

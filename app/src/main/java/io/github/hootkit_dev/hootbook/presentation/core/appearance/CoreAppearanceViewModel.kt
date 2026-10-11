@@ -8,7 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.ui.*
-import io.github.hootkit_dev.hootbook.data.preferences.AppIcon
+import io.github.hootkit_dev.hootbook.data.preferences.*
 import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
 import io.github.hootkit_dev.hootbook.utils.IconSwitchingUtils
 import javax.inject.Inject
@@ -26,6 +26,13 @@ class CoreAppearanceViewModel @Inject constructor(@ApplicationContext private va
     private val failure=MutableStateFlow<Int?>(null);val error=failure.asStateFlow()
     init{command{preferences.ready()}}
     fun update(transform:(CoreUiPreferences)->CoreUiPreferences)=command{preferences.update(transform)}
+    fun updateDarkTheme(value: Boolean?) = update { it.copy(darkTheme = value) }
+    fun updateAmoledMode(value: Boolean) = update { it.copy(amoled = value) }
+    fun updateBlurEffects(value: Boolean) = update { it.copy(blur = value) }
+    fun updateThemeStyle(value: ThemeStyle) = update { it.copy(themeStyle = value) }
+    fun updateAccentColor(value: AccentColor) = update { it.copy(accent = value) }
+    fun updateAppFont(value: AppFont) = update { it.copy(font = value) }
+    fun updateAppIcon(value: AppIcon) = appIcon(value)
     fun appIcon(icon:AppIcon)=command{
         val previous=preferences.ready().appIcon
         try{withContext(Dispatchers.Main.immediate){IconSwitchingUtils.switchAppIcon(context,icon)};preferences.update{it.copy(appIcon=icon)}}

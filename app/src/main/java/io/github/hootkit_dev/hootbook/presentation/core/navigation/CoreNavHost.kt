@@ -2,6 +2,13 @@
 package io.github.hootkit_dev.hootbook.presentation.core.navigation
 
 import android.net.Uri
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.ui.platform.LocalView
+import io.github.hootkit_dev.hootbook.presentation.navigation.*
+import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,9 +64,15 @@ internal fun coreCurrenciesRoute(currency: String? = null): String = coreRoute("
  * Home always means its root, not a saved Settings/Profile child. Other tabs retain their saved state.
  */
 internal fun NavController.selectCoreTab(route: String) {
+    val current = currentBackStackEntry
+    val currentRoute = current?.destination?.route?.substringBefore('?')
+    val isContextual = currentRoute == "transactions" && listOf(
+        "accountId", "transactionId", "subscriptionId", "templateId", "categoryId", "newKind", "from", "to", "currency", "kinds"
+    ).any { current?.arguments?.getString(it) != null }
+    if (currentRoute == route && !isContextual) return
     navigate(route) {
         launchSingleTop = true
-        restoreState = route != "home"
+        restoreState = route != "home" && currentRoute != route
         popUpTo("home") { saveState = true }
     }
 }
@@ -71,6 +84,8 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
     val nav = rememberNavController(); val prefs by preferences.state.collectAsStateWithLifecycle()
     val pending by ingress.pending.collectAsStateWithLifecycle(); val shareFailure by ingress.failed.collectAsStateWithLifecycle()
     val current by nav.currentBackStackEntryAsState()
+    val windowLayout = rememberWindowLayout()
+    val view = LocalView.current
     val start = remember { if (prefs.onboardingFinished) "home" else "onboarding" }
     var recordHint by rememberSaveable { mutableStateOf<String?>(null) }
     var schema by remember(session) { mutableStateOf<UInt?>(null) }
@@ -105,35 +120,55 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
             }
             go(route); ingress.consumed(entry.token)
         }
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val wide = maxWidth >= 600.dp
-            val tabs = listOf("home" to R.string.core_shell_home, "transactions" to R.string.core_transactions_title, "analytics" to R.string.core_analytics_title)
-            fun tab(route: String) { nav.selectCoreTab(route) }
+        CompositionLocalProvider(LocalWindowLayout provides windowLayout) {
+            val route = current?.destination?.route.orEmpty().substringBefore('?')
+            val entryScreen = current?.arguments?.let { args ->
+                listOf("newKind", "transactionId", "subscriptionId", "templateId").any { args.getString(it) != null }
+            } == true
+            val mainScreen = route in setOf("home", "analytics", "transactions") && !entryScreen
+            val showRail = windowLayout.useNavigationRail && route != "onboarding" && !entryScreen
+            val showBottomBar = !windowLayout.useNavigationRail && mainScreen
+            val showAdd = !entryScreen && (route in setOf("home", "transactions", "subscriptions") ||
+                (route == "budgets" && current?.arguments?.getString("id") != null))
             Row(Modifier.fillMaxSize()) {
-                if (wide) NavigationRail { tabs.forEach { (route, label) -> NavigationRailItem(selected = current?.destination?.route?.substringBefore('?') == route,
-                    onClick = { tab(route) }, icon = { Text(stringResource(label).take(1)) }, label = { Text(stringResource(label)) }) } }
+                if (showRail) HootbookNavigationRail(navController = nav, currentDestination = current?.destination, visible = true)
                 Scaffold(Modifier.weight(1f), contentWindowInsets = WindowInsets.safeDrawing,
-                    bottomBar = { if (!wide && current?.destination?.route != "onboarding") NavigationBar { tabs.forEach { (route, label) -> NavigationBarItem(
-                        selected = current?.destination?.route?.substringBefore('?') == route, onClick = { tab(route) }, icon = { Text(stringResource(label).take(1)) }, label = { Text(stringResource(label)) }) } } }) { padding ->
+                    bottomBar = { HootbookBottomNavigation(navController = nav, currentDestination = current?.destination, visible = showBottomBar) },
+                    floatingActionButton = {
+                        AnimatedVisibility(showAdd, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+                            FloatingActionButton(onClick = {
+                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                go(if (route == "subscriptions") coreRoute("subscriptions", "new" to "true")
+                                   else coreTransactionsRoute(newKind = TransactionKind.EXPENSE))
+                            }, containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                                Icon(Icons.Rounded.Add, stringResource(R.string.add_transaction_subscription_cd))
+                            }
+                        }
+                    }) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                         if (shareFailure) TextButton(onClick = ingress::dismissFailure) { Text(stringResource(R.string.core_shell_share_failed)) }
                         recordHint?.let { hint -> Row { Text(hint, Modifier.weight(1f)); TextButton(onClick = { recordHint = null }) { Text(stringResource(R.string.core_shell_close)) } } }
                         Box(Modifier.weight(1f).fillMaxWidth().semantics { contentDescription = "core-screen-" + current?.destination?.route.orEmpty().substringBefore('?') }, contentAlignment = Alignment.TopCenter) {
-                            NavHost(nav, startDestination = start, modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()) {
-                                composable("onboarding") { CoreOnboardingScreen(session, preferences, ::go) { nav.navigate("home") { popUpTo("onboarding") { inclusive = true } } } }
+                            NavHost(nav, startDestination = start, modifier = Modifier.fillMaxSize(),
+                                enterTransition = CoreNavigationMotion.enter,
+                                exitTransition = CoreNavigationMotion.exit,
+                                popEnterTransition = CoreNavigationMotion.popEnter,
+                                popExitTransition = CoreNavigationMotion.popExit) {
+                                composable("onboarding", enterTransition=HootbookTransitions.noneEnter, exitTransition=HootbookTransitions.noneExit) { CoreOnboardingScreen(session, preferences, ::go, onRecord=::record) { nav.navigate("home") { popUpTo("onboarding") { inclusive = true } } } }
                                 composable("home") { CoreHomeScreen(onAccounts={go("accounts")},onCategories={go("categories")},onTransactions={go("transactions")},onBudgets={go("budgets")},
                                     onSubscriptions={go("subscriptions")},onTemplates={go("templates")},onDebts={go("debts")},onSettings={go("settings")},onCurrencies={go("currencies")},onBackup={go("backup")},
                                     onProfile={go("profile")},onAppearance={go("appearance")},onAnalytics={go("analytics")},onAccount={go(coreRoute("accounts","id" to it))},onBudget={go(coreRoute("budgets","id" to it))},
-                                    onTransaction={go(coreTransactionsRoute(transactionId=it))},onSubscription={go(coreRoute("subscriptions","id" to it))}) }
-                                composable("accounts?id={id}&history={history}", arguments=arguments("id","history")) { entry -> CoreAccountsScreen(back,{go(coreTransactionsRoute(accountId=it))},initialAccountId=entry.arguments?.getString("id"),initialHistory=entry.arguments?.getString("history")=="true",onBrokerage={connection,id->go(coreRoute("investments","connection" to connection.toString(),"id" to id))}) }
+                                    onTransaction={go(coreTransactionsRoute(transactionId=it))},onSubscription={go(coreRoute("subscriptions","id" to it))},onAi={go("ai")},onAccountCategory={go(coreRoute("accounts","kind" to it.name))}) }
+                                composable("accounts?id={id}&history={history}&kind={kind}&create={create}", arguments=arguments("id","history","kind","create")) { entry -> CoreAccountsScreen(back,{go(coreTransactionsRoute(accountId=it))},initialAccountId=entry.arguments?.getString("id"),onConnectBroker={go("investments")},initialHistory=entry.arguments?.getString("history")=="true",initialCreate=entry.arguments?.getString("create")=="true",initialKind=entry.arguments?.getString("kind")?.let { raw -> AccountKind.entries.find { it.name == raw } },onBrokerage={connection,id->go(coreRoute("investments","connection" to connection.toString(),"id" to id))}) }
                                 composable("categories") { CoreCategoriesScreen(back) }
                                 composable("budgets?id={id}", arguments=arguments("id")) { CoreBudgetsScreen(back,it.arguments?.getString("id")) }
-                                composable("subscriptions?id={id}&new={new}", arguments=arguments("id","new")) { entry -> CoreSubscriptionsScreen(back,{go(coreTransactionsRoute(subscriptionId=it))},entry.arguments?.getString("id"),initialCreate=entry.arguments?.getString("new")=="true") }
+                                composable("subscriptions?id={id}&new={new}", arguments=arguments("id","new")) { entry -> CoreSubscriptionsScreen(back,{go(coreTransactionsRoute(subscriptionId=it))},entry.arguments?.getString("id"),initialCreate=entry.arguments?.getString("new")=="true",onNewTransaction={go(coreTransactionsRoute(newKind=TransactionKind.EXPENSE))}) }
                                 composable("templates") { CoreTemplatesScreen(back,{go(coreTransactionsRoute(templateId=it))}) }
-                                composable("debts?id={id}", arguments=arguments("id")) { entry -> CoreDebtsScreen(back,initialPersonId=entry.arguments?.getString("id"),onOpenTransactions={go(coreTransactionsRoute(transactionId=it))}) }
+                                composable("debts?id={id}&new={new}", arguments=arguments("id","new")) { entry -> CoreDebtsScreen(back,initialPersonId=entry.arguments?.getString("id"),initialCreatePerson=entry.arguments?.getString("new")=="true",onOpenTransactions={go(coreTransactionsRoute(transactionId=it))}) }
                                 composable("transactions?accountId={accountId}&transactionId={transactionId}&subscriptionId={subscriptionId}&templateId={templateId}&categoryId={categoryId}&newKind={newKind}&from={from}&to={to}&currency={currency}&kinds={kinds}",arguments=arguments("accountId","transactionId","subscriptionId","templateId","categoryId","newKind","from","to","currency","kinds")) { entry -> CoreTransactionsScreen(back,
                                     accountId=entry.arguments?.getString("accountId"),initialTransactionId=entry.arguments?.getString("transactionId"),subscriptionId=entry.arguments?.getString("subscriptionId"),templateId=entry.arguments?.getString("templateId"),
-                                    onManageDebts={go("debts")},onManageSubscriptions={go(coreRoute("subscriptions","id" to it))},onManageMerchantIcon={go(coreRoute("merchant-icons","name" to it))},
+                                    onNewSubscription={go(coreRoute("subscriptions","new" to "true"))},onManageDebts={go("debts")},onManageSubscriptions={go(coreRoute("subscriptions","id" to it))},onManageMerchantIcon={go(coreRoute("merchant-icons","name" to it))},
                                     initialFrom=entry.arguments?.getString("from"),initialTo=entry.arguments?.getString("to"),initialCurrency=entry.arguments?.getString("currency"),initialKinds=entry.arguments?.getString("kinds")?.split(",")?.mapNotNull{raw->TransactionKind.entries.find{it.name==raw}}.orEmpty(),initialCategoryId=entry.arguments?.getString("categoryId"),initialNewKind=entry.arguments?.getString("newKind")?.let { raw -> TransactionKind.entries.find { it.name==raw && it in setOf(TransactionKind.EXPENSE,TransactionKind.TRANSFER) } }) }
                                 composable("analytics") { CoreAnalyticsScreen(back,{go(coreTransactionsRoute(categoryId=it))},onFilterTransactions={filter->go(coreTransactionsRoute(categoryId=filter.categoryIds.singleOrNull(),from=filter.from?.let{coreRouteDate(it.year,it.month.toInt(),it.day.toInt())},to=filter.to?.let{coreRouteDate(it.year,it.month.toInt(),it.day.toInt())},currency=filter.currency,kinds=filter.kinds.joinToString(","){it.name}))}) }
                                 composable("ai") { CoreAiScreen(back) }
@@ -142,15 +177,16 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                     val vm:CoreInvestmentsViewModel=hiltViewModel(); val connection=entry.arguments?.getString("connection")?.toLongOrNull(); val id=entry.arguments?.getString("id")
                                     val brokerState by vm.state.collectAsStateWithLifecycle(); var routedBroker by rememberSaveable { mutableStateOf(false) }
                                     LaunchedEffect(connection,id,brokerState.loading) { if(!brokerState.loading&&!routedBroker&&connection!=null&&id!=null) { routedBroker=true; vm.selectAccount(BrokerAccountRef(connection,id)) } }
-                                    CoreInvestmentsScreen(back,{go("accounts")},{go(coreRoute("accounts","id" to it,"history" to "true"))},vm)
+                                    CoreInvestmentsScreen(back,{go("accounts")},{go(coreRoute("accounts","id" to it,"history" to "true"))},vm,onAddInvestment={go(coreRoute("accounts","kind" to AccountKind.INVESTMENT.name,"create" to "true"))})
                                 }
                                 composable("settings") { CoreSettingsScreen(back,{go("currencies")},{go("backup")},onRoute=::go,coreSchemaVersion=schema) }
                                 composable("currencies?currency={currency}",arguments=arguments("currency")) { CoreCurrenciesScreen(back,it.arguments?.getString("currency")) }
-                                composable("backup") { CoreBackupScreen(back) }
-                                composable("profile") { CoreProfileScreen(back,{go("debts")},{go("merchant-icons")}) }
+                                composable("backup") { CoreBackupScreen(back, onSync={go("sync")}) }
+                                composable("profile") { CoreProfileScreen(back,{go("debts")},{go("merchant-icons")},onPerson={go(coreRoute("debts","id" to it))},onAddPerson={go(coreRoute("debts","new" to "true"))}) }
                                 composable("merchant-icons?name={name}",arguments=arguments("name")) { CoreMerchantIconsScreen(back,it.arguments?.getString("name")) }
                                 composable("appearance") { CoreAppearanceScreen(back,{go("app-lock")}) }
                                 composable("app-lock") { CoreAppLockSettingsScreen(back) }
+                                composable("data-privacy") { CoreAppLockSettingsScreen(back, dataPrivacy = true) }
                                 composable("notifications") { CoreNotificationPreferencesScreen(back) }
                                 composable("about") { AboutScreen(back,{go("licenses")},blurEffects=prefs.blur,coreSchemaVersion=schema) }
                                 composable("licenses") { LicensesScreen(back,coreSchemaVersion=schema) }

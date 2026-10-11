@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 @Config(application=Application::class,sdk=[28],manifest=Config.NONE)
 class CoreHomeProductionQueriesTest {
     private fun context()=ApplicationProvider.getApplicationContext<Application>().also {File(it.noBackupFilesDir,"hootkit-core/ui").deleteRecursively();File(it.filesDir,"datastore").deleteRecursively()}
-    @Test fun realThreeParameterConstructorQueriesRecentDueHeatmapAndCoreDisplayConversion()=runTest{
+    @Test fun realThreeParameterConstructorQueriesRecentSubscriptionsHeatmapAndCoreDisplayConversion()=runTest{
         Dispatchers.setMain(StandardTestDispatcher(testScheduler));val store=ViewModelStore()
         try{val prefs=CoreUiPreferencesStore(context());prefs.update{it.copy(unifiedDisplayEnabled=true,unifiedDisplayCurrency="USD")};val core=WidgetCore()
             val vm=CoreHomeViewModel(CoreSession(backgroundScope){core},ChangeBus(),prefs);store.put("vm",vm)
@@ -37,7 +37,10 @@ class CoreHomeProductionQueriesTest {
             assertEquals("USD",core.displayCurrency);assertEquals(mapOf("PTS" to "★"),state.customSymbols)
             val first=JavaDate.now().minusWeeks(26).with(java.time.DayOfWeek.MONDAY)
             assertEquals(first.coreDate(),state.heatmap.first().date);assertEquals(JavaDate.now().coreDate(),state.heatmap.last().date);assertTrue(state.heatmap.all{it.transactions==3u})
-            assertEquals(JavaDate.now().plusDays(7).coreDate(),core.dueThrough);assertTrue(core.recentReads>0&&core.dailyReads>0&&core.dueReads>0)
+            assertEquals(false,core.includeHidden);assertTrue(core.recentReads>0&&core.dailyReads>0&&core.subscriptionReads>0)
+            assertTrue(core.summaryFilters.any { it.from?.day == 1.toUByte() && it.from?.month == JavaDate.now().monthValue.toUByte() && it.to?.day == 1.toUByte() })
+            assertTrue(core.summaryFilters.any { it.from?.month == JavaDate.now().minusMonths(1).monthValue.toUByte() })
+            assertSame(core.summary, state.previousSummary)
             assertEquals(core.opened,core.destroyed)
         }finally{store.clear();Dispatchers.resetMain()}
     }
@@ -45,9 +48,9 @@ class CoreHomeProductionQueriesTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler));val store=ViewModelStore()
         try{val prefs=CoreUiPreferencesStore(context());val hidden=setOf(HomeWidget.RECENT_TRANSACTIONS,HomeWidget.UPCOMING_SUBSCRIPTIONS,HomeWidget.TRANSACTION_HEATMAP);prefs.update{it.copy(hiddenHomeWidgets=hidden)};val core=WidgetCore()
             val vm=CoreHomeViewModel(CoreSession(backgroundScope){core},ChangeBus(),prefs);store.put("vm",vm);vm.state.first{!it.loading&&!it.widgetsLoading}
-            assertEquals(0,core.recentReads);assertEquals(0,core.dailyReads);assertEquals(0,core.dueReads)
+            assertEquals(0,core.recentReads);assertEquals(0,core.dailyReads);assertEquals(0,core.subscriptionReads)
             prefs.update{it.copy(hiddenHomeWidgets=emptySet())};val visible=vm.state.first{!it.widgetsLoading&&it.heatmap.isNotEmpty()}
-            assertSame(core.overview.netWorth,visible.overview!!.netWorth);assertTrue(core.recentReads>0&&core.dailyReads>0&&core.dueReads>0)
+            assertSame(core.overview.netWorth,visible.overview!!.netWorth);assertTrue(core.recentReads>0&&core.dailyReads>0&&core.subscriptionReads>0)
             prefs.update{it.copy(hiddenHomeWidgets=hidden)};vm.state.first{!it.widgetsLoading&&it.heatmap.isEmpty()};assertEquals(core.opened,core.destroyed)
         }finally{store.clear();Dispatchers.resetMain()}
     }
@@ -73,21 +76,26 @@ private class WidgetCore:HootKitCore(NoPointer){
         hidden=false,monthlyEquivalent=BigDecimal.TEN,ended=false,overdue=false,daysUntil=2,
     )
     val overview=AccountsOverview(emptyList(),Money(BigDecimal("100"),"CNY"),true,null,null)
-    private val summary=LedgerSummary("CNY",BigDecimal("10"),BigDecimal("5"),BigDecimal("5"),true,emptyList(),emptyList(),emptyList(),emptyList())
-    var opened=0;var destroyed=0;var recentReads=0;var dailyReads=0;var dueReads=0
-    var displayCurrency:String?=null;var dueThrough:LocalDate?=null;var lastConversion:Triple<BigDecimal,String,String>?=null
+    val summary=LedgerSummary("CNY",BigDecimal("10"),BigDecimal("5"),BigDecimal("5"),true,emptyList(),emptyList(),emptyList(),emptyList())
+    val summaryFilters = mutableListOf<TransactionFilter>()
+    var opened=0;var destroyed=0;var recentReads=0;var dailyReads=0;var subscriptionReads=0
+    var displayCurrency:String?=null;var includeHidden:Boolean?=null;var lastConversion:Triple<BigDecimal,String,String>?=null
     var conversion:suspend(BigDecimal,String,String)->BigDecimal?={_,_,_->BigDecimal("1.25")}
     override fun accounts():Accounts {opened++;return object:Accounts(NoPointer){override suspend fun overview()=this@WidgetCore.overview;private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun ledger():Ledger {opened++;return object:Ledger(NoPointer){
-        override suspend fun summary(filter:TransactionFilter)=this@WidgetCore.summary
+        override suspend fun summary(filter:TransactionFilter): LedgerSummary { summaryFilters += filter; return this@WidgetCore.summary }
         override suspend fun list(filter:TransactionFilter,page:PageRequest):TransactionPage=if(filter.from==null){recentReads++;TransactionPage(listOf(transaction),1u)}else{dailyReads++;TransactionPage(emptyList(),3u)}
         private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}
     }}
+    override fun categories(): Categories { opened++; return object : Categories(NoPointer) {
+        override suspend fun list(kind: CategoryKind?, includeHidden: Boolean) = emptyList<Category>()
+        private var released = false; override fun destroy() { if (!released) { released = true; destroyed++ }; super.destroy() }
+    } }
     override fun budgets():Budgets {opened++;return object:Budgets(NoPointer){override suspend fun list(today:LocalDate,homeOnly:Boolean,displayCurrency:String?):List<Budget>{assertTrue(homeOnly);this@WidgetCore.displayCurrency=displayCurrency;return emptyList()};private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun plans():Plans {opened++;return object:Plans(NoPointer){
         override suspend fun subscriptionSummary(today:LocalDate)=SubscriptionSummary("CNY",BigDecimal.TEN,BigDecimal("120"),BigDecimal.TEN,1u,true,emptyList())
         override suspend fun debtSummary(today:LocalDate)=DebtSummary("CNY",BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,0u,0u,0u,0u,true)
-        override suspend fun dueSubscriptions(today:LocalDate,through:LocalDate):List<Subscription>{dueReads++;dueThrough=through;return listOf(subscription)}
+        override suspend fun subscriptions(today:LocalDate,includeHidden:Boolean):List<Subscription>{subscriptionReads++;this@WidgetCore.includeHidden=includeHidden;return listOf(subscription)}
         private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}
     }}
     override fun currency():Currency {opened++;return object:Currency(NoPointer){

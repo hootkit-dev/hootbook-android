@@ -85,6 +85,7 @@ class CoreSubscriptionsViewModel private constructor(
     fun includeHidden(value: Boolean) { if (blockNavigation()) return; mutable.update { it.copy(includeHidden = value) }; refresh() }
     fun select(id: String?) { if (blockNavigation()) return; mutable.update { it.copy(selectedId = id, selected = null, error = null) }; refresh() }
     fun create() { if (blockNavigation()) return; mutable.update { it.copy(form = CoreSubscriptionForm(currency = it.references.mainCurrency, nextDue = today().planDateText()), error = null) } }
+    fun edit(row: Subscription) { if (!blockNavigation()) mutable.update { it.copy(form = CoreSubscriptionForm.from(row), error = null) } }
     fun edit() { if (blockNavigation()) return; mutable.value.selected?.let { row -> mutable.update { it.copy(form = CoreSubscriptionForm.from(row), error = null) } } }
     fun updateForm(form: CoreSubscriptionForm) { if (!mutable.value.saving) mutable.update { it.copy(form = form, error = null) } }
     fun back(): Boolean {
@@ -107,8 +108,8 @@ class CoreSubscriptionsViewModel private constructor(
             mutable.update { it.copy(form = null, selectedId = id, selected = null) }
         }
     }
-    fun toggleHidden() {
-        val row = mutable.value.selected ?: return
+    fun toggleHidden() { mutable.value.selected?.let(::toggleHidden) }
+    fun toggleHidden(row: Subscription) {
         command { it.setSubscriptionHidden(row.id, !row.hidden)
             mutable.update { state -> state.copy(undoHiddenId = if (!row.hidden) row.id else null) } }
     }
