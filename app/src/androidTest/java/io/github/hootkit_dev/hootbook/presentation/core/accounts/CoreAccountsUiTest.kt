@@ -1,5 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.core.accounts
 
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -62,7 +66,7 @@ class CoreAccountsUiTest {
             when (method.name.substringBefore('-')) {
                 "overview" -> overview
                 "anchors" -> emptyList<dev.hootkit.core.BalanceAnchor>()
-                "transactionCount" -> 0u
+                "transactionCount" -> 3u
                 else -> error("Unexpected Core API: ${method.name}")
             }
         } as AccountsInterface
@@ -92,10 +96,12 @@ class CoreAccountsUiTest {
         rule.onNodeWithTag("account_$accountId").assertIsDisplayed().performClick()
         rule.waitUntil(5_000) { !model.state.value.loading && model.state.value.account != null }
         rule.runOnIdle { assertEquals(accountId, model.state.value.selectedId) }
-        rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("-1234567.89"), "CNY")).assertIsDisplayed()
+        // The headline total and the currency row both show it.
+        rule.onAllNodesWithText(CoreMoneyPresentation.format(BigDecimal("-1234567.89"), "CNY")).onFirst().assertIsDisplayed()
         val label = InstrumentationRegistry.getInstrumentation().targetContext
             .getString(R.string.account_all_transactions)
-        rule.onNodeWithText(label).performScrollTo().performClick()
+        rule.onNodeWithTag("account_detail").performScrollToNode(hasText(label))
+        rule.onNodeWithText(label).performClick()
         rule.runOnIdle { assertEquals(accountId, target) }
     }
 
@@ -103,7 +109,7 @@ class CoreAccountsUiTest {
         render(fontScale = 2f)
         rule.onNodeWithTag("account_$accountId").assertIsDisplayed().performClick()
         rule.waitUntil(5_000) { !model.state.value.loading && model.state.value.account != null }
-        rule.onNodeWithText("-1234567.89").performScrollTo().assertIsDisplayed()
+        rule.onAllNodesWithText(CoreMoneyPresentation.format(BigDecimal("-1234567.89"), "CNY")).onFirst().assertIsDisplayed()
         rule.runOnIdle {
             assertEquals(BigDecimal("-1234567.89"), model.state.value.account!!.pockets.single().balance)
             assertFalse(model.state.value.saving)

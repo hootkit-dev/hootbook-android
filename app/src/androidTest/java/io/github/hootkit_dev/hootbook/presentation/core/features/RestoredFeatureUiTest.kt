@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.core.features
 
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -129,7 +130,9 @@ class RestoredFeatureUiTest {
                 onCancel = {}, onClearError = {}, onConnect = {}, onSelect = {}, onHolding = {}, onLink = {}, onDisconnect = {},
                 onManageAccounts = { managed = true }, onAccountHistory = {}, onAddInvestment = { created = true })
         } }
-        rule.onNodeWithContentDescription(context.getString(R.string.investments_add)).performClick()
+        // The extended FAB sits in the gesture area on some phones, where touch injection is refused.
+        rule.onAllNodes(hasClickAction() and hasAnyDescendant(hasText(context.getString(R.string.investments_add))), useUnmergedTree = true)
+            .onFirst().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         rule.runOnIdle { assertEquals(true, created); assertEquals(false, managed) }
     }
 
@@ -138,8 +141,8 @@ class RestoredFeatureUiTest {
         var opened: String? = null
         rule.setContent { HootbookTheme(dynamicColor = false) { CoreHoldingRow(holding, ListItemPosition.Single) { opened = holding.instrumentId } } }
         rule.onNodeWithText("EXM").assertIsDisplayed().performClick()
-        rule.onNodeWithText(context.getString(R.string.investments_value, "USD", "10.25")).assertIsDisplayed()
-        rule.onNodeWithText(context.getString(R.string.investments_pnl, "USD", "-2.25")).assertIsDisplayed()
+        rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("10.25"), "USD")).assertIsDisplayed()
+        rule.onNodeWithText(CoreMoneyPresentation.format(BigDecimal("-2.25"), "USD")).assertIsDisplayed()
         rule.runOnIdle { assertEquals("instrument-id", opened) }
     }
 }

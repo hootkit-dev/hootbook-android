@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,7 +69,7 @@ internal fun AccountDetail(
 ) {
     val symbols = state.customSymbols
     val enabled = !state.saving
-    LazyColumn(modifier, contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
+    LazyColumn(modifier.testTag("account_detail"), contentPadding = ScreenContentPadding, verticalArrangement = Arrangement.spacedBy(SectionSpacing)) {
         item(key = "summary") { AccountSummary(state, account) }
         if (account.broker != null || account.securities != null) item(key = "broker") {
             ListSection(title = stringResource(R.string.account_section_broker)) {
