@@ -419,7 +419,7 @@ internal fun RecentTransactionsCard(
                                 amountOverride = (when (transaction.kind) {
                                     TransactionKind.INCOME, TransactionKind.LOAN_IN -> "+"
                                     TransactionKind.TRANSFER -> ""
-                                    else -> "−"
+                                    else -> "-"
                                 }) + CurrencyFormatter.format(transaction.amount, transaction.currency, customSymbols),
                                 convertedAmount = conversions[transaction.id]?.amount, mainCurrency = mainCurrency,
                                 onClick = { onTransactionClick(transaction) },

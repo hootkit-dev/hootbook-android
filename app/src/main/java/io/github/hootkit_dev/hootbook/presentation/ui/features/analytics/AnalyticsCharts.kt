@@ -103,7 +103,7 @@ fun SpendingLineChart(
         modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = Spacing.md),
         data =
             series.map { type ->
-                val color = if (type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
+                val color = if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
                 Line(
                     label = seriesLabels.getValue(type),
                     values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
@@ -237,7 +237,7 @@ fun SpendingBarChart(
                         Bars.Data(
                             label = seriesLabels.getValue(type),
                             value = point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0,
-                            color = SolidColor((if (type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary).copy(alpha = 0.8f)),
+                            color = SolidColor((if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary).copy(alpha = 0.8f)),
                         )
                     },
                 )

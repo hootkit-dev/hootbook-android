@@ -65,7 +65,7 @@ fun NumberPad(
             .fillMaxHeight(if (doneButtonLabel == stringResource(R.string.update_balance)) 0.9f else 0.8f)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(Spacing.md),
+            modifier = Modifier.fillMaxSize().padding(Spacing.md).padding(bottom = 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
