@@ -207,7 +207,7 @@ fun HootbookNavHost(
                                     SharedTransitionLayout {
                                         HomeScreen(
                                             navController = navController,
-                                            onNavigateToProfile = { go(Profile) },
+                                            onNavigateToSettings = { go(Settings) },
                                             onNavigateToTransactions = { go(Transactions()) },
                                             onNavigateToSubscriptions = { go(Subscriptions()) },
                                             onNavigateToAnalytics = { go(Analytics) },

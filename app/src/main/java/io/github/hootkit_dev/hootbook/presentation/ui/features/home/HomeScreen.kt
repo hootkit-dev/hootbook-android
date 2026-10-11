@@ -118,7 +118,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBo
 fun SharedTransitionScope.HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     navController: NavController,
-    onNavigateToProfile: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToAnalytics: () -> Unit = {},
@@ -189,7 +189,7 @@ fun SharedTransitionScope.HomeScreen(
                     userName = prefs.userName,
                     profileImageUri = homeViewModel.assets.resolve(prefs.avatar)?.let { android.net.Uri.fromFile(it) },
                     profileBackgroundColor = Color(prefs.profileBackground),
-                    onProfileClick = onNavigateToProfile,
+                    onProfileClick = onNavigateToSettings,
                     onAiClick = { navController.safeNavigate(AiAssistant) }
                 )
             }
