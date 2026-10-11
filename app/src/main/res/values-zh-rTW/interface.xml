@@ -109,7 +109,6 @@
     <string name="ai_leave_out">不儲存這筆</string>
     <string name="ai_put_back">恢復儲存</string>
     <string name="ai_merchant">商戶</string>
-    <string name="ai_date_time_pattern">M月d日 HH:mm</string>
     <string name="ai_section_accounts">新帳戶 · %1$d 個</string>
     <string name="ai_new_account_note">會先於記在它上面的交易建立。若不儲存這個帳戶，相關交易會儲存為不關聯帳戶。</string>
     <string name="ai_section_account_changes">帳戶調整 · %1$d 項</string>

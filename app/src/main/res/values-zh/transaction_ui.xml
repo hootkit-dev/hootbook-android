@@ -3,12 +3,9 @@
     <string name="transaction_use_conversion">使用参考换算金额 %1$s %2$s</string>
     <string name="transaction_minimum">最低金额</string>
     <string name="transaction_maximum">最高金额</string>
-    <string name="transaction_amount_filter_unavailable">当前 Core 尚不支持金额筛选，因此无法使用这些条件。</string>
-    <string name="transaction_subcategory_filter_unavailable">当前 Core 尚不支持子分类筛选，可使用上方分类筛选。</string>
     <string name="transaction_filter_invalid">请检查日期和筛选条件。</string>
     <string name="transaction_page_position">第 %1$s–%2$s 条，共 %3$s 条</string>
-    <string name="transaction_sort_unavailable">当前 Core 尚不支持其他排序方式。</string>
     <string name="transaction_currency_summary">各币种汇总</string>
-    <string name="transaction_unsupported_merchant">当前 Core 尚不支持按商户精确筛选，请使用搜索查找商户名称和备注。</string>
+    <string name="transaction_unsupported_merchant">暂不支持按商户精确筛选，请用搜索查找商户名称。</string>
     <string name="transaction_load_more">加载更多</string>
 </resources>

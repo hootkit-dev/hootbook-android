@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_history_invalid_amount">Enter a valid decimal amount</string>
-  <string name="core_history_invalid_date">Use a valid date in YYYY-MM-DD format</string>
+  <string name="core_history_invalid_date">Enter a valid date</string>
   <string name="core_history_query_failed">Budget history could not be loaded. Retry.</string>
   <string name="core_history_read_only">Past periods are read-only.</string>
   <string name="core_history_categories">Historical category totals</string>
   <string name="core_history_load_older">Load earlier periods</string>
-  <string name="core_history_transaction_gap">Core does not expose the exact transactions included in this budget period. No approximate ledger list is shown.</string>
 </resources>

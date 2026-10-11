@@ -29,7 +29,7 @@
     <string name="core_ai_leave_body">Unsaved proposals will be discarded. Saved changes stay, but this session’s undo token expires when the session is released.</string>
     <string name="core_ai_leave">Leave</string>
     <string name="core_ai_keep_reviewing">Keep reviewing</string>
-    <string name="core_ai_apply_warning">Save %1$d selected proposals in one Core transaction? Account balances, transaction edits, and deletions are included when selected.</string>
+    <string name="core_ai_apply_warning">Save the %1$d selected changes together? Ticked balance updates, edits and deletions are saved too.</string>
     <string name="core_ai_restart_warning">Discard the current review and remove inbox copies? Already saved ledger changes remain unless you undo first. Original shared files remain untouched.</string>
     <string name="core_ai_pdf_password">PDF password</string>
     <string name="core_ai_continue">Continue</string>
@@ -51,9 +51,9 @@
     <string name="core_ai_kind">Kind</string>
     <string name="core_ai_amount">Amount</string>
     <string name="core_ai_currency">Currency</string>
-    <string name="core_ai_date">Local date/time (ISO 8601)</string>
+    <string name="core_ai_date">Date and time</string>
     <string name="core_ai_merchant">Merchant</string>
-    <string name="core_ai_default">Core default</string>
+    <string name="core_ai_default">Default</string>
     <string name="core_ai_account">Account</string>
     <string name="core_ai_category">Category</string>
     <string name="core_ai_subcategory">Subcategory</string>

@@ -8,7 +8,6 @@
     <string name="core_settings_default_account">默认账户</string>
     <string name="core_settings_no_default">不设默认账户</string>
     <string name="core_settings_language">语言</string>
-    <string name="core_settings_language_note">同步更新 Android 界面及 Core 分类显示名，下次启动仍生效。</string>
     <string name="core_settings_system_language">跟随系统</string>
     <string name="core_settings_currencies">货币与汇率</string>
     <string name="core_settings_backup">文件备份与恢复</string>

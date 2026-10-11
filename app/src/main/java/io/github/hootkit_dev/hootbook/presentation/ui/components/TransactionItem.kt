@@ -83,7 +83,7 @@ fun TransactionItem(
                     if (transaction.attachments.isNotEmpty()) Icon(Icons.Rounded.AttachFile, stringResource(R.string.core_full_attachment_view), Modifier.size(16.dp), tint = muted)
                     if (transaction.subscriptionId != null) Icon(Icons.Rounded.Repeat, stringResource(R.string.core_full_open_subscription), Modifier.size(16.dp), tint = muted)
                 }
-                if (transaction.deleted) Text(stringResource(R.string.core_full_label_11), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+                if (transaction.deleted) Text(stringResource(R.string.txn_deleted), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
             }
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 160.dp)) {
                 Text(sign + CoreMoneyPresentation.format(amount, currency, customSymbols), color = color,

@@ -62,7 +62,6 @@
   <string name="core_debts_due_display">到期：%1$s</string>
   <string name="core_debts_avatar_notice">联系人头像引用：%1$s</string>
   <string name="core_debts_attachments_notice">附件引用：%1$s</string>
-  <string name="core_debts_platform_notice">Android 管理所选联系人、拨号和文件，Core 管理账本引用。</string>
   <string name="core_debts_orphan">此人员已删除，但仍有遗留记录。编辑记录即可改到其他人员名下。</string>
     <string name="core_debts_kind">类型</string>
     <string name="core_debts_remove_avatar">移除头像</string>

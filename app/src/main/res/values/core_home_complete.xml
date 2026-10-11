@@ -5,7 +5,7 @@
   <string name="core_complete_profile">Profile</string>
   <string name="core_complete_banner">Profile banner</string>
   <string name="core_complete_refresh">Refresh</string>
-  <string name="core_complete_query_failed">Core data could not be refreshed. Retry.</string>
+  <string name="core_complete_query_failed">Could not load your data. Try again.</string>
   <string name="core_complete_widgets_failed">Some home widgets could not be refreshed. Retry.</string>
   <string name="core_complete_display_missing">Display conversion unavailable for %1$s; original currency is retained.</string>
   <string name="core_complete_securities">Securities value: %1$s</string>
@@ -31,7 +31,6 @@
   <string name="core_complete_recent">Recent transactions</string>
   <string name="core_complete_transactions">Transactions</string>
   <string name="core_complete_heatmap">Transaction activity</string>
-  <string name="core_complete_heatmap_note">Daily transaction counts from Core for the previous 26 weeks.</string>
   <string name="core_complete_templates">Quick templates</string>
   <string name="core_complete_categories">Categories</string>
   <string name="core_complete_settings">Business settings</string>

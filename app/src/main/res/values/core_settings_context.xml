@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_locale_command_failed">The language command was rejected before applying UI preferences. Your UI choice is unchanged. Retry language synchronization.</string>
-  <string name="core_locale_rolled_back">UI language persistence failed. Compensation completed for the prior selection and Core locale. Retry the language change.</string>
-  <string name="core_locale_diverged">UI and Core language state may differ because the result or rollback could not be confirmed. Retry synchronization before continuing.</string>
+  <string name="core_locale_rolled_back">The language could not be saved, so the previous one was kept. Try again.</string>
+  <string name="core_locale_diverged">The language may not have been saved everywhere. Try again before you continue.</string>
   <string name="core_locale_retry_sync">Retry synchronizing the UI language</string>
   <string name="core_currency_download_failed">Downloading rates failed. The existing rates are kept; check the network and try again.</string>
 </resources>

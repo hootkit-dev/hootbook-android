@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_history_invalid_amount">请输入有效十进制金额</string>
-  <string name="core_history_invalid_date">请使用 YYYY-MM-DD 格式的有效日期</string>
+  <string name="core_history_invalid_date">请输入有效日期</string>
   <string name="core_history_query_failed">预算历史加载失败，请重试。</string>
   <string name="core_history_read_only">历史周期只读。</string>
   <string name="core_history_categories">历史分类汇总</string>
   <string name="core_history_load_older">加载更早周期</string>
-  <string name="core_history_transaction_gap">Core 未提供此预算周期准确计入的交易列表，因此不显示近似账本筛选。</string>
 </resources>

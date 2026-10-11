@@ -94,7 +94,6 @@
     <string name="ai_leave_out">Leave out</string>
     <string name="ai_put_back">Put back</string>
     <string name="ai_merchant">Payee</string>
-    <string name="ai_date_time_pattern">MMM d, HH:mm</string>
     <string name="ai_section_accounts">New accounts · %1$d</string>
     <string name="ai_new_account_note">Created before the transactions on it. Left out, those transactions are saved without an account.</string>
     <string name="ai_section_account_changes">Account changes · %1$d</string>

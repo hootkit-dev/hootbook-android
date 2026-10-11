@@ -235,7 +235,7 @@ class RealMainJourneys {
     }
     @Test fun uiExpenseCreateEditDeleteUndoThroughTypedEntry()=runBlocking{
         val c=f.core();val merchant="${f.tag} UI expense";typed(QuickEntry.Entry.NewTransaction)
-        transactionAmount("9.25");field(R.string.core_full_label_67,merchant)
+        transactionAmount("9.25");field(R.string.txn_merchant,merchant)
         transactionCategory(c.categories().use{it.list(CategoryKind.EXPENSE,false).first().displayName})
         click(R.string.save)
         val filter=TransactionFilter(from=null,to=null,kinds=emptyList(),accountIds=emptyList(),categoryIds=emptyList(),text=merchant,currency=null,deleted=DeletedFilter.INCLUDE,sort=SortOrder.NEWEST_FIRST)
@@ -479,7 +479,7 @@ class RealMainJourneys {
     }
     @Test fun uiAttachmentSafCancelSelectPreviewShareAndConfirmedSave()=runBlocking{
         val c=f.core();val merchant="${f.tag} SAF expense";typed(QuickEntry.Entry.NewTransaction)
-        transactionAmount("3.50");field(R.string.core_full_label_67,merchant)
+        transactionAmount("3.50");field(R.string.txn_merchant,merchant)
         click(R.string.core_full_attachment_add);awaitCondition{nodes().any{it.packageName?.toString()=="com.google.android.documentsui"}};systemBack()
         awaitCondition{nodes().any{it.isEditable&&it.text?.toString()==merchant}}
         click(R.string.core_full_attachment_add);documentDownloads();clickText("hoot-core-accept-image.png")

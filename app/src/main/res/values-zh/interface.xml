@@ -94,7 +94,6 @@
     <string name="ai_leave_out">不保存这笔</string>
     <string name="ai_put_back">恢复保存</string>
     <string name="ai_merchant">商户</string>
-    <string name="ai_date_time_pattern">M月d日 HH:mm</string>
     <string name="ai_section_accounts">新账户 · %1$d 个</string>
     <string name="ai_new_account_note">会先于记在它上面的交易创建。若不保存这个账户，相关交易会保存为不关联账户。</string>
     <string name="ai_section_account_changes">账户调整 · %1$d 项</string>

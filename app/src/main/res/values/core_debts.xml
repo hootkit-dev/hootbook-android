@@ -62,7 +62,6 @@
   <string name="core_debts_due_display">Due: %1$s</string>
   <string name="core_debts_avatar_notice">Person avatar reference: %1$s</string>
   <string name="core_debts_attachments_notice">Attachment references: %1$s</string>
-  <string name="core_debts_platform_notice">Android manages selected contacts, dialing and files; Core owns their ledger references.</string>
   <string name="core_debts_orphan">This person was deleted, but some of their records remain. Edit a record to move it to another person.</string>
     <string name="core_debts_kind">Type</string>
     <string name="core_debts_remove_avatar">Remove photo</string>

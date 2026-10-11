@@ -8,7 +8,6 @@
     <string name="core_settings_default_account">Default account</string>
     <string name="core_settings_no_default">No default account</string>
     <string name="core_settings_language">Language</string>
-    <string name="core_settings_language_note">Updates Android UI and Core category names. Kept for the next launch.</string>
     <string name="core_settings_system_language">System default</string>
     <string name="core_settings_currencies">Currencies and exchange rates</string>
     <string name="core_settings_backup">File backup and restore</string>
