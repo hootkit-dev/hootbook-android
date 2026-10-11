@@ -43,7 +43,7 @@ jobs:
           key: ${{ runner.os }}-android-deps-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
       - name: Compile once and run the complete Android regression checks
         run: |
-          ./gradlew :core-platform:testDebugUnitTest :core-platform:lintDebug \
+          ./gradlew :core-bindings:assembleDebug :core-platform:testDebugUnitTest :core-platform:lintDebug \
             :app:testStandardDebugUnitTest :app:lintStandardDebug \
             :app:assembleStandardDebug :app:assembleStandardDebugAndroidTest \
             :core-platform:assembleDebugAndroidTest \
