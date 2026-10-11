@@ -199,6 +199,13 @@ fun TransactionsScreen(
     val selectionMode = uiState.selectionMode
     val selectedTransactionIds = uiState.selectedIds
     val groupedTransactions = remember(uiState.transactions) { groupTransactionsByDate(uiState.transactions) }
+    val subcategoriesById = remember(uiState.categories) {
+        val map = HashMap<String, dev.hootkit.core.Subcategory>()
+        uiState.categories.values.forEach { cat ->
+            cat.subcategories.forEach { sub -> map[sub.id] = sub }
+        }
+        map
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(uiState.error) {
@@ -725,7 +732,7 @@ fun TransactionsScreen(
                                         convertedAmount = uiState.convertedAmounts[transaction.id],
                                         transaction = transaction,
                                         categoryEntity = uiState.categories[transaction.categoryId],
-                                        subcategoryEntity = uiState.categories[transaction.categoryId]?.subcategories?.find { it.id == transaction.subcategoryId },
+                                        subcategoryEntity = transaction.subcategoryId?.let { subcategoriesById[it] },
                                         accountIconName = uiState.accounts[transaction.accountId]?.icon,
                                         accountColorHex = uiState.accounts[transaction.accountId]?.color,
                                         showDate = dateGroup == DateGroup.EARLIER,

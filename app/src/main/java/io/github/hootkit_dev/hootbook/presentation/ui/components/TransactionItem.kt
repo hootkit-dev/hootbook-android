@@ -441,49 +441,49 @@ fun TransactionItem(
                                     Icons.Rounded.SwapHoriz,
                                     contentDescription = stringResource(R.string.type_transfer),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) transfer_light else transfer_dark
+                                    tint = if (!isDark) transfer_light else transfer_dark
                                 )
 
                                 TransactionKind.INVESTMENT -> Icon(
                                     Icons.AutoMirrored.Filled.ShowChart,
                                     contentDescription = stringResource(R.string.type_investment),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) investment_light else investment_dark
+                                    tint = if (!isDark) investment_light else investment_dark
                                 )
 
                                 TransactionKind.INCOME -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = stringResource(R.string.type_income),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) income_light else income_dark
+                                    tint = if (!isDark) income_light else income_dark
                                 )
 
                                 TransactionKind.EXPENSE -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = stringResource(R.string.type_expense),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) expense_light else expense_dark
+                                    tint = if (!isDark) expense_light else expense_dark
                                 )
 
                                 TransactionKind.UNKNOWN -> Icon(
                                     Icons.Rounded.SwapHoriz,
                                     contentDescription = stringResource(R.string.type_balance_update),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) transfer_light else transfer_dark
+                                    tint = if (!isDark) transfer_light else transfer_dark
                                 )
 
                                 TransactionKind.LOAN_OUT -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = stringResource(R.string.type_lent),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) expense_light else expense_dark
+                                    tint = if (!isDark) expense_light else expense_dark
                                 )
 
                                 TransactionKind.LOAN_IN -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = stringResource(R.string.type_borrowed),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) income_light else income_dark
+                                    tint = if (!isDark) income_light else income_dark
                                 )
                             }
                         }

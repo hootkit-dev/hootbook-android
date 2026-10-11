@@ -51,7 +51,7 @@ android {
         manifestPlaceholders["coreAcceptanceCleartext"] = "false"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 97
         versionName = "2.1.63"
         // Pure UI/context instrumentation must never construct production/Hilt Application.

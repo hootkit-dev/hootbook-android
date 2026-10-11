@@ -36,37 +36,58 @@ enum class ListItemPosition {
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val listTopItemShape
+val listTopItemShape: CornerBasedShape
     @Composable
-    get() = MaterialTheme.shapes.largeIncreased.copy(
-        bottomStart = MaterialTheme.shapes.small.bottomStart,
-        bottomEnd = MaterialTheme.shapes.small.bottomEnd
-    )
+    get() {
+        val shapes = MaterialTheme.shapes
+        return androidx.compose.runtime.remember(shapes) {
+            shapes.largeIncreased.copy(
+                bottomStart = shapes.small.bottomStart,
+                bottomEnd = shapes.small.bottomEnd
+            )
+        }
+    }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val listMiddleItemShape
+val listMiddleItemShape: CornerBasedShape
     @Composable get() = MaterialTheme.shapes.small
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val listBottomItemShape
+val listBottomItemShape: CornerBasedShape
     @Composable
-    get() = MaterialTheme.shapes.largeIncreased.copy(
-        topStart = MaterialTheme.shapes.small.topStart,
-        topEnd = MaterialTheme.shapes.small.topEnd
-    )
+    get() {
+        val shapes = MaterialTheme.shapes
+        return androidx.compose.runtime.remember(shapes) {
+            shapes.largeIncreased.copy(
+                topStart = shapes.small.topStart,
+                topEnd = shapes.small.topEnd
+            )
+        }
+    }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val listSingleItemShape
+val listSingleItemShape: CornerBasedShape
     @Composable get() = MaterialTheme.shapes.largeIncreased
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ListItemPosition.toShape() =
+fun ListItemPosition.toShape(): CornerBasedShape {
+    val shapes = MaterialTheme.shapes
+    return androidx.compose.runtime.remember(shapes, this) {
         when (this) {
-            ListItemPosition.Top -> listTopItemShape
-            ListItemPosition.Middle -> listMiddleItemShape
-            ListItemPosition.Bottom -> listBottomItemShape
-            ListItemPosition.Single -> listSingleItemShape
+            ListItemPosition.Top -> shapes.largeIncreased.copy(
+                bottomStart = shapes.small.bottomStart,
+                bottomEnd = shapes.small.bottomEnd
+            )
+            ListItemPosition.Middle -> shapes.small
+            ListItemPosition.Bottom -> shapes.largeIncreased.copy(
+                topStart = shapes.small.topStart,
+                topEnd = shapes.small.topEnd
+            )
+            ListItemPosition.Single -> shapes.largeIncreased
         }
+    }
+}
 
 val listItemPadding = PaddingValues(horizontal = 16.dp, vertical = 1.5.dp)
 

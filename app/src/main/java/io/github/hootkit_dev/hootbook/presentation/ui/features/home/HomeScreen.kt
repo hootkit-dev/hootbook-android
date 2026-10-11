@@ -231,7 +231,6 @@ fun SharedTransitionScope.HomeScreen(
                                 contentDescription = stringResource(R.string.banner),
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .hazeSource(hazeStateBanner)
                                     .alpha(0.5f)
                                     .bottomFade(0.4f)
                                     .hazeSource(hazeStateBanner),
