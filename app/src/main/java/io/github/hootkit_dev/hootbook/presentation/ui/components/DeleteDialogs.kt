@@ -60,6 +60,7 @@ fun DeleteTransactionDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
     isDeleting: Boolean,
+    permanent: Boolean = false,
     blurEffects: Boolean = LocalBlurEffects.current,
     hazeState: HazeState = remember { HazeState() },
 ) {
@@ -76,7 +77,7 @@ fun DeleteTransactionDialog(
         title = { Text(stringResource(R.string.delete_transaction_title)) },
         text = {
             Text(
-                text = stringResource(R.string.delete_transaction_confirm),
+                text = stringResource(if (permanent) R.string.delete_multiple_transactions_confirm else R.string.restore_transaction_delete_confirm),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -100,13 +101,15 @@ fun DeleteTransactionDialog(
 fun DeleteMultipleTransactionsDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
-    selectedTransactionIds: Set<Long>,
+    selectedTransactionIds: Set<String>,
+    permanent: Boolean = false,
+    busy: Boolean = false,
     blurEffects: Boolean = LocalBlurEffects.current,
     hazeState: HazeState = remember { HazeState() },
 ) {
     val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!busy) onDismiss() },
         icon = {
             Icon(
                 imageVector = Iconax.Bag,
@@ -119,14 +122,14 @@ fun DeleteMultipleTransactionsDialog(
         },
         text = {
             Text(
-                text = stringResource(R.string.delete_multiple_transactions_confirm),
+                text = stringResource(if (permanent) R.string.delete_multiple_transactions_confirm else R.string.restore_transaction_delete_confirm),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
         confirmButton = {
             DialogConfirmButton(
                 text = stringResource(R.string.delete),
-                onClick = onDelete,
+                onClick = { if (!busy) onDelete() },
                 destructive = true
             )
         },

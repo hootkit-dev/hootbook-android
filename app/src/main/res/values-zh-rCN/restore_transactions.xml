@@ -1,0 +1,3 @@
+<resources>
+    <string name="restore_transaction_delete_confirm">将所选交易移入回收站？删除后可立即撤销。</string>
+</resources>

@@ -1,0 +1,3 @@
+<resources>
+    <string name="restore_transaction_delete_confirm">Move these transactions to the recycle bin? You can undo this immediately after deleting.</string>
+</resources>

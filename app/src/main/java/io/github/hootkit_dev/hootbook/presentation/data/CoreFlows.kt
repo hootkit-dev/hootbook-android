@@ -38,3 +38,12 @@ fun <T> CoreSession.observe(
  */
 suspend fun <T> CoreSession.withCore(block: suspend (HootKitCoreInterface) -> T): T =
     withContext(Dispatchers.IO) { block(awaitCore()) }
+
+/** Keep query failures in state so a later ChangeBus revision can retry the query. */
+suspend fun <T> coreQuery(query: suspend () -> T): Result<T> = try {
+    Result.success(query())
+} catch (cancelled: kotlinx.coroutines.CancellationException) {
+    throw cancelled
+} catch (failure: Exception) {
+    Result.failure(failure)
+}
