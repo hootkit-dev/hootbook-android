@@ -166,7 +166,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                                 currencies = account.pockets.map { it.currency }, selected = uiState.currency ?: account.mainCurrency,
                                 onSelect = accountDetailViewModel::selectCurrency)
                             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                FilledTonalButton(onClick = { showCalibration = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) {
+                                FilledTonalButton(onClick = { showCalibration = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1.8f)) {
                                     Text(stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.update_outstanding_title else R.string.balance_calibration), maxLines = 1)
                                 }
                                 OutlinedButton(onClick = { showHistory = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) {

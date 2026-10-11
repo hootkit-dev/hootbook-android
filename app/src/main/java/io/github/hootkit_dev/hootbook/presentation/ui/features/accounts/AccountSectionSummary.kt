@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.AccountSurfaceElevation
 import io.github.hootkit_dev.hootbook.R
@@ -67,11 +68,26 @@ internal fun AccountSectionSummary(
         Column(Modifier.padding(horizontal = 4.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (onToggle != null) Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (onToggle != null) Text(stringResource(titleOverride ?: title), style = MaterialTheme.typography.titleLargeEmphasized, modifier = Modifier.weight(1f))
-                Text(listOfNotNull(
-                    stringResource(R.string.overview_count, accounts.size).takeIf { accounts.isNotEmpty() || connectionCount == 0 },
-                    if (connectionCount > 0) pluralStringResource(R.plurals.broker_connections, connectionCount, connectionCount) else null,
-                ).joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(titleOverride ?: title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    val countText = listOfNotNull(
+                        stringResource(R.string.overview_count, accounts.size).takeIf { accounts.isNotEmpty() || connectionCount == 0 },
+                        if (connectionCount > 0) pluralStringResource(R.plurals.broker_connections, connectionCount, connectionCount) else null,
+                    ).joinToString(" · ")
+                    Text(
+                        countText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 if (onToggle != null) {
                     val toggleLabel = stringResource(if (expanded) R.string.account_section_collapse_all else R.string.account_section_expand_all, stringResource(title))
                     val toggleState = stringResource(if (expanded) R.string.account_section_expanded else R.string.account_section_collapsed)

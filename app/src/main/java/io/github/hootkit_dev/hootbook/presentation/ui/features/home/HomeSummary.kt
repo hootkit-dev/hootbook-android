@@ -320,7 +320,7 @@ internal fun AccountCategoryList(
                         )
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(stringResource(item.key.titleRes), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(item.key.titleRes), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             when {
                                 empty -> stringResource(R.string.home_connect_hint)
@@ -330,11 +330,13 @@ internal fun AccountCategoryList(
                                 else -> stringResource(R.string.overview_count, item.value.size)
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     if (item.key == AccountCategory.CREDIT_CARDS) overview?.creditAvailable?.let { available ->
-                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                        Column(horizontalAlignment = Alignment.End) {
                             Text(CurrencyFormatter.formatCurrency(available.amount, available.currency),
                                 style = MaterialTheme.typography.titleMedium.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(stringResource(R.string.label_available), style = MaterialTheme.typography.bodySmall,

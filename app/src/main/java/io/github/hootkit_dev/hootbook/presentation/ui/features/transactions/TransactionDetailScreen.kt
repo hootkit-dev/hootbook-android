@@ -2768,7 +2768,7 @@ private fun ReceiptInfoRow(
                                         icon()
                                     }
                                     Text(
-                                        text = value, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 96.dp),
+                                        text = value, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -2799,7 +2799,7 @@ private fun ReceiptInfoRow(
                                     }
                                     if (subValue != null) {
                                         Text(
-                                            text = subValue,
+                                            text = subValue, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp),
                                             style = MaterialTheme.typography.bodySmall,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
