@@ -7,7 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreTextField
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreTextField
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset

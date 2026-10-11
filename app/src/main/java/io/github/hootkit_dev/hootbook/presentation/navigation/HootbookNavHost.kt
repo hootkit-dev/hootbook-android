@@ -4,6 +4,7 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -50,8 +51,7 @@ import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.CoreIntentIngress
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
-import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreAccountsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreAccountsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
 import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
@@ -318,12 +318,12 @@ fun HootbookNavHost(
                                 popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
-                                ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until account management is migrated
-                                    CoreAccountsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
-                                    )
+                                AccountsListDetail(animatedContentScope = this@composable,
+                                    onOpen = { go(AccountDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
+                                    onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) }) { open ->
+                                    ManageAccountsScreen(onNavigateBack = back, onNavigateToAccountDetail = open,
+                                        onNavigateToAddAccount = { go(AddAccount(it?.name)) },
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
                                 }
                             }
                             composable<AccountCategoryRoute>(
@@ -332,12 +332,14 @@ fun HootbookNavHost(
                                 popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
-                                ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until account categories is migrated
-                                    CoreAccountsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
-                                    )
+                                val route = entry.toRoute<AccountCategoryRoute>()
+                                val category = AccountCategory.entries.firstOrNull { it.name == route.category }
+                                AccountsListDetail(animatedContentScope = this@composable,
+                                    onOpen = { go(AccountDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
+                                    onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) }) { open ->
+                                    ManageAccountsScreen(onNavigateBack = back, onNavigateToAccountDetail = open,
+                                        onNavigateToAddAccount = { go(AddAccount(it?.name)) }, category = category,
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
                                 }
                             }
                             composable<AccountDetail>(
@@ -346,14 +348,14 @@ fun HootbookNavHost(
                                 popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
+                                val route = entry.toRoute<AccountDetail>()
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until account detail is migrated
-                                    val route = entry.toRoute<AccountDetail>()
-                                    CoreAccountsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
-                                        initialAccountId = route.accountId, initialHistory = route.history,
-                                    )
+                                    SharedTransitionLayout {
+                                        AccountDetailScreen(accountId = route.accountId, initialHistory = route.history,
+                                            animatedContentScope = this@composable, onNavigateBack = back,
+                                            onTransaction = { go(TransactionDetail(it)) },
+                                            onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
+                                    }
                                 }
                             }
                             composable<AddAccount>(
@@ -362,18 +364,11 @@ fun HootbookNavHost(
                                 popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
+                                val route = entry.toRoute<AddAccount>()
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until add account is migrated
-                                    val vm: CoreAccountsViewModel = hiltViewModel()
-                                    var opened by rememberSaveable { mutableStateOf(false) }
-                                    LaunchedEffect(Unit) {
-                                        if (!opened) { opened = true; if (vm.state.value.draft == null) vm.edit() }
-                                    }
-                                    CoreAccountsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
-                                        viewModel = vm,
-                                    )
+                                    AddAccountScreen(onNavigateBack = back,
+                                        initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category },
+                                        onInvestments = { go(Investments()) })
                                 }
                             }
                             composable<Categories>(
@@ -800,4 +795,30 @@ private fun TemporaryBudgetScreen(
         }
     }
     CoreBudgetsScreen(back, initialBudgetId = budgetId, viewModel = vm)
+}
+
+
+/** Original wide-window account list/detail split, keyed by the Core account id. */
+@Composable
+private fun AccountsListDetail(
+    animatedContentScope: AnimatedVisibilityScope,
+    onOpen: (String) -> Unit,
+    onTransaction: (String) -> Unit,
+    onBrokerage: (Long, String) -> Unit,
+    list: @Composable (openAccount: (String) -> Unit) -> Unit,
+) {
+    if (LocalWindowLayout.current.widthDp < ACCOUNT_LIST_DETAIL_MIN_WIDTH_DP) {
+        ReadableWidth { list(onOpen) }
+        return
+    }
+    var accountId by rememberSaveable { mutableStateOf<String?>(null) }
+    BackHandler(enabled = accountId != null) { accountId = null }
+    Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { list { accountId = it } }
+        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Box(Modifier.weight(1f)) {
+            AccountDetailPane(accountId = accountId, animatedContentScope = animatedContentScope,
+                onTransaction = onTransaction, onBrokerage = onBrokerage, onClose = { accountId = null })
+        }
+    }
 }

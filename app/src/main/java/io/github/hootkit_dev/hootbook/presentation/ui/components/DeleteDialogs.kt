@@ -299,7 +299,7 @@ fun DeleteAccountDialog(
                     )
                 ) {
                     Text(
-                        text = stringResource(R.string.delete_account_warning),
+                        text = stringResource(R.string.account_delete_core_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(Spacing.sm)

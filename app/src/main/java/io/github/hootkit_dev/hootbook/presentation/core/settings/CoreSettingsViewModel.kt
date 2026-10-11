@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.hootkit.core.*
 import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
-import io.github.hootkit_dev.hootbook.presentation.core.accounts.coreFailureText
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

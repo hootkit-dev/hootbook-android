@@ -508,7 +508,7 @@ fun CategoriesScreen(
                 onDelete = if (editingSubcategory != null) {
                     { subcategoryId ->
                         editingSubcategory?.let { categoriesViewModel.deleteSubcategory(it) }
-                        
+
                     }
                 } else null
             )

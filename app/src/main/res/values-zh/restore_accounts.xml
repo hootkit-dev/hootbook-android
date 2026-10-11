@@ -1,0 +1,4 @@
+<resources>
+    <string name="account_history_record_count">%1$d 条记录</string>
+    <string name="account_delete_core_warning">这将永久删除此账户的所有余额历史记录。此操作无法撤销。</string>
+</resources>

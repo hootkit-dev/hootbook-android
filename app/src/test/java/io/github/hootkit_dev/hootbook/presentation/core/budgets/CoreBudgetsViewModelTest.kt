@@ -98,7 +98,7 @@ class CoreBudgetsViewModelTest {
         model.limitAmountChanged("50")
         model.saveLimit(); runCurrent()
         assertEquals(row.id, model.state.value.selectedId)
-        assertEquals(io.github.hootkit_dev.hootbook.presentation.core.accounts.coreFailureText(IllegalStateException("fixture failure")),model.state.value.error)
+        assertEquals(io.github.hootkit_dev.hootbook.presentation.format.coreFailureText(IllegalStateException("fixture failure")),model.state.value.error)
         assertFalse(model.state.value.error!!.contains("fixture failure"))
         assertEquals("50", model.state.value.limitDraft!!.amount)
         assertEquals(row.id, model.state.value.limitDraft!!.budgetId)

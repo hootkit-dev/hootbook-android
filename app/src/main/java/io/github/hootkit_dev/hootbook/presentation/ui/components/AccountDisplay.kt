@@ -55,7 +55,18 @@ fun List<Account>.groupedForDisplay(): List<Pair<AccountKind, List<Account>>> =
     sortedWith(compareBy<Account>({ !it.isDefault }, { it.institutionKey ?: it.name }, { it.name }))
         .groupBy { it.kind }.toList()
 @Composable
-fun accountBalanceText(account: Account): String = CoreMoneyPresentation.formatCurrency(account.total.amount, account.total.currency)
+fun accountBalanceText(account: Account): String {
+    val pocket = account.pockets.firstOrNull { it.currency == account.mainCurrency }
+    return if (account.pockets.size > 1 || account.securities != null) CoreMoneyPresentation.formatCurrency(account.total.amount, account.total.currency)
+        else CoreMoneyPresentation.format(pocket?.balance, account.mainCurrency)
+}
+
+@Composable
+fun AccountIncompleteIndicator(account: Account) {
+    if (!account.totalComplete) Text(stringResource(R.string.core_complete_incomplete),
+        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp))
+}
 @Composable
 fun accountCurrenciesText(account: Account): String? = if (account.pockets.size > 1)
     stringResource(R.string.account_holds_currencies, account.pockets.joinToString(stringResource(R.string.list_separator)) { it.currency }) else null
@@ -139,6 +150,7 @@ fun RowScope.AccountRowContent(account: Account, showBalance: Boolean = true, no
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
+            if (!account.totalComplete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.labelSmall)
             val currencies = accountCurrenciesText(account)
             if (currencies != null) {
                 Text(

@@ -155,7 +155,7 @@ class CoreCurrenciesViewModelTest {
             else -> query(method, listOf(original))
         } } }
         store.put("vm", vm); runCurrent(); vm.download(true); runCurrent()
-        assertTrue(vm.state.value.downloadFailed); assertEquals(io.github.hootkit_dev.hootbook.presentation.core.accounts.coreFailureText(CoreException.Platform("HTTP transport unavailable")),vm.state.value.error)
+        assertTrue(vm.state.value.downloadFailed); assertEquals(io.github.hootkit_dev.hootbook.presentation.format.coreFailureText(CoreException.Platform("HTTP transport unavailable")),vm.state.value.error)
         assertFalse(vm.state.value.error!!.contains("HTTP transport unavailable")); assertSame(original, vm.state.value.rates.single())
         assertNull(vm.state.value.refreshOutcome); assertEquals(opened, destroyed)
         fail = false; vm.download(true); runCurrent(); assertNull(vm.state.value.error);assertFalse(vm.state.value.downloadFailed)
