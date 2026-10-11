@@ -62,18 +62,21 @@ class CoreUiPlatformTest {
     }
     @Test fun legacyImageAndMerchantIndexActuallyInstalledAndReapplyHasNoLedgerWrite()=runTest {
         clear();val prefs=CoreUiPreferencesStore(context);val assets=CorePlatformAssets(context);val locale=FakeLocale()
-        val applier=BackupPlatformApplier(prefs,assets,locale,{},{});val op=operation(true,"""{"profile":{"user_name":"Restored","profile_image_uri":"file:///old/install/private/avatar.jpg"}}""",listOf("profile/profile_image","merchant_icons/icon.png","merchant_icons/index.json"))
+        var restored = 0
+        val applier=BackupPlatformApplier(prefs,assets,locale,{},{}, { restored++ });val op=operation(true,"""{"profile":{"user_name":"Restored","profile_image_uri":"file:///old/install/private/avatar.jpg"}}""",listOf("profile/profile_image","merchant_icons/icon.png","merchant_icons/index.json"))
         image(File(op.source.file.parentFile,"platform/profile/profile_image"));image(File(op.source.file.parentFile,"platform/merchant_icons/icon.png"))
         File(op.source.file.parentFile,"platform/merchant_icons/index.json").writeText("""{"Coffee":"icon.png"}""")
         applier.apply(op);assertEquals("Restored",prefs.state.value.userName);assertNotNull(assets.resolve(prefs.state.value.avatar));assertNotNull(assets.merchantIcon(" coffee "))
-        val first=prefs.state.value;applier.apply(op);assertEquals(first,prefs.state.value);assertTrue(op.source.file.exists())
+        assertEquals(1, restored)
+        val first=prefs.state.value;applier.apply(op);assertEquals(first,prefs.state.value);assertTrue(op.source.file.exists());assertEquals(2, restored)
     }
     @Test fun localeFailureDoesNotApplyPreferencesAndCompensatesCoreLocale()=runTest {
         clear();val prefs=CoreUiPreferencesStore(context);prefs.update{it.copy(userName="Before")};val locale=FakeLocale().apply{failure=true};val calls=mutableListOf<String>()
-        val applier=BackupPlatformApplier(prefs,CorePlatformAssets(context),locale,{calls+=it},{})
+        var restored = 0
+        val applier=BackupPlatformApplier(prefs,CorePlatformAssets(context),locale,{calls+=it},{}, { restored++ })
         val json=CoreUiPreferencesCodec.encode(CoreUiPreferences(userName="After")).put("locale","ja").toString()
         try{applier.apply(operation(false,json,emptyList()));fail()}catch(_:IllegalStateException){}
-        assertEquals("Before",prefs.state.value.userName);assertEquals(listOf("ja","en"),calls)
+        assertEquals("Before",prefs.state.value.userName);assertEquals(listOf("ja","en"),calls);assertEquals(0, restored)
     }
     @Test fun exportContainsActivePreferenceAndAssetReferences()=runTest {
         clear();val prefs=CoreUiPreferencesStore(context);val assets=CorePlatformAssets(context);val path=assets.installImage(image(temp.newFile("avatar.png")));prefs.update{it.copy(userName="Saved",avatar=path)}

@@ -25,12 +25,15 @@ class BackupPlatformApplier internal constructor(
     private val locale: io.github.hootkit_dev.hootbook.presentation.app.UiLocalePreference,
     private val setCoreLocale: suspend (String) -> Unit,
     private val switchIcon: suspend (io.github.hootkit_dev.hootbook.data.preferences.AppIcon) -> Unit,
+    private val onRestored: () -> Unit = {},
 ) {
     @Inject constructor(@ApplicationContext context: Context, preferences: CoreUiPreferencesStore,
-        assets: CorePlatformAssets, locale: LocaleController, session: CoreSession) : this(
+        assets: CorePlatformAssets, locale: LocaleController, session: CoreSession,
+        rates: io.github.hootkit_dev.hootbook.core.CoreRateRefreshCoordinator) : this(
         preferences, assets, locale,
         { tag -> session.awaitCore().settings().use { it.setLocale(tag) } },
         { icon -> withContext(Dispatchers.Main.immediate) { IconSwitchingUtils.switchAppIcon(context, icon) } },
+        rates::requestRefresh,
     )
     private val applyMutex=kotlinx.coroutines.sync.Mutex()
     suspend fun exportSnapshot(): PlatformBackupSnapshot {
@@ -99,6 +102,7 @@ class BackupPlatformApplier internal constructor(
             if(locale.selection()!=oldLocale) try { applyLocale(oldLocale,locale.selection()) } catch(rollback:Throwable){failure.addSuppressed(rollback)}
             throw failure
         }
+        onRestored()
     }
     private suspend fun applyLocale(selected: String, previous: String) {
         setCoreLocale(locale.effectiveTag(selected))

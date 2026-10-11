@@ -23,6 +23,7 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
     private val prefs: CoreUiPreferencesStore, private val session: Provider<CoreSession>,
     private val startup: CoreStartupCoordinator, private val lock: Provider<CoreAppLockController>,
     private val sync: Provider<CoreSyncCoordinator>, private val system: Provider<CoreSystemCoordinator>,
+    private val rates: CoreRateRefreshCoordinator,
     @ApplicationScope private val scope: CoroutineScope) {
     private val mutable = MutableStateFlow(CoreBootstrapState.PREFERENCES); val state = mutable.asStateFlow()
     private var job: Job? = null
@@ -45,13 +46,14 @@ class CoreAppBootstrap @Inject constructor(@ApplicationContext private val conte
             } catch (_: Throwable) { }
             lock.get().retryLoading(); sync.get().start(); system.get().start()
             mutable.value = CoreBootstrapState.READY
+            rates.requestRefresh()
             if (foreground) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh() }
         }
     }
     fun foregroundChanged(value: Boolean) {
         foreground = value; startup.onForegroundChanged(value)
         if (state.value != CoreBootstrapState.READY || CoreProcess.isCrashProcess(context)) return
-        if (value) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh() }
+        if (value) { lock.get().onForeground(); sync.get().foregrounded(); system.get().refresh(); rates.requestRefresh() }
         else { lock.get().onBackground(); sync.get().backgrounded() }
     }
 }
