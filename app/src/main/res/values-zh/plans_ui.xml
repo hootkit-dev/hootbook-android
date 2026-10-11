@@ -11,4 +11,5 @@
     <string name="plan_edit">编辑订阅</string>
     <string name="plan_template_edit">编辑模板</string>
     <string name="plan_template_new">新建模板</string>
+    <string name="invest_holdings">持仓</string>
 </resources>
