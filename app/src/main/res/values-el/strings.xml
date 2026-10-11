@@ -11,11 +11,9 @@
     <string name="security_section">Ασφάλεια</string>
     <string name="app_lock">Κλείδωμα Εφαρμογής</string>
     <string name="app_lock_biometric_sub">Προστατέψτε τα δεδομένα σας με βιομετρική αυθεντικοποίηση</string>
-    <string name="export_data">Εξαγωγή Δεδομένων</string>
     <string name="one_minute">1 λεπτό</string>
     <string name="cancel">Ακύρωση</string>
     <string name="export">Εξαγωγή</string>
-    <string name="select_data_to_backup">Επιλέξτε δεδομένα για δημιουργία αντιγράφου ασφαλείας:</string>
     <string name="transactional_data">Συναλλακτικά Δεδομένα</string>
     <string name="profile_data">Δεδομένα Προφίλ</string>
     <string name="budgets">Προϋπολογισμοί</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Δάνεισα</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Διαχείριση εγγραφών δανείων και δανεισμών</string>
-    <string name="import_cashew_backup">Εισαγωγή από Cashew</string>
     <string name="import_cashew_backup_sub">Εισαγωγή αρχείων SQLite ή CSV από την εφαρμογή Cashew</string>
     <string name="app_crashed">Η εφαρμογή κρασάρισε</string>
     <string name="share_crash_report">Μοιραστείτε την αναφορά κατάρρευσης</string>

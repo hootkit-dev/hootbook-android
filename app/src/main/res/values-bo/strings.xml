@@ -11,11 +11,9 @@
     <string name="security_section">བདེ་འཇགས།</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">སྐྱེ་དངོས་ཀྱི་ཁུངས་དཔང་ར་སྤྲོད་ལ་བརྟེན་ནས་གཞི་གྲངས་ལ་སྲུང་སྐྱོབ་བྱེད་དགོས།</string>
-    <string name="export_data">གཞི་གྲངས་ཕྱིར་འདྲེན་བྱས་པ།</string>
     <string name="one_minute">སྐར་མ་1</string>
     <string name="cancel">ཕྱིར་འཐེན།</string>
     <string name="export">ཕྱིར་གཏོང་</string>
-    <string name="select_data_to_backup">གཞི་གྲངས་བདམས་ནས་རྗེས་གྲབས་བྱས་ཆོག་པ་སྟེ།</string>
     <string name="transactional_data">ཉོ་ཚོང་གི་གཞི་གྲངས་</string>
     <string name="profile_data">དཔྱད་གཞིའི་ཡིག་རིགས་</string>
     <string name="budgets">སྔོན་རྩིས།</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">སྤྲོད་བྱས་པ།</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">གཡར་བདག་དང་གཡར་ལེན་གྱི་ཐོ་བཀོལ།</string>
-    <string name="import_cashew_backup">ཀ་ཤ་ནས་ནང་འདྲེན་བྱས་པ།</string>
     <string name="import_cashew_backup_sub">Cashew app ནས་SQLite or CSV ཡིག་ཆ་ནང་འདྲེན་བྱས་པ།</string>
     <string name="app_crashed">App བརྡབ་སྐྱོན་བྱུང་བ།</string>
     <string name="share_crash_report">མཉམ་སྤྱོད་ཀྱི་དོན་རྐྱེན་སྙན་ཞུ།</string>

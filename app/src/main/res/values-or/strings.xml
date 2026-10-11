@@ -11,11 +11,9 @@
     <string name="security_section">ସୁରକ୍ଷା</string>
     <string name="app_lock">ଆପ୍ ଲକ୍</string>
     <string name="app_lock_biometric_sub">ବାୟୋମେଟ୍ରିକ୍ ପ୍ରାମାଣିକରଣ ସହ ଆପଣଙ୍କ ଡାଟା ସୁରକ୍ଷିତ କରନ୍ତୁ</string>
-    <string name="export_data">ଡାଟା ରପ୍ତାନୀ କରନ୍ତୁ</string>
     <string name="one_minute">1 ମିନିଟ୍</string>
     <string name="cancel">ବାତିଲ୍‌ କରନ୍ତୁ</string>
     <string name="export">ନିର୍ਯାତ</string>
-    <string name="select_data_to_backup">ବ୍ୟାକ୍‌ଅପ୍‌ କରିବା ପାଇଁ ଡାଟା ବାଛନ୍ତୁ:</string>
     <string name="transactional_data">ଲେନଦେନ ଡାଟା</string>
     <string name="profile_data">ପ୍ରୋଫାଇଲ୍ ଡାଟା</string>
     <string name="budgets">ବଜେଟ୍‌ଗୁଡିକ</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">କର୍ଜ ଦିଲି</string>
     <string name="whatsapp_cd">ଭାଟସାପ</string>
     <string name="loan_description">ଋଣ ଦିଆଯାଇଥିବା ଏବଂ ନିଆଯାଇଥିବା ରେକର୍ଡଗୁଡ଼ିକ ପରିଚାଳନା କରନ୍ତୁ</string>
-    <string name="import_cashew_backup">ମୋଙ୍ଗ ବାଟରୁ ଆମଦାନୀ</string>
     <string name="import_cashew_backup_sub">Cashew ଆପ୍ଲିକେଶନରୁ SQLite କିମ୍ବା CSV ଫାଇଲ୍ ଆମଦାନୀ କରନ୍ତୁ</string>
     <string name="app_crashed">ଆପ୍ଲିକେସନ୍ ଧସିଗଲା</string>
     <string name="share_crash_report">ଧସିବାର ସୂଚନା ଅଂଶୀଦାନ କରନ୍ତୁ</string>

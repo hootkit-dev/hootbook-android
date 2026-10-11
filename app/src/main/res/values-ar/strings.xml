@@ -11,11 +11,9 @@
     <string name="security_section">الأمان</string>
     <string name="app_lock">قفل التطبيق</string>
     <string name="app_lock_biometric_sub">حافظ على بياناتك باستخدام المصادقة البيومترية</string>
-    <string name="export_data">تصدير البيانات</string>
     <string name="one_minute">1 دقيقة</string>
     <string name="cancel">إلغاء</string>
     <string name="export">تصدير</string>
-    <string name="select_data_to_backup">حدد البيانات للنسخ الاحتياطي:</string>
     <string name="transactional_data">البيانات المعاملاتية</string>
     <string name="profile_data">بيانات الملف الشخصي</string>
     <string name="budgets">الميزانيات</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">أقرض</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">إدارة سجلات الإقراض والاقتراض</string>
-    <string name="import_cashew_backup">استيراد من Cashew</string>
     <string name="import_cashew_backup_sub">استيراد ملفات SQLite أو CSV من تطبيق Cashew</string>
     <string name="app_crashed">تعطل التطبيق</string>
     <string name="share_crash_report">مشاركة تقرير العطل</string>

@@ -11,11 +11,9 @@
     <string name="security_section">ಸುರಕ್ಷತೆ</string>
     <string name="app_lock">ಆಪ್ ಲಾಕ್</string>
     <string name="app_lock_biometric_sub">ಜೈವೀಕ ಪರಿಶೀಲನೆಯಿಂದ ನಿಮ್ಮ ದತ್ತಾಂಶವನ್ನು ರಕ್ಷಿಸಿ</string>
-    <string name="export_data">ದತ್ತಾಂಶ ರಫ್ತು ಮಾಡಿ</string>
     <string name="one_minute">1 ನಿಮಿಷ</string>
     <string name="cancel">ರದ್ದುಗೊಳಿಸಿ</string>
     <string name="export">ರಫ್ತು</string>
-    <string name="select_data_to_backup">ಬ್ಯಾಕಪ್ ಮಾಡಲು ಡೇಟಾವನ್ನು ಆಯ್ಕೆಮಾಡಿ:</string>
     <string name="transactional_data">ವ್ಯವಹಾರ ಡೇಟಾ</string>
     <string name="profile_data">ಪ್ರೋಫೈಲ್ ಡೇಟಾ</string>
     <string name="budgets">ಬಜೆಟ್‌ಗಳು</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">ಸಾಲ ಕೊಟ್ಟ</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">ಸಾಲವಾಗಿ ನೀಡಿದ ಮತ್ತು ಪಡೆದ ದಾಖಲೆಗಳನ್ನು ನಿರ್ವಹಿಸಿ</string>
-    <string name="import_cashew_backup">ಕಾಜುದಿಂದ ಆಮದು ಮಾಡಿ</string>
     <string name="import_cashew_backup_sub">ಕಾಜು ಅಪ್ಲಿಕೇಶನ್‌ನಿಂದ SQLite ಅಥವಾ CSV ಕಡತಗಳನ್ನು ಆಮದು ಮಾಡು</string>
     <string name="app_crashed">ಅಪ್ಲಿಕೇಶನ್ ಕ್ರ್ಯಾಶ್ ಆಗಿದೆ</string>
     <string name="share_crash_report">ಕ್ರ್ಯಾಶ್ ವರದಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಿ</string>

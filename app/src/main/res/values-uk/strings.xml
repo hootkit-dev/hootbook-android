@@ -11,11 +11,9 @@
     <string name="security_section">Безпека</string>
     <string name="app_lock">Блокування програм</string>
     <string name="app_lock_biometric_sub">Захистіть свої дані біометричною аутентифікацією</string>
-    <string name="export_data">Експорт даних</string>
     <string name="one_minute">1 хвилина</string>
     <string name="cancel">Скасувати</string>
     <string name="export">Експорт</string>
-    <string name="select_data_to_backup">Виберіть дані для резервного копіювання:</string>
     <string name="transactional_data">Транзакційні дані</string>
     <string name="profile_data">Дані профілю</string>
     <string name="budgets">Бюджети</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Позичено</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Керуйте записами про видані та отримані позики</string>
-    <string name="import_cashew_backup">Імпортувати з Cashew</string>
     <string name="import_cashew_backup_sub">Імпортувати файли SQLite або CSV з додатку Cashew</string>
     <string name="app_crashed">Додаток аварійно завершив роботу</string>
     <string name="share_crash_report">Поділитися звітом про збій</string>

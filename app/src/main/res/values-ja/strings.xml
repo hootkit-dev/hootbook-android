@@ -11,11 +11,9 @@
     <string name="security_section">セキュリティ</string>
     <string name="app_lock">アプリロック</string>
     <string name="app_lock_biometric_sub">生体認証でデータを保護</string>
-    <string name="export_data">データをエクスポート</string>
     <string name="one_minute">1分</string>
     <string name="cancel">キャンセル</string>
     <string name="export">エクスポート</string>
-    <string name="select_data_to_backup">バックアップするデータを選択:</string>
     <string name="transactional_data">トランザクションデータ</string>
     <string name="profile_data">プロファイルデータ</string>
     <string name="budgets">予算</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">貸付</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">貸した・借りた記録を管理</string>
-    <string name="import_cashew_backup">Cashewからインポート</string>
     <string name="import_cashew_backup_sub">CashewアプリからSQLiteまたはCSVファイルをインポート</string>
     <string name="app_crashed">アプリがクラッシュしました</string>
     <string name="share_crash_report">クラッシュレポートを共有</string>

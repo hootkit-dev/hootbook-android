@@ -11,11 +11,9 @@
     <string name="security_section">Segurança</string>
     <string name="app_lock">Bloqueio de apps</string>
     <string name="app_lock_biometric_sub">Proteja seus dados com autenticação biométrica</string>
-    <string name="export_data">Exportar dados</string>
     <string name="one_minute">format@@0number@@1format@@2 minutos</string>
     <string name="cancel">cancelar</string>
     <string name="export">Exportação</string>
-    <string name="select_data_to_backup">Selecionar dados para backup:</string>
     <string name="transactional_data">Dados Transacionais</string>
     <string name="profile_data">Dados do perfil</string>
     <string name="budgets">Orçamentos</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Emprestou</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Gerencie registros de empréstimos concedidos e tomados</string>
-    <string name="import_cashew_backup">Importar do Cashew</string>
     <string name="import_cashew_backup_sub">Importar ficheiros SQLite ou CSV da aplicação Cashew</string>
     <string name="screen_content">Conteúdo do Ecrã</string>
     <string name="app_crashed">Aplicativo Travou</string>

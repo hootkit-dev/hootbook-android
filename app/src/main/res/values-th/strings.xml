@@ -11,11 +11,9 @@
     <string name="security_section">ความปลอดภัย</string>
     <string name="app_lock">ล็อกแอป</string>
     <string name="app_lock_biometric_sub">ปกป้องข้อมูลของคุณด้วยการยืนยันตัวตนทางชีวมิติ</string>
-    <string name="export_data">ส่งออกข้อมูล</string>
     <string name="one_minute">1 นาที</string>
     <string name="cancel">ยกเลิก</string>
     <string name="export">ส่งออก</string>
-    <string name="select_data_to_backup">เลือกข้อมูลเพื่อสำรอง:</string>
     <string name="transactional_data">ข้อมูลธุรกรรม</string>
     <string name="profile_data">ข้อมูลโปรไฟล์</string>
     <string name="budgets">งบประมาณ</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">ให้ยืม</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">จัดการบันทึกการให้ยืมและขอยืม</string>
-    <string name="import_cashew_backup">นำเข้าจาก Cashew</string>
     <string name="import_cashew_backup_sub">นำเข้าไฟล์ SQLite หรือ CSV จากแอป Cashew</string>
     <string name="app_crashed">แอปพลิเคชันหยุดทำงาน</string>
     <string name="share_crash_report">แชร์รายงานการล่ม</string>

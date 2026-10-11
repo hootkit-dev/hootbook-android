@@ -11,11 +11,9 @@
     <string name="security_section">Howpsuzlyk</string>
     <string name="app_lock">Täjirçilik Gapysy</string>
     <string name="app_lock_biometric_sub">Maglumatlaryňyzy biologik tassyk bilen goranyň</string>
-    <string name="export_data">Maglumatlary eksport etmek</string>
     <string name="one_minute">1 minut</string>
     <string name="cancel">Iýmit etmek</string>
     <string name="export">Eksport</string>
-    <string name="select_data_to_backup">Ehtiyat nusgasyny almak üçin maglumatlary saýlaň:</string>
     <string name="transactional_data">Amal Maglumatlary</string>
     <string name="profile_data">Profil Maglumatlary</string>
     <string name="budgets">Býujetler</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Berlen karz</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Karz berlen we alynan ýazgylary dolandyryň</string>
-    <string name="import_cashew_backup">Kajudan import edilýär</string>
     <string name="import_cashew_backup_sub">Cashew programmasyndan SQLite ýa-da CSV faýllaryny import ediň</string>
     <string name="app_crashed">App çökdi</string>
     <string name="share_crash_report">Share crash report</string>

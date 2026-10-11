@@ -11,11 +11,9 @@
     <string name="security_section">سیکیورٹی</string>
     <string name="app_lock">ایپ لاک</string>
     <string name="app_lock_biometric_sub">اپنے ڈیٹا کو بایومیٹرک تصدیق کے ذریعے محفوظ کریں</string>
-    <string name="export_data">ڈیٹا برآمد کریں</string>
     <string name="one_minute">1 منٹ</string>
     <string name="cancel">منسوخ</string>
     <string name="export">برآمد کریں</string>
-    <string name="select_data_to_backup">بیک اپ کے لیے ڈیٹا منتخب کریں:</string>
     <string name="transactional_data">لین دینے والا ڈیٹا</string>
     <string name="profile_data">پروفائل ڈیٹا</string>
     <string name="budgets">بجٹ</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">دیا گیا</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">ادھار دینے اور لینے کے ریکارڈ کا انتظام کریں</string>
-    <string name="import_cashew_backup">کیشو سے درآمد کریں</string>
     <string name="import_cashew_backup_sub">کیشو ایپ سے SQLite یا CSV فائلیں درآمد کریں</string>
     <string name="app_crashed">ایپ کریش ہو گئی</string>
     <string name="share_crash_report">کراس رپورٹ شیئر کریں</string>

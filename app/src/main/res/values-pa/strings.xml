@@ -11,11 +11,9 @@
     <string name="security_section">ਸੁਰੱਖਿਆ</string>
     <string name="app_lock">ਐਪ ਲਾਕ</string>
     <string name="app_lock_biometric_sub">ਬਾਇਓਮੈਟ੍ਰਿਕ ਪ੍ਰਮਾਣਿਕਰਨ ਨਾਲ ਆਪਣਾ ਡਾਟਾ ਸੁਰੱਖਿਅਤ ਕਰੋ</string>
-    <string name="export_data">ਡਾਟਾ ਐਕਸਪੋਰਟ ਕਰੋ</string>
     <string name="one_minute">1 ਮਿੰਟ</string>
     <string name="cancel">ਰੱਦ ਕਰੋ</string>
     <string name="export">ਨਿਰਯਾਤ ਕਰੋ</string>
-    <string name="select_data_to_backup">ਬੈਕਅੱਪ ਲਈ ਡਾਟਾ ਚੁਣੋ:</string>
     <string name="transactional_data">ਲੈਣ-ਦੇਣ ਦਾ ਡਾਟਾ</string>
     <string name="profile_data">ਪ੍ਰੋਫ਼ਾਈਲ ਦਾ ਡਾਟਾ</string>
     <string name="budgets">ਬਜਟ</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">ਕਰਜ਼ ਦਿੱਤਾ</string>
     <string name="whatsapp_cd">ਵਟਸਐਪ</string>
     <string name="loan_description">ਉਧਾਰ ਦਿੱਤੇ ਅਤੇ ਲਏ ਗਏ ਰਿਕਾਰਡਾਂ ਦਾ ਪ੍ਰਬੰਧ ਕਰੋ</string>
-    <string name="import_cashew_backup">ਕੈਸ਼ੂ ਤੋਂ ਇੰਪੋਰਟ ਕਰੋ</string>
     <string name="import_cashew_backup_sub">ਕੈਸ਼ੂ ਐਪ ਤੋਂ SQLite ਜਾਂ CSV ਫਾਈਲਾਂ ਇੰਪੋਰਟ ਕਰੋ</string>
     <string name="app_crashed">ਐਪ ਸੁੱਟ ਗਿਆ</string>
     <string name="share_crash_report">ਕ੍ਰੈਸ਼ ਰਿਪੋਰਟ ਸਾਂਝਾ ਕਰੋ</string>

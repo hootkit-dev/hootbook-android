@@ -21,6 +21,7 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSectionScope
+import io.github.hootkit_dev.hootbook.presentation.ui.components.detailRow
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 
 @Composable internal fun cycleLabel(unit: CycleUnit) = stringResource(when (unit) {
@@ -93,9 +94,3 @@ internal fun ListSectionScope.planReferenceRows(refs: CorePlanReferences, accoun
     detailRow(stringResource(R.string.category), listOfNotNull(category?.displayName ?: categoryId ?: none,
         subcategoryId?.let { id -> category?.subcategories?.find { it.id == id }?.displayName ?: id }).joinToString(" · "))
 }
-
-internal fun ListSectionScope.detailRow(label: String, value: String, error: Boolean = false) = item(
-    headline = { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-    trailing = { Text(value, Modifier.widthIn(max = 220.dp), style = MaterialTheme.typography.bodyLarge,
-        color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface) },
-)

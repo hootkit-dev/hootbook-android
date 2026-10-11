@@ -11,11 +11,9 @@
     <string name="security_section">భద్రత</string>
     <string name="app_lock">యాప్ లాక్</string>
     <string name="app_lock_biometric_sub">బయోమెట్రిక్ ఆథెంటికేషన్‌తో మీ డేటాను రక్షించండి</string>
-    <string name="export_data">డేటా ఎగుమతి</string>
     <string name="one_minute">1 నిమిషం</string>
     <string name="cancel">రద్దు</string>
     <string name="export">ఎగుమతి</string>
-    <string name="select_data_to_backup">బ్యాకప్ కోసం డేటాను ఎంచుకోండి:</string>
     <string name="transactional_data">లావాదేవీ డేటా</string>
     <string name="profile_data">ప్రొఫైల్ డేటా</string>
     <string name="budgets">బడ్జెట్లు</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">అప్పు ఇచ్చినవి</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">అప్పు ఇచ్చిన మరియు తీసుకున్న రికార్డులను నిర్వహించండి</string>
-    <string name="import_cashew_backup">కాజూ నుంచి దిగుమతి చేయండి</string>
     <string name="import_cashew_backup_sub">కాజూ యాప్ నుండి SQLite లేదా CSV ఫైళ్లను దిగుమతి చేయండి</string>
     <string name="app_crashed">యాప్ క్ర్యాష్ అయింది</string>
     <string name="share_crash_report">క్రాష్ రిపోర్ట్ పంచుకోండి</string>

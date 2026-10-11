@@ -11,11 +11,9 @@
     <string name="security_section">सुरक्षा</string>
     <string name="app_lock">एप लॉक</string>
     <string name="app_lock_biometric_sub">बायोमेट्रिक प्रमाणीकरण के साथ अपने डेटा की सुरक्षा करें</string>
-    <string name="export_data">डेटा निर्यात करें</string>
     <string name="one_minute">1 मिनट</string>
     <string name="cancel">रद्द करें</string>
     <string name="export">निर्यात</string>
-    <string name="select_data_to_backup">बैकअप के लिए डेटा चुनें:</string>
     <string name="transactional_data">लेनदेन डेटा</string>
     <string name="profile_data">प्रोफ़ाइल डेटा</string>
     <string name="budgets">बजट</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">उधार दिया</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">उधार दिए और लिए गए रिकॉर्ड प्रबंधित करें</string>
-    <string name="import_cashew_backup">Cashew से आयात करें</string>
     <string name="import_cashew_backup_sub">Cashew ऐप से SQLite या CSV फ़ाइलें आयात करें</string>
     <string name="app_crashed">ऐप क्रैश हो गया</string>
     <string name="share_crash_report">क्रैश रिपोर्ट साझा करें</string>

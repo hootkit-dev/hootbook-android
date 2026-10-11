@@ -11,11 +11,9 @@
     <string name="security_section">אבטחה</string>
     <string name="app_lock">נעילת אפליקציה</string>
     <string name="app_lock_biometric_sub">הגן על הנתונים שלך עם אימות ביומטרי</string>
-    <string name="export_data">ייצוא נתונים</string>
     <string name="one_minute">דקה אחת</string>
     <string name="cancel">בטל</string>
     <string name="export">ייצוא</string>
-    <string name="select_data_to_backup">בחר נתונים לגיבוי:</string>
     <string name="transactional_data">נתונים עסקיים</string>
     <string name="profile_data">נתוני פרופיל</string>
     <string name="budgets">תקציבים</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">הוהלווה</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">ניהול תיעוד של הלוואות שניתנו ונלקחו</string>
-    <string name="import_cashew_backup">ייבוא מ-Cashew</string>
     <string name="import_cashew_backup_sub">ייבא קבצי SQLite או CSV מאפליקציית Cashew</string>
     <string name="app_crashed">האפליקציה קרסה</string>
     <string name="share_crash_report">שתף דוח קריסה</string>

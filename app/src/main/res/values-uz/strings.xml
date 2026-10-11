@@ -11,11 +11,9 @@
     <string name="security_section">Xavfsizlik</string>
     <string name="app_lock">Ilovani qulflash</string>
     <string name="app_lock_biometric_sub">Biometrik autentifikatsiya bilan ma\'lumotlaringizni himoya qiling</string>
-    <string name="export_data">Ma\'lumotlarni eksport qilish</string>
     <string name="one_minute">1 daqiqa</string>
     <string name="cancel">Bekor qilish</string>
     <string name="export">Eksport</string>
-    <string name="select_data_to_backup">Zaxira qilish uchun ma\'lumotlarni tanlang:</string>
     <string name="transactional_data">Tranzaksion ma\'lumotlar</string>
     <string name="profile_data">Profil ma\'lumotlari</string>
     <string name="budgets">Byudjetlar</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Qarz berdi</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Berilgan va olingan qarz yozuvlarini boshqaring</string>
-    <string name="import_cashew_backup">Cashew\'dan import qilish</string>
     <string name="import_cashew_backup_sub">Cashew ilovasidan SQLite yoki CSV fayllarini import qilish</string>
     <string name="app_crashed">Ilova ish faoliyatini to‘xtatdi</string>
     <string name="share_crash_report">Avariya hisobotini ulashish</string>

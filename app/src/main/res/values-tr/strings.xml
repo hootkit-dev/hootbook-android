@@ -11,11 +11,9 @@
     <string name="security_section">Güvenlik</string>
     <string name="app_lock">Uygulama Kilidi</string>
     <string name="app_lock_biometric_sub">Verilerinizi biyometrik doğrulama ile koruyun</string>
-    <string name="export_data">Veriyi Dışa Aktar</string>
     <string name="one_minute">1 dakika</string>
     <string name="cancel">İptal</string>
     <string name="export">Dışa Aktar</string>
-    <string name="select_data_to_backup">Yedeklenecek verileri seçin:</string>
     <string name="transactional_data">İşlem Verileri</string>
     <string name="profile_data">Profil Verileri</string>
     <string name="budgets">Bütçeler</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Ödünç Verilen</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Verilen ve alınan borç kayıtlarını yönetin</string>
-    <string name="import_cashew_backup">Cashew\'den İçe Aktar</string>
     <string name="import_cashew_backup_sub">Cashew uygulamasından SQLite veya CSV dosyalarını içe aktar</string>
     <string name="app_crashed">Uygulama Çöktü</string>
     <string name="share_crash_report">Çökme raporunu paylaş</string>

@@ -30,6 +30,7 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
 import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon
+import io.github.hootkit_dev.hootbook.presentation.ui.components.detailRow
 import io.github.hootkit_dev.hootbook.presentation.ui.components.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState

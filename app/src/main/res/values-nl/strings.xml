@@ -11,11 +11,9 @@
     <string name="security_section">Beveiliging</string>
     <string name="app_lock">App vergrendeling</string>
     <string name="app_lock_biometric_sub">Bescherm uw gegevens met biometrische verificatie</string>
-    <string name="export_data">Gegevens exporteren</string>
     <string name="one_minute">1 minuut</string>
     <string name="cancel">annuleren</string>
     <string name="export">Exporteren</string>
-    <string name="select_data_to_backup">Selecteer gegevens voor een back-up:</string>
     <string name="transactional_data">Transactionele gegevens</string>
     <string name="profile_data">Profiel gegevens</string>
     <string name="budgets">Budgetten</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Uitgeleend</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Beheer registraties van uitgeleend en geleend geld</string>
-    <string name="import_cashew_backup">Importeren uit Cashew</string>
     <string name="import_cashew_backup_sub">Importeer SQLite- of CSV-bestanden van de Cashew-app</string>
     <string name="screen_content">Scherminhoud</string>
     <string name="app_crashed">App Crashed</string>

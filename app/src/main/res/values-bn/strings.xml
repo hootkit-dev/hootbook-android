@@ -11,11 +11,9 @@
     <string name="security_section">সুরক্ষা</string>
     <string name="app_lock">অ্যাপ লক</string>
     <string name="app_lock_biometric_sub">বায়োমেট্রিক প্রমাণীকরণের মাধ্যমে আপনার ডেটা সুরক্ষিত করুন</string>
-    <string name="export_data">ডেটা রপ্তানি করুন</string>
     <string name="one_minute">১ মিনিট</string>
     <string name="cancel">বাতিল করুন</string>
     <string name="export">রপ্তানি</string>
-    <string name="select_data_to_backup">ব্যাকআপ করার জন্য ডেটা নির্বাচন করুন:</string>
     <string name="transactional_data">লেনদেনের ডেটা</string>
     <string name="profile_data">প্রোফাইল ডেটা</string>
     <string name="budgets">বাজেট</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">ধার দেওয়া</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">ধার দেওয়া এবং নেওয়ার রেকর্ড পরিচালনা করুন</string>
-    <string name="import_cashew_backup">কাশিউ থেকে আমদানি করুন</string>
     <string name="import_cashew_backup_sub">কাশিউ অ্যাপ থেকে SQLite বা CSV ফাইল আমদানি করুন</string>
     <string name="app_crashed">অ্যাপ ক্র্যাশ হয়েছে</string>
     <string name="share_crash_report">ক্র্যাশ রিপোর্ট শেয়ার করুন</string>

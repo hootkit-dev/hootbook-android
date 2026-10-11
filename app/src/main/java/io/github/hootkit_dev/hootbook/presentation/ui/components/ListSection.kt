@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material.icons.Icons
@@ -79,6 +80,13 @@ class ListSectionScope @PublishedApi internal constructor() {
         )
     }
 }
+
+/** A read-only label / value row. */
+fun ListSectionScope.detailRow(label: String, value: String, error: Boolean = false) = item(
+    headline = { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+    trailing = { Text(value, Modifier.widthIn(max = 220.dp), style = MaterialTheme.typography.bodyLarge,
+        color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface) },
+)
 
 @Composable
 private fun ChevronTrailing(value: (@Composable () -> Unit)?) {

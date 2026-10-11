@@ -11,11 +11,9 @@
     <string name="security_section">Seguretat</string>
     <string name="app_lock">Bloqueig de l\'aplicació</string>
     <string name="app_lock_biometric_sub">Protegeix les teves dades amb autenticació biomètrica</string>
-    <string name="export_data">Exportar dades</string>
     <string name="one_minute">1 minut</string>
     <string name="cancel">Cancel·lar</string>
     <string name="export">Exporta</string>
-    <string name="select_data_to_backup">Selecciona les dades per fer una còpia de seguretat:</string>
     <string name="transactional_data">Dades transaccionals</string>
     <string name="profile_data">Dades de perfil</string>
     <string name="budgets">Pressupostos</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Prestat</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Gestiona els registres de préstecs i deutes</string>
-    <string name="import_cashew_backup">Import from Cashew</string>
     <string name="import_cashew_backup_sub">Importa fitxers SQLite o CSV des de l\'aplicació Cashew</string>
     <string name="app_crashed">App Crashed</string>
     <string name="share_crash_report">Share crash report</string>

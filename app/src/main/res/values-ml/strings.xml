@@ -11,11 +11,9 @@
     <string name="security_section">സുരക്ഷ</string>
     <string name="app_lock">ആപ്പ് ലോക്ക്</string>
     <string name="app_lock_biometric_sub">ബയോമെട്രിക് സാക്ഷ്യപ്പെടുത്തലിലൂടെ നിങ്ങളുടെ ഡാറ്റ സംരക്ഷിക്കുക</string>
-    <string name="export_data">ഡാറ്റ എക്സ്പോർട്ട് ചെയ്യുക</string>
     <string name="one_minute">1 മിനിറ്റ്</string>
     <string name="cancel">റദ്ദാക്കുക</string>
     <string name="export">കയറ്റുമതി</string>
-    <string name="select_data_to_backup">ബാക്കപ്പ് എടുക്കാൻ ഡാറ്റ തിരഞ്ഞെടുക്കുക:</string>
     <string name="transactional_data">ഇടപാട് ഡാറ്റ</string>
     <string name="profile_data">പ്രൊഫൈൽ ഡാറ്റ</string>
     <string name="budgets">ബഡ്ജറ്റ്‌സ്</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">കടം കൊടുത്തത്</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">കടം കൊടുത്തതിന്റെയും വാങ്ങിയതിന്റെയും രേഖകൾ കൈകാര്യം ചെയ്യുക</string>
-    <string name="import_cashew_backup">കാഷുവിൽ നിന്ന് ഇറക്കുമതി ചെയ്യുക</string>
     <string name="import_cashew_backup_sub">കാഷു ആപ്പിൽ നിന്ന് SQLite അല്ലെങ്കിൽ CSV ഫയലുകൾ ഇറക്കുമതി ചെയ്യുക</string>
     <string name="app_crashed">ആപ്പ് ക്രാഷ് ആയി</string>
     <string name="share_crash_report">ക്രാഷ് റിപ്പോർട്ട് പങ്കിടുക</string>

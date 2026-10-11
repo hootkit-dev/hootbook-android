@@ -7,4 +7,6 @@
     <string name="ui_yes">是</string>
     <string name="ui_no">否</string>
     <string name="appearance_other">其他</string>
+    <string name="ui_show_password">显示密码</string>
+    <string name="ui_hide_password">隐藏密码</string>
 </resources>

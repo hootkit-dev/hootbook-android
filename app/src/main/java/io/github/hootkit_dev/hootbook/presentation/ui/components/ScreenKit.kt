@@ -165,8 +165,8 @@ fun OverflowMenu(actions: List<MenuAction>, modifier: Modifier = Modifier, enabl
 }
 
 /**
- * A form in a modal bottom sheet: headline, scrolling fields, then Cancel and a filled confirm
- * button. While [busy] the sheet cannot be dismissed and its buttons are disabled.
+ * A form in a modal bottom sheet: headline, scrolling fields, then Cancel, an optional
+ * [extraAction] and a filled confirm button. While [busy] the sheet cannot be dismissed and its buttons are disabled.
  */
 @Composable
 fun FormSheet(
@@ -178,6 +178,7 @@ fun FormSheet(
     confirmLabel: String = stringResource(R.string.save),
     error: String? = null,
     titleAction: (@Composable () -> Unit)? = null,
+    extraAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     HootbookModalBottomSheet(
@@ -200,6 +201,7 @@ fun FormSheet(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         ) {
             TextButton(onClick = onDismiss, enabled = !busy, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.cancel)) }
+            extraAction?.invoke()
             Button(onClick = onConfirm, enabled = !busy && confirmEnabled, shapes = ButtonDefaults.shapes()) { Text(confirmLabel) }
         }
     }

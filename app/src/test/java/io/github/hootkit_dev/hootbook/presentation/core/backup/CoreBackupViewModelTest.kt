@@ -65,7 +65,7 @@ class CoreBackupViewModelTest {
     @Test fun changedPasswordInvalidatesInspectionAndNeverWrites() = runTest {
         val access = BackupTestAccess(); val vm = model(access); select(vm)
         vm.restore(ImportMode.MERGE, "changed-password", false, false); vm.state.first { !it.busy }
-        assertEquals(0, access.imports); assertEquals(context.getString(io.github.hootkit_dev.hootbook.R.string.core_ui_backup_inspect_first), vm.state.value.error)
+        assertEquals(0, access.imports); assertEquals(context.getString(io.github.hootkit_dev.hootbook.R.string.backup_err_inspect_first), vm.state.value.error)
         vm.invalidateInspection(); assertNull(vm.state.value.info)
     }
     @Test fun plaintextSecretExportRequiresConfirmationAndDoesNotPersistPassword() = runTest {

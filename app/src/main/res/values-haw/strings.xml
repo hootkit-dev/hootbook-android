@@ -11,11 +11,9 @@
     <string name="security_section">Palekana</string>
     <string name="app_lock">Laka App</string>
     <string name="app_lock_biometric_sub">E pale i kāu ʻikepili me ka hōʻoia biometric</string>
-    <string name="export_data">Hoʻokuʻu i ka ʻikepili</string>
     <string name="one_minute">1 minuke</string>
     <string name="cancel">Hoʻopau</string>
     <string name="export">Hoʻokuʻu aku</string>
-    <string name="select_data_to_backup">E koho i ka ʻikepili e hoʻihoʻi:</string>
     <string name="transactional_data">ʻIkepili Kūʻai</string>
     <string name="profile_data">ʻIkepili Pilikino</string>
     <string name="budgets">Puke kālā</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Hōʻaiʻē ʻia</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Hoʻoponopono i nā moʻolelo hōʻaiʻē a ʻaiʻē ʻia</string>
-    <string name="import_cashew_backup">Lawe ʻia mai Cashew</string>
     <string name="import_cashew_backup_sub">Hoʻokomo i nā faila SQLite a i ʻole CSV mai ka app Cashew</string>
     <string name="app_crashed">Hāʻule ka polokalamu</string>
     <string name="share_crash_report">Kaʻana i ka hōʻike pōʻino</string>

@@ -11,11 +11,9 @@
     <string name="security_section">Chitetezo</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">Tetezani deta yanu ndi kutsimikizika kwa biometric</string>
-    <string name="export_data">Tumizani Deta</string>
     <string name="one_minute">1 miniti</string>
     <string name="cancel">Letsani</string>
     <string name="export">Tumizani kunja</string>
-    <string name="select_data_to_backup">Sankhani deta yosunga zosunga zobwezeretsera:</string>
     <string name="transactional_data">Transaction Data</string>
     <string name="profile_data">Mbiri Yambiri</string>
     <string name="budgets">Bajeti</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Zobwereketsa</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Yendetsani zolembedwa za ngongole zobwerekedwa ndi zobwereka</string>
-    <string name="import_cashew_backup">Tengani kuchokera ku Cashew</string>
     <string name="import_cashew_backup_sub">Lowetsani mafayilo a SQLite kapena CSV kuchokera ku pulogalamu ya Cashew</string>
     <string name="app_crashed">Pulogalamu Yawonongeka</string>
     <string name="share_crash_report">Gawani lipoti la ngozi</string>

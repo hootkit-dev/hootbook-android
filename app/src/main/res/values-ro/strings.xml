@@ -11,11 +11,9 @@
     <string name="security_section">Securitate</string>
     <string name="app_lock">Blocare aplicație</string>
     <string name="app_lock_biometric_sub">Protejează-ți datele prin autentificare biometrică</string>
-    <string name="export_data">Exportă Datele</string>
     <string name="one_minute">1 minut</string>
     <string name="cancel">Anulează</string>
     <string name="export">Exportă</string>
-    <string name="select_data_to_backup">Selectați datele pentru copia de rezervă:</string>
     <string name="transactional_data">Date Tranzacție</string>
     <string name="profile_data">Date profil</string>
     <string name="budgets">Bugete</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Împrumutat</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Gestionați înregistrările pentru bani împrumutați și primiți</string>
-    <string name="import_cashew_backup">Importă din Cashew</string>
     <string name="import_cashew_backup_sub">Importă fișiere SQLite sau CSV din aplicația Cashew</string>
     <string name="app_crashed">Aplicația a picat</string>
     <string name="share_crash_report">Împarte raportul de eroare</string>

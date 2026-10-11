@@ -495,23 +495,23 @@ class RealMainJourneys {
     }
     @Test fun uiBackupEncryptedExportSafSaveInspectAndMerge()=runBlocking{
         val root=File(f.context.noBackupFilesDir,"hootkit-core/backup-ui");home();click(R.string.core_complete_backup)
-        click(R.string.export_data)
-        field(R.string.core_backup_password,"fixture-password");click(R.string.core_backup_export);click(R.string.core_backup_save)
+        click(R.string.backup_export)
+        field(R.string.backup_password,"fixture-password");click(R.string.backup_export_action);click(R.string.backup_save)
         documentDownloads()
         val edit=nodes().first{it.isEditable&&it.isEnabled};check(edit.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
         val fileName="${f.tag}-ui.hkbak";check(edit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,Bundle().apply{putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,fileName)}));clickText("Save")
-        awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_backup_share)}}
-        click(R.string.core_backup_share)
+        awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.backup_share)}}
+        click(R.string.backup_share)
         awaitCondition{nodes().firstOrNull()?.packageName?.toString()?.let{it!=f.context.packageName}==true}
-        systemBack();showText(f.text(R.string.core_backup_share));systemBack()
-        click(R.string.core_backup_restore)
-        click(R.string.core_backup_select);documentDownloads();clickText(fileName)
-        field(R.string.core_backup_password,"fixture-password",last=true);click(R.string.core_backup_inspect)
+        systemBack();showText(f.text(R.string.backup_share));systemBack()
+        click(R.string.backup_restore)
+        field(R.string.backup_password,"fixture-password",last=true)
+        click(R.string.backup_file);documentDownloads();clickText(fileName)
         val source=root.walkTopDown().filter{it.isFile&&it.name=="source.backup"}.maxBy{it.lastModified()}
         assertTrue(f.core().backup().use{it.inspectBackup(source.path,"fixture-password").encrypted})
         val original=java.security.MessageDigest.getInstance("SHA-256").digest(source.readBytes()).joinToString(""){"%02x".format(it)}
-        click(R.string.core_backup_import)
-        showText(f.text(R.string.core_backup_result))
+        click(R.string.backup_restore_action)
+        showText(f.text(R.string.backup_last_restore))
         val journal=root.walkTopDown().filter{it.isFile&&it.name=="journal.json"}.maxBy{it.lastModified()};val op=org.json.JSONObject(journal.readText())
         assertEquals("PLATFORM_APPLIED",op.getString("phase"));assertEquals(original,op.getString("sha256"));assertTrue(source.isFile)
         File(f.output,"ui-saf-backup-journal.json").writeText(journal.readText());layout("ui-saf-backup-import-result")

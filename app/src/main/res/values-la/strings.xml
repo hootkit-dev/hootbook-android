@@ -11,11 +11,9 @@
     <string name="security_section">Securitas</string>
     <string name="app_lock">App Claudere</string>
     <string name="app_lock_biometric_sub">Tua data protegere cum biometrica authentificatione</string>
-    <string name="export_data">Exportare Data</string>
     <string name="one_minute">1 minutum</string>
     <string name="cancel">Cancella</string>
     <string name="export">Exportare</string>
-    <string name="select_data_to_backup">Elige notitia ad tergum capere:</string>
     <string name="transactional_data">Transactionem Notitia</string>
     <string name="profile_data">Profilum Notitia</string>
     <string name="budgets">Budgeta</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Mutuo datum</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Rege tabulas mutuorum et debitorum</string>
-    <string name="import_cashew_backup">Importare ex Cashew</string>
     <string name="import_cashew_backup_sub">Importare SQLite vel CSV lima ex Cashew app</string>
     <string name="app_crashed">App Rupti</string>
     <string name="share_crash_report">Commune crash relationem</string>

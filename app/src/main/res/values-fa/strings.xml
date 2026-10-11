@@ -11,11 +11,9 @@
     <string name="security_section">امنیت</string>
     <string name="app_lock">قفل برنامه</string>
     <string name="app_lock_biometric_sub">از داده‌های خود با احراز هویت بیومتریک محافظت کنید</string>
-    <string name="export_data">صدور داده‌ها</string>
     <string name="one_minute">۱ دقیقه</string>
     <string name="cancel">لغو</string>
     <string name="export">خروجی گرفتن</string>
-    <string name="select_data_to_backup">انتخاب داده برای پشتیبان‌گیری:</string>
     <string name="transactional_data">داده‌های تراکنشی</string>
     <string name="profile_data">داده‌های پروفایل</string>
     <string name="budgets">بودجه‌ها</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">قرض داده</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">مدیریت سوابق قرض دادن و قرض گرفتن</string>
-    <string name="import_cashew_backup">وارد کردن از Cashew</string>
     <string name="import_cashew_backup_sub">وارد کردن فایل‌های SQLite یا CSV از برنامه Cashew</string>
     <string name="app_crashed">برنامه متوقف شد</string>
     <string name="share_crash_report">گزارش خرابی را به اشتراک بگذارید</string>

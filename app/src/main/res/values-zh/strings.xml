@@ -11,11 +11,9 @@
     <string name="security_section">安全</string>
     <string name="app_lock">应用锁</string>
     <string name="app_lock_biometric_sub">通过生物识别认证保护您的数据</string>
-    <string name="export_data">导出数据</string>
     <string name="one_minute">1分钟</string>
     <string name="cancel">取消</string>
     <string name="export">导出</string>
-    <string name="select_data_to_backup">选择要备份的数据：</string>
     <string name="transactional_data">交易数据</string>
     <string name="profile_data">个人资料数据</string>
     <string name="budgets">预算</string>
@@ -654,7 +652,6 @@
     <string name="type_lent">借出</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">管理借出和借入记录</string>
-    <string name="import_cashew_backup">从 Cashew 导入</string>
     <string name="import_cashew_backup_sub">从 Cashew 应用导入 SQLite 或 CSV 文件</string>
     <string name="screen_content">屏幕内容</string>
     <string name="app_crashed">应用崩溃</string>

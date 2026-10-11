@@ -11,11 +11,9 @@
     <string name="security_section">Biztonság</string>
     <string name="app_lock">Alkalmazás zárolása</string>
     <string name="app_lock_biometric_sub">Védd az adataidat biometrikus hitelesítéssel</string>
-    <string name="export_data">Adatok exportálása</string>
     <string name="one_minute">1 perc</string>
     <string name="cancel">Mégse</string>
     <string name="export">Exportálás</string>
-    <string name="select_data_to_backup">Válassza ki a biztonsági mentéshez adatokat:</string>
     <string name="transactional_data">Tranzakciós adatok</string>
     <string name="profile_data">Profiladatok</string>
     <string name="budgets">Költségvetések</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Kölcsönadott</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">A kölcsönadott és kölcsönvett tételek kezelése</string>
-    <string name="import_cashew_backup">Importálás a kesusdióból</string>
     <string name="import_cashew_backup_sub">SQLite vagy CSV fájlok importálása a Cashew alkalmazásból</string>
     <string name="app_crashed">Az alkalmazás összeomlott</string>
     <string name="share_crash_report">Részvényösszeomlási jelentés</string>

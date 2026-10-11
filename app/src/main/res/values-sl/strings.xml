@@ -11,11 +11,9 @@
     <string name="security_section">Varnost</string>
     <string name="app_lock">Zaklepanje aplikacije</string>
     <string name="app_lock_biometric_sub">Zaščitite svoje podatke z biometrično overitvijo</string>
-    <string name="export_data">Izvozi podatke</string>
     <string name="one_minute">1 minuta</string>
     <string name="cancel">Prekliči</string>
     <string name="export">Izvoz</string>
-    <string name="select_data_to_backup">Izberite podatke za varnostno kopiranje:</string>
     <string name="transactional_data">Transakcijski podatki</string>
     <string name="profile_data">Podatki profila</string>
     <string name="budgets">Proračuni</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Započeno</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Upravljanje zapisov o posojenih in izposojenih zneskih</string>
-    <string name="import_cashew_backup">Uvozi iz Cashew</string>
     <string name="import_cashew_backup_sub">Uvozi SQLite ali CSV datoteke iz aplikacije Cashew</string>
     <string name="app_crashed">Aplikacija se je zrušila</string>
     <string name="share_crash_report">Deli poročilo o zrušitvi</string>

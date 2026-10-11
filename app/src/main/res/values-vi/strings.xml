@@ -11,11 +11,9 @@
     <string name="security_section">Bảo Mật</string>
     <string name="app_lock">Khóa Ứng Dụng</string>
     <string name="app_lock_biometric_sub">Bảo vệ dữ liệu của bạn bằng xác thực sinh trắc học</string>
-    <string name="export_data">Xuất Dữ Liệu</string>
     <string name="one_minute">1 phút</string>
     <string name="cancel">Hủy</string>
     <string name="export">Xuất khẩu</string>
-    <string name="select_data_to_backup">Chọn dữ liệu để sao lưu:</string>
     <string name="transactional_data">Dữ liệu giao dịch</string>
     <string name="profile_data">Dữ liệu hồ sơ</string>
     <string name="budgets">Ngân sách</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Đã cho vay</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Quản lý các khoản cho vay và đi vay</string>
-    <string name="import_cashew_backup">Nhập từ Cashew</string>
     <string name="import_cashew_backup_sub">Nhập tệp SQLite hoặc CSV từ ứng dụng Cashew</string>
     <string name="screen_content">Nội dung màn hình</string>
     <string name="app_crashed">Ứng dụng bị lỗi</string>

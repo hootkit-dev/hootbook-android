@@ -11,11 +11,9 @@
     <string name="security_section">பாதுகாப்பு</string>
     <string name="app_lock">ஆப் பூட்டு</string>
     <string name="app_lock_biometric_sub">உங்கள் தரவை உயிர்மெய் அங்கீகாரம் மூலம் பாதுகாக்கவும்</string>
-    <string name="export_data">தரவை ஏற்றுமதி செய்யவும்</string>
     <string name="one_minute">1 நிமிடம்</string>
     <string name="cancel">ரத்து</string>
     <string name="export">ரஞ்சியம்</string>
-    <string name="select_data_to_backup">பேக்கப் செய்ய தரவுகளைத் தேர்ந்தெடுக்கவும்:</string>
     <string name="transactional_data">பரிவர்த்தனை தரவுகள்</string>
     <string name="profile_data">சுயவிவர தரவுகள்</string>
     <string name="budgets">பட்ஜெட்கள்</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">கடன் கொடுத்தவை</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">கடன் கொடுத்த மற்றும் வாங்கிய பதிவுகளை நிர்வகிக்கவும்</string>
-    <string name="import_cashew_backup">Cashew இருந்து இறக்குமதி செய்</string>
     <string name="import_cashew_backup_sub">Cashew செயலியில் இருந்து SQLite அல்லது CSV கோப்புகளை இறக்குமதி செய்</string>
     <string name="app_crashed">செயலி தரைதிரைத் தகராறு</string>
     <string name="share_crash_report">சம்பவக் குறித்த அறிக்கையை பகிர்</string>

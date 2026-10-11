@@ -7,4 +7,6 @@
     <string name="ui_yes">Yes</string>
     <string name="ui_no">No</string>
     <string name="appearance_other">Other</string>
+    <string name="ui_show_password">Show password</string>
+    <string name="ui_hide_password">Hide password</string>
 </resources>

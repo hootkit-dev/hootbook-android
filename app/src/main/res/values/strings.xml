@@ -14,13 +14,10 @@
     <string name="security_section">Security</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_biometric_sub">Protect your data with biometric authentication</string>
-    <string name="export_data">Export Data</string>
-    <string name="import_cashew_backup">Import from Cashew</string>
     <string name="import_cashew_backup_sub">Import SQLite or CSV files from Cashew app</string>
     <string name="one_minute">1 minute</string>
     <string name="cancel">Cancel</string>
     <string name="export">Export</string>
-    <string name="select_data_to_backup">Select data to backup:</string>
     <string name="transactional_data">Transactional Data</string>
     <string name="profile_data">Profile Data</string>
     <string name="budgets">Budgets</string>

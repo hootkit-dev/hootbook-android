@@ -11,11 +11,9 @@
     <string name="security_section">Sikkerhed</string>
     <string name="app_lock">App Lås</string>
     <string name="app_lock_biometric_sub">Beskyt dine data med biometrisk godkendelse</string>
-    <string name="export_data">Eksporter Data</string>
     <string name="one_minute">1 minut</string>
     <string name="cancel">Annuller</string>
     <string name="export">Eksporter</string>
-    <string name="select_data_to_backup">Vælg data at sikkerhedskopiere:</string>
     <string name="transactional_data">Transaktionsdata</string>
     <string name="profile_data">Profil Data</string>
     <string name="budgets">Budgetter</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Udlånt</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Administrer registreringer af udlån og lån</string>
-    <string name="import_cashew_backup">Importér fra Cashew</string>
     <string name="import_cashew_backup_sub">Importer SQLite- eller CSV-filer fra Cashew-appen</string>
     <string name="app_crashed">Appen er gået ned</string>
     <string name="share_crash_report">Del fejllog</string>

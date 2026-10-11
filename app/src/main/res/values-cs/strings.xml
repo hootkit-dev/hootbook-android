@@ -11,11 +11,9 @@
     <string name="security_section">Zabezpečení</string>
     <string name="app_lock">Zámek aplikací</string>
     <string name="app_lock_biometric_sub">Chraňte svá data biometrickým ověřením</string>
-    <string name="export_data">Exportovat data</string>
     <string name="one_minute">1 minuta</string>
     <string name="cancel">Zrušit</string>
     <string name="export">Exportovat</string>
-    <string name="select_data_to_backup">Vyberte data k zálohování:</string>
     <string name="transactional_data">Transakční data</string>
     <string name="profile_data">Data profilu</string>
     <string name="budgets">Rozpočty</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Půjčeno</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Spravujte záznamy o půjčených a vypůjčených penězích</string>
-    <string name="import_cashew_backup">Importovat z Cashew</string>
     <string name="import_cashew_backup_sub">Importovat soubory SQLite nebo CSV z aplikace Cashew</string>
     <string name="app_crashed">Aplikace spadla</string>
     <string name="share_crash_report">Sdílet zprávu o pádu</string>

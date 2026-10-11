@@ -11,11 +11,9 @@
     <string name="security_section">સુરક્ષા</string>
     <string name="app_lock">એપ લૉક</string>
     <string name="app_lock_biometric_sub">બાયોમેટ્રિક ઓથેન્ટિકેશન સાથે તમારા ડેટાને સુરક્ષિત કરો</string>
-    <string name="export_data">ડેટા નિકાસ કરો</string>
     <string name="one_minute">1 મિનિટ</string>
     <string name="cancel">રદ કરો</string>
     <string name="export">નિકાસ</string>
-    <string name="select_data_to_backup">બૅકઅપ માટે ડેટા પસંદ કરો:</string>
     <string name="transactional_data">વ્યવહાર ડેટા</string>
     <string name="profile_data">પ્રોફાઇલ ડેટા</string>
     <string name="budgets">બજેટ્સ</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">ઉધાર આપેલ</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">ઉછીના આપેલા અને લીધેલા રેકોર્ડનું સંચાલન કરો</string>
-    <string name="import_cashew_backup">કાજુથી આયાત કરો</string>
     <string name="import_cashew_backup_sub">કાજુ એપમાંથી SQLite અથવા CSV ફાઈલો આયાત કરો</string>
     <string name="app_crashed">એપ ક્રેશ થયું</string>
     <string name="share_crash_report">ક્રેશ રિપોર્ટ શેર કરો</string>

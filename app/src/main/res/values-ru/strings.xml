@@ -11,11 +11,9 @@
     <string name="security_section">Безопасность</string>
     <string name="app_lock">Блокировка приложения</string>
     <string name="app_lock_biometric_sub">Защитите свои данные с помощью биометрической аутентификации</string>
-    <string name="export_data">Экспорт данных</string>
     <string name="one_minute">1 минута</string>
     <string name="cancel">Отмена</string>
     <string name="export">Экспорт</string>
-    <string name="select_data_to_backup">Выберите данные для резервного копирования:</string>
     <string name="transactional_data">Транзакционные данные</string>
     <string name="profile_data">Данные профиля</string>
     <string name="budgets">Бюджеты</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Выдано в долг</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Управление записями о выданных и полученных займах</string>
-    <string name="import_cashew_backup">Импорт из Cashew</string>
     <string name="import_cashew_backup_sub">Импорт файлов SQLite или CSV из приложения Cashew</string>
     <string name="screen_content">Содержимое экрана</string>
     <string name="app_crashed">Приложение аварийно завершило работу</string>

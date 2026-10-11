@@ -24,6 +24,4 @@
     <string name="core_shell_appearance">外观</string>
     <string name="core_shell_app_lock">应用锁</string>
     <string name="core_shell_about">关于／更新／帮助</string>
-    <string name="core_shell_platform_skipped">账本导入已提交。平台界面偏好／资产已保留，但明确未应用；未重复导入账本。</string>
-    <string name="core_shell_skip_platform">保留文件，跳过平台界面恢复</string>
 </resources>

@@ -11,11 +11,9 @@
     <string name="security_section">Keamanan</string>
     <string name="app_lock">Kunci Aplikasi</string>
     <string name="app_lock_biometric_sub">Lindungi data Anda dengan autentikasi biometrik</string>
-    <string name="export_data">Ekspor Data</string>
     <string name="one_minute">1 menit</string>
     <string name="cancel">Batal</string>
     <string name="export">Ekspor</string>
-    <string name="select_data_to_backup">Pilih data untuk dicadangkan:</string>
     <string name="transactional_data">Data Transaksional</string>
     <string name="profile_data">Data Profil</string>
     <string name="budgets">Anggaran</string>
@@ -652,7 +650,6 @@
     <string name="type_lent">Dipinjamkan</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Kelola catatan uang yang dipinjamkan dan dipinjam</string>
-    <string name="import_cashew_backup">Impor dari Cashew</string>
     <string name="import_cashew_backup_sub">Impor file SQLite atau CSV dari aplikasi Cashew</string>
     <string name="app_crashed">Aplikasi Crash</string>
     <string name="share_crash_report">Bagikan laporan crash</string>
