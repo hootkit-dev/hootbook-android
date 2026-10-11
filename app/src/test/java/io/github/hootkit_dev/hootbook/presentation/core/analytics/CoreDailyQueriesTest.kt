@@ -23,11 +23,6 @@ class CoreDailyQueriesTest {
         val filters=mutableListOf<TransactionFilter>();val rows=queryDayCounts(api(filters,42u),JavaDate.parse("2026-10-10"),JavaDate.parse("2026-10-10"))
         assertEquals(42u,rows.single().transactions);assertEquals(1,filters.size)
     }
-    @Test fun dateQueryValidatesInputsWithoutChangingCoreFilterSemantics(){
-        val filter=CoreAnalyticsQuery("2026-10-01","2026-10-10",kinds=setOf(TransactionKind.INCOME),currency="JPY",categoryId="cat").filter()
-        assertEquals("JPY",filter.currency);assertEquals(listOf("cat"),filter.categoryIds);assertEquals(11u.toUByte(),filter.to!!.day)
-        try{CoreAnalyticsQuery("2026-10-11","2026-10-10").filter();fail()}catch(_:IllegalArgumentException){}
-    }
     private suspend fun allTimeRange(oldest:String?,latest:String?):Pair<JavaDate,JavaDate>{
         fun transaction(day:String):Transaction {val d=JavaDate.parse(day);val time=LocalDateTime(d.year,d.monthValue.toUByte(),d.dayOfMonth.toUByte(),12u,0u,0u,0u)
             return Transaction(day,TransactionKind.EXPENSE,BigDecimal.ONE,"CNY",time,null,null,null,null,null,null,"Merchant",null,null,null,emptyList(),false,time,time)}

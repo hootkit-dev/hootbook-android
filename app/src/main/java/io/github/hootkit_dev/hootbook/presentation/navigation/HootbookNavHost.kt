@@ -44,7 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
-import io.github.hootkit_dev.hootbook.presentation.core.investments.BrokerAccountRef
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerAccountRef
 import dev.hootkit.core.Table
 import dev.hootkit.core.TransactionKind
 import dev.hootkit.platform.CoreSession
@@ -57,16 +57,17 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions.Sub
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.quicktemplates.QuickTemplatesScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.*
 import io.github.hootkit_dev.hootbook.presentation.ui.features.contacts.ContactsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.ai.AiAssistantScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.AnalyticsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.home.HomeScreen
-import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.AddAccountWithBrokerAutoSync
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsViewModel
 import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
 import io.github.hootkit_dev.hootbook.presentation.core.notifications.CoreNotificationPreferencesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.onboarding.CoreOnboardingScreen
@@ -301,10 +302,9 @@ fun HootbookNavHost(
                                 popExitTransition = MainTabMotion.popExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until analytics is migrated
-                                    CoreAnalyticsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(categoryId = it)) },
-                                        onFilterTransactions = { filter ->
+                                    AnalyticsScreen(
+                                        blurEffects = prefs.blur, animatedContentScope = this@composable,
+                                        onNavigateToTransactions = { filter ->
                                             go(Transactions(
                                                 categoryId = filter.categoryIds.singleOrNull(), from = filter.from?.coreDateText()?.substringBefore('T'),
                                                 to = filter.to?.coreDateText()?.substringBefore('T'), currency = filter.currency,
@@ -368,9 +368,8 @@ fun HootbookNavHost(
                             ) { entry ->
                                 val route = entry.toRoute<AddAccount>()
                                 ReadableWidth {
-                                    AddAccountScreen(onNavigateBack = back,
-                                        initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category },
-                                        onInvestments = { go(Investments()) })
+                                    AddAccountWithBrokerAutoSync(onNavigateBack = back,
+                                        initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category })
                                 }
                             }
                             composable<Categories>(
@@ -495,9 +494,8 @@ fun HootbookNavHost(
                             }
                             composable<Investments> { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until investments is migrated
                                     val route = entry.toRoute<Investments>()
-                                    val vm: CoreInvestmentsViewModel = hiltViewModel()
+                                    val vm: InvestmentsViewModel = hiltViewModel()
                                     val state by vm.state.collectAsStateWithLifecycle()
                                     var opened by rememberSaveable { mutableStateOf(false) }
                                     LaunchedEffect(route, state.loading) {
@@ -508,7 +506,7 @@ fun HootbookNavHost(
                                             vm.selectAccount(BrokerAccountRef(connection, account))
                                         }
                                     }
-                                    CoreInvestmentsScreen(back, { go(ManageAccounts) }, { go(AccountDetail(it, history = true)) }, vm)
+                                    InvestmentsScreen(back, { go(ManageAccounts) }, { go(AddAccount(category = AccountCategory.INVESTMENTS.name)) }, vm)
                                 }
                             }
                             composable<AiAssistant>(
@@ -518,8 +516,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until AI assistant is migrated
-                                    CoreAiScreen(back)
+                                    AiAssistantScreen(back)
                                 }
                             }
                             composable<Settings>(
