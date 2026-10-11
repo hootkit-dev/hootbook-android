@@ -35,7 +35,7 @@ import io.github.hootkit_dev.hootbook.R
 import dev.hootkit.core.Account
 import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 
 // One way to show an account everywhere: icon, name, "<type> · •••• 1234", balance.
 

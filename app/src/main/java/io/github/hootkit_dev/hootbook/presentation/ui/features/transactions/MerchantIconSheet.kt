@@ -47,56 +47,62 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets
 import io.github.hootkit_dev.hootbook.data.icons.AppIconCandidate
 import io.github.hootkit_dev.hootbook.data.icons.AppStoreIconSearch
-import io.github.hootkit_dev.hootbook.data.icons.IconSearchException
-import io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.ensureActive
 
 data class MerchantIconSearchState(
     val loading: Boolean = false,
     val results: List<AppIconCandidate>? = null,
     val error: String? = null,
     // The candidate being downloaded and saved
-    val saving: AppIconCandidate? = null
+    val saving: AppIconCandidate? = null,
 )
 
 @HiltViewModel
-class MerchantIconViewModel @Inject constructor(
-    val store: CorePlatformAssets,
-    private val search: AppStoreIconSearch
-) : ViewModel() {
+class MerchantIconViewModel
+@Inject
+constructor(val store: CorePlatformAssets, private val search: AppStoreIconSearch) : ViewModel() {
     private val _state = MutableStateFlow(MerchantIconSearchState())
     val state: StateFlow<MerchantIconSearchState> = _state.asStateFlow()
     val icons = store.revision
     private var searching: Job? = null
+    private var searchVersion = 0L
 
     fun search(term: String) {
-        if (term.isBlank()) return
+        val mine = ++searchVersion
         searching?.cancel()
-        searching = viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null) }
-            try {
-                val results = search.search(term)
-                ensureActive()
-                _state.update { it.copy(loading = false, results = results) }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                _state.update { it.copy(loading = false, error = failure.message) }
-            }
+        if (term.isBlank()) {
+            _state.update { it.copy(loading = false, results = null, error = null) }
+            return
         }
+        searching =
+            viewModelScope.launch {
+                _state.update { it.copy(loading = true, error = null) }
+                try {
+                    val results = search.search(term)
+                    ensureActive()
+                    if (mine == searchVersion)
+                        _state.update { it.copy(loading = false, results = results) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    if (mine == searchVersion)
+                        _state.update { it.copy(loading = false, error = failure.message) }
+                }
+            }
     }
 
     fun choose(merchantName: String, candidate: AppIconCandidate, onDone: () -> Unit) {
@@ -105,7 +111,11 @@ class MerchantIconViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val bitmap = search.download(candidate)
-                try { store.saveMerchantIcon(merchantName, bitmap) } finally { bitmap.recycle() }
+                try {
+                    store.saveMerchantIcon(merchantName, bitmap)
+                } finally {
+                    bitmap.recycle()
+                }
                 _state.update { it.copy(saving = null) }
                 onDone()
             } catch (cancelled: CancellationException) {
@@ -119,37 +129,51 @@ class MerchantIconViewModel @Inject constructor(
     fun reset(merchantName: String) {
         if (_state.value.saving != null) return
         viewModelScope.launch {
-            try { store.removeMerchantIcon(merchantName) }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { _state.update { it.copy(error = failure.message) } }
+            try {
+                store.removeMerchantIcon(merchantName)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                _state.update { it.copy(error = failure.message) }
+            }
         }
     }
 }
 
 /**
- * Picks an icon for every transaction with this merchant: searches the App Store for the name
- * (or what the user types), and keeps the chosen app icon on the device.
+ * Picks an icon for every transaction with this merchant: searches the App Store for the name (or
+ * what the user types), and keeps the chosen app icon on the device.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MerchantIconSheet(
     merchantName: String,
     onDismiss: () -> Unit,
-    viewModel: MerchantIconViewModel = hiltViewModel()
+    viewModel: MerchantIconViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val icons by viewModel.icons.collectAsState()
-    val hasCustomIcon = androidx.compose.runtime.remember(icons, merchantName) { viewModel.store.merchantIcon(merchantName) != null }
+    val hasCustomIcon =
+        androidx.compose.runtime.remember(icons, merchantName) {
+            viewModel.store.merchantIcon(merchantName) != null
+        }
     var query by rememberSaveable { mutableStateOf(merchantName) }
     // The user opened this to look for an icon: search the merchant's name straight away
     LaunchedEffect(Unit) { viewModel.search(merchantName) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            modifier =
+                Modifier.fillMaxWidth().padding(horizontal = Spacing.md).navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text(stringResource(R.string.merchant_icon_title), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(R.string.merchant_icon_title),
+                style = MaterialTheme.typography.titleLarge,
+            )
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -157,44 +181,49 @@ fun MerchantIconSheet(
                 label = { Text(stringResource(R.string.merchant_icon_search_hint)) },
                 trailingIcon = {
                     IconButton(onClick = { viewModel.search(query) }) {
-                        Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.merchant_icon_search_hint))
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = stringResource(R.string.merchant_icon_search_hint),
+                        )
                     }
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Text(
                 stringResource(R.string.merchant_icon_privacy, merchantName),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             state.error?.let {
                 Text(
                     stringResource(R.string.merchant_icon_error, it),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
             Box(modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 420.dp)) {
                 val results = state.results
                 when {
                     state.loading -> LoadingIndicator(modifier = Modifier.align(Alignment.Center))
-                    results != null && results.isEmpty() -> Text(
-                        stringResource(R.string.merchant_icon_none),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                    results != null -> LazyColumn {
-                        items(results, key = { it.iconUrl }) { app ->
-                            CandidateRow(
-                                app = app,
-                                saving = state.saving == app,
-                                enabled = state.saving == null,
-                                onClick = { viewModel.choose(merchantName, app, onDismiss) }
-                            )
+                    results != null && results.isEmpty() ->
+                        Text(
+                            stringResource(R.string.merchant_icon_none),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    results != null ->
+                        LazyColumn {
+                            items(results, key = { it.iconUrl }) { app ->
+                                CandidateRow(
+                                    app = app,
+                                    saving = state.saving == app,
+                                    enabled = state.saving == null,
+                                    onClick = { viewModel.choose(merchantName, app, onDismiss) },
+                                )
+                            }
                         }
-                    }
                 }
             }
             if (hasCustomIcon) {
@@ -204,7 +233,7 @@ fun MerchantIconSheet(
                         onDismiss()
                     },
                     shapes = ButtonDefaults.shapes(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.merchant_icon_reset))
                 }
@@ -215,29 +244,39 @@ fun MerchantIconSheet(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun CandidateRow(app: AppIconCandidate, saving: Boolean, enabled: Boolean, onClick: () -> Unit) {
+private fun CandidateRow(
+    app: AppIconCandidate,
+    saving: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
+        modifier =
+            Modifier.fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         AsyncImage(
             model = app.thumbnailUrl,
             contentDescription = null,
-            modifier = Modifier.size(48.dp).clip(CircleShape)
+            modifier = Modifier.size(48.dp).clip(CircleShape),
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(app.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                app.name,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 app.seller,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (saving) LoadingIndicator(modifier = Modifier.size(24.dp))

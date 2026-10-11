@@ -2,7 +2,7 @@ package io.github.hootkit_dev.hootbook.presentation.format
 
 import dev.hootkit.core.Transaction
 import dev.hootkit.core.LocalDateTime
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 
 fun LocalDateTime.toJavaDateTime(): java.time.LocalDateTime = java.time.LocalDateTime.of(
     year, month.toInt(), day.toInt(), hour.toInt(), minute.toInt(), second.toInt(), nanosecond.toInt(),
@@ -19,3 +19,6 @@ fun dev.hootkit.core.TransactionKind.transactionKindLabelRes(): Int = when (this
     dev.hootkit.core.TransactionKind.LOAN_IN -> io.github.hootkit_dev.hootbook.R.string.type_borrowed
     dev.hootkit.core.TransactionKind.UNKNOWN -> io.github.hootkit_dev.hootbook.R.string.core_kind_unknown
 }
+
+/** Unsigned Core clock fields must be unboxed before Java integer formatting. */
+fun coreClockPart(value: UByte): String = String.format("%02d", value.toInt())

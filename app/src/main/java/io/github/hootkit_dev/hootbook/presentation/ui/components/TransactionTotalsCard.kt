@@ -28,7 +28,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 import java.math.BigDecimal
 
 @Composable

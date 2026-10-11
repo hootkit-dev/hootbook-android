@@ -43,7 +43,7 @@ import dev.hootkit.core.Category
 import dev.hootkit.core.QuickTemplate
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 
 /**
  * Saved templates, then templates suggested from history (marked with a sparkle). A tap

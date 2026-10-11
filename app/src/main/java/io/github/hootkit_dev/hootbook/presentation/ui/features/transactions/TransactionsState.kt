@@ -6,7 +6,18 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
 import java.time.LocalDate
 
-internal fun emptyTransactionFilter() = TransactionFilter(null, null, emptyList(), emptyList(), emptyList(), null, null, DeletedFilter.EXCLUDE, SortOrder.NEWEST_FIRST)
+internal fun emptyTransactionFilter() =
+    TransactionFilter(
+        null,
+        null,
+        emptyList(),
+        emptyList(),
+        emptyList(),
+        null,
+        null,
+        DeletedFilter.EXCLUDE,
+        SortOrder.NEWEST_FIRST,
+    )
 
 data class TransactionsUiState(
     val transactions: List<Transaction> = emptyList(),
@@ -32,9 +43,12 @@ data class TransactionsUiState(
 )
 
 enum class DateGroup(@StringRes val labelRes: Int) {
-    TODAY(R.string.today_lbl), YESTERDAY(R.string.yesterday_lbl),
-    THIS_WEEK(R.string.this_week_lbl), EARLIER(R.string.earlier_lbl)
+    TODAY(R.string.today_lbl),
+    YESTERDAY(R.string.yesterday_lbl),
+    THIS_WEEK(R.string.this_week_lbl),
+    EARLIER(R.string.earlier_lbl),
 }
+
 enum class SortOption(@StringRes val labelRes: Int, val core: SortOrder) {
     DATE_NEWEST(R.string.sort_date_newest, SortOrder.NEWEST_FIRST),
     DATE_OLDEST(R.string.sort_date_oldest, SortOrder.OLDEST_FIRST),

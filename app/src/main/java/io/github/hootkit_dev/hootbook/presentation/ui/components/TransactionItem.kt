@@ -58,7 +58,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 import io.github.hootkit_dev.hootbook.presentation.format.formatAmount
 import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import java.math.BigDecimal

@@ -196,6 +196,7 @@ import dev.hootkit.core.DebtKind
 import dev.hootkit.core.TransactionKind
 import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
 import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.coreClockPart
 import io.github.hootkit_dev.hootbook.presentation.format.transactionKindLabelRes
 import android.net.Uri
 import io.github.hootkit_dev.hootbook.presentation.format.entryCycleKeys
@@ -253,7 +254,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.EntryMoneyPresentation as CurrencyFormatter
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import io.github.hootkit_dev.hootbook.presentation.format.formatAmount
 import dev.chrisbanes.haze.HazeInputScale
@@ -2119,7 +2120,7 @@ private fun TransactionReceipt(
                                     )
                                 ) {
                                     Text(
-                                        text = String.format("%02d", hour),
+                                        text = coreClockPart(hour),
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.bodyLarge,
@@ -2144,7 +2145,7 @@ private fun TransactionReceipt(
                                         )
                                 ) {
                                     Text(
-                                        text = String.format("%02d", minute),
+                                        text = coreClockPart(minute),
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         style = MaterialTheme.typography.bodyLarge,

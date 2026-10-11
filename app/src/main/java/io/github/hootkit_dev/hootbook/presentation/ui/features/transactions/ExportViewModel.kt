@@ -10,14 +10,14 @@ import dev.hootkit.core.*
 import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
-import io.github.hootkit_dev.hootbook.presentation.export.CoreTransactionCsv
-import io.github.hootkit_dev.hootbook.presentation.data.withCore
-import io.github.hootkit_dev.hootbook.presentation.data.observe
 import io.github.hootkit_dev.hootbook.presentation.data.coreQuery
-import kotlinx.coroutines.Job
+import io.github.hootkit_dev.hootbook.presentation.data.observe
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
+import io.github.hootkit_dev.hootbook.presentation.export.CoreTransactionCsv
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -30,7 +30,9 @@ data class ExportPreview(
 )
 
 @HiltViewModel
-class ExportViewModel @Inject constructor(
+class ExportViewModel
+@Inject
+constructor(
     private val session: CoreSession,
     private val changes: ChangeBus,
     private val attachments: CoreAttachmentStore,
@@ -41,23 +43,49 @@ class ExportViewModel @Inject constructor(
     private val mutablePreview = MutableStateFlow(ExportPreview())
     val preview = mutablePreview.asStateFlow()
     private var previewJob: Job? = null
+
     fun observeFilter(filter: TransactionFilter) {
         previewJob?.cancel()
         mutablePreview.value = ExportPreview()
-        previewJob = viewModelScope.launch {
-            session.observe(changes, ledgerTables) { core -> coreQuery {
-                core.ledger().use { ledger ->
-                    val oldest = ledger.list(filter.copy(sort = SortOrder.OLDEST_FIRST), PageRequest(0u, 1u))
-                    val newest = ledger.list(filter.copy(sort = SortOrder.NEWEST_FIRST), PageRequest(0u, 1u))
-                    ExportPreview(oldest.items.firstOrNull(), newest.items.firstOrNull(), newest.total)
-                }
-            } }.collect { result ->
-                mutablePreview.value = result.getOrElse { ExportPreview(error = it.message) }
+        previewJob =
+            viewModelScope.launch {
+                session
+                    .observe(changes, ledgerTables) { core ->
+                        coreQuery {
+                            core.ledger().use { ledger ->
+                                val oldest =
+                                    ledger.list(
+                                        filter.copy(sort = SortOrder.OLDEST_FIRST),
+                                        PageRequest(0u, 1u),
+                                    )
+                                val newest =
+                                    ledger.list(
+                                        filter.copy(sort = SortOrder.NEWEST_FIRST),
+                                        PageRequest(0u, 1u),
+                                    )
+                                ExportPreview(
+                                    oldest.items.firstOrNull(),
+                                    newest.items.firstOrNull(),
+                                    newest.total,
+                                )
+                            }
+                        }
+                    }
+                    .collect { result ->
+                        mutablePreview.value =
+                            result.getOrElse { ExportPreview(error = it.message) }
+                    }
             }
-        }
     }
-    fun stopPreview() { previewJob?.cancel() }
-    fun reset() { if (state.value !is ExportState.Exporting) mutableState.value = ExportState.Ready }
+
+    fun stopPreview() {
+        previewJob?.cancel()
+    }
+
+    fun reset() {
+        if (state.value !is ExportState.Exporting) mutableState.value = ExportState.Ready
+    }
+
     fun exportTransactions(filter: TransactionFilter) {
         if (state.value is ExportState.Exporting) return
         mutableState.value = ExportState.Exporting()
@@ -68,20 +96,43 @@ class ExportViewModel @Inject constructor(
             try {
                 val target = attachments.createShareFile("csv")
                 file = target
-                val count = session.withCore { core ->
-                    val accounts = core.accounts().use { it.overview().accounts }
-                    val categories = core.categories().use { it.list(null, true) }
-                    core.ledger().use { ledger -> target.outputStream().use { output ->
-                        CoreTransactionCsv.export(ledger, filter, output, accounts, categories,
-                            onProgress = { written, total -> mutableState.value = ExportState.Exporting(written, total) }) { changes.revisions.value == revision }
-                    } }
-                }
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
-                mutableState.value = ExportState.Success(uri, target.name, count.toInt(), target.length())
+                val count =
+                    session.withCore { core ->
+                        val accounts = core.accounts().use { it.overview().accounts }
+                        val categories = core.categories().use { it.list(null, true) }
+                        core.ledger().use { ledger ->
+                            target.outputStream().use { output ->
+                                CoreTransactionCsv.export(
+                                    ledger,
+                                    filter,
+                                    output,
+                                    accounts,
+                                    categories,
+                                    onProgress = { written, total ->
+                                        mutableState.value = ExportState.Exporting(written, total)
+                                    },
+                                ) {
+                                    changes.revisions.value == revision
+                                }
+                            }
+                        }
+                    }
+                val uri =
+                    FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        target,
+                    )
+                mutableState.value =
+                    ExportState.Success(uri, target.name, count.toInt(), target.length())
                 complete = true
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutableState.value = ExportState.Error(failure.message.orEmpty()) }
-            finally { if (!complete) file?.delete() }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableState.value = ExportState.Error(failure.message.orEmpty())
+            } finally {
+                if (!complete) file?.delete()
+            }
         }
     }
 }
