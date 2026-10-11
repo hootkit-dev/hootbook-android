@@ -52,7 +52,7 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.CoreIntentIngress
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
-import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.ai.AiAssistantScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.AnalyticsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
@@ -498,8 +498,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until AI assistant is migrated
-                                    CoreAiScreen(back)
+                                    AiAssistantScreen(back)
                                 }
                             }
                             composable<Settings>(
