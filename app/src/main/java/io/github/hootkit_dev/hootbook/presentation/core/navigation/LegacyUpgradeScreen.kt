@@ -110,10 +110,7 @@ internal fun LegacyUpgradeContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 if (state.busy) item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        LinearProgressIndicator(Modifier.fillMaxWidth())
-                        Text(stringResource(R.string.legacy_upgrade_working), style = MaterialTheme.typography.bodyMedium)
-                    }
+                    Text(stringResource(R.string.legacy_upgrade_working), style = MaterialTheme.typography.bodyMedium)
                 }
                 item {
                     UpgradeCard(stringResource(if (reportMissing) R.string.legacy_upgrade_attention else phaseTitle(state.phase))) {

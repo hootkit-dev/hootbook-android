@@ -61,7 +61,6 @@ fun CoreAppLockSettingsScreen(onBack:()->Unit,viewModel:CoreAppLockSettingsViewM
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.security_section), Modifier.padding(start = 16.dp, top = 16.dp), style = MaterialTheme.typography.titleMedium)
-            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
                 PreferenceSwitch(title = stringResource(R.string.app_lock), subtitle = stringResource(R.string.core_ui_lock_subtitle),

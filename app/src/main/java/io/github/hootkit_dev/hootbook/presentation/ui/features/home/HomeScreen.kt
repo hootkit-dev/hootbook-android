@@ -129,11 +129,6 @@ fun HomeScreen(
                     }
                 }
             }
-            // Progress is an overlay, never an inserted list item that changes scroll geometry.
-            if (state.loading || state.refreshing || state.widgetsLoading || state.heatmapLoading) {
-                LinearProgressIndicator(Modifier.align(Alignment.TopCenter).fillMaxWidth()
-                    .padding(horizontal = 16.dp).testTag("home_refresh_progress"))
-            }
         }
     }
     if (showEditor) EditWidgetsSheet({ showEditor = false }, rememberModalBottomSheetState(skipPartiallyExpanded = true), prefs.homeOrder, prefs.hiddenHomeWidgets, onWidgetVisibility, onReorder, onResetLayout, prefs.showBanner, onToggleBanner)

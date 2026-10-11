@@ -53,11 +53,9 @@ internal fun CoreTransactionFullActions(state: CoreTransactionsUiState, model: C
                 if (state.form != null) TextButton(enabled = !state.writing, onClick = { model.removeAttachment(ref) }) { Text(stringResource(R.string.core_full_attachment_remove)) }
             }
             if (state.form != null) OutlinedButton(enabled = !state.writing && !state.importingAttachment, onClick = { pick.launch(arrayOf("image/*", "application/pdf", "text/plain")) }) { Text(stringResource(R.string.core_full_attachment_add)) }
-            if (state.importingAttachment) LinearProgressIndicator(Modifier.fillMaxWidth())
         }
         if (state.form != null || state.detail != null) {
             OutlinedButton(enabled = !state.writing && !state.checkingDuplicates, onClick = model::checkDuplicates) { Text(stringResource(R.string.core_full_duplicates)) }
-            if (state.checkingDuplicates) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (state.duplicateCandidates.isNotEmpty()) {
                 Text(stringResource(R.string.core_full_duplicates_note))
                 state.duplicateCandidates.forEach { row ->
@@ -90,7 +88,7 @@ internal fun CoreTransactionFullActions(state: CoreTransactionsUiState, model: C
                 }
                 if (store != null) TextButton(enabled = !state.exporting, onClick = model::exportCsv) { Text(stringResource(R.string.core_full_export_all_pages)) }
             }
-            if (state.exporting) { LinearProgressIndicator(Modifier.fillMaxWidth()); TextButton(onClick = model::cancelExport) { Text(stringResource(R.string.core_full_cancel_request)) } }
+            if (state.exporting) { TextButton(onClick = model::cancelExport) { Text(stringResource(R.string.core_full_cancel_request)) } }
             state.exportFile?.let { file ->
                 Text(stringResource(R.string.core_full_export_count, state.exportCount.toString()))
                 Row {

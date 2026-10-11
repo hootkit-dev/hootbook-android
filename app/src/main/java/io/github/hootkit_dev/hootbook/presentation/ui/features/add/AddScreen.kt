@@ -60,7 +60,6 @@ fun AddScreen(state: CoreTransactionsUiState, update: (CoreTransactionForm) -> U
     }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = 720.dp).fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (state.writing || state.loadingSource) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (onNewSubscription != null && form.editingId == null && form.subscriptionId == null) {
                     GenericTypeSwitcher(0, { if (it == 1 && enabled) onNewSubscription() }, listOf(stringResource(R.string.transaction), stringResource(R.string.subscription)))

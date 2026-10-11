@@ -86,7 +86,6 @@ fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
             icon = { Icon(Icons.Rounded.Add, null) }, text = { Text(stringResource(R.string.new_budget)) })
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-            if (state.loading || state.saving) LinearProgressIndicator(Modifier.fillMaxWidth())
             state.errorResource?.let { Text(stringResource(it),color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(16.dp)) }
             if (state.navigationBlocked) Text(stringResource(R.string.core_budgets_saving), modifier = Modifier.padding(16.dp))
             state.error?.let { error -> Surface(color = MaterialTheme.colorScheme.errorContainer) { Row(Modifier.padding(12.dp)) {
@@ -112,7 +111,6 @@ fun CoreBudgetsScreen(onBack: () -> Unit, initialBudgetId: String? = null,
                     item { Spacer(Modifier.height(90.dp)) }
                 }
                 selected != null && state.showHistory -> LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-                    if (state.historyLoading || state.historyDetailLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                     val detail = state.historyDetail
                     if (detail != null) {
                         item { CoreBudgetCard(budget = detail, onHistoryClick = { viewModel.history(true) }); CoreBudgetPeriodDivider(detail) }

@@ -50,7 +50,7 @@ class CoreHomePresentationTest {
         rule.runOnIdle { assertEquals(true, opened) }
     }
 
-    @Test fun refreshProgressDoesNotMoveScrolledContentOrReplaceRows() {
+    @Test fun refreshDoesNotMoveScrolledContentOrReplaceRows() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         val assets = CorePlatformAssets(context)
         val at = LocalDateTime(2026, 10u, 11u, 9u, 30u, 0u, 0u)
@@ -74,13 +74,11 @@ class CoreHomePresentationTest {
         rule.onNodeWithTag("home_transaction_tx-3").performScrollTo().assertIsDisplayed()
         val before = rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot
         rule.runOnIdle { state.value = state.value.copy(refreshing = true, widgetsLoading = true) }
-        rule.onNodeWithTag("home_refresh_progress").assertExists()
         rule.onNodeWithText(context.getString(R.string.home_recent_empty)).assertDoesNotExist()
         assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
         rule.runOnIdle { state.value = state.value.copy(refreshing = false, widgetsLoading = false, heatmapLoading = true) }
         assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
         rule.runOnIdle { state.value = state.value.copy(heatmapLoading = false) }
-        rule.onNodeWithTag("home_refresh_progress").assertDoesNotExist()
         assertEquals(before, rule.onNodeWithTag("home_transaction_tx-3").fetchSemanticsNode().boundsInRoot)
     }
 

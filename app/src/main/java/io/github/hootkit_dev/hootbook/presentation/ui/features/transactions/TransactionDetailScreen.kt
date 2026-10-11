@@ -37,7 +37,6 @@ fun TransactionDetailScreen(state: CoreTransactionsUiState, onBack: () -> Unit, 
         }) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = 720.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                if (state.loading || state.writing) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (transaction == null && !state.loading) Text(stringResource(R.string.core_full_label_4))
                 transaction?.let { row ->

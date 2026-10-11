@@ -101,7 +101,7 @@ fun CoreBackupScreen(onBack: () -> Unit, viewModel: CoreBackupViewModel = hiltVi
     }) { padding ->
         Column(Modifier.fillMaxSize().hazeSource(haze).padding(padding).consumeWindowInsets(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (state.busy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.core_backup_busy)) }
+            if (state.busy) Text(stringResource(R.string.core_backup_busy))
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             state.message?.let { Text(it) }
             SectionHeader(title = stringResource(R.string.seamless_sync_section), modifier = Modifier.padding(start = 16.dp))
@@ -171,7 +171,7 @@ fun CoreBackupScreen(onBack: () -> Unit, viewModel: CoreBackupViewModel = hiltVi
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxWidth().weight(1f, fill = false).imePadding().verticalScroll(rememberScrollState()).padding(24.dp).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (state.busy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.core_backup_busy)) }
+                if (state.busy) Text(stringResource(R.string.core_backup_busy))
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 state.message?.let { Text(it) }
                 if (page == "export") {

@@ -86,7 +86,6 @@ fun CoreSettingsScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (state.loading || state.saving) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (state.navigationBlocked) item { Text(stringResource(R.string.core_settings_saving)) }
             state.localeFailure?.let { failure -> item {
                 Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.large) {

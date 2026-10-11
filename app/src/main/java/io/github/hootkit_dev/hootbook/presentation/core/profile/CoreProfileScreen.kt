@@ -74,7 +74,6 @@ fun CoreProfileScreen(onBack: () -> Unit, onContacts: () -> Unit = {}, onMerchan
                         Text(stringResource(R.string.transactions_count_format, ledger.transactionCount.toInt()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                if (ledger.loading || state.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
                 items(warnings) { Text(stringResource(it), Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.error) }
                 ledger.error?.let { item { Text(stringResource(it), Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.error); TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.core_settings_retry)) } } }
                 state.error?.let { item { Text(stringResource(it), Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.error) } }
@@ -177,7 +176,6 @@ private fun CoreEditProfileSheet(viewModel: CoreProfileViewModel, onDismiss: () 
             Row(verticalAlignment = Alignment.CenterVertically) { Text(stringResource(R.string.core_ui_show_banner), Modifier.weight(1f)); Switch(showBanner, { showBanner = it }, enabled = !state.busy) }
             ColorPickerContent(initialColor = background, onColorChanged = { if (!state.busy) background = it })
             state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-            if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             Button(onClick = { viewModel.save(name, background, showBanner, avatarPath, bannerPath, onDismiss) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.save)) }
             TextButton(onClick = onDismiss, enabled = !state.busy) { Text(stringResource(R.string.cancel)) }
         }

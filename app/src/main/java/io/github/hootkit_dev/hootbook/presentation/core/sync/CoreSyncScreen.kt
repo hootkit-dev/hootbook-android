@@ -73,7 +73,6 @@ fun CoreSyncScreen(onBack: () -> Unit, onBackup: () -> Unit, onRecord: (Table, S
             LazyColumn(Modifier.widthIn(max = 720.dp).fillMaxSize().hazeSource(haze), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item { Text(stringResource(R.string.sync_intro), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp)) }
-                if (state.loading || state.busy || phase == SyncPhase.SYNCING || state.control?.authChanging == true) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
                 if (state.busy || state.navigationBlocked) item { Text(stringResource(R.string.core_sync_wait)) }
                 (state.error ?: state.control?.error)?.let { error -> item { Surface(color = MaterialTheme.colorScheme.errorContainer) { Column(Modifier.padding(12.dp)) {
                     Text(error); TextButton(onClick = viewModel::clearError) { Text(stringResource(R.string.core_sync_dismiss)) }

@@ -93,7 +93,6 @@ internal fun CoreBrokerConnectDialog(
                     }
                     state.error?.let { Text(investmentFailureText(it), color = MaterialTheme.colorScheme.error) }
                     if (state.busy) {
-                        LinearProgressIndicator(Modifier.fillMaxWidth())
                         Text(stringResource(if (state.cancelling) R.string.core_invest_cancelling else R.string.core_invest_working))
                     }
                     TextButton(enabled = !state.cancelling, onClick = {

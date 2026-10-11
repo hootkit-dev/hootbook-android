@@ -98,9 +98,6 @@ internal fun CoreNetWorthHistoryContent(
                 if (state.failed || state.data?.complete == false) TextButton(onClick = onRetry,
                     modifier = Modifier.testTag("net_worth_history_retry")) { Text(stringResource(R.string.net_worth_history_retry)) }
             }
-            Box(Modifier.fillMaxWidth().height(2.dp)) {
-                if (state.refreshing) LinearProgressIndicator(Modifier.fillMaxSize())
-            }
         }
     }
     if (information) AlertDialog(onDismissRequest = { information = false },

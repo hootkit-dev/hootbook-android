@@ -638,7 +638,6 @@ fun CoreAppearanceScreen(
                     }
                 }
 
-                if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) }
                 CoreAppearanceAdditionalSettings(viewModel, onAppLock)
                 Spacer(modifier = Modifier.height(Spacing.xl))
