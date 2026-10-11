@@ -131,8 +131,8 @@ class RestoredFeatureUiTest {
                 onManageAccounts = { managed = true }, onAccountHistory = {}, onAddInvestment = { created = true })
         } }
         // The extended FAB sits in the gesture area on some phones, where touch injection is refused.
-        rule.onAllNodes(hasClickAction() and hasAnyDescendant(hasText(context.getString(R.string.investments_add))), useUnmergedTree = true)
-            .onFirst().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
+        rule.onNodeWithContentDescription(context.getString(R.string.investments_add))
+            .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
         rule.runOnIdle { assertEquals(true, created); assertEquals(false, managed) }
     }
 
