@@ -6,7 +6,7 @@ import dev.hootkit.core.BackupFile
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.backup.BackupOperation
 import io.github.hootkit_dev.hootbook.core.backup.CoreBackupFiles
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
 import io.github.hootkit_dev.hootbook.utils.IconSwitchingUtils
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,12 +22,12 @@ data class PlatformBackupSnapshot(val preferencesJson: String, val files: List<B
 class BackupPlatformApplier internal constructor(
     private val preferences: CoreUiPreferencesStore,
     private val assets: CorePlatformAssets,
-    private val locale: io.github.hootkit_dev.hootbook.presentation.core.settings.CoreUiLocalePreference,
+    private val locale: io.github.hootkit_dev.hootbook.presentation.app.UiLocalePreference,
     private val setCoreLocale: suspend (String) -> Unit,
     private val switchIcon: suspend (io.github.hootkit_dev.hootbook.data.preferences.AppIcon) -> Unit,
 ) {
     @Inject constructor(@ApplicationContext context: Context, preferences: CoreUiPreferencesStore,
-        assets: CorePlatformAssets, locale: CoreLocaleController, session: CoreSession) : this(
+        assets: CorePlatformAssets, locale: LocaleController, session: CoreSession) : this(
         preferences, assets, locale,
         { tag -> session.awaitCore().settings().use { it.setLocale(tag) } },
         { icon -> withContext(Dispatchers.Main.immediate) { IconSwitchingUtils.switchAppIcon(context, icon) } },

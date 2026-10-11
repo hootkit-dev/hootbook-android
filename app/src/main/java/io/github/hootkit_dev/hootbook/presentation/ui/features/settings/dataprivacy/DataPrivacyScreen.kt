@@ -157,7 +157,7 @@ fun DataPrivacyScreen(
                         },
                         checked = appLockUiState.isLockEnabled,
                         onCheckedChange = { enabled ->
-                            appLockViewModel.setAppLockEnabled(enabled, io.github.hootkit_dev.hootbook.presentation.core.applock.coreFragmentActivity(context))
+                            appLockViewModel.setAppLockEnabled(enabled, io.github.hootkit_dev.hootbook.presentation.app.fragmentActivity(context))
                         },
                         leadingIcon = {
                             Box(

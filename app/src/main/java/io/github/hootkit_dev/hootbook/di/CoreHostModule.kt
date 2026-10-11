@@ -17,7 +17,7 @@ import dev.hootkit.platform.OkHttpTransport
 import io.github.hootkit_dev.hootbook.core.CoreCapabilities
 import io.github.hootkit_dev.hootbook.core.CoreProcess
 import io.github.hootkit_dev.hootbook.core.CoreStartupCoordinator
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
 import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +52,7 @@ object CoreHostModule {
         @ApplicationScope scope: CoroutineScope,
         factory: AndroidCoreFactory,
         capabilities: CoreCapabilities,
-        locale: CoreLocaleController,
+        locale: LocaleController,
     ): CoreSession {
         check(!CoreProcess.isCrashProcess(context)) { "Core is disabled in the crash process" }
         // Constructing the binding is cheap. Only awaitCore opens native code, on the factory's IO dispatcher.

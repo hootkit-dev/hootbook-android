@@ -11,8 +11,8 @@ import io.github.hootkit_dev.hootbook.core.ui.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreUiLocalePreference
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
+import io.github.hootkit_dev.hootbook.presentation.app.UiLocalePreference
 
 @HiltViewModel
 class SettingsViewModel internal constructor(
@@ -20,10 +20,10 @@ class SettingsViewModel internal constructor(
     private val changes: ChangeBus,
     val preferences: CoreUiPreferencesStore,
     val assets: CorePlatformAssets,
-    private val locale: CoreUiLocalePreference,
+    private val locale: UiLocalePreference,
 ) : ViewModel() {
     @Inject constructor(session: CoreSession, changes: ChangeBus, preferences: CoreUiPreferencesStore,
-        assets: CorePlatformAssets, locale: CoreLocaleController) : this(session, changes, preferences, assets, locale as CoreUiLocalePreference)
+        assets: CorePlatformAssets, locale: LocaleController) : this(session, changes, preferences, assets, locale as UiLocalePreference)
     val userPreferences = preferences.state
     private val count = MutableStateFlow(0u)
     val totalTransactions = count.asStateFlow()

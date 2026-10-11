@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.backup
+package io.github.hootkit_dev.hootbook.presentation.data.backup
 
 import android.app.Application
 import dev.hootkit.core.*
@@ -46,11 +46,11 @@ internal class BackupTestAccess : CoreBackupAccess {
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28], manifest = Config.NONE)
-class CoreBackupWorkflowTest {
+class BackupWorkflowTest {
     @get:Rule val temp = TemporaryFolder()
     private val root get() = temp.root
     private fun workflow(access: BackupTestAccess, files: CoreBackupFiles = CoreBackupFiles(root)) =
-        CoreBackupWorkflow(access, files, BackupOperationJournal(files), root)
+        BackupWorkflow(access, files, BackupOperationJournal(files), root)
     private suspend fun source(files: CoreBackupFiles) = files.stage { ByteArrayInputStream("source-original".toByteArray()) }
     @Test fun mergeCallsCoreOnceAndPreservesOriginal() = runTest {
         val access = BackupTestAccess(); val files = CoreBackupFiles(root); val source = source(files)
@@ -97,13 +97,13 @@ class CoreBackupWorkflowTest {
             failure = CoreException.Storage(StorageErrorKind.IO, "writer closed after commit")
         }
         val files = CoreBackupFiles(File(root, "operations")); val source = source(files)
-        val workflow = CoreBackupWorkflow(access, files, BackupOperationJournal(files), File(root, "operations"))
+        val workflow = BackupWorkflow(access, files, BackupOperationJournal(files), File(root, "operations"))
         try { workflow.restore(source, false, ImportMode.MERGE, null, false); fail() } catch (_: CoreException.Storage) { }
         assertEquals("committed-once", committedLedger.readText())
         val persisted = BackupOperationJournal(files).read(source.operationId)!!
         assertEquals(BackupPhase.UNCERTAIN, persisted.phase); assertTrue(persisted.blocksImport)
         access.failure = null; access.onImport = { fail("Duplicate ledger mutation") }
-        val restarted = CoreBackupWorkflow(access, files, BackupOperationJournal(files), File(root, "operations"))
+        val restarted = BackupWorkflow(access, files, BackupOperationJournal(files), File(root, "operations"))
         assertEquals(BackupPhase.UNCERTAIN, restarted.recover().single().phase)
         try { restarted.restore(source, false, ImportMode.MERGE, null, false); fail() } catch (_: IllegalStateException) { }
         assertEquals(1, access.imports); assertEquals("committed-once", committedLedger.readText())
@@ -116,7 +116,7 @@ class CoreBackupWorkflowTest {
         for (error in known) {
             val operationRoot = temp.newFolder(); val files = CoreBackupFiles(operationRoot)
             val access = BackupTestAccess().apply { failure = error }
-            val workflow = CoreBackupWorkflow(access, files, BackupOperationJournal(files), operationRoot)
+            val workflow = BackupWorkflow(access, files, BackupOperationJournal(files), operationRoot)
             val wrong = source(files)
             try { workflow.restore(wrong, false, ImportMode.MERGE, "wrong", false); fail() } catch (_: CoreException.Invalid) { }
             assertEquals(BackupPhase.FAILED, workflow.recover().single().phase)
@@ -148,7 +148,7 @@ class CoreBackupWorkflowTest {
         for (error in unknown) {
             val operationRoot = temp.newFolder(); val files = CoreBackupFiles(operationRoot)
             val access = BackupTestAccess().apply { failure = error }
-            val workflow = CoreBackupWorkflow(access, files, BackupOperationJournal(files), operationRoot); val source = source(files)
+            val workflow = BackupWorkflow(access, files, BackupOperationJournal(files), operationRoot); val source = source(files)
             try { workflow.restore(source, false, ImportMode.MERGE, null, false); fail() } catch (_: Exception) { }
             assertEquals(BackupPhase.UNCERTAIN, workflow.recover().single().phase)
             assertTrue(BackupOperationJournal(files).read(source.operationId)!!.blocksImport)
@@ -216,7 +216,7 @@ class CoreBackupWorkflowTest {
     @Test fun platformApplyFailureAndRetryNeverReimportsLedger() = runTest {
         val access = BackupTestAccess(); val files = CoreBackupFiles(root); val source = source(files)
         var attempts = 0; var failApply = true
-        val workflow = CoreBackupWorkflow(access, files, BackupOperationJournal(files), root) { operation ->
+        val workflow = BackupWorkflow(access, files, BackupOperationJournal(files), root) { operation ->
             assertEquals(BackupPhase.CORE_COMMITTED, operation.phase)
             attempts++
             if (failApply) throw java.io.IOException("platform image install interrupted")
@@ -230,7 +230,7 @@ class CoreBackupWorkflowTest {
     }
     @Test fun cancelledPlatformApplyLeavesCommittedStatusForIdempotentRetry() = runTest {
         val access = BackupTestAccess(); val files = CoreBackupFiles(root); val source = source(files)
-        val workflow = CoreBackupWorkflow(access, files, BackupOperationJournal(files), root) {
+        val workflow = BackupWorkflow(access, files, BackupOperationJournal(files), root) {
             throw kotlinx.coroutines.CancellationException("platform cancellation")
         }
         try { workflow.restore(source, false, ImportMode.MERGE, null, false); fail() } catch (_: kotlinx.coroutines.CancellationException) { }

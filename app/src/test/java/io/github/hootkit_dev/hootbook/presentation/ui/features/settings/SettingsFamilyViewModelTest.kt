@@ -3,7 +3,7 @@ package io.github.hootkit_dev.hootbook.presentation.ui.features.settings
 import dev.hootkit.core.*
 import dev.hootkit.platform.*
 import io.github.hootkit_dev.hootbook.core.ui.*
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreUiLocalePreference
+import io.github.hootkit_dev.hootbook.presentation.app.UiLocalePreference
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.FakeAccountsCore
 import io.github.hootkit_dev.hootbook.presentation.ui.features.plans.FakePlansCore
 import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.CoreViewModelTest
@@ -36,7 +36,7 @@ internal class SettingsFamilyCore : FakeAccountsCore() {
     }
     override fun plans() = plans.plans()
 }
-internal class TestLocale : CoreUiLocalePreference {
+internal class TestLocale : UiLocalePreference {
     var selected = "en"
     var fail = false
     override fun selection() = selected

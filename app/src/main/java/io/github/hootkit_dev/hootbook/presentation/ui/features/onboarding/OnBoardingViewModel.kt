@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.toArgb
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.backup.*
-import io.github.hootkit_dev.hootbook.presentation.core.backup.*
+import io.github.hootkit_dev.hootbook.presentation.data.backup.*
 import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.persistProfileImage
 import java.io.File
 
@@ -39,7 +39,7 @@ class OnBoardingViewModel @Inject constructor(
     private var accountReceipt: Pair<String, String>? = null
     private val workflow = File(context.noBackupFilesDir, "hootkit-core/backup-ui").let { root ->
         val files = CoreBackupFiles(root)
-        CoreBackupWorkflow(SessionBackupAccess(session), files, BackupOperationJournal(files), root) { platform.apply(it, onboardingFinished = false) }
+        BackupWorkflow(SessionBackupAccess(session), files, BackupOperationJournal(files), root) { platform.apply(it, onboardingFinished = false) }
     }
     init {
         loadPreferences()

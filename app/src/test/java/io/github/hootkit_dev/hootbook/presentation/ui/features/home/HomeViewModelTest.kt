@@ -8,7 +8,7 @@ import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.data.preferences.HomeWidget
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.coreDate
+import io.github.hootkit_dev.hootbook.presentation.data.coreDate
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate as JavaDate

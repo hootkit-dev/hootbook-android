@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.navigation
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -22,13 +22,13 @@ import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.CoreLocaleGateState
 import io.github.hootkit_dev.hootbook.core.CoreLocaleReconciler
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
 
 /** Keep the navigation composition/VMs alive while hiding and blocking stale-language content. */
 @Composable
-internal fun CoreLocaleGate(session: CoreSession, content: @Composable () -> Unit) {
+internal fun LocaleGate(session: CoreSession, content: @Composable () -> Unit) {
     val context = LocalContext.current.applicationContext
-    val preference = remember(context) { CoreLocaleController(context) }
+    val preference = remember(context) { LocaleController(context) }
     val configurationKey = LocalConfiguration.current.locales.toLanguageTags()
     val reconciler = remember(session) { CoreLocaleReconciler { tag ->
         session.awaitCore().settings().use { it.setLocale(tag) }

@@ -39,9 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Locale
-import kotlin.math.pow
-import kotlin.math.roundToLong
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 
 @Composable
 fun AmountInput(
@@ -157,7 +155,7 @@ fun AnimatedCounterText(
     }
 
     // Format the animated value properly
-    val displayText = formatAnimatedValue(animatedValue, cleanedAmount)
+    val displayText = CoreMoneyPresentation.formatAnimatedInput(animatedValue, cleanedAmount)
 
     // Calculate dynamic font size based on display text length
     val dynamicFontSize = remember(displayText, enableDynamicSizing) {
@@ -181,33 +179,6 @@ fun AnimatedCounterText(
         else
             MaterialTheme.colorScheme.inverseSurface
     )
-}
-
-// Helper function to format the animated value to match the target format
-private fun formatAnimatedValue(value: Float, targetString: String): String {
-    val hasDecimal = targetString.contains('.')
-    return if (hasDecimal) {
-        val decimalPart = targetString.substringAfter('.', "")
-        val decimalPlaces = decimalPart.length
-        val factor = 10.0.pow(decimalPlaces.toDouble()).toFloat()
-        val roundedValue = (value * factor).roundToLong() / factor
-
-        // Special handling for trailing zeros, similar to the reference code
-        if (decimalPart.all { it == '0' }) {
-            // If all decimal places are zeros, format as integer with commas
-            String.format(Locale.US, "%,d", roundedValue.roundToLong())
-        } else if (roundedValue.roundToLong().toFloat() != roundedValue) {
-            // If there's a meaningful decimal part
-            val pattern = "%,.${decimalPlaces}f"
-            String.format(Locale.US, pattern, roundedValue)
-        } else {
-            // Otherwise, round to whole number with commas
-            String.format(Locale.US, "%,d", roundedValue.roundToLong())
-        }
-    } else {
-        // Format integer with commas
-        String.format(Locale.US, "%,d", value.roundToLong())
-    }
 }
 
 // Calculate dynamic font size based on amount length

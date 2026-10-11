@@ -177,14 +177,6 @@ fun BatchEditTransactionsBottomSheet(
                     )
                 }
 
-//                item {
-//                    Text(
-//                        text = stringResource(R.string.batch_edit_toggle_hint),
-//                        style = MaterialTheme.typography.labelLarge,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//                }
-
                 // Date Card
                 item {
                     BatchEditOptionCard(

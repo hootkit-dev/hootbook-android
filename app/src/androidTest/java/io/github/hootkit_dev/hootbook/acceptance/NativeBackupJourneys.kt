@@ -3,8 +3,8 @@ package io.github.hootkit_dev.hootbook.acceptance
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.core.backup.*
 import io.github.hootkit_dev.hootbook.core.ui.*
-import io.github.hootkit_dev.hootbook.presentation.core.backup.*
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
+import io.github.hootkit_dev.hootbook.presentation.data.backup.*
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
@@ -24,11 +24,11 @@ import org.junit.runners.MethodSorters
 class NativeBackupJourneys {
     private lateinit var f:NativeScenarioFixture
     @Before fun ready():Unit=runBlocking{f=NativeScenarioFixture();f.core();f.preferences.ready()}
-    private fun workflow(folder:String,apply:(suspend(BackupOperation)->Unit)?=null,access:CoreBackupAccess=SessionBackupAccess(f.session)):CoreBackupWorkflow {
+    private fun workflow(folder:String,apply:(suspend(BackupOperation)->Unit)?=null,access:CoreBackupAccess=SessionBackupAccess(f.session)):BackupWorkflow {
         val root=File(f.context.noBackupFilesDir,"native-acceptance/$folder-${UUID.randomUUID()}")
-        val files=CoreBackupFiles(root);return CoreBackupWorkflow(access,files,BackupOperationJournal(files),root,apply)
+        val files=CoreBackupFiles(root);return BackupWorkflow(access,files,BackupOperationJournal(files),root,apply)
     }
-    private fun applier():BackupPlatformApplier=BackupPlatformApplier(f.context,f.preferences,CorePlatformAssets(f.context),CoreLocaleController(f.context),f.session)
+    private fun applier():BackupPlatformApplier=BackupPlatformApplier(f.context,f.preferences,CorePlatformAssets(f.context),LocaleController(f.context),f.session)
     private fun digest(file:File)=MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString(""){"%02x".format(it)}
     @Test fun aLegacyEmptyCoreSchemaAndActualProfileMerchantAssets()=runBlocking {
         val c=f.core()
@@ -126,7 +126,7 @@ class NativeBackupJourneys {
             })}
             override suspend fun <T> legacy(block:suspend(LegacyInterface)->T):T=actual.legacy(block)
         }
-        val w=CoreBackupWorkflow(held,files,BackupOperationJournal(files),root)
+        val w=BackupWorkflow(held,files,BackupOperationJournal(files),root)
         check(w.recover().none{it.blocksImport})
         val backup=w.export(ExportOptions(includeAi=false,includeBrokerage=false,platformFiles=emptyList()))
         source=files.stage{backup.first.file.inputStream()}
@@ -137,7 +137,7 @@ class NativeBackupJourneys {
         org.junit.Assume.assumeTrue("Prior actual host process-kill marker required",File(f.output,"actual-process-killpoint.json").isFile)
         val marker=JSONObject(File(f.output,"actual-process-killpoint.json").readText());assertTrue(marker.getBoolean("actualNativeReturned"))
         val root=File(marker.getString("root"));val files=CoreBackupFiles(root)
-        val w=CoreBackupWorkflow(SessionBackupAccess(f.session),files,BackupOperationJournal(files),root)
+        val w=BackupWorkflow(SessionBackupAccess(f.session),files,BackupOperationJournal(files),root)
         val op=w.recover().single{it.source.operationId==marker.getString("operationId")}
         assertEquals(BackupPhase.UNCERTAIN,op.phase);assertEquals(marker.getString("sha256"),digest(op.source.file))
         try{w.restore(op.source,false,ImportMode.MERGE,null,false);fail("uncertain restart must not replay") }catch(_:IllegalStateException){}

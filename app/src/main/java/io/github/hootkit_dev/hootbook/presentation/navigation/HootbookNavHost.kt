@@ -68,7 +68,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.appearan
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.applock.AppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy.DataPrivacyScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.currency.CurrencySettingsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleGate
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.notifications.NotificationScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.onboarding.OnBoardingScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.MerchantIconsScreen
@@ -150,7 +150,7 @@ fun HootbookNavHost(
         go(destination)
     }
 
-    CoreLocaleGate(session) {
+    LocaleGate(session) {
         LaunchedEffect(pending.firstOrNull()?.token, prefs.onboardingFinished, navBackStackEntry?.id) {
             val entry = pending.firstOrNull() ?: return@LaunchedEffect
             if (navController.routeIngress(entry.target, prefs.onboardingFinished)) ingress.consumed(entry.token)

@@ -11,8 +11,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.*
 import io.github.hootkit_dev.hootbook.core.ui.*
-import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreAppRoot
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreLocaleController
+import io.github.hootkit_dev.hootbook.presentation.app.AppRoot
+import io.github.hootkit_dev.hootbook.presentation.app.LocaleController
 import io.github.hootkit_dev.hootbook.widget.QuickEntry
 import javax.inject.Inject
 
@@ -26,19 +26,18 @@ class MainActivity : AppCompatActivity() {
     }
     @Inject lateinit var bootstrap: CoreAppBootstrap
     @Inject lateinit var coreSession: CoreSession
-    @Inject lateinit var capabilities: CoreCapabilities
     @Inject lateinit var preferences: CoreUiPreferencesStore
     @Inject lateinit var lock: CoreAppLockController
     @Inject lateinit var ingress: CoreIntentIngress
     override fun attachBaseContext(newBase: Context) {
-        try { CoreLocaleController(newBase).applyStartupPreference() } catch (_: Exception) { /* Ready locale gate owns explicit retry. */ }
+        try { LocaleController(newBase).applyStartupPreference() } catch (_: Exception) { /* Ready locale gate owns explicit retry. */ }
         super.attachBaseContext(newBase)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen(); super.onCreate(savedInstanceState)
         enableEdgeToEdge(); requestHighestRefreshRate(); bootstrap.start()
         if (savedInstanceState == null) ingress.accept(this, intent)
-        setContent { CoreAppRoot(bootstrap, coreSession, capabilities, preferences, lock, ingress) }
+        setContent { AppRoot(bootstrap, coreSession, preferences, lock, ingress) }
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); ingress.accept(this, intent) }
     private fun requestHighestRefreshRate() {

@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.settings
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import android.app.LocaleManager
 import android.content.Context
@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** UI language is not a ledger setting. Core's runtime locale is updated only after accepting a command. */
-interface CoreUiLocalePreference {
+interface UiLocalePreference {
     fun selection(): String
     fun effectiveTag(selection: String): String
     suspend fun apply(selection: String)
@@ -25,7 +25,7 @@ interface CoreUiLocalePreference {
  * alone restores on Activity attach, after Application can already start Core on API 26–32.
  * LocaleManagerCompat is the public cold-start reader for the existing AndroidX/OS locale choice.
  */
-class CoreLocaleController internal constructor(private val context: Context, private val writeCompat: (String) -> Unit) : CoreUiLocalePreference {
+class LocaleController internal constructor(private val context: Context, private val writeCompat: (String) -> Unit) : UiLocalePreference {
     @Inject constructor(@ApplicationContext context: Context) : this(context, { selection ->
         writeAndroidLocale(context, selection)
     })
@@ -54,12 +54,12 @@ class CoreLocaleController internal constructor(private val context: Context, pr
     /** CoreHostModule must call this on EACH open, including retries and explicit restarts. */
     fun resolveStartupTag(): String = effectiveTag(selection())
 
-    /** Invoke at the start of MainActivity.attachBaseContext, before super, in Core-only mode. */
+    /** Invoke at the start of MainActivity.attachBaseContext, before super. */
     fun applyStartupPreference() { writeCompat(selection()) }
 
     override suspend fun apply(selection: String) = withContext(Dispatchers.Main.immediate) {
         synchronized(guard) {
-            val previous = this@CoreLocaleController.selection()
+            val previous = this@LocaleController.selection()
             val canonical = LocaleListCompat.forLanguageTags(selection).toLanguageTags()
             try {
                 check(preferences.edit().putString(SELECTION_KEY, canonical).commit()) { "Language preference persistence failed" }

@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.settings
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import android.app.Application
 import android.app.LocaleManager
@@ -29,10 +29,10 @@ import org.robolectric.annotation.Config
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28], qualifiers = "en")
-class CoreLocaleControllerTest {
+class LocaleControllerTest {
     private val context get() = RuntimeEnvironment.getApplication() as Context
     private val activities = mutableListOf<ActivityController<LocaleActivity>>()
-    private val preferences get() = context.getSharedPreferences(CoreLocaleController.STORE_NAME, Context.MODE_PRIVATE)
+    private val preferences get() = context.getSharedPreferences(LocaleController.STORE_NAME, Context.MODE_PRIVATE)
     @Before fun setup() {
         Dispatchers.setMain(StandardTestDispatcher())
         preferences.edit().clear().commit()
@@ -56,69 +56,69 @@ class CoreLocaleControllerTest {
             it.write("<?xml version=\"1.0\" encoding=\"utf-8\"?><locales application_locales=\"zh-CN\"/>".toByteArray())
         }
         assertTrue(AppCompatDelegate.getApplicationLocales().isEmpty)
-        val locale = CoreLocaleController(context)
+        val locale = LocaleController(context)
         assertEquals("zh-CN", locale.resolveStartupTag())
-        assertEquals("zh-CN", preferences.getString(CoreLocaleController.SELECTION_KEY, null))
+        assertEquals("zh-CN", preferences.getString(LocaleController.SELECTION_KEY, null))
         context.deleteFile(COMPAT_LOCALE_FILE)
-        assertEquals("zh-CN", CoreLocaleController(context).resolveStartupTag())
-        assertEquals(setOf(CoreLocaleController.SELECTION_KEY), preferences.all.keys)
+        assertEquals("zh-CN", LocaleController(context).resolveStartupTag())
+        assertEquals(setOf(LocaleController.SELECTION_KEY), preferences.all.keys)
     }
     @Test fun persistedChoiceSurvivesCompatStaticEmptyAndActivityAttachUsesTranslatedResources() {
-        preferences.edit().putString(CoreLocaleController.SELECTION_KEY, "zh-CN").commit()
+        preferences.edit().putString(LocaleController.SELECTION_KEY, "zh-CN").commit()
         assertTrue(AppCompatDelegate.getApplicationLocales().isEmpty)
-        assertEquals("zh-CN", CoreLocaleController(context).resolveStartupTag())
+        assertEquals("zh-CN", LocaleController(context).resolveStartupTag())
         val app = activity()
         assertEquals("zh", app.resources.configuration.locales[0].language)
         assertEquals("设置", app.getString(R.string.core_settings_title))
         assertEquals("货币与汇率", app.getString(R.string.core_currencies_title))
     }
     @Test fun englishAndSystemSelectionHaveRealResourceAndCoreTagAgreement() {
-        preferences.edit().putString(CoreLocaleController.SELECTION_KEY, "en").commit()
+        preferences.edit().putString(LocaleController.SELECTION_KEY, "en").commit()
         val app = activity()
         assertEquals("en", app.resources.configuration.locales[0].language)
         assertEquals("Settings", app.getString(R.string.core_settings_title))
-        preferences.edit().putString(CoreLocaleController.SELECTION_KEY, "").commit()
+        preferences.edit().putString(LocaleController.SELECTION_KEY, "").commit()
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-        val startup = CoreLocaleController(context).resolveStartupTag()
+        val startup = LocaleController(context).resolveStartupTag()
         assertEquals(LocaleManagerCompat.getSystemLocales(context)[0]!!.toLanguageTag(), startup)
-        assertEquals("", CoreLocaleController(context).selection())
+        assertEquals("", LocaleController(context).selection())
         assertEquals("en", Locale.forLanguageTag(startup).language)
         assertEquals("Settings", activity().getString(R.string.core_settings_title))
     }
     @Test fun uiApplyFailureRestoresPersistentSelectionAndCompatLocaleForCoreRollback() = runTest {
-        preferences.edit().putString(CoreLocaleController.SELECTION_KEY, "en").commit()
+        preferences.edit().putString(LocaleController.SELECTION_KEY, "en").commit()
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
-        val controller = CoreLocaleController(context) { tag ->
+        val controller = LocaleController(context) { tag ->
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
             if (tag == "zh-CN") error("fixture UI apply failure after mutation")
         }
         val result = runCatching { controller.apply("zh-CN") }
         assertTrue(result.isFailure)
-        assertEquals("en", preferences.getString(CoreLocaleController.SELECTION_KEY, null))
+        assertEquals("en", preferences.getString(LocaleController.SELECTION_KEY, null))
         assertEquals("en", AppCompatDelegate.getApplicationLocales().toLanguageTags())
-        assertEquals("en", CoreLocaleController(context).resolveStartupTag())
+        assertEquals("en", LocaleController(context).resolveStartupTag())
     }
     @Test fun successfulUiSelectionIsDurableAndExplicitSystemModeDoesNotReimportOldChoice() = runTest {
-        val controller = CoreLocaleController(context)
+        val controller = LocaleController(context)
         controller.apply("zh-CN")
-        assertEquals("zh-CN", CoreLocaleController(context).resolveStartupTag())
+        assertEquals("zh-CN", LocaleController(context).resolveStartupTag())
         controller.apply("")
-        assertEquals("", preferences.getString(CoreLocaleController.SELECTION_KEY, null))
+        assertEquals("", preferences.getString(LocaleController.SELECTION_KEY, null))
         // A delayed old Compat autoStore file cannot override the explicit system-mode preference.
         context.openFileOutput(COMPAT_LOCALE_FILE, Context.MODE_PRIVATE).use {
             it.write("<locales application_locales=\"zh-CN\"/>".toByteArray())
         }
-        assertEquals("", CoreLocaleController(context).selection())
-        assertEquals("en", Locale.forLanguageTag(CoreLocaleController(context).resolveStartupTag()).language)
+        assertEquals("", LocaleController(context).selection())
+        assertEquals("en", Locale.forLanguageTag(LocaleController(context).resolveStartupTag()).language)
     }
     @Test @Config(sdk = [33], qualifiers = "en")
     fun api33ExternalOsLanguageSelectionOverridesStaleUiMirrorAtCoreStartup() {
         val manager = context.getSystemService(LocaleManager::class.java)
-        preferences.edit().putString(CoreLocaleController.SELECTION_KEY, "zh-CN").commit()
+        preferences.edit().putString(LocaleController.SELECTION_KEY, "zh-CN").commit()
         manager.applicationLocales = LocaleList.forLanguageTags("en-GB")
-        val controller = CoreLocaleController(context)
+        val controller = LocaleController(context)
         assertEquals("en-GB", controller.resolveStartupTag())
-        assertEquals("en-GB", preferences.getString(CoreLocaleController.SELECTION_KEY, null))
+        assertEquals("en-GB", preferences.getString(LocaleController.SELECTION_KEY, null))
         controller.applyStartupPreference()
         assertEquals("en-GB", manager.applicationLocales.toLanguageTags())
         manager.applicationLocales = LocaleList.getEmptyLocaleList()
@@ -127,7 +127,7 @@ class CoreLocaleControllerTest {
     }
     @Test @Config(sdk = [33], qualifiers = "en")
     fun api33ApplyUsesFrameworkEvenWithoutAnAppCompatActivity() = runTest {
-        val controller = CoreLocaleController(context)
+        val controller = LocaleController(context)
         controller.apply("zh-CN")
         assertEquals("zh-CN", context.getSystemService(LocaleManager::class.java).applicationLocales.toLanguageTags())
         assertEquals("zh-CN", controller.resolveStartupTag())
@@ -141,7 +141,7 @@ class CoreLocaleControllerTest {
 /** Mirrors the integrator's early MainActivity hook without constructing the legacy Application. */
 class LocaleActivity : AppCompatActivity() {
     override fun attachBaseContext(newBase: Context) {
-        CoreLocaleController(newBase).applyStartupPreference()
+        LocaleController(newBase).applyStartupPreference()
         super.attachBaseContext(newBase)
     }
     override fun onCreate(savedInstanceState: Bundle?) {

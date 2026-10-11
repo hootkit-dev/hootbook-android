@@ -2,6 +2,8 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
+import io.github.hootkit_dev.hootbook.presentation.data.ConvertedMoney
+
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.LazyListScope
 import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.LocalWindowLayout
@@ -478,7 +480,7 @@ private fun UpcomingSubscriptionsCard(
     modifier: Modifier = Modifier,
     subscriptions: List<Subscription>,
     summary: SubscriptionSummary?,
-    monthly: io.github.hootkit_dev.hootbook.presentation.format.CoreDisplayedMoney?,
+    monthly: ConvertedMoney?,
     customSymbols: Map<String, String>,
     categoriesMap: Map<String, Category> = emptyMap(),
     subcategoriesMap: Map<String, Subcategory> = emptyMap(),

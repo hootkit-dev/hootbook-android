@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.sync
+package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync
 
 import dev.hootkit.core.*
 

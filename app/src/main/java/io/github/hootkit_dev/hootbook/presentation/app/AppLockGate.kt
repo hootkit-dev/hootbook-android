@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.applock
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import android.content.Context
 import android.content.ContextWrapper
@@ -21,12 +21,12 @@ import io.github.hootkit_dev.hootbook.core.ui.CoreAppLockController
 
 /** Wrap the NavHost, not just a screen. Locked/background state does not compose private content. */
 @Composable
-fun CoreAppLockGate(controller:CoreAppLockController,content: @Composable () -> Unit) {
+fun AppLockGate(controller:CoreAppLockController,content: @Composable () -> Unit) {
     // Keep saveable NavController/back-stack and ordinary UI drafts outside the visibility branch.
     // Secret inputs intentionally use remember (not rememberSaveable) and are discarded when locked.
     val contentState = rememberSaveableStateHolder()
     val state by controller.state.collectAsStateWithLifecycle()
-    val activity=coreFragmentActivity(LocalContext.current)
+    val activity=fragmentActivity(LocalContext.current)
     LifecycleEventEffect(Lifecycle.Event.ON_START){controller.onForeground()}
     LifecycleEventEffect(Lifecycle.Event.ON_STOP){controller.onBackground()}
     io.github.hootkit_dev.hootbook.core.ui.CoreSecureWindow(enabled = state.enabled || !state.loaded)
@@ -44,4 +44,4 @@ fun CoreAppLockGate(controller:CoreAppLockController,content: @Composable () -> 
         }
     }
 }
-internal fun coreFragmentActivity(context:Context):FragmentActivity? = when(context){is FragmentActivity->context;is ContextWrapper->coreFragmentActivity(context.baseContext);else->null}
+internal fun fragmentActivity(context:Context):FragmentActivity? = when(context){is FragmentActivity->context;is ContextWrapper->fragmentActivity(context.baseContext);else->null}

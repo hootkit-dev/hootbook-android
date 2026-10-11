@@ -1,7 +1,5 @@
 package io.github.hootkit_dev.hootbook.presentation.format
 
-import dev.hootkit.core.CurrencyInterface
-import kotlinx.coroutines.CancellationException
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -9,15 +7,8 @@ import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
 import java.util.Optional
-
-data class CoreDisplayedMoney(
-    val originalAmount: BigDecimal,
-    val originalCurrency: String,
-    val amount: BigDecimal?,
-    val currency: String,
-    val complete: Boolean,
-    val failed: Boolean = false,
-)
+import kotlin.math.pow
+import kotlin.math.roundToLong
 
 /** Original compact amount typography for restored UI. Presentation only; Core owns values. */
 object CoreMoneyPresentation {
@@ -230,11 +221,31 @@ object CoreMoneyPresentation {
         return "${symbol.ifBlank { currency }}${formatAmount(amount, currency)}"
     }
 
-    suspend fun convert(coreCurrency: CurrencyInterface, amount: BigDecimal, from: String, to: String): CoreDisplayedMoney {
-        return try {
-            val converted = coreCurrency.convert(amount, from, to)
-            CoreDisplayedMoney(amount, from, converted, to, complete = converted != null)
-        } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { CoreDisplayedMoney(amount, from, null, to, complete = false, failed = true) }
+    /** Preserves the original animated input typography during value transitions. */
+    fun formatAnimatedInput(value: Float, targetString: String): String {
+        val hasDecimal = targetString.contains('.')
+        return if (hasDecimal) {
+            val decimalPart = targetString.substringAfter('.', "")
+            val decimalPlaces = decimalPart.length
+            val factor = 10.0.pow(decimalPlaces.toDouble()).toFloat()
+            val roundedValue = (value * factor).roundToLong() / factor
+
+            // Special handling for trailing zeros, similar to the reference code
+            if (decimalPart.all { it == '0' }) {
+                // If all decimal places are zeros, format as integer with commas
+                String.format(Locale.US, "%,d", roundedValue.roundToLong())
+            } else if (roundedValue.roundToLong().toFloat() != roundedValue) {
+                // If there's a meaningful decimal part
+                val pattern = "%,.${decimalPlaces}f"
+                String.format(Locale.US, pattern, roundedValue)
+            } else {
+                // Otherwise, round to whole number with commas
+                String.format(Locale.US, "%,d", roundedValue.roundToLong())
+            }
+        } else {
+            // Format integer with commas
+            String.format(Locale.US, "%,d", value.roundToLong())
+        }
     }
+
 }

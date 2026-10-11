@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import androidx.test.core.app.ApplicationProvider
 import io.github.hootkit_dev.hootbook.core.backup.*
 import io.github.hootkit_dev.hootbook.data.preferences.*
-import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreUiLocalePreference
+import io.github.hootkit_dev.hootbook.presentation.app.UiLocalePreference
 import dev.hootkit.core.*
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -135,12 +135,12 @@ class CoreUiPlatformTest {
         val names=listOf("profile/readme.txt","images/data.bin","merchant_icons/custom-metadata.txt")
         val root=temp.newFolder();val files=CoreBackupFiles(root)
         val source=files.stage{ByteArrayInputStream("opaque-backup-source".toByteArray())}
-        val access=io.github.hootkit_dev.hootbook.presentation.core.backup.BackupTestAccess().apply {
+        val access=io.github.hootkit_dev.hootbook.presentation.data.backup.BackupTestAccess().apply {
             summary=summary.copy(preferencesJson=CoreUiPreferencesCodec.encode(CoreUiPreferences(userName="Applied")).toString(),platformFiles=names)
             onImport={directory->for(name in names)File(directory,name).apply{parentFile.mkdirs();writeText("opaque-not-an-image")}}
         }
         val applier=BackupPlatformApplier(prefs,assets,FakeLocale(),{},{})
-        val workflow=io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupWorkflow(access,files,BackupOperationJournal(files),root,applier::apply)
+        val workflow=io.github.hootkit_dev.hootbook.presentation.data.backup.BackupWorkflow(access,files,BackupOperationJournal(files),root,applier::apply)
         val result=workflow.restore(source,false,ImportMode.MERGE,null,false)
         assertEquals(BackupPhase.PLATFORM_APPLIED,result.phase);assertEquals("Applied",prefs.state.value.userName);assertTrue(assets.exportFiles().isEmpty())
         for(name in names)assertEquals("opaque-not-an-image",File(files.platform(source.operationId),name).readText())
@@ -158,7 +158,7 @@ class CoreUiPlatformTest {
             if(!legacy)ImportSummary(1u,0u,0u,prefs,files,false,0u,null)else null,
             if(legacy)LegacyImportSummary(emptyList(),emptyList(),"CNY",prefs,files,emptyMap())else null)
     }
-    private class FakeLocale:CoreUiLocalePreference {
+    private class FakeLocale:UiLocalePreference {
         var selected="en";var failure=false
         override fun selection()=selected
         override fun effectiveTag(selection:String)=selection.ifEmpty{"en"}

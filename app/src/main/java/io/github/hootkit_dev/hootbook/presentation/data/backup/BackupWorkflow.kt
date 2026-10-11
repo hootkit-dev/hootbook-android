@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.backup
+package io.github.hootkit_dev.hootbook.presentation.data.backup
 
 import dev.hootkit.core.*
 import dev.hootkit.platform.CoreSession
@@ -20,7 +20,7 @@ internal class SessionBackupAccess(private val session: CoreSession) : CoreBacku
 }
 
 /** Core remains the sole implementation of import rules, encryption and safety backups. */
-internal class CoreBackupWorkflow(
+internal class BackupWorkflow(
     private val access: CoreBackupAccess,
     val files: CoreBackupFiles,
     private val journal: BackupOperationJournal,

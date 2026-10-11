@@ -1,6 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy
 
-import io.github.hootkit_dev.hootbook.presentation.core.backup.*
+import io.github.hootkit_dev.hootbook.presentation.data.backup.*
 
 import android.app.Application
 import android.net.Uri

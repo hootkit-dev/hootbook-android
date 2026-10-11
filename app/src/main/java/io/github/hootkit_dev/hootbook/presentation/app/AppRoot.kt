@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.navigation
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import io.github.hootkit_dev.hootbook.presentation.navigation.HootbookNavHost
 
@@ -15,21 +15,20 @@ import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.*
 import io.github.hootkit_dev.hootbook.core.ui.*
-import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockGate
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
 
-@Composable fun CoreAppRoot(bootstrap: CoreAppBootstrap, session: CoreSession, capabilities: CoreCapabilities,
+@Composable fun AppRoot(bootstrap: CoreAppBootstrap, session: CoreSession,
     prefs: CoreUiPreferencesStore, lock: CoreAppLockController, ingress: CoreIntentIngress) {
     val boot by bootstrap.state.collectAsStateWithLifecycle(); val preference by prefs.state.collectAsStateWithLifecycle()
     HootbookTheme(darkTheme = preference.darkTheme ?: isSystemInDarkTheme(), themeStyle = preference.themeStyle,
         dynamicColor = preference.dynamicColor, isAmoledMode = preference.amoled, accentColor = preference.accent,
         appFont = preference.font, blurEffects = preference.blur) {
         when (boot) {
-            CoreBootstrapState.PREFERENCES_FAILED -> CorePreferencesRecovery(prefs, bootstrap)
+            CoreBootstrapState.PREFERENCES_FAILED -> PreferencesRecovery(prefs, bootstrap)
             CoreBootstrapState.CORE_FAILED -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
                 Text(stringResource(R.string.core_host_open_failed)); Button(onClick = bootstrap::start) { Text(stringResource(R.string.core_shell_retry)) }
             }
-            CoreBootstrapState.READY -> CoreAppLockGate(lock) { HootbookNavHost(session, prefs, ingress) }
+            CoreBootstrapState.READY -> AppLockGate(lock) { HootbookNavHost(session, prefs, ingress) }
             else -> Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         }
     }

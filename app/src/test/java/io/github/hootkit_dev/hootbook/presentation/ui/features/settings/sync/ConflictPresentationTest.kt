@@ -1,10 +1,10 @@
-package io.github.hootkit_dev.hootbook.presentation.core.sync
+package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync
 
 import dev.hootkit.core.*
 import org.junit.Assert.*
 import org.junit.Test
 
-class CoreConflictPresentationTest {
+class ConflictPresentationTest {
     private fun conflict(table: Table, vararg fields: String) = SyncConflict(1, LocalDateTime(2026, 10u, 11u, 0u, 0u, 0u, 0u), table,
         "record-string", ConflictKind.BOTH_EDITED, true, null, fields.map { ConflictField(it, "base", "mine", "theirs") }, "{}", "{}")
     @Test fun transactionAmountCurrencyAndAccountsStayOneDisplayChoice() {

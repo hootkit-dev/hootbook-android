@@ -1,7 +1,7 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
 import dev.hootkit.core.*
-import io.github.hootkit_dev.hootbook.presentation.format.CoreDisplayedMoney
+import io.github.hootkit_dev.hootbook.presentation.data.ConvertedMoney
 
 data class HomeUiState(
     val overview: AccountsOverview? = null,
@@ -16,12 +16,12 @@ data class HomeUiState(
     val accounts: Map<String, Account> = emptyMap(),
     val categories: Map<String, Category> = emptyMap(),
     val subcategories: Map<String, Subcategory> = emptyMap(),
-    val displayNetWorth: CoreDisplayedMoney? = null,
-    val recentConversions: Map<String, CoreDisplayedMoney> = emptyMap(),
+    val displayNetWorth: ConvertedMoney? = null,
+    val recentConversions: Map<String, ConvertedMoney> = emptyMap(),
     val availableCurrencies: List<String> = emptyList(),
     val loading: Boolean = true,
     val error: String? = null,
-    val displayTotals: Map<String, CoreDisplayedMoney> = emptyMap(),
+    val displayTotals: Map<String, ConvertedMoney> = emptyMap(),
     val customSymbols: Map<String, String> = emptyMap(),
     val submitting: Boolean = false,
 ) {

@@ -2,6 +2,8 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
+import io.github.hootkit_dev.hootbook.presentation.data.ConvertedMoney
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -139,7 +141,7 @@ internal fun NetWorthSection(
 internal fun MonthCard(
     summary: LedgerSummary,
     lastSummary: LedgerSummary?,
-    display: Map<String, CoreDisplayedMoney>,
+    display: Map<String, ConvertedMoney>,
     customSymbols: Map<String, String>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -354,7 +356,7 @@ internal fun RecentTransactionsCard(
     categories: Map<String, Category>,
     subcategories: Map<String, Subcategory>,
     accounts: Map<String, Account>,
-    conversions: Map<String, CoreDisplayedMoney>,
+    conversions: Map<String, ConvertedMoney>,
     customSymbols: Map<String, String>,
     mainCurrency: String,
     isLoading: Boolean,

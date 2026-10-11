@@ -35,15 +35,3 @@ internal fun AccountOverviewList(overview: AccountsOverview?, onOpen: (AccountCa
         }
     }
 }
-
-@Composable
-internal fun AccountOverviewPanel(overview: AccountsOverview?, onOpen: (AccountCategory) -> Unit,
-    modifier: Modifier = Modifier, header: @Composable () -> Unit) {
-    Column(modifier.fillMaxWidth().testTag("networth_accounts_panel"), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer) { header() }
-        Text(stringResource(R.string.overview_categories), Modifier.padding(start = 4.dp, top = 8.dp),
-            style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        AccountOverviewList(overview, onOpen)
-    }
-}

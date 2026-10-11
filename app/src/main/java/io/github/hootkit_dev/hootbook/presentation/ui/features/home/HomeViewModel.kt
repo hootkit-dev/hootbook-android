@@ -8,9 +8,7 @@ import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
 import io.github.hootkit_dev.hootbook.core.ui.*
 import io.github.hootkit_dev.hootbook.data.preferences.HomeWidget
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.*
 import io.github.hootkit_dev.hootbook.presentation.data.*
-import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.emptyTransactionFilter
 import java.time.LocalDate as JavaDate
 import javax.inject.Inject
@@ -62,7 +60,7 @@ class HomeViewModel @Inject constructor(
             val summary = ledger.summary(period(month, month.plusMonths(1)))
             val last = ledger.summary(period(month.minusMonths(1), month))
             val recent = if (HomeWidget.RECENT_TRANSACTIONS in hidden) emptyList() else ledger.list(emptyTransactionFilter(), PageRequest(0u, 6u)).items
-            val heatmap = if (HomeWidget.TRANSACTION_HEATMAP in hidden) emptyList() else queryDayCounts(ledger, today.minusWeeks(26).with(java.time.DayOfWeek.MONDAY), today)
+            val heatmap = if (HomeWidget.TRANSACTION_HEATMAP in hidden) emptyMap() else queryDayCounts(ledger, today.minusWeeks(26).with(java.time.DayOfWeek.MONDAY), today)
             Triple(summary, last, recent to heatmap)
         }
         val (recent, heatmap) = activity
@@ -78,10 +76,10 @@ class HomeViewModel @Inject constructor(
         val target = display ?: overview.netWorth.currency
         val (netWorth, conversions, symbols) = core.currency().use { api ->
             val net = display?.takeIf { it != overview.netWorth.currency }?.let {
-                CoreMoneyPresentation.convert(api, overview.netWorth.amount, overview.netWorth.currency, it)
+                queryConvertedMoney(api, overview.netWorth.amount, overview.netWorth.currency, it)
             }
             val conversions = recent.filter { it.currency != target }.associate { tx ->
-                tx.id to CoreMoneyPresentation.convert(api, tx.amount, tx.currency, target)
+                tx.id to queryConvertedMoney(api, tx.amount, tx.currency, target)
             }
             Triple(net, conversions, api.customCurrencies().associate { it.code to it.symbol })
         }
@@ -92,13 +90,13 @@ class HomeViewModel @Inject constructor(
             listOf("income" to Money(summary.income, summary.currency), "expense" to Money(summary.expense, summary.currency), "net" to Money(summary.net, summary.currency),
                 "lastIncome" to Money(lastSummary.income, lastSummary.currency), "lastExpense" to Money(lastSummary.expense, lastSummary.currency), "lastNet" to Money(lastSummary.net, lastSummary.currency),
                 "monthly" to Money(subscriptions.monthly, subscriptions.currency)).filter { it.second.currency != target }.associate { (key, money) ->
-                    key to CoreMoneyPresentation.convert(api, money.amount, money.currency, target)
+                    key to queryConvertedMoney(api, money.amount, money.currency, target)
                 }
         }
         return HomeUiState(
             overview = overview, summary = summary, lastSummary = lastSummary,
             budgets = budgets, subscriptions = subscriptions, debts = debts,
-            recent = recent, upcoming = upcoming, heatmap = heatmap.associate { it.date to it.transactions },
+            recent = recent, upcoming = upcoming, heatmap = heatmap,
             accounts = overview.accounts.associateBy { it.id }, categories = categories, subcategories = subcategories,
             displayNetWorth = netWorth, recentConversions = conversions, availableCurrencies = currencies,
             loading = false, displayTotals = totals, customSymbols = symbols,

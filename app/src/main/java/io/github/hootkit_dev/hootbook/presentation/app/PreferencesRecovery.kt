@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.navigation
+package io.github.hootkit_dev.hootbook.presentation.app
 
 import android.content.Context
 import android.content.ContextWrapper
@@ -23,7 +23,7 @@ import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiRecoveryTicket
 import kotlinx.coroutines.launch
 
-@Composable internal fun CorePreferencesRecovery(prefs: CoreUiPreferencesStore, bootstrap: CoreAppBootstrap) {
+@Composable internal fun PreferencesRecovery(prefs: CoreUiPreferencesStore, bootstrap: CoreAppBootstrap) {
     CoreSecureWindow()
     val context = LocalContext.current; val activity = context.fragmentActivity(); val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }; var failed by remember { mutableStateOf(false) }

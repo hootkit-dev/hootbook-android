@@ -1,6 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy
 
-import io.github.hootkit_dev.hootbook.presentation.core.backup.*
+import io.github.hootkit_dev.hootbook.presentation.data.backup.*
 
 import android.content.Context
 import android.net.Uri
@@ -28,19 +28,19 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class DataPrivacyViewModel private constructor(
     private val context: Context,
-    private val workflow: CoreBackupWorkflow,
+    private val workflow: BackupWorkflow,
     private val platform: BackupPlatformApplier? = null,
 ) : ViewModel() {
     @Inject constructor(@ApplicationContext context: Context, session: CoreSession, platform: BackupPlatformApplier) : this(context,
         File(context.noBackupFilesDir, "hootkit-core/backup-ui").let { root ->
             val files = CoreBackupFiles(root)
-            CoreBackupWorkflow(SessionBackupAccess(session), files, BackupOperationJournal(files), root) { operation ->
+            BackupWorkflow(SessionBackupAccess(session), files, BackupOperationJournal(files), root) { operation ->
                 try { platform.apply(operation) } catch(cancelled: CancellationException) { throw cancelled }
                 catch(failure: Exception) { throw CoreBackupUiException(R.string.core_ui_backup_platform_failed, failure) }
             }
         }, platform)
     internal constructor(context: Context, access: CoreBackupAccess, root: File) : this(context,
-        CoreBackupFiles(root).let { files -> CoreBackupWorkflow(access, files, BackupOperationJournal(files), root) })
+        CoreBackupFiles(root).let { files -> BackupWorkflow(access, files, BackupOperationJournal(files), root) })
     private val mutable = MutableStateFlow(DataPrivacyUiState())
     val state = mutable.asStateFlow()
     private var inspectedPassword: String? = null

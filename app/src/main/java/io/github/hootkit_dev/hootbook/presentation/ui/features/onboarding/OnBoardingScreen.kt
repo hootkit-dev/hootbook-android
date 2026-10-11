@@ -233,7 +233,6 @@ internal fun WelcomeStep(syncAvailable: Boolean, onSync: () -> Unit, onImportBac
         }
         Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.displaySmallEmphasized, textAlign = TextAlign.Center)
         Text(stringResource(R.string.onboarding_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        // The F-Droid build has no sync
         if (syncAvailable) {
             WelcomeChoice(
                 icon = Icons.Rounded.CloudSync,

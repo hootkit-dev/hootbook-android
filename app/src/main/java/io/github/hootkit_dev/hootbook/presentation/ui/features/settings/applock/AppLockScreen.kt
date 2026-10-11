@@ -35,7 +35,7 @@ fun AppLockScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
 ) {
     val uiState by appLockViewModel.uiState.collectAsStateWithLifecycle()
-    val context = io.github.hootkit_dev.hootbook.presentation.core.applock.coreFragmentActivity(LocalContext.current)
+    val context = io.github.hootkit_dev.hootbook.presentation.app.fragmentActivity(LocalContext.current)
 
     // Prevent back navigation when app is locked
     BackHandler(enabled = true) {
