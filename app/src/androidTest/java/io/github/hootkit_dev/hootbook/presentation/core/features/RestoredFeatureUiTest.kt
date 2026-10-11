@@ -12,7 +12,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsSummaryCard
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetCard
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetLimitsCard
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetHistoryRow
@@ -133,9 +132,9 @@ class RestoredFeatureUiTest {
 
     @Test fun analyticsSummaryRendersSelectedIncomeWithoutClientAggregation() {
         val summary = LedgerSummary("CNY", BigDecimal("71.23"), BigDecimal("11.11"), BigDecimal("60.12"), true, emptyList(), emptyList(), emptyList(), emptyList())
-        rule.setContent { HootbookTheme(dynamicColor = false) { CoreAnalyticsSummaryCard(summary, 3u, setOf(TransactionKind.INCOME)) } }
+        rule.setContent { HootbookTheme(dynamicColor = false) { io.github.hootkit_dev.hootbook.presentation.ui.components.LedgerTotals(summary, emptyMap(), count = 3u) } }
         rule.onNodeWithText(money("71.23")).assertIsDisplayed()
-        rule.onNodeWithText(context.getString(R.string.transactions_format, 3)).assertIsDisplayed()
+        rule.onNodeWithText(context.getString(R.string.core_analytics_count, "3")).assertIsDisplayed()
     }
 
     @Test fun personRowShowsCoreNetAndRetainsContactNavigation() {

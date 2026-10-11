@@ -113,14 +113,16 @@ private fun <T> CorePeriodLineChart(
                 isMonthly -> date.format(DateFormats.monthFormatter())
                 else -> date.format(DateFormats.monthDayFormatter())
             }
-        }
+        }.thinned()
     }
 
+    val axisStart = indicatorWidth(cashFlowData.maxOrNull() ?: 0.0, currency, suffixMillion, suffixThousand)
+    Column {
     LineChart(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp)
-            .padding(vertical = Spacing.md),
+            .height(260.dp)
+            .padding(top = Spacing.md),
         data = listOf(
             Line(
                 label = if (typeFilters.contains(TransactionKind.UNKNOWN) || typeFilters.size > 2) {
@@ -158,25 +160,23 @@ private fun <T> CorePeriodLineChart(
         ),
         indicatorProperties = HorizontalIndicatorProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurfaceVariant.copy(0.6f),
                 textAlign = TextAlign.Center
             ),
+            padding = IndicatorPadding,
             contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) }
         ),
         labelHelperProperties = LabelHelperProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurface,
                 textAlign = TextAlign.End
             ),
         ),
         labelProperties = LabelProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            enabled = false,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurface.copy(0.6f),
                 textAlign = TextAlign.End
             ),
@@ -184,7 +184,7 @@ private fun <T> CorePeriodLineChart(
             padding = 16.dp,
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
-                degree = -45f
+                degree = 0f
             )
         ),
         zeroLineProperties = ZeroLineProperties(
@@ -206,7 +206,10 @@ private fun <T> CorePeriodLineChart(
             )
         ),
         animationMode = AnimationMode.Together(delayBuilder = { it * 200L }),
+        popupProperties = chartPopup(currency),
     )
+    DateAxis(labels, axisStart)
+    }
 }
 
 @Composable
@@ -255,11 +258,13 @@ fun SpendingBarChart(
 
     val maxValue = remember(data, typeFilters) { (data.maxDoubleOrNull { point: CoreDailySummary -> point.chartAmount(typeFilters).toDouble() } ?: 0.0) * 1.2 }
 
+    val axisStart = indicatorWidth(maxValue, currency, suffixMillion, suffixThousand)
+    Column {
     ColumnChart(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp)
-            .padding(vertical = Spacing.md),
+            .height(260.dp)
+            .padding(top = Spacing.md),
         data = columnData,
         maxValue = maxValue,
         barProperties = BarProperties(
@@ -285,32 +290,30 @@ fun SpendingBarChart(
         ),
         indicatorProperties = HorizontalIndicatorProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurfaceVariant.copy(0.6f),
                 textAlign = TextAlign.Center
             ),
+            padding = IndicatorPadding,
             contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) }
         ),
         labelHelperProperties = LabelHelperProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurface,
                 textAlign = TextAlign.End
             ),
         ),
         labelProperties = LabelProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
+            enabled = false,
+            textStyle = MaterialTheme.typography.labelSmall.copy(
                 color = themeColors.onSurface.copy(0.6f),
                 textAlign = TextAlign.End
             ),
             padding = 16.dp,
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
-                degree = -45f
+                degree = 0f
             )
         ),
         gridProperties = GridProperties(
@@ -327,7 +330,10 @@ fun SpendingBarChart(
             )
         ),
         animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
+        popupProperties = chartPopup(currency),
     )
+    DateAxis(columnData.map { it.label }, axisStart)
+    }
 }
 
 @Composable
@@ -487,12 +493,12 @@ fun LegendItem(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = formatPremiumCurrency(value, currency, stringResource(R.string.suffix_million), stringResource(R.string.suffix_thousand)),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = stringResource(R.string.percentage_format, percentage),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -642,3 +648,45 @@ fun formatPremiumCurrency(value: Double, currency: String, suffixMillion: String
 /** Selects a Core amount for drawing only; it does not aggregate, convert, or mutate money. */
 internal fun CoreDailySummary.chartAmount(kinds: Set<TransactionKind>) =
     if (kinds == setOf(TransactionKind.INCOME)) summary.income else summary.expense
+
+/**
+ * At most six date labels, picked evenly from first to last. The chart gives every label a slot
+ * as wide as the widest and spreads the slots edge to edge, so a label per point would overflow.
+ */
+private fun List<String>.thinned(max: Int = 6): List<String> =
+    if (size <= max) this else (0 until max).map { this[Math.round(it * (size - 1) / (max - 1).toFloat())] }
+
+/** The value under a tapped point, as money in the chart's currency. */
+@Composable
+private fun chartPopup(currency: String) = ir.ehsannarmani.compose_charts.models.PopupProperties(
+    textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.inverseOnSurface),
+    containerColor = MaterialTheme.colorScheme.inverseSurface,
+    contentBuilder = { popup ->
+        io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation.format(
+            java.math.BigDecimal.valueOf(popup.value).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros(), currency)
+    },
+)
+
+private val IndicatorPadding = 12.dp
+
+/** Width the chart gives its value labels: the widest of zero and the top value, plus their padding. */
+@Composable
+private fun indicatorWidth(max: Double, currency: String, million: String, thousand: String): androidx.compose.ui.unit.Dp {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelSmall
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val widest = listOf(max, 0.0).maxOf { measurer.measure(formatPremiumCurrency(it, currency, million, thousand), style).size.width }
+    return with(density) { widest.toDp() } + IndicatorPadding
+}
+
+/**
+ * The dates under a chart: up to six, from its first point to its last. Drawn here rather than by
+ * the chart library, which packs one label per point from the left instead of under each point.
+ */
+@Composable
+private fun DateAxis(labels: List<String>, start: androidx.compose.ui.unit.Dp) {
+    val shown = labels.thinned()
+    Row(Modifier.fillMaxWidth().padding(start = start, top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        shown.forEach { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) }
+    }
+}
