@@ -189,8 +189,8 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                 composable("app-lock") { CoreAppLockSettingsScreen(back) }
                                 composable("data-privacy") { CoreAppLockSettingsScreen(back, dataPrivacy = true) }
                                 composable("notifications") { CoreNotificationPreferencesScreen(back) }
-                                composable("about") { AboutScreen(back,{go("licenses")},blurEffects=prefs.blur,coreSchemaVersion=schema) }
-                                composable("licenses") { LicensesScreen(back,coreSchemaVersion=schema) }
+                                composable("about") { AboutScreen(back,{go("licenses")},coreSchemaVersion=schema) }
+                                composable("licenses") { LicensesScreen(back) }
                             }
                         }
                     }
