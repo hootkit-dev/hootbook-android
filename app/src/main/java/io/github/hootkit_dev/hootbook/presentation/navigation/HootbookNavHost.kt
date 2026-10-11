@@ -53,7 +53,7 @@ import io.github.hootkit_dev.hootbook.core.CoreIntentIngress
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
 import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.AnalyticsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
@@ -299,10 +299,9 @@ fun HootbookNavHost(
                                 popExitTransition = MainTabMotion.popExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until analytics is migrated
-                                    CoreAnalyticsScreen(
-                                        onBack = back, onTransactions = { go(Transactions(categoryId = it)) },
-                                        onFilterTransactions = { filter ->
+                                    AnalyticsScreen(
+                                        blurEffects = prefs.blur, animatedContentScope = this@composable,
+                                        onNavigateToTransactions = { filter ->
                                             go(Transactions(
                                                 categoryId = filter.categoryIds.singleOrNull(), from = filter.from?.coreDateText()?.substringBefore('T'),
                                                 to = filter.to?.coreDateText()?.substringBefore('T'), currency = filter.currency,
