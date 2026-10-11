@@ -425,13 +425,13 @@ class RealMainJourneys {
         assertEquals(AccountKind.CREDIT_CARD,card.kind);assertEquals(0,card.creditLimit!!.compareTo(BigDecimal("1000")));assertEquals(15.toUByte(),card.statementDay);assertEquals(2.toUByte(),card.dueDay)
         click(R.string.edit);field(R.string.account_name,"$name Edited");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).name=="$name Edited"}}}
-        click(R.string.account_set_default);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.account_clear_default)
-        click(R.string.account_archive);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.account_unarchive)
-        click(R.string.account_currency_add);field(R.string.account_currency_code,"USD");field(R.string.new_balance_label,"3");click(R.string.save)
+        click(R.string.more_options);click(R.string.account_set_default);awaitCondition{runBlocking{c.accounts().use{it.get(id).isDefault}}};click(R.string.more_options);click(R.string.account_clear_default)
+        click(R.string.more_options);click(R.string.account_archive);awaitCondition{runBlocking{c.accounts().use{it.get(id).archived}}};click(R.string.more_options);click(R.string.account_unarchive)
+        click(R.string.account_currency_add);field(R.string.account_currency_code,"USD");field(R.string.account_balance,"3");click(R.string.save)
         awaitCondition{runBlocking{c.accounts().use{it.get(id).pockets.any{pocket->pocket.currency=="USD"}}}}
-        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.account_calibrate);field(R.string.new_balance_label,"25");click(R.string.save)
-        click(R.string.balance_history_title);field(R.string.core_full_history_from,JavaDate.now().minusDays(7).toString());field(R.string.core_full_history_to,JavaDate.now().toString());click(R.string.core_full_history_query)
-        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.account_delete);click(R.string.account_delete_with_transactions)
+        assertFalse(c.accounts().use{it.get(id).totalComplete});shot("ui-card-pocket-created");click(R.string.account_calibrate);field(R.string.account_balance,"25");click(R.string.save)
+        click(R.string.account_balance_trend);click(R.string.net_worth_history_month)
+        shot("ui-card-native-history");systemBack();click(R.string.more_options);click(R.string.account_delete);click(R.string.delete)
         awaitCondition{runBlocking{c.accounts().use{it.overview().accounts.none{row->row.id==id}}}}
         f.note("ui-accounts-advanced","real card create/nameedit/default/archive/unarchive/USD pocket/calibrate/history/zero-refdelete UI and Core queries; balance/missing-rate output remains Core")
     }
