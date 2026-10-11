@@ -403,8 +403,6 @@
     <string name="notifications">התראות</string>
     <string name="notifications_subtitle">ניהול הגדרות התראות תזכורת</string>
     <string name="about_subtitle">גרסת אפליקציה, קוד מקור ועוד</string>
-    <string name="currency">מטבע</string>
-    <string name="currency_subtitle">שערי חליפין והעדפות מטבע</string>
     <string name="currency_settings_title">מטבע</string>
     <string name="unified_currency">מטבע מאוחד</string>
     <string name="unified_currency_subtitle">הצג את כל הסכומים במטבע אחד</string>

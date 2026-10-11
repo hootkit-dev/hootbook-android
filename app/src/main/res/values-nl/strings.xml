@@ -403,8 +403,6 @@
     <string name="notifications">Meldingen</string>
     <string name="notifications_subtitle">Beheer herinneringsmeldingsinstellingen</string>
     <string name="about_subtitle">App-versie, broncode en meer</string>
-    <string name="currency">valuta</string>
-    <string name="currency_subtitle">Wisselkoersen en valuta voorkeuren</string>
     <string name="currency_settings_title">valuta</string>
     <string name="unified_currency">Eengemaakte Valuta</string>
     <string name="unified_currency_subtitle">Toon alle bedragen in één valuta</string>

@@ -405,8 +405,6 @@
     <string name="notifications">通知</string>
     <string name="notifications_subtitle">管理提醒通知设置</string>
     <string name="about_subtitle">应用版本、源代码及更多</string>
-    <string name="currency">货币</string>
-    <string name="currency_subtitle">汇率和货币偏好</string>
     <string name="currency_settings_title">货币</string>
     <string name="unified_currency">统一货币</string>
     <string name="unified_currency_subtitle">以单一货币显示所有金额</string>

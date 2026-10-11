@@ -403,8 +403,6 @@
     <string name="notifications">Notificaciones</string>
     <string name="notifications_subtitle">Administrar la configuración de notificaciones de recordatorio</string>
     <string name="about_subtitle">Versión de la aplicación, código fuente y más</string>
-    <string name="currency">Moneda</string>
-    <string name="currency_subtitle">Tipos de cambio y preferencias de moneda</string>
     <string name="currency_settings_title">Moneda</string>
     <string name="unified_currency">Moneda unificada</string>
     <string name="unified_currency_subtitle">Mostrar todos los importes en una sola moneda</string>

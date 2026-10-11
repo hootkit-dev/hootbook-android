@@ -403,8 +403,6 @@
     <string name="notifications">Oznámenia</string>
     <string name="notifications_subtitle">Spravovať nastavenia pripomienok</string>
     <string name="about_subtitle">Verzia aplikácie, zdrojový kód a ďalšie</string>
-    <string name="currency">Mena</string>
-    <string name="currency_subtitle">Menové kurzy a preferencie meny</string>
     <string name="currency_settings_title">Mena</string>
     <string name="unified_currency">Unifikovaná mena</string>
     <string name="unified_currency_subtitle">Zobraziť všetky sumy v jednej mene</string>

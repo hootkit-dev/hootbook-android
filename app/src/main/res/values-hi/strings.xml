@@ -403,8 +403,6 @@
     <string name="notifications">सूचनाएँ</string>
     <string name="notifications_subtitle">रिमाइंडर नोटिफिकेशन सेटिंग्स प्रबंधित करें</string>
     <string name="about_subtitle">ऐप संस्करण, स्रोत कोड और अन्य</string>
-    <string name="currency">मुद्रा</string>
-    <string name="currency_subtitle">एक्सचेंज रेट और मुद्रा प्राथमिकताएँ</string>
     <string name="currency_settings_title">मुद्रा</string>
     <string name="unified_currency">एकीकृत मुद्रा</string>
     <string name="unified_currency_subtitle">सभी राशियों को एकल मुद्रा में प्रदर्शित करें</string>

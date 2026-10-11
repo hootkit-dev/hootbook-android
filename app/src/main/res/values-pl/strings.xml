@@ -403,8 +403,6 @@
     <string name="notifications">Powiadomienia</string>
     <string name="notifications_subtitle">Zarządzaj ustawieniami powiadomień przypomnienia</string>
     <string name="about_subtitle">Wersja aplikacji, kod źródłowy i inne</string>
-    <string name="currency">Waluta</string>
-    <string name="currency_subtitle">Kursy wymiany walut i preferencje walutowe</string>
     <string name="currency_settings_title">Waluta</string>
     <string name="unified_currency">Zunifikowana waluta</string>
     <string name="unified_currency_subtitle">Wyświetl wszystkie kwoty w jednej walucie</string>

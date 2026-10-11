@@ -403,8 +403,6 @@
     <string name="notifications">Уведомления</string>
     <string name="notifications_subtitle">Управление настройками уведомлений напоминаний</string>
     <string name="about_subtitle">Версия приложения, исходный код и другое</string>
-    <string name="currency">Валюта</string>
-    <string name="currency_subtitle">Курсы валют и предпочтения валют</string>
     <string name="currency_settings_title">Валюта</string>
     <string name="unified_currency">Единая валюта</string>
     <string name="unified_currency_subtitle">Отображать все суммы в одной валюте</string>

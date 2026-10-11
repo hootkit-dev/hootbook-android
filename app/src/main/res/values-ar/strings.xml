@@ -403,8 +403,6 @@
     <string name="notifications">الإشعارات</string>
     <string name="notifications_subtitle">إدارة إعدادات تذكير الإشعارات</string>
     <string name="about_subtitle">إصدار التطبيق، كود المصدر والمزيد</string>
-    <string name="currency">العملة</string>
-    <string name="currency_subtitle">أسعار الصرف وتفضيلات العملات</string>
     <string name="currency_settings_title">العملة</string>
     <string name="unified_currency">العملة الموحدة</string>
     <string name="unified_currency_subtitle">عرض كل المبالغ بعملة واحدة</string>

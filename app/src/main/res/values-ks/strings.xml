@@ -403,8 +403,6 @@
     <string name="notifications">اطلاع</string>
     <string name="notifications_subtitle">ریمانڑر نوٹیفکیشن سیٹنگ کَر اِنتِظام</string>
     <string name="about_subtitle">ایپ ورژن، سورس کوڈ تہٕ باقی</string>
-    <string name="currency">کرنسی</string>
-    <string name="currency_subtitle">ایکسچینج ریٹ تہٕ کرنسی ترجیحات</string>
     <string name="currency_settings_title">کرنسی</string>
     <string name="unified_currency">یونیفائیڈ کرنسی</string>
     <string name="unified_currency_subtitle">تمام رقم ہٲوِو اَکی کرنسی منٛز</string>

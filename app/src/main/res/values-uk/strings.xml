@@ -403,8 +403,6 @@
     <string name="notifications">Сповіщення</string>
     <string name="notifications_subtitle">Керувати налаштуваннями сповіщень</string>
     <string name="about_subtitle">Версія додатку, вихідний код та інше</string>
-    <string name="currency">Валюта</string>
-    <string name="currency_subtitle">Курси обміну та валютні налаштування</string>
     <string name="currency_settings_title">Валюта</string>
     <string name="unified_currency">Уніфікована валюта</string>
     <string name="unified_currency_subtitle">Відображати всі суми в одній валюті</string>

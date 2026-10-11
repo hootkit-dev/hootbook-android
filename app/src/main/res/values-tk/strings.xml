@@ -403,8 +403,6 @@
     <string name="notifications">Bildirişler</string>
     <string name="notifications_subtitle">Bildiriş bellik sazlamalaryny dolandyrmak</string>
     <string name="about_subtitle">Programma wersiýasy, çeşme kody we beýleki maglumatlar</string>
-    <string name="currency">Valýuta</string>
-    <string name="currency_subtitle">Valýuta kurslary we islegler</string>
     <string name="currency_settings_title">Valýuta</string>
     <string name="unified_currency">Bilelikdäki Valýuta</string>
     <string name="unified_currency_subtitle">Ähli mukdarlary bir valýutada görkezmek</string>

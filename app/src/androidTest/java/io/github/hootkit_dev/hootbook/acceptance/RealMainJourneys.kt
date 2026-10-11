@@ -102,7 +102,7 @@ class RealMainJourneys {
         val settingsDestination = when (id) {
             R.string.core_complete_accounts -> R.string.title_accounts
             R.string.core_complete_categories -> R.string.categories
-            R.string.core_complete_currencies -> R.string.currency
+            R.string.core_complete_currencies -> R.string.settings_currencies
             R.string.core_complete_backup -> R.string.backup_sync_title
             R.string.core_complete_templates -> R.string.quick_add_templates
             R.string.core_complete_subscriptions -> R.string.core_plans_subscriptions
@@ -120,7 +120,7 @@ class RealMainJourneys {
             id == R.string.core_complete_settings -> settings()
             id == R.string.core_complete_transactions -> { home(); clickText(f.text(R.string.transactions)) }
             id == R.string.core_complete_analytics -> { home(); clickText(f.text(R.string.analytics)) }
-            id == R.string.core_shell_app_lock -> { settings(); clickText(f.text(R.string.appearances)); clickText(f.text(R.string.core_ui_app_lock)) }
+            id == R.string.core_shell_app_lock -> { settings(); clickText(f.text(R.string.data_privacy_title)) }
             id == R.string.core_shell_sync -> { settings(); clickText(f.text(R.string.backup_sync_title)); clickText(f.text(R.string.sync_firebase_title)) }
             id == R.string.core_ai_title -> clickText(f.text(R.string.ai_assistant_title))
             else -> clickText(f.text(id))
@@ -290,7 +290,7 @@ class RealMainJourneys {
         home();click(R.string.core_complete_layout);click(R.string.theme_dark)
         awaitCondition{f.preferences.state.value.darkTheme==true};shot("ui-appearance-dark")
         click(R.string.theme_light);awaitCondition{f.preferences.state.value.darkTheme==false}
-        click(R.string.core_ui_app_lock);click(R.string.core_ui_app_lock)
+        systemBack();click(R.string.core_shell_app_lock);click(R.string.app_lock)
         awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_lock_enroll)}}
         assertFalse(f.preferences.state.value.appLockEnabled);shot("ui-lock-no-credential-guard")
         f.note("ui-appearance-lock","UI dark/light persist; no device credential enable rejected without enabling")
@@ -331,7 +331,7 @@ class RealMainJourneys {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_ENTER);Thread.sleep(850)
     }
     @Test fun uiEnrolledPinEnableCancelAndReauthentication()=runBlocking{
-        home();click(R.string.core_complete_settings);click(R.string.core_shell_app_lock);click(R.string.core_ui_app_lock);enterFixturePin()
+        home();click(R.string.core_complete_settings);click(R.string.core_shell_app_lock);click(R.string.app_lock);enterFixturePin()
         awaitCondition{f.preferences.state.value.appLockEnabled}
         assertTrue(main.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE!=0)
         click(R.string.core_ui_lock_now);awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_locked)}}

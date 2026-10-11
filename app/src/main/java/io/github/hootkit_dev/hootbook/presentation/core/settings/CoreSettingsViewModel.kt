@@ -29,6 +29,7 @@ data class CoreSettingsUiState(
     val currencyDirty: Boolean = false,
     val defaultAccountId: String? = null,
     val accounts: List<Account> = emptyList(),
+    val customCurrencies: List<dev.hootkit.core.CustomCurrency> = emptyList(),
     val localeSelection: String = "",
     val commandRevision: Long = 0,
 )
@@ -69,16 +70,19 @@ class CoreSettingsViewModel private constructor(
             try {
                 val values = withSettings { Pair(it.mainCurrency(), it.defaultAccount()) }
                 val accounts = accounts()
+                val custom = session?.awaitCore()?.currency()?.use { it.customCurrencies() }.orEmpty()
                 val selection = locale.selection()
                 if (request == revision) mutable.update { it.copy(loading = false, loaded = true, mainCurrency = values.first,
                     currencyDraft = if (it.currencyDirty) it.currencyDraft else values.first,
-                    defaultAccountId = values.second, accounts = accounts, localeSelection = selection) }
+                    defaultAccountId = values.second, accounts = accounts, customCurrencies = custom, localeSelection = selection) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Throwable) { if (request == revision) mutable.update { it.copy(loading = false, error = coreFailureText(error)) } }
         }
     }
     fun currencyChanged(value: String) { if (!state.value.saving) mutable.update { it.copy(currencyDraft = value, currencyDirty = true) } }
     fun discardCurrencyDraft() { if (!state.value.saving) mutable.update { it.copy(currencyDraft = it.mainCurrency, currencyDirty = false) } }
+    /** Picks [code] as the main currency and saves it at once. */
+    fun mainCurrency(code: String) { currencyChanged(code); saveCurrency() }
     fun saveCurrency() {
         val draft = state.value.currencyDraft
         command { it.setMainCurrency(draft.trim()); mutable.update { state -> state.copy(currencyDirty = false) } }

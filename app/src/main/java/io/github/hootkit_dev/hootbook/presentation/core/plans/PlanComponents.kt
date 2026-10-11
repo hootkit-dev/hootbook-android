@@ -18,7 +18,7 @@ import dev.hootkit.core.CategoryKind
 import dev.hootkit.core.CycleUnit
 import dev.hootkit.core.LocalDate
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ChoiceSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSection
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListSectionScope
 import io.github.hootkit_dev.hootbook.presentation.ui.components.detailRow
@@ -70,20 +70,8 @@ private fun ListSectionScope.referenceRow(label: Int, icon: ImageVector, value: 
 )
 
 @Composable
-private fun ReferenceSheet(title: String, selected: String?, options: List<Pair<String?, String>>, onDismiss: () -> Unit, change: (String?) -> Unit) {
-    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Text(title, Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp), style = MaterialTheme.typography.headlineSmall)
-        Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
-            ListSection {
-                options.forEach { (id, name) ->
-                    item(headline = { Text(name) }, selected = id == selected,
-                        trailing = if (id == selected) ({ Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary) }) else null,
-                        onClick = { change(id); onDismiss() })
-                }
-            }
-        }
-    }
-}
+private fun ReferenceSheet(title: String, selected: String?, options: List<Pair<String?, String>>, onDismiss: () -> Unit, change: (String?) -> Unit) =
+    ChoiceSheet(title, options, selected, onDismiss, change)
 
 /** A plan's account, category and subcategory as label / value rows. */
 @Composable

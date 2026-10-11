@@ -18,4 +18,12 @@
     <string name="privacy_lock_after">Lock after</string>
     <string name="privacy_lock_immediately">Immediately on leaving the app</string>
     <string name="privacy_lock_minutes">%1$d min after leaving the app</string>
+    <string name="settings_group_bookkeeping">Bookkeeping</string>
+    <string name="settings_group_data">Reminders &amp; data</string>
+    <string name="settings_main_currency_help">Totals are shown in it</string>
+    <string name="settings_default_account_help">Preselected for new records</string>
+    <string name="settings_currencies">Currencies &amp; rates</string>
+    <string name="settings_currencies_help">Custom currencies and exchange rates</string>
+    <string name="settings_subscriptions_help">Recurring payments and their reminders</string>
+    <string name="settings_investments_help">Connect brokers and see holdings</string>
 </resources>

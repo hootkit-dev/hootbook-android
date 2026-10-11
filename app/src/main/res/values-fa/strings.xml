@@ -403,8 +403,6 @@
     <string name="notifications">اطلاعیه‌ها</string>
     <string name="notifications_subtitle">مدیریت تنظیمات اعلان یادآوری</string>
     <string name="about_subtitle">نسخه برنامه، کد منبع و بیشتر</string>
-    <string name="currency">واحد پول</string>
-    <string name="currency_subtitle">نرخ‌های تبادل و تنظیمات ترجیحی ارز</string>
     <string name="currency_settings_title">واحد پول</string>
     <string name="unified_currency">ارز یکپارچه</string>
     <string name="unified_currency_subtitle">نمایش همه مبالغ در یک واحد پولی</string>

@@ -403,8 +403,6 @@
     <string name="notifications">Notifications</string>
     <string name="notifications_subtitle">Manage reminder notification settings</string>
     <string name="about_subtitle">App version, source code and more</string>
-    <string name="currency">Currency</string>
-    <string name="currency_subtitle">Exchange rates and currency preferences</string>
     <string name="currency_settings_title">Currency</string>
     <string name="unified_currency">Unified Currency</string>
     <string name="unified_currency_subtitle">Display all amounts in a single currency</string>

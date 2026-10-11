@@ -403,8 +403,6 @@
     <string name="notifications">Értesítések</string>
     <string name="notifications_subtitle">Értesítési beállítások kezelése</string>
     <string name="about_subtitle">Alkalmazás verzió, forráskód és több</string>
-    <string name="currency">Pénznem</string>
-    <string name="currency_subtitle">Árfolyamok és pénznem preferenciák</string>
     <string name="currency_settings_title">Pénznem</string>
     <string name="unified_currency">Egységes pénznem</string>
     <string name="unified_currency_subtitle">Minden összeg megjelenítése egyetlen pénznemben</string>

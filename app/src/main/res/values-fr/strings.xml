@@ -403,8 +403,6 @@
     <string name="notifications">Notifications</string>
     <string name="notifications_subtitle">Gérer les paramètres de notification de rappel</string>
     <string name="about_subtitle">Version de l\'application, code source et plus</string>
-    <string name="currency">Devise</string>
-    <string name="currency_subtitle">Taux de change et préférences de devise</string>
     <string name="currency_settings_title">Devise</string>
     <string name="unified_currency">Devise unifiée</string>
     <string name="unified_currency_subtitle">Afficher tous les montants dans une seule devise</string>

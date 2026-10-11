@@ -403,8 +403,6 @@
     <string name="notifications">การแจ้งเตือน</string>
     <string name="notifications_subtitle">จัดการการตั้งค่าการแจ้งเตือนเตือนความจำ</string>
     <string name="about_subtitle">รุ่นแอป, ซอร์สโค้ด และอื่น ๆ</string>
-    <string name="currency">สกุลเงิน</string>
-    <string name="currency_subtitle">อัตราแลกเปลี่ยนและการตั้งค่าสกุลเงิน</string>
     <string name="currency_settings_title">สกุลเงิน</string>
     <string name="unified_currency">สกุลเงินแบบรวม</string>
     <string name="unified_currency_subtitle">แสดงจำนวนทั้งหมดเป็นสกุลเงินเดียว</string>

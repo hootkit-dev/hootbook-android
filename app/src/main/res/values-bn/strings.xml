@@ -403,8 +403,6 @@
     <string name="notifications">বিজ্ঞপ্তি</string>
     <string name="notifications_subtitle">রিমাইন্ডার নোটিফিকেশন সেটিংস পরিচালনা করুন</string>
     <string name="about_subtitle">অ্যাপ সংস্করণ, সোর্স কোড এবং আরও কিছু</string>
-    <string name="currency">মুদ্রা</string>
-    <string name="currency_subtitle">বিনিময় হার এবং মুদ্রার পছন্দ</string>
     <string name="currency_settings_title">মুদ্রা</string>
     <string name="unified_currency">একীভূত মুদ্রা</string>
     <string name="unified_currency_subtitle">সমস্ত পরিমাণ একটি মুদ্রায় প্রদর্শন করুন</string>

@@ -403,8 +403,6 @@
     <string name="notifications">Notificações</string>
     <string name="notifications_subtitle">Gerenciar configurações de notificações de lembrete</string>
     <string name="about_subtitle">Versão do aplicativo, código-fonte e mais</string>
-    <string name="currency">moeda</string>
-    <string name="currency_subtitle">Taxas de câmbio e preferências de moeda</string>
     <string name="currency_settings_title">moeda</string>
     <string name="unified_currency">Moeda Unificada</string>
     <string name="unified_currency_subtitle">Exibir todos os valores em uma única moeda</string>

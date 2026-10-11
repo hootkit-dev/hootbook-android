@@ -403,8 +403,6 @@
     <string name="notifications">Hoolaha</string>
     <string name="notifications_subtitle">Mālama i nā hoʻonohonoho hoʻolaha hoʻomanaʻo</string>
     <string name="about_subtitle">Manaʻo app, code kumu a me nā mea hou aku</string>
-    <string name="currency">Kālā</string>
-    <string name="currency_subtitle">Nā kumukūʻai kūʻai a me nā makemake kālā</string>
     <string name="currency_settings_title">Kālā</string>
     <string name="unified_currency">Kālā Hui</string>
     <string name="unified_currency_subtitle">Hōʻike i nā huina a pau i ke kālā hoʻokahi</string>

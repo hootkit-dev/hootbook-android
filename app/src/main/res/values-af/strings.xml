@@ -403,8 +403,6 @@
     <string name="notifications">Kennisgewings</string>
     <string name="notifications_subtitle">Bestuur herinnering kennisgewing instellings</string>
     <string name="about_subtitle">App weergawe, bron kode en meer</string>
-    <string name="currency">Geldeenheid</string>
-    <string name="currency_subtitle">Wisselkoerse en geldeenheid voorkeur</string>
     <string name="currency_settings_title">Geldeenheid</string>
     <string name="unified_currency">Gekonsolideerde Geldeenheid</string>
     <string name="unified_currency_subtitle">Vertoon alle bedrae in een geldeenheid</string>

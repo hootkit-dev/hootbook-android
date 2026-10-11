@@ -403,8 +403,6 @@
     <string name="notifications">Zidziwitso</string>
     <string name="notifications_subtitle">Konzani zochunira zidziwitso</string>
     <string name="about_subtitle">Mtundu wa pulogalamu, khodi yoyambira ndi zina zambiri</string>
-    <string name="currency">Ndalama</string>
-    <string name="currency_subtitle">Mitengo yosinthira ndi zokonda zandalama</string>
     <string name="currency_settings_title">Ndalama</string>
     <string name="unified_currency">Ndalama Zogwirizana</string>
     <string name="unified_currency_subtitle">Onetsani ndalama zonse mundalama imodzi</string>

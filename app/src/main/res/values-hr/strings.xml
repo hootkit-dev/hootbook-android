@@ -403,8 +403,6 @@
     <string name="notifications">Obavijesti</string>
     <string name="notifications_subtitle">Upravljajte postavkama obavijesti podsjetnika</string>
     <string name="about_subtitle">Verzija aplikacije, izvorni kod i više</string>
-    <string name="currency">Valuta</string>
-    <string name="currency_subtitle">Tečajevi i postavke valuta</string>
     <string name="currency_settings_title">Valuta</string>
     <string name="unified_currency">Ujedinjena valuta</string>
     <string name="unified_currency_subtitle">Prikaži sve iznose u jednoj valuti</string>

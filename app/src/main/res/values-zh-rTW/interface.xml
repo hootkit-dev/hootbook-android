@@ -2,8 +2,6 @@
 <resources>
     <string name="settings_group_personal">個人化</string>
     <string name="settings_group_finances">財務管理</string>
-    <string name="settings_group_automation">自動化與通知</string>
-    <string name="settings_group_app">關於應用</string>
     <string name="type_bank_account">銀行帳戶</string>
     <string name="type_investment_account">投資帳戶</string>
 

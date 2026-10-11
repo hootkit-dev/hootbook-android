@@ -403,8 +403,6 @@
     <string name="notifications">བརྡ་ཐོ།</string>
     <string name="notifications_subtitle">དྲན་སྐུལ་བརྡ་སྦྱོར་གྱི་སྒྲིག་སྟངས་ལ་དོ་དམ་བྱེད་དགོས།</string>
     <string name="about_subtitle">ཉེར་སྤྱོད་པར་གཞི་དང་འབྱུང་ཁུངས་ཚབ་རྟགས་སོགས་ཡོད།</string>
-    <string name="currency">དངུལ་ལོར་</string>
-    <string name="currency_subtitle">དངུལ་བརྗེས་འཛའ་ཐང་དང་དངུལ་ལོར་གྱི་གཟིགས་སྐྱོང་།</string>
     <string name="currency_settings_title">དངུལ་ལོར་</string>
     <string name="unified_currency">གཅིག་གྱུར་གྱི་དངུལ་ལོར་</string>
     <string name="unified_currency_subtitle">དངུལ་ལོར་རྐྱང་པའི་ཐོག་ནས་དངུལ་གྲངས་ཡོད་ཚད་མངོན་པར་བྱ་དགོས།</string>

@@ -180,7 +180,7 @@ fun CoreNavHost(session: CoreSession, capabilities: CoreCapabilities, preference
                                     LaunchedEffect(connection,id,brokerState.loading) { if(!brokerState.loading&&!routedBroker&&connection!=null&&id!=null) { routedBroker=true; vm.selectAccount(BrokerAccountRef(connection,id)) } }
                                     CoreInvestmentsScreen(back,{go("accounts")},{go(coreRoute("accounts","id" to it,"history" to "true"))},vm,onAddInvestment={go(coreRoute("accounts","kind" to AccountKind.INVESTMENT.name,"create" to "true"))})
                                 }
-                                composable("settings") { CoreSettingsScreen(back,{go("currencies")},{go("backup")},onRoute=::go,coreSchemaVersion=schema) }
+                                composable("settings") { CoreSettingsScreen(back,{go("currencies")},{go("backup")},onRoute=::go) }
                                 composable("currencies?currency={currency}",arguments=arguments("currency")) { CoreCurrenciesScreen(back,it.arguments?.getString("currency")) }
                                 composable("backup") { CoreBackupScreen(back, onSync={go("sync")}) }
                                 composable("profile") { CoreProfileScreen(back,{go("debts")},{go("merchant-icons")},onPerson={go(coreRoute("debts","id" to it))},onAddPerson={go(coreRoute("debts","new" to "true"))}) }

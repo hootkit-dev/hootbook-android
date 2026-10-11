@@ -403,8 +403,6 @@
     <string name="notifications">Thông báo</string>
     <string name="notifications_subtitle">Quản lý cài đặt thông báo nhắc nhở</string>
     <string name="about_subtitle">Phiên bản ứng dụng, mã nguồn và hơn thế nữa</string>
-    <string name="currency">Tiền tệ</string>
-    <string name="currency_subtitle">Tỷ giá hối đoái và sở thích tiền tệ</string>
     <string name="currency_settings_title">Tiền tệ</string>
     <string name="unified_currency">Tiền tệ thống nhất</string>
     <string name="unified_currency_subtitle">Hiển thị tất cả các khoản bằng một loại tiền tệ duy nhất</string>

@@ -403,8 +403,6 @@
     <string name="notifications">सूचनाहरू</string>
     <string name="notifications_subtitle">स्मरणसूचक सूचना सेटिङहरू व्यवस्थापन गर्नुहोस्</string>
     <string name="about_subtitle">एप संस्करण, स्रोत कोड र थप</string>
-    <string name="currency">मुद्रा</string>
-    <string name="currency_subtitle">विदेश विनिमय दर र मुद्रा प्राथमिकता</string>
     <string name="currency_settings_title">मुद्रा</string>
     <string name="unified_currency">एकीकृत मुद्रा</string>
     <string name="unified_currency_subtitle">सवै रकम एकै मुद्रामा प्रदर्शन गर्नुहोस्</string>

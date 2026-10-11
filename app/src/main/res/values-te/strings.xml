@@ -403,8 +403,6 @@
     <string name="notifications">నోటిఫికేషన్లు</string>
     <string name="notifications_subtitle">నిర్మాణ సూచన నోటిఫికేషన్ సెట్టింగులను నిర్వహించండి</string>
     <string name="about_subtitle">యాప్ వెర్షన్, సోర్స్ కోడ్ మరియు మరిన్ని</string>
-    <string name="currency">కరెన్సీ</string>
-    <string name="currency_subtitle">ఎక్స్ఛేంజ్ రేట్లు మరియు కరెన్సీ ప్రాధాన్యతలు</string>
     <string name="currency_settings_title">కరెన్సీ</string>
     <string name="unified_currency">ఐక్య కరెన్సీ</string>
     <string name="unified_currency_subtitle">అన్ని మొత్తం ఒకే కరెన్సీలో చూపించండి</string>

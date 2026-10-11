@@ -403,8 +403,6 @@
     <string name="notifications">Varsler</string>
     <string name="notifications_subtitle">Administrer innstillinger for påminnelsesvarsler</string>
     <string name="about_subtitle">App-versjon, kildekode og mer</string>
-    <string name="currency">Valuta</string>
-    <string name="currency_subtitle">Valutakurser og valutapreferanser</string>
     <string name="currency_settings_title">Valuta</string>
     <string name="unified_currency">Enhetlig valuta</string>
     <string name="unified_currency_subtitle">Vis alle beløp i én valuta</string>

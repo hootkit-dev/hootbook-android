@@ -403,8 +403,6 @@
     <string name="notifications">Aviseringar</string>
     <string name="notifications_subtitle">Hantera påminnelseaviseringar</string>
     <string name="about_subtitle">Appversion, källkod och mer</string>
-    <string name="currency">Valuta</string>
-    <string name="currency_subtitle">Växelkurser och valutainställningar</string>
     <string name="currency_settings_title">Valuta</string>
     <string name="unified_currency">Enhetlig valuta</string>
     <string name="unified_currency_subtitle">Visa alla belopp i en enda valuta</string>

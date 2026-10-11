@@ -403,8 +403,6 @@
     <string name="notifications">Benachrichtigungen</string>
     <string name="notifications_subtitle">Erinnerungs-Benachrichtigungseinstellungen verwalten</string>
     <string name="about_subtitle">App-Version, Quellcode und mehr</string>
-    <string name="currency">Währung</string>
-    <string name="currency_subtitle">Wechselkurse und Währungseinstellungen</string>
     <string name="currency_settings_title">Währung</string>
     <string name="unified_currency">Einheitliche Währung</string>
     <string name="unified_currency_subtitle">Alle Beträge in einer Währung anzeigen</string>

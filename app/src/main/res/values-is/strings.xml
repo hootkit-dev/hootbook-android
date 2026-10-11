@@ -403,8 +403,6 @@
     <string name="notifications">Tilkynningar</string>
     <string name="notifications_subtitle">Stjórn áminninga tilkynningastillingum</string>
     <string name="about_subtitle">Forritagerð, uppsprettukóði og meira</string>
-    <string name="currency">Gjaldmiðill</string>
-    <string name="currency_subtitle">Gengi og gjaldmiðilsval</string>
     <string name="currency_settings_title">Gjaldmiðill</string>
     <string name="unified_currency">Sameinaður gjaldmiðill</string>
     <string name="unified_currency_subtitle">Sýna öll upphæðir í einum gjaldmiðli</string>

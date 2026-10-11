@@ -403,8 +403,6 @@
     <string name="notifications">सूचना</string>
     <string name="notifications_subtitle">सूचना सूट व्यवस्थापित करा</string>
     <string name="about_subtitle">अॅप आवृत्ती, स्त्रोत कोड आणि अधिक</string>
-    <string name="currency">चलन</string>
-    <string name="currency_subtitle">विनिमय दर आणि चलन प्राधान्ये</string>
     <string name="currency_settings_title">चलन</string>
     <string name="unified_currency">एकसंध चलन</string>
     <string name="unified_currency_subtitle">सर्व रक्कमा एका चलनात दर्शवा</string>

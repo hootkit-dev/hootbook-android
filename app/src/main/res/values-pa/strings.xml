@@ -403,8 +403,6 @@
     <string name="notifications">ਸੂਚਨਾਵਾਂ</string>
     <string name="notifications_subtitle">ਰੀਮਾਈਡਰ ਨੋਟੀਫਿਕੇਸ਼ਨ ਸੈਟਿੰਗਸ ਦਾ ਪ੍ਰਬੰਧ ਕਰੋ</string>
     <string name="about_subtitle">ਐਪ ਵਰਜਨ, ਸੋਰਸ ਕੋਡ ਅਤੇ ਹੋਰ</string>
-    <string name="currency">ਮੁਦਰਾ</string>
-    <string name="currency_subtitle">ਵਿਨਿਮਯ ਦਰਾਂ ਅਤੇ ਮੁਦਰਾ ਪREFERENCEਸ</string>
     <string name="currency_settings_title">ਮੁਦਰਾ</string>
     <string name="unified_currency">ਇਕਸਾਰ ਮੁਦਰਾ</string>
     <string name="unified_currency_subtitle">ਸਭ ਰਕਮਾਂ ਇੱਕ ਮੋਨੈਟਰੀ ਵਿੱਚ ਦਿਖਾਓ</string>

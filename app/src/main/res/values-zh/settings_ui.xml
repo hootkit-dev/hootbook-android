@@ -18,4 +18,12 @@
     <string name="privacy_lock_after">自动锁定</string>
     <string name="privacy_lock_immediately">离开应用后立即</string>
     <string name="privacy_lock_minutes">离开应用 %1$d 分钟后</string>
+    <string name="settings_group_bookkeeping">记账</string>
+    <string name="settings_group_data">提醒与数据</string>
+    <string name="settings_main_currency_help">合计金额以此货币显示</string>
+    <string name="settings_default_account_help">新记录预选此账户</string>
+    <string name="settings_currencies">货币与汇率</string>
+    <string name="settings_currencies_help">自定义货币与汇率</string>
+    <string name="settings_subscriptions_help">定期扣款与到期提醒</string>
+    <string name="settings_investments_help">连接券商，查看持仓</string>
 </resources>

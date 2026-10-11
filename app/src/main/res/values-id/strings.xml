@@ -403,8 +403,6 @@
     <string name="notifications">Notifikasi</string>
     <string name="notifications_subtitle">Kelola pengaturan notifikasi pengingat</string>
     <string name="about_subtitle">Versi aplikasi, kode sumber, dan lainnya</string>
-    <string name="currency">Mata uang</string>
-    <string name="currency_subtitle">Kurs dan preferensi mata uang</string>
     <string name="currency_settings_title">Mata uang</string>
     <string name="unified_currency">Mata Uang Tunggal</string>
     <string name="unified_currency_subtitle">Tampilkan semua jumlah dalam satu mata uang</string>

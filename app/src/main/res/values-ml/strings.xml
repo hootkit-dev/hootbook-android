@@ -403,8 +403,6 @@
     <string name="notifications">അറിയിപ്പുകൾ</string>
     <string name="notifications_subtitle">റിമൈണ്ടർ നോട്ടിഫിക്കേഷൻ ക്രമീകരണങ്ങൾ മാനേജ് ചെയ്യുക</string>
     <string name="about_subtitle">ആപ്പ് പതിപ്പ്, സോഴ്‌സ് കോഡ് എന്നിവയും കൂടുതൽ</string>
-    <string name="currency">ചില്ലറ</string>
-    <string name="currency_subtitle">വിനിമയ നിരക്കുകളും ചില്ലറ പ്രവണതകളും</string>
     <string name="currency_settings_title">ചില്ലറ</string>
     <string name="unified_currency">ഏകീകൃത ചില്ലറ</string>
     <string name="unified_currency_subtitle">എല്ലാ തുകയുകളും ഒരേ ചില്ലറില്‍ പ്രദർഷിപ്പിക്കുക</string>

@@ -2,8 +2,6 @@
 <resources>
     <string name="settings_group_personal">个性化</string>
     <string name="settings_group_finances">财务管理</string>
-    <string name="settings_group_automation">自动化与通知</string>
-    <string name="settings_group_app">关于应用</string>
     <string name="type_bank_account">银行账户</string>
     <string name="type_investment_account">投资账户</string>
     <string name="merchant_optional">商家（可选）</string>

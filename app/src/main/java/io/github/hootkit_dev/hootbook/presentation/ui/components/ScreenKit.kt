@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -231,5 +233,34 @@ fun StatusLabel(text: String, modifier: Modifier = Modifier, error: Boolean = fa
         color = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer) {
         Text(text, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelLarge,
             color = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)
+    }
+}
+
+/**
+ * A single choice from a list, in a modal bottom sheet: one row per option, the selected one
+ * checked. Picking an option reports it and closes the sheet.
+ */
+@Composable
+fun <T> ChoiceSheet(
+    title: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    onDismiss: () -> Unit,
+    onSelect: (T) -> Unit,
+    enabled: Boolean = true,
+    supporting: ((T) -> String?)? = null,
+) {
+    HootbookModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Text(title, Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp), style = MaterialTheme.typography.headlineSmall)
+        Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
+            ListSection {
+                options.forEach { (value, label) ->
+                    val detail = supporting?.invoke(value)
+                    item(headline = { Text(label) }, supporting = detail?.let { { Text(it) } }, selected = value == selected,
+                        trailing = if (value == selected) ({ Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.primary) }) else null,
+                        onClick = if (enabled) { { onSelect(value); onDismiss() } } else null)
+                }
+            }
+        }
     }
 }

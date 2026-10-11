@@ -403,8 +403,6 @@
     <string name="notifications">Ειδοποιήσεις</string>
     <string name="notifications_subtitle">Διαχείριση ρυθμίσεων ειδοποιήσεων υπενθύμισης</string>
     <string name="about_subtitle">Έκδοση εφαρμογής, πηγαίος κώδικας και άλλα</string>
-    <string name="currency">Νόμισμα</string>
-    <string name="currency_subtitle">Ισοτιμίες και προτιμήσεις νομισμάτων</string>
     <string name="currency_settings_title">Νόμισμα</string>
     <string name="unified_currency">Ενιαίο Νόμισμα</string>
     <string name="unified_currency_subtitle">Εμφάνιση όλων των ποσών σε ένα νόμισμα</string>

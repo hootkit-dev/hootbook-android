@@ -403,8 +403,6 @@
     <string name="notifications">Oznámení</string>
     <string name="notifications_subtitle">Spravovat nastavení připomenutí</string>
     <string name="about_subtitle">Verze aplikace, zdrojový kód a další</string>
-    <string name="currency">Měna</string>
-    <string name="currency_subtitle">Kurzy měn a preference měn</string>
     <string name="currency_settings_title">Měna</string>
     <string name="unified_currency">Jednotná měna</string>
     <string name="unified_currency_subtitle">Zobrazit všechny částky v jedné měně</string>

@@ -403,8 +403,6 @@
     <string name="notifications">Notificări</string>
     <string name="notifications_subtitle">Gestionați setările notificărilor de reamintire</string>
     <string name="about_subtitle">Versiunea aplicației, codul sursă și altele</string>
-    <string name="currency">Monedă</string>
-    <string name="currency_subtitle">Rate de schimb și preferințe valutare</string>
     <string name="currency_settings_title">Monedă</string>
     <string name="unified_currency">Moneda unificată</string>
     <string name="unified_currency_subtitle">Afișați toate sumele într-o singură monedă</string>

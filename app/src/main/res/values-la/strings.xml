@@ -403,8 +403,6 @@
     <string name="notifications">Notificationes</string>
     <string name="notifications_subtitle">Administrare occasus admonitionis memoriae</string>
     <string name="about_subtitle">Versio applicationis, codex fontis et plus</string>
-    <string name="currency">nummus</string>
-    <string name="currency_subtitle">Rationes permutationis et praelationes monetae</string>
     <string name="currency_settings_title">nummus</string>
     <string name="unified_currency">Moneta Unita</string>
     <string name="unified_currency_subtitle">Omnia quantitas in una moneta ostendere</string>

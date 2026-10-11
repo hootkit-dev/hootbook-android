@@ -590,13 +590,11 @@
 <string name="connection_failed_format">Connection failed: %1$s</string>
 <string name="connection_verified">Connection successfully verified!</string>
 <string name="contacts">Contacts</string>
-<string name="currency">Currency</string>
 <string name="currency_code">Currency Code</string>
 <string name="currency_code_hint">USD, INR, EUR ...</string>
 <string name="currency_country_name">Currency name</string>
 <string name="currency_name_hint">US Dollar, India Rupee ..</string>
 <string name="currency_settings_title">Currency</string>
-<string name="currency_subtitle">Exchange rates and currency preferences</string>
 <string name="currency_symbol">Currency Symbol</string>
 <string name="currency_symbols_hint">$,₹,€,£,₽</string>
 <string name="custom_currency">Custom Currency</string>

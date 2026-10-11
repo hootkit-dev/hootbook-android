@@ -403,8 +403,6 @@
     <string name="notifications">Notificacions</string>
     <string name="notifications_subtitle">Gestiona la configuració de les notificacions de recordatori</string>
     <string name="about_subtitle">Versió de l\'aplicació, codi font i més</string>
-    <string name="currency">Moneda</string>
-    <string name="currency_subtitle">Tipus de canvi i preferències de moneda</string>
     <string name="currency_settings_title">Moneda</string>
     <string name="unified_currency">Moneda unificada</string>
     <string name="unified_currency_subtitle">Mostra tots els imports en una sola moneda</string>

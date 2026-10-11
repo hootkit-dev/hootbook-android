@@ -403,8 +403,6 @@
     <string name="notifications">அறிவிப்புகள்</string>
     <string name="notifications_subtitle">நினைவூட்டல் அறிவிப்பு அமைப்புகளை நிர்வகிக்கவும்</string>
     <string name="about_subtitle">ஆப் பதிப்பு, மூலக் குறியீடு மற்றும் பல</string>
-    <string name="currency">கரன்சீ</string>
-    <string name="currency_subtitle">மாற்று விகிதங்கள் மற்றும் கரன்சீ முன்னுரிமைகள்</string>
     <string name="currency_settings_title">கரன்சீ</string>
     <string name="unified_currency">ஒற்றை கரன்சீ</string>
     <string name="unified_currency_subtitle">அனைத்து தொகையும் ஒரே கரன்சீயில் காட்சிப்படுத்தவும்</string>

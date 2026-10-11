@@ -403,8 +403,6 @@
     <string name="notifications">સૂચનાઓ</string>
     <string name="notifications_subtitle">સૂચના રીમાઇન્ડર ગોઠવણીઓ મેનેજ કરો</string>
     <string name="about_subtitle">એપ્લિકેશન સંસ્કરણ, સ્ત્રોત કોડ અને વધુ</string>
-    <string name="currency">ચલણ</string>
-    <string name="currency_subtitle">વિનિમય દર અને ચલણ પસંદગીઓ</string>
     <string name="currency_settings_title">ચલણ</string>
     <string name="unified_currency">એકીકૃત ચલણ</string>
     <string name="unified_currency_subtitle">બધા રકમોને એક જ ચલણમાં બતાવો</string>

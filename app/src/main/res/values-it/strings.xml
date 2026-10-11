@@ -403,8 +403,6 @@
     <string name="notifications">Notifiche</string>
     <string name="notifications_subtitle">Gestisci impostazioni delle notifiche di promemoria</string>
     <string name="about_subtitle">Versione dell\'app, codice sorgente e altro</string>
-    <string name="currency">Valuta</string>
-    <string name="currency_subtitle">Tassi di cambio e preferenze di valuta</string>
     <string name="currency_settings_title">Valuta</string>
     <string name="unified_currency">Valuta Unificata</string>
     <string name="unified_currency_subtitle">Mostra tutti gli importi in un\'unica valuta</string>

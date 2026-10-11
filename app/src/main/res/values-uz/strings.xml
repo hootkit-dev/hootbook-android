@@ -403,8 +403,6 @@
     <string name="notifications">Bildirishnomalar</string>
     <string name="notifications_subtitle">Eslatma bildirishnoma sozlamalarini boshqarish</string>
     <string name="about_subtitle">Ilova versiyasi, manba kodi va boshqalar</string>
-    <string name="currency">Valyuta</string>
-    <string name="currency_subtitle">Valyuta kurslari va afzalliklari</string>
     <string name="currency_settings_title">Valyuta</string>
     <string name="unified_currency">Yagona valyuta</string>
     <string name="unified_currency_subtitle">Barcha summalarni bitta valyutada ko\'rsatish</string>

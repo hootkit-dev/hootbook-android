@@ -403,8 +403,6 @@
     <string name="notifications">اطلاعات</string>
     <string name="notifications_subtitle">ریماینڈر اطلاعات کی ترتیبات کا انتظام کریں</string>
     <string name="about_subtitle">ایپ ورژن، سورس کوڈ اور مزید</string>
-    <string name="currency">کرنسی</string>
-    <string name="currency_subtitle">زر مبادلہ کی شرح اور کرنسی کی ترجیحات</string>
     <string name="currency_settings_title">کرنسی</string>
     <string name="unified_currency">متحدہ کرنسی</string>
     <string name="unified_currency_subtitle">تمام رقمیں ایک ہی کرنسی میں دکھائیں</string>

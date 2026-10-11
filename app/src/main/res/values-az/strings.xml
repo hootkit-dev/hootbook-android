@@ -403,8 +403,6 @@
     <string name="notifications">Bildirişlər</string>
     <string name="notifications_subtitle">Xatırlatma bildiriş parametrlərini idarə et</string>
     <string name="about_subtitle">Tətbiq versiyası, mənbə kodu və daha çox</string>
-    <string name="currency">Valyuta</string>
-    <string name="currency_subtitle">Valyuta məzənnələri və üstünlük parametrləri</string>
     <string name="currency_settings_title">Valyuta</string>
     <string name="unified_currency">Birgə Valyuta</string>
     <string name="unified_currency_subtitle">Bütün məbləğləri bir valyutada göstər</string>

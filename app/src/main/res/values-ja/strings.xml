@@ -403,8 +403,6 @@
     <string name="notifications">通知</string>
     <string name="notifications_subtitle">リマインダー通知設定を管理</string>
     <string name="about_subtitle">アプリのバージョン、ソースコードなど</string>
-    <string name="currency">通貨</string>
-    <string name="currency_subtitle">為替レートと通貨の設定</string>
     <string name="currency_settings_title">通貨</string>
     <string name="unified_currency">統一通貨</string>
     <string name="unified_currency_subtitle">すべての金額を単一の通貨で表示</string>

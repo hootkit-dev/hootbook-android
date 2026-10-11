@@ -403,8 +403,6 @@
     <string name="notifications">ସୂଚନାମାଳାସମୂହ</string>
     <string name="notifications_subtitle">ସ୍ମରଣ ନୋଟିଫିକେସନ ସେଟିଂଗଗୁଡ଼ିକ ପରିଚାଳନା କରନ୍ତୁ</string>
     <string name="about_subtitle">ଆପ୍ ଭର୍ସନ, ସୋର୍ସ କୋଡ୍ ଏବଂ ଅଧିକ</string>
-    <string name="currency">ମୁଦ୍ରା</string>
-    <string name="currency_subtitle">ବିନିମୟ ଦର ଏବଂ ମୁଦ୍ରା ପସନ୍ଦ</string>
     <string name="currency_settings_title">ମୁଦ୍ରା</string>
     <string name="unified_currency">ଏକତ୍ରିତ ମୁଦ୍ରା</string>
     <string name="unified_currency_subtitle">ସମସ୍ତ ରାଶିକୁ ଏକ ମୁଦ୍ରାରେ ପ୍ରଦର୍ଶିତ କରନ୍ତୁ</string>

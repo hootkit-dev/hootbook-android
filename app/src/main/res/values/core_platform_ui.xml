@@ -33,7 +33,6 @@
   <string name="core_ui_reset_layout">Reset home layout</string>
   <string name="core_ui_developer">Developer diagnostics</string>
   <string name="core_ui_tokens">Show AI token information</string>
-  <string name="core_ui_app_lock">App lock</string>
   <string name="core_ui_locked">Private ledger locked</string>
   <string name="core_ui_unlock">Unlock Hootbook</string>
   <string name="core_ui_lock_subtitle">Authenticate with biometrics or your device screen lock.</string>

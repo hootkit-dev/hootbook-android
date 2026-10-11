@@ -403,8 +403,6 @@
     <string name="notifications">ಸೂಚನೆಗಳು</string>
     <string name="notifications_subtitle">ಸ್ಮರಣೆ ನೋಟಿಫಿಕೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸಿ</string>
     <string name="about_subtitle">ಆಪ್ ಆವೃತ್ತಿ, ಮೂಲ ಕೋಡ್ ಮತ್ತು ಇನ್ನಷ್ಟು</string>
-    <string name="currency">ಕರೆನ್ಸಿ</string>
-    <string name="currency_subtitle">ವಿನಿಮಯ ದರಗಳು ಮತ್ತು ಕರೆನ್ಸಿ प्राथमिकತೆಗಳು</string>
     <string name="currency_settings_title">ಕರೆನ್ಸಿ</string>
     <string name="unified_currency">ಏಕೀಕೃತ ಕರೆನ್ಸಿ</string>
     <string name="unified_currency_subtitle">ಎಲ್ಲಾ ಪ್ರಮಾಣಗಳನ್ನು ಒಂದೇ ಕರೆನ್ಸಿಯಲ್ಲಿ ಪ್ರದರ್ಶಿಸಿ</string>

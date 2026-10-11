@@ -403,8 +403,6 @@
     <string name="notifications">Bildirimler</string>
     <string name="notifications_subtitle">Hatırlatma bildirim ayarlarını yönet</string>
     <string name="about_subtitle">Uygulama sürümü, kaynak kodu ve daha fazlası</string>
-    <string name="currency">Para birimi</string>
-    <string name="currency_subtitle">Döviz kurları ve para birimi tercihleri</string>
     <string name="currency_settings_title">Para birimi</string>
     <string name="unified_currency">Birleşik Para Birimi</string>
     <string name="unified_currency_subtitle">Tüm tutarları tek bir para biriminde göster</string>
