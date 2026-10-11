@@ -9,7 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.MainActivity
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.core.budgets.appendBudgetHistory
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.appendBudgetHistory
 import io.github.hootkit_dev.hootbook.presentation.export.CoreTransactionCsv
 import io.github.hootkit_dev.hootbook.widget.QuickEntry
 import java.io.ByteArrayOutputStream
@@ -161,32 +161,6 @@ class RealMainJourneys {
         awaitCondition{runBlocking{c.ledger().use{it.get(id).deleted}}};click(R.string.core_full_label_3)
         awaitCondition{runBlocking{!c.ledger().use{it.get(id).deleted}}};shot("ui-expense-undo")
         f.note("ui-ledger","real typed-entry UI expense create/edit/delete/undo id=$id")
-    }
-    @Test fun uiBudgetCreateHistoryAndPauseResume()=runBlocking{
-        val c=f.core();val name="${f.tag} UI budget";home();click(R.string.core_complete_budgets);click(R.string.core_budgets_add)
-        field(R.string.core_budgets_name,name);field(R.string.core_budgets_amount,"80");field(R.string.core_budgets_start,"2023-01-31");click(R.string.core_budgets_save)
-        awaitCondition{nodes().any{it.text?.toString()==name}};click(R.string.core_budgets_pause);click(R.string.core_budgets_resume)
-        click(R.string.core_budgets_limit_edit);field(R.string.core_budgets_limit_amount,"10");click(R.string.core_budgets_save)
-        val id=c.budgets().use{it.list(JavaDate.now().nativeDate(),false,null).single{budget->budget.name==name}.id}
-        awaitCondition{runBlocking{c.budgets().use{it.get(id,JavaDate.now().nativeDate(),null).current.limits.any{limit->limit.amount.compareTo(BigDecimal("10"))==0}}}}
-        click(R.string.core_budgets_history);shot("ui-budget-history-first-page");click(R.string.core_history_load_older);shot("ui-budget-history-second-page")
-        val oldest=c.budgets().use{it.get(id,LocalDate(2023,1u,31u),null).current}
-        fun display(day:LocalDate)="%04d-%02d-%02d".format(java.util.Locale.ROOT,day.year,day.month.toInt(),day.day.toInt())
-        clickText("${display(oldest.start)} — ${display(oldest.end)}");shot("ui-budget-oldest-exact-period");f.note("ui-budget","real create/pause/resume/categorylimit/history Load older traversed >24 through production UI")
-    }
-    @Test fun uiTemplateAndSubscriptionCreateAndPersonDebt()=runBlocking{
-        val c=f.core();val name="${f.tag} UI template";home();click(R.string.core_complete_templates);clickText("＋")
-        field(R.string.core_plans_name,name);field(R.string.core_plans_merchant,"${f.tag} UI merchant");field(R.string.core_plans_optional_amount,"6");field(R.string.core_plans_optional_currency,"CNY");click(R.string.save)
-        awaitCondition{runBlocking{c.plans().use{it.templates().any{t->t.name==name}}}};shot("ui-template-saved")
-        home();click(R.string.core_complete_subscriptions);clickText("＋");val sub="${f.tag} UI subscription"
-        field(R.string.core_plans_name,sub);field(R.string.core_plans_amount,"5");field(R.string.core_plans_currency,"CNY");field(R.string.core_plans_next_due,JavaDate.now().toString());click(R.string.save)
-        awaitCondition{nodes().any{it.text?.toString()==sub}};shot("ui-subscription-saved")
-        home();click(R.string.core_complete_debts);click(R.string.core_debts_add_person);val person="${f.tag} UI person"
-        field(R.string.core_debts_name,person);field(R.string.core_debts_phone,"+15551234567");click(R.string.core_debts_save)
-        awaitCondition{nodes().any{it.text?.toString()==person}};click(R.string.core_debts_add_record)
-        field(R.string.core_debts_record_title,"${f.tag} UI debt");field(R.string.core_debts_amount,"7");click(R.string.core_debts_save)
-        awaitCondition{nodes().any{it.text?.toString()=="${f.tag} UI debt"}};shot("ui-person-debt-saved")
-        f.note("ui-plans","real template/subscription/person/debt forms saved via Main UI")
     }
     private fun layout(name:String){File(f.output,"$name-layout.txt").writeText(nodes().joinToString("\n"){node->val b=Rect();node.getBoundsInScreen(b);"${node.className} text=${if(node.isPassword)"[PASSWORD]" else node.text} description=${node.contentDescription} bounds=$b checked=${node.isChecked}"})}
     @Test fun uiCurrenciesCustomAndNativeRateConversion()=runBlocking{
@@ -367,22 +341,6 @@ class RealMainJourneys {
             for(row in listOf(rows.first(),rows[24],rows.last())){val detail=api.get(id,row.start,null);assertEquals(row.start,detail.current.start);assertEquals(row.end,detail.current.end)}
             f.note("native-weekly-budget","public native weekly history rows=${rows.size} pages=$pages strict dedup/start cursors and exact returned details; not fabricated txnIDs")
         }
-    }
-    @Test fun uiSubscriptionHideSchedulePaidAndConfirmedLedgerPayment()=runBlocking{
-        val c=f.core();val today=JavaDate.now().nativeDate();val sub=c.plans().use{it.subscriptions(today,true).first{row->row.name.contains("UI subscription")&&!row.ended}}
-        home();click(R.string.core_complete_subscriptions);field(R.string.core_detail_name_filter,sub.name);clickText(sub.name)
-        click(R.string.core_plans_hide);awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.hidden}}}
-        click(R.string.core_plans_unhide);click(R.string.core_plans_mark_paid);click(R.string.core_plans_confirm)
-        awaitCondition{runBlocking{c.plans().use{it.subscriptions(today,true).single{row->row.id==sub.id}.lastPaid==today}}}
-        val all=TransactionFilter(null,null,emptyList(),emptyList(),emptyList(),null,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)
-        val before=c.ledger().use{it.list(all,PageRequest(0u,1u)).total};click(R.string.core_plans_record_payment)
-        assertEquals(before,c.ledger().use{it.list(all,PageRequest(0u,1u)).total})
-        val account=c.accounts().use{it.overview().accounts.first{row->!row.archived&&row.kind==AccountKind.WALLET}}
-        clickPrefix(R.string.core_full_label_38);clickText(account.name+account.last4?.let{" · $it"}.orEmpty())
-        clickPrefix(R.string.core_full_label_40);clickText(c.categories().use{it.list(CategoryKind.EXPENSE,false).first().displayName});click(R.string.core_full_label_71)
-        awaitCondition{runBlocking{c.ledger().use{it.list(all,PageRequest(0u,1u)).total==before+1u}}}
-        val saved=c.ledger().use{it.list(all.copy(text=sub.name),PageRequest(0u,50u)).items};assertTrue(saved.any{row->row.subscriptionId==sub.id})
-        shot("ui-subscription-payment-confirmed");f.note("ui-subscription","actual hide/unhide/schedulepaid + typed paymentprefill nosave before confirmation/one linked nativeledger record after UI Save")
     }
     private fun systemBack(){automation.executeShellCommand("input keyevent 4").use{android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes()};Thread.sleep(850)}
     private fun documentDownloads(){

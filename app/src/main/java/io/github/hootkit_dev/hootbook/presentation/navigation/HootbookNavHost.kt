@@ -52,24 +52,24 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.CoreIntentIngress
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions.SubscriptionsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.quicktemplates.QuickTemplatesScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.contacts.ContactsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
-import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
-import io.github.hootkit_dev.hootbook.presentation.core.debts.CoreDebtsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeScreen
 import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsViewModel
 import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
 import io.github.hootkit_dev.hootbook.presentation.core.notifications.CoreNotificationPreferencesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.onboarding.CoreOnboardingScreen
-import io.github.hootkit_dev.hootbook.presentation.core.plans.CoreSubscriptionsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.plans.CoreTemplatesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIconsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreProfileScreen
 import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreSettingsScreen
@@ -388,8 +388,13 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until budgets is migrated
-                                    CoreBudgetsScreen(back)
+                                    SharedTransitionLayout {
+                                        BudgetsScreen(onNavigateBack = back,
+                                            onBudgetClick = { id, key -> go(BudgetDetail(id, sharedElementKey = key)) },
+                                            onHistoryClick = { go(BudgetHistory(it)) },
+                                            sharedElementPrefix = entry.toRoute<Budgets>().sharedElementPrefix,
+                                            animatedContentScope = this@composable, blurEffects = prefs.blur)
+                                    }
                                 }
                             }
                             composable<BudgetDetail>(
@@ -399,9 +404,13 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until budget detail is migrated
                                     val route = entry.toRoute<BudgetDetail>()
-                                    TemporaryBudgetScreen(back, route.budgetId, start = route.startDate, end = route.endDate)
+                                    SharedTransitionLayout {
+                                        BudgetDetailScreen(budgetId = route.budgetId, startDate = route.startDate, endDate = route.endDate,
+                                            onNavigateBack = back, onNavigateToHistory = { go(BudgetHistory(it)) },
+                                            animatedContentScope = this@composable, sharedElementKey = route.sharedElementKey,
+                                            blurEffects = prefs.blur)
+                                    }
                                 }
                             }
                             composable<BudgetHistory>(
@@ -411,8 +420,8 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until budget history is migrated
-                                    TemporaryBudgetScreen(back, entry.toRoute<BudgetHistory>().budgetId, history = true)
+                                    BudgetHistoryScreen(entry.toRoute<BudgetHistory>().budgetId, back,
+                                        onNavigateToDetail = { id, start, end -> go(BudgetDetail(id, startDate = start?.coreDateText(), endDate = end?.coreDateText())) })
                                 }
                             }
                             composable<Subscriptions>(
@@ -422,11 +431,13 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.noneExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until subscriptions is migrated
-                                    CoreSubscriptionsScreen(
-                                        onBack = back, subscriptionId = entry.toRoute<Subscriptions>().subscriptionId,
-                                        onRecordPayment = { go(AddTransaction(subscriptionId = it)) },
-                                    )
+                                    SharedTransitionLayout {
+                                        SubscriptionsScreen(onNavigateBack = back,
+                                            initialSubscriptionId = entry.toRoute<Subscriptions>().subscriptionId,
+                                            onEditSubscription = { go(AddTransaction(initialTab = 1, subscriptionId = it)) },
+                                            onRecordPayment = { go(AddTransaction(subscriptionId = it)) },
+                                            sharedTransitionScope = this@SharedTransitionLayout, animatedContentScope = this@composable)
+                                    }
                                 }
                             }
                             composable<QuickTemplates>(
@@ -436,8 +447,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until quick templates is migrated
-                                    CoreTemplatesScreen(back, { go(AddTransaction(templateId = it)) })
+                                    QuickTemplatesScreen(back)
                                 }
                             }
                             composable<LendBorrow>(
@@ -447,8 +457,10 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until lending and borrowing is migrated
-                                    CoreDebtsScreen(back, onOpenTransactions = { go(TransactionDetail(it)) })
+                                    SharedTransitionLayout {
+                                        LendBorrowScreen(back, { go(PersonDetail(it, "person_avatar_$it")) },
+                                            animatedContentScope = this@composable, blurEffects = prefs.blur)
+                                    }
                                 }
                             }
                             composable<Contacts>(
@@ -458,9 +470,11 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until contacts is migrated
-                                    CoreDebtsScreen(back, initialPersonId = entry.toRoute<Contacts>().personId,
-                                        onOpenTransactions = { go(TransactionDetail(it)) })
+                                    SharedTransitionLayout {
+                                        ContactsScreen(back, { go(PersonDetail(it, "person_avatar_$it")) },
+                                            selectedPersonId = entry.toRoute<Contacts>().personId,
+                                            animatedContentScope = this@composable, blurEffects = prefs.blur)
+                                    }
                                 }
                             }
                             composable<PersonDetail>(
@@ -470,9 +484,11 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.noneExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until person detail is migrated
-                                    CoreDebtsScreen(back, initialPersonId = entry.toRoute<PersonDetail>().personId,
-                                        onOpenTransactions = { go(TransactionDetail(it)) })
+                                    SharedTransitionLayout {
+                                        PersonDetailScreen(back, { id, key -> go(TransactionDetail(id, key)) },
+                                            sharedElementKey = entry.toRoute<PersonDetail>().sharedElementKey,
+                                            animatedContentScope = this@composable)
+                                    }
                                 }
                             }
                             composable<Investments> { entry ->
@@ -771,32 +787,6 @@ private fun NavigationTransitionInputBlocker(
         )
     }
 }
-
-/** Temporary detail/history selection uses Core-returned periods without deriving budget dates. */
-@Composable
-private fun TemporaryBudgetScreen(
-    back: () -> Unit,
-    budgetId: String,
-    history: Boolean = false,
-    start: String? = null,
-    end: String? = null,
-) {
-    val vm: CoreBudgetsViewModel = hiltViewModel()
-    val state by vm.state.collectAsStateWithLifecycle()
-    var opened by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(state.selected, state.history) {
-        if (!opened && state.selected?.id == budgetId) {
-            if (history) { opened = true; vm.history(true) }
-            else if (start != null && end != null) {
-                state.history.firstOrNull { it.start.coreDateText() == start && it.end.coreDateText() == end }
-                    ?.let { opened = true; vm.history(true); vm.historyPeriod(it) }
-                if (!opened && state.historyCursor != null && !state.historyLoading) vm.loadMoreHistory()
-            } else opened = true
-        }
-    }
-    CoreBudgetsScreen(back, initialBudgetId = budgetId, viewModel = vm)
-}
-
 
 /** Original wide-window account list/detail split, keyed by the Core account id. */
 @Composable
