@@ -17,13 +17,13 @@
     <string name="core_currencies_amount">金额</string>
     <string name="core_currencies_from">原币种</string>
     <string name="core_currencies_to">目标币种</string>
-    <string name="core_currencies_convert_note">Core 仅使用已存汇率；缺失汇率不按 1:1 换算，相关合计可能不完整。</string>
+    <string name="core_currencies_convert_note">只使用已保存的汇率；缺少汇率时不会按 1:1 换算。</string>
     <string name="core_currencies_missing_rate">缺少 %1$s → %2$s 汇率，请下载或设置自定义汇率。</string>
     <string name="core_currencies_direct">直接汇率</string>
     <string name="core_currencies_inverse">反向汇率</string>
     <string name="core_currencies_cross">交叉汇率</string>
     <string name="core_currencies_custom">自定义</string>
-    <string name="core_currencies_expired">汇率已过期，Core 仍可使用，建议刷新。</string>
+    <string name="core_currencies_expired">已过期</string>
     <string name="core_currencies_custom_currencies">自定义货币</string>
     <string name="core_currencies_add">新增</string>
     <string name="core_currencies_edit">编辑</string>
@@ -39,9 +39,15 @@
     <string name="core_currencies_save">保存</string>
     <string name="core_currencies_cancel">取消</string>
     <string name="core_currencies_custom_rate">自定义汇率</string>
-    <string name="core_currencies_custom_rate_note">1 单位原币种 = 输入汇率的目标币种。Core 校验并保存十进制值。</string>
+    <string name="core_currencies_custom_rate_note">1 单位原币种等于多少目标币种。</string>
     <string name="core_currencies_rate">汇率</string>
     <string name="core_currencies_delete_currency_note">仅删除名称和符号，账户、交易和汇率保持不变。</string>
-    <string name="core_currencies_delete_rate_note">删除此自定义汇率。Core 可能改用反向或交叉汇率，否则需再次下载。</string>
+    <string name="core_currencies_delete_rate_note">删除此自定义汇率。如有反向或交叉汇率会改用它，否则请重新下载汇率。</string>
     <string name="core_currencies_auto">自动</string>
+    <string name="cur_display">显示</string>
+    <string name="cur_search_rates">搜索汇率</string>
+    <string name="cur_updated">%1$s 更新</string>
+    <string name="cur_main">主货币</string>
+    <string name="cur_edit_currency">编辑货币</string>
+    <string name="cur_new_currency">新增货币</string>
 </resources>

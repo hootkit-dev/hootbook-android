@@ -24,23 +24,34 @@ import androidx.compose.ui.unit.dp
  * A titled group of rows drawn as one segmented surface: the Material 3 Expressive list the
  * Settings screen uses, shared so every screen groups its content the same way. Rows get their
  * top / middle / bottom shape from their position, so callers never pass shapes.
+ *
+ * Inline, like Column: [content] then has no restart scope of its own, so a state it reads
+ * recomposes the whole section. As a separate composable lambda it would be restarted alone and
+ * append rows to a builder whose rows were already drawn, leaving stale rows on screen.
  */
 @Composable
-fun ListSection(
+inline fun ListSection(
     modifier: Modifier = Modifier,
     title: String? = null,
-    action: (@Composable () -> Unit)? = null,
+    noinline action: (@Composable () -> Unit)? = null,
     content: @Composable ListSectionScope.() -> Unit,
 ) {
-    val rows = ListSectionScope().also { it.content() }.rows
+    val scope = ListSectionScope()
+    scope.content()
+    ListSectionRows(scope.rows, modifier, title, action)
+}
+
+@PublishedApi
+@Composable
+internal fun ListSectionRows(rows: List<@Composable (CornerBasedShape) -> Unit>, modifier: Modifier, title: String?, action: (@Composable () -> Unit)?) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (title != null) SectionTitle(title, action = action)
         rows.forEachIndexed { index, row -> row(ListItemPosition.from(index, rows.size).toShape()) }
     }
 }
 
-class ListSectionScope internal constructor() {
-    internal val rows = mutableListOf<@Composable (CornerBasedShape) -> Unit>()
+class ListSectionScope @PublishedApi internal constructor() {
+    @PublishedApi internal val rows = mutableListOf<@Composable (CornerBasedShape) -> Unit>()
 
     /** A row drawn by the caller with the group's shape for its position. */
     fun row(content: @Composable (shape: CornerBasedShape) -> Unit) {
