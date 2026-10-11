@@ -8,10 +8,20 @@ on:
 
 jobs:
   core-platform-tests:
+    # Fork pull requests have no private Core credential; do not run their code with it.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - name: Require Core repository credential
+        env:
+          CORE_REPO_READ_TOKEN: ${{ secrets.CORE_REPO_READ_TOKEN }}
+        run: |
+          if [ -z "$CORE_REPO_READ_TOKEN" ]; then
+            echo "::error::Missing CORE_REPO_READ_TOKEN repository secret. See docs/ci-secrets.md."
+            exit 1
+          fi
       - name: Read pinned Core commit
         id: core-pin
         run: |
@@ -25,6 +35,8 @@ jobs:
           repository: hootkit-dev/hootkit-core
           ref: ${{ steps.core-pin.outputs.commit }}
           path: .core-source
+          token: ${{ secrets.CORE_REPO_READ_TOKEN }}
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -64,6 +76,7 @@ jobs:
             core-bindings/build/generated/*-provenance.json
           retention-days: 7
   app-tests:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -78,6 +91,8 @@ jobs:
           packages: platform-tools
       - name: Set up pinned Core source and toolchain
         uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         with:
           path: |

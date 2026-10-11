@@ -88,6 +88,8 @@ jobs:
           packages: platform-tools
       - name: Set up pinned Core source and toolchain
         uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         with:
           path: |
@@ -176,6 +178,8 @@ jobs:
       - name: Set up pinned Core source and toolchain
         if: steps.apk.outputs.cache-hit != 'true'
         uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         if: steps.apk.outputs.cache-hit != 'true'
         with:
@@ -372,6 +376,8 @@ jobs:
           packages: platform-tools
       - name: Set up pinned Core source and toolchain
         uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         with:
           path: |

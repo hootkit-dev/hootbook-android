@@ -1,8 +1,21 @@
 name: Set up pinned Rust Core
 description: Resolve the locked Core source and Android native toolchain without changing the app channel.
+inputs:
+  core-token:
+    description: Read-only token for the private hootkit-core repository (CORE_REPO_READ_TOKEN).
+    required: true
 runs:
   using: composite
   steps:
+    - name: Require Core repository credential
+      shell: bash
+      env:
+        CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
+      run: |
+        if [ -z "$CORE_REPO_READ_TOKEN" ]; then
+          echo "::error::Missing CORE_REPO_READ_TOKEN repository secret. See docs/ci-secrets.md."
+          exit 1
+        fi
     - name: Read Core build lock
       id: lock
       shell: bash
@@ -19,6 +32,7 @@ runs:
         repository: hootkit-dev/hootkit-core
         ref: ${{ steps.lock.outputs.commit }}
         path: .core-source
+        token: ${{ inputs.core-token }}
         persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
       with:
