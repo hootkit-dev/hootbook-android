@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.hootkit.core.*
 import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionQuery
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.emptyTransactionFilter
 import javax.inject.Inject
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
@@ -72,7 +72,7 @@ class CoreHomeViewModel private constructor(private val session: CoreSession, ch
             try {
                 val core = session.awaitCore()
                 val overview = core.accounts().use { it.overview() }
-                val summary = core.ledger().use { it.summary(CoreTransactionQuery().toFilter()) }
+                val summary = core.ledger().use { it.summary(emptyTransactionFilter()) }
                 val today = java.time.LocalDate.now().let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
                 val prefs = preferences?.ready()
                 val display = prefs?.unifiedDisplayCurrency?.takeIf { prefs.unifiedDisplayEnabled }

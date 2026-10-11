@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelStore
 import dev.hootkit.core.*
 import dev.hootkit.platform.ChangeBus
 import dev.hootkit.platform.CoreSession
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.FakeLedgerCore
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.FakeLedgerCore
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext

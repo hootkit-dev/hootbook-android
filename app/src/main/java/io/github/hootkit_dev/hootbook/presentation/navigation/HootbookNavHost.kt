@@ -74,7 +74,10 @@ import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreProfileScreen
 import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncScreen
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AddScreen
+import androidx.activity.compose.BackHandler
+import dev.hootkit.core.TransactionFilter
 import io.github.hootkit_dev.hootbook.presentation.data.withCore
 import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.*
@@ -221,20 +224,47 @@ fun HootbookNavHost(
                                 popEnterTransition = MainTabMotion.popEnter,
                                 popExitTransition = MainTabMotion.popExit,
                             ) { entry ->
-                                ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until transactions is migrated
-                                    val route = entry.toRoute<Transactions>()
-                                    CoreTransactionsScreen(
-                                        onBack = back, accountId = route.accountId, subscriptionId = route.subscriptionId,
-                                        initialCategoryId = route.categoryId, initialFrom = route.from, initialTo = route.to,
-                                        initialCurrency = route.currency,
-                                        initialKinds = route.kinds?.split(",")?.map(TransactionKind::valueOf).orEmpty(),
-                                        onManageDebts = { go(LendBorrow()) },
-                                        onManageSubscriptions = { go(Subscriptions(it)) },
-                                        onManageMerchantIcon = { go(MerchantIcons(it)) },
+                                val route = entry.toRoute<Transactions>()
+                                var paneTransactionId by rememberSaveable { mutableStateOf<String?>(null) }
+                                val listDetail = LocalWindowLayout.current.widthDp >= LIST_DETAIL_MIN_WIDTH_DP
+                                val initialFilter = remember(route) {
+                                    if (route == Transactions()) null else emptyTransactionFilter().copy(
+                                        accountIds = listOfNotNull(route.accountId),
+                                        categoryIds = listOfNotNull(route.categoryId),
+                                        currency = route.currency,
+                                        kinds = route.kinds?.split(",")?.map(TransactionKind::valueOf).orEmpty(),
+                                        from = route.from?.let { java.time.LocalDate.parse(it).atStartOfDay().coreTime() },
+                                        to = route.to?.let { java.time.LocalDate.parse(it).atStartOfDay().coreTime() },
                                     )
                                 }
+                                val filterKey = remember(route) {
+                                    kotlinx.serialization.json.Json.encodeToString(Transactions.serializer(), route)
+                                }
+                                val list: @Composable () -> Unit = {
+                                    key(filterKey) {
+                                    TransactionsScreen(
+                                        transactionsViewModel = hiltViewModel(key = filterKey),
+                                        initialFilter = initialFilter, onNavigateBack = back,
+                                        onTransactionClick = { id, key -> go(TransactionDetail(id, key)) },
+                                        onNavigateToSettings = { go(Settings) },
+                                        animatedContentScope = this@composable, blurEffects = prefs.blur,
+                                        onTransactionSelected = if (listDetail) { id -> paneTransactionId = id } else null,
+                                    )
+                                    }
+                                }
+                                if (!listDetail) list() else {
+                                    BackHandler(enabled = paneTransactionId != null) { paneTransactionId = null }
+                                    Row(Modifier.fillMaxSize()) {
+                                        Box(Modifier.weight(1f)) { list() }
+                                        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        Box(Modifier.weight(1f)) {
+                                            TransactionDetailPane(paneTransactionId, { paneTransactionId = null },
+                                                { go(PersonDetail(it, "person_avatar_$it")) }, prefs.blur)
+                                        }
+                                    }
+                                }
                             }
+
                             composable<TransactionDetail>(
                                 enterTransition = HootbookTransitions.noneEnter,
                                 exitTransition = HootbookTransitions.noneExit,
@@ -242,12 +272,14 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.noneExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until transaction detail is migrated
-                                    CoreTransactionsScreen(
-                                        onBack = back, initialTransactionId = entry.toRoute<TransactionDetail>().transactionId,
-                                        onManageDebts = { go(LendBorrow()) }, onManageSubscriptions = { go(Subscriptions(it)) },
-                                        onManageMerchantIcon = { go(MerchantIcons(it)) },
-                                    )
+                                    SharedTransitionLayout {
+                                        val route = entry.toRoute<TransactionDetail>()
+                                        TransactionDetailScreen(
+                                            transactionId = route.transactionId, sharedElementKey = route.sharedElementKey,
+                                            onNavigateBack = back, onNavigateToPersonDetail = { go(PersonDetail(it, "person_avatar_$it")) },
+                                            animatedContentScope = this@composable, blurEffects = prefs.blur,
+                                        )
+                                    }
                                 }
                             }
                             composable<AddTransaction>(
@@ -600,40 +632,17 @@ fun HootbookNavHost(
                     ) {
                         addEntry?.let { entry ->
                             entry.LocalOwnersProvider(addStateHolder) {
-                                Box(
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "fab_to_add"),
-                                        animatedVisibilityScope = this@AnimatedVisibility,
-                                        boundsTransform = { _, _ ->
-                                            tween(MotionDurations.standard, easing = FastOutSlowInEasing)
-                                        },
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
-                                            contentScale = ContentScale.Fit,
-                                            alignment = Alignment.BottomEnd,
-                                        ),
-                                    ).skipToLookaheadSize()
-                                        .background(MaterialTheme.colorScheme.background)
-                                        .fillMaxSize().safeDrawingPadding()
-                                        .consumeWindowInsets(WindowInsets.safeDrawing)
-                                ) {
-                                    val route = entry.toRoute<AddTransaction>()
-                                    if (route.initialTab == 1) {
-                                        // TEMP(restore-ui): mount Core screen until add subscription is migrated
-                                        CoreSubscriptionsScreen(
-                                            onBack = back, subscriptionId = route.subscriptionId,
-                                            onRecordPayment = { go(AddTransaction(subscriptionId = it)) },
-                                            initialCreate = route.subscriptionId == null,
-                                        )
-                                    } else {
-                                        // TEMP(restore-ui): mount Core screen until add transaction is migrated
-                                        CoreTransactionsScreen(
-                                            onBack = back, subscriptionId = route.subscriptionId, templateId = route.templateId,
-                                            initialNewKind = if (route.subscriptionId == null && route.templateId == null)
-                                                route.type?.let(TransactionKind::valueOf) ?: TransactionKind.EXPENSE else null,
-                                            onManageDebts = { go(LendBorrow()) }, onManageSubscriptions = { go(Subscriptions(it)) },
-                                            onManageMerchantIcon = { go(MerchantIcons(it)) },
-                                        )
-                                    }
+                                val route = entry.toRoute<AddTransaction>()
+                                val formKey = remember(route) {
+                                    kotlinx.serialization.json.Json.encodeToString(AddTransaction.serializer(), route)
+                                }
+                                key(formKey) {
+                                    AddScreen(
+                                        addViewModel = hiltViewModel(key = formKey),
+                                        onNavigateBack = back, animatedVisibilityScope = this@AnimatedVisibility,
+                                        initialTab = route.initialTab, subscriptionId = route.subscriptionId,
+                                        transactionType = route.type, templateId = route.templateId, blurEffects = prefs.blur,
+                                    )
                                 }
                             }
                         }

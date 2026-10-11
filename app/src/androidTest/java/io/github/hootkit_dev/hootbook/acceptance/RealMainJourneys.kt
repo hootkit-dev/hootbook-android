@@ -10,7 +10,7 @@ import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.MainActivity
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.budgets.appendBudgetHistory
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionCsv
+import io.github.hootkit_dev.hootbook.presentation.export.CoreTransactionCsv
 import io.github.hootkit_dev.hootbook.widget.QuickEntry
 import java.io.ByteArrayOutputStream
 import java.io.File

@@ -1,8 +1,8 @@
 package io.github.hootkit_dev.hootbook.presentation.core.ai
 
 import dev.hootkit.core.*
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.inputText
-import io.github.hootkit_dev.hootbook.presentation.core.transactions.parseCoreDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.inputText
+import io.github.hootkit_dev.hootbook.presentation.format.parseCoreDateTime
 import java.math.BigDecimal
 
 /** Text fields are presentation input only; Core validates semantics when applying. */
