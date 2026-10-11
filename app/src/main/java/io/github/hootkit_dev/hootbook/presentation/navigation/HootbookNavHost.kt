@@ -44,7 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
-import io.github.hootkit_dev.hootbook.presentation.core.investments.BrokerAccountRef
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerAccountRef
 import dev.hootkit.core.Table
 import dev.hootkit.core.TransactionKind
 import dev.hootkit.platform.CoreSession
@@ -63,8 +63,9 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.Catego
 import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.debts.CoreDebtsScreen
 import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeScreen
-import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsScreen
-import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.AddAccountWithBrokerAutoSync
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsViewModel
 import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
 import io.github.hootkit_dev.hootbook.presentation.core.notifications.CoreNotificationPreferencesScreen
 import io.github.hootkit_dev.hootbook.presentation.core.onboarding.CoreOnboardingScreen
@@ -365,9 +366,8 @@ fun HootbookNavHost(
                             ) { entry ->
                                 val route = entry.toRoute<AddAccount>()
                                 ReadableWidth {
-                                    AddAccountScreen(onNavigateBack = back,
-                                        initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category },
-                                        onInvestments = { go(Investments()) })
+                                    AddAccountWithBrokerAutoSync(onNavigateBack = back,
+                                        initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category })
                                 }
                             }
                             composable<Categories>(
@@ -476,9 +476,8 @@ fun HootbookNavHost(
                             }
                             composable<Investments> { entry ->
                                 ReadableWidth {
-                                    // TEMP(restore-ui): mount Core screen until investments is migrated
                                     val route = entry.toRoute<Investments>()
-                                    val vm: CoreInvestmentsViewModel = hiltViewModel()
+                                    val vm: InvestmentsViewModel = hiltViewModel()
                                     val state by vm.state.collectAsStateWithLifecycle()
                                     var opened by rememberSaveable { mutableStateOf(false) }
                                     LaunchedEffect(route, state.loading) {
@@ -489,7 +488,7 @@ fun HootbookNavHost(
                                             vm.selectAccount(BrokerAccountRef(connection, account))
                                         }
                                     }
-                                    CoreInvestmentsScreen(back, { go(ManageAccounts) }, { go(AccountDetail(it, history = true)) }, vm)
+                                    InvestmentsScreen(back, { go(ManageAccounts) }, { go(AddAccount(category = AccountCategory.INVESTMENTS.name)) }, vm)
                                 }
                             }
                             composable<AiAssistant>(
