@@ -606,10 +606,8 @@
 <string name="category_friends">Friends</string>
 <string name="category_other">Other</string>
 <string name="clear_due_date">Clear Due Date</string>
-<string name="cloud_backup_failed">Cloud backup failed</string>
 <string name="cloud_snapshots">Cloud Snapshots</string>
 <string name="collapse_cd">Collapse</string>
-<string name="connected_to_google_drive">Connected to Google Drive</string>
 <string name="connection_failed_format">Connection failed: %1$s</string>
 <string name="connection_verified">Connection successfully verified!</string>
 <string name="contacts">Contacts</string>
@@ -682,9 +680,6 @@
 <string name="fonts_title">Fonts</string>
 <string name="full_settlement">Full</string>
 <string name="gets_amount">Gets %1$s</string>
-<string name="google_drive_configuration">Google Drive Configuration</string>
-<string name="google_drive_provider_desc">Secure AppData folder in your personal Google Drive</string>
-<string name="google_drive_signin_desc">Sign in with your Google account to enable Google Drive backup &amp; sync.</string>
 <string name="google_signin_failed_no_email">Google sign-in failed: Could not retrieve email</string>
 <string name="google_signin_failed_null">Google sign-in failed: Account is null</string>
 <string name="home_title">Home</string>
@@ -725,8 +720,6 @@
 <string name="person_name">Person Name *</string>
 <string name="phone_number_optional">Phone Number (Optional)</string>
 <string name="please_fill_all_fields">Please fill all fields with valid data.</string>
-<string name="provider_google_drive">Google Drive</string>
-<string name="provider_webdav">Nextcloud / WebDAV</string>
 <string name="rates_info_subtitle">View exchange rates for your base currency</string>
 <string name="rates_relative_to">Rates relative to %1$s</string>
 <string name="record_options">Record Options</string>
@@ -765,7 +758,6 @@
 <string name="sort_date_oldest">Oldest First</string>
 <string name="sort_merchant_az">Merchant (A-Z)</string>
 <string name="sort_merchant_za">Merchant (Z-A)</string>
-<string name="starting_cloud_backup">Starting cloud backup...</string>
 <string name="store_backups_local_desc">Store backups only on this device</string>
 <string name="style_default">Default</string>
 <string name="style_default_sub">Default Colors</string>
@@ -800,8 +792,6 @@
 <string name="uploading_to_cloud_format">Uploading to cloud... %1$d%%</string>
 <string name="username">Username</string>
 <string name="verification_failed">Verification failed.</string>
-<string name="webdav_credentials_title">Nextcloud / WebDAV Credentials</string>
-<string name="webdav_provider_desc">Nextcloud, OwnCloud, Synology, or custom WebDAV</string>
 <string name="whatsapp_cd">WhatsApp</string>
 <string name="yesterday_lbl">Yesterday</string>
 

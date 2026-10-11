@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="core_attachment_title">Attachment</string>
+  <string name="core_attachment_document">Document</string>
+  <string name="core_attachment_missing">Attachment file is missing</string>
+  <string name="core_attachment_action_failed">Document preview or sharing failed</string>
+  <string name="core_attachment_share">Share</string>
+  <string name="core_attachment_open">Open</string>
+  <string name="core_attachment_close">Close</string>
+</resources>

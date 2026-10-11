@@ -76,20 +76,18 @@ class ScreenBenchmark(private val variant: Variant) {
      */
     @OptIn(ExperimentalMetricApi::class)
     private val transactionsMetrics = listOf(
-        TraceSectionMetric("TransactionsList.publish", TraceSectionMetric.Mode.Count),
-        TapToSectionMetric("TransactionsList.firstDraw", "tapToListDrawnMs"),
+        FrameTimingMetric(), // Current Core UI does not emit old publish/firstDraw traces; no fake latency metric.
     )
 
     /**
-     * Time from tapping the Transactions tab until the list is drawn (tapToListDrawnMs, read
-     * from the trace), i.e. how long the list's data takes to load, which frame metrics do
-     * not capture. Waiting for the rows only ends the iteration; it is not timed.
+     * Frame timing during Core transaction loading. Waiting for seeded rows bounds the
+     * measurement only; this is not a tap-to-first-draw latency or publish-count metric.
      */
     @Test
-    fun transactionsDataReady() = dataReady(CompilationMode.None())
+    fun transactionsLoadFrames() = dataReady(CompilationMode.None())
 
     @Test
-    fun transactionsDataReadyWithProfile() = dataReady(withProfile)
+    fun transactionsLoadFramesWithProfile() = dataReady(withProfile)
 
     private fun dataReady(compilationMode: CompilationMode) =
         measure(LATENCY_ITERATIONS, transactionsMetrics, compilationMode, settle = false) {
@@ -147,11 +145,11 @@ class ScreenBenchmark(private val variant: Variant) {
         }
     }
 
-    /** Home → profile → Settings, scroll it, then back. */
+    /** Home → Core profile, scroll it, then back. */
     @Test
-    fun settingsOpenAndScroll() = measure {
-        device.findObject(By.desc("Profile Image")).click()
-        if (!device.wait(Until.gone(By.desc("Add Transaction or Subscription")), 10_000)) {
+    fun profileOpenAndScroll() = measure {
+        device.findObject(By.desc("core-home-profile")).click()
+        if (!device.wait(Until.gone(By.desc("core-screen-home")), 10_000)) {
             fail("Settings did not open")
         }
         device.waitForIdle(1_000)

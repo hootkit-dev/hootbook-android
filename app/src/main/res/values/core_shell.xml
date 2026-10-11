@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_shell_preferences_recovered">UI settings recovered after device authentication; originals retained, ledger unchanged.</string>
+    <string name="core_shell_legacy_defaults">Unknown legacy display options used defaults; original preferences retained.</string>
+    <string name="core_shell_preferences_failed">UI preferences could not be loaded. Private content stays shielded.</string>
+    <string name="core_shell_recovery_note">Retry first. Explicit recovery retains original files and resets only UI preferences after fresh device authentication. Known/unknown lock protection is preserved, never ledger data or authentication timestamps.</string>
+    <string name="core_shell_recovery_auth_failed">Authentication or recovery failed. Original preferences and ledger remain.</string>
+    <string name="core_shell_retry">Retry</string>
+    <string name="core_shell_recover_ui">Authenticate and recover UI</string>
+    <string name="core_shell_device_security">Set up device screen lock</string>
+    <string name="core_shell_welcome">Welcome to Hootbook</string>
+    <string name="core_shell_onboarding_note">Choose a main currency and optional setup steps. Existing old databases are never read, exported, or erased automatically; choose your saved backup explicitly.</string>
+    <string name="core_shell_name">Display name</string>
+    <string name="core_shell_profile">Profile</string>
+    <string name="core_shell_backup">File backup</string>
+    <string name="core_shell_sync">Ledger sync</string>
+    <string name="core_shell_notifications">Notifications</string>
+    <string name="core_shell_onboarding_failed">Setup failed; review input and retry. Nothing was marked complete.</string>
+    <string name="core_shell_finish">Finish setup</string>
+    <string name="core_shell_home">Home</string>
+    <string name="core_shell_share_failed">Shared content could not be read. Choose an external document and retry.</string>
+    <string name="core_shell_close">Close</string>
+    <string name="core_shell_investments">Brokerage</string>
+    <string name="core_shell_appearance">Appearance</string>
+    <string name="core_shell_app_lock">App lock</string>
+    <string name="core_shell_about">About / updates / help</string>
+    <string name="core_shell_platform_skipped">Ledger import is committed. Platform UI preferences/assets remain retained but were explicitly not applied. No ledger import was repeated.</string>
+    <string name="core_shell_skip_platform">Keep files; skip platform UI restore</string>
+</resources>

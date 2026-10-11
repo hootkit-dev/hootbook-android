@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="platform_unavailable">Unavailable</string>
+    <string name="platform_sync_advanced">Advanced sync controls</string>
+    <string name="platform_sync_advanced_note">Conflict rules, cloud replacement, encryption reset and legacy protocol data</string>
+    <string name="platform_backup_local_body">Create a complete backup or inspect a backup before restoring it. Encryption and ledger changes are handled by Core.</string>
+    <string name="platform_backup_local_provider">Save or share with the Android file picker</string>
+    <string name="platform_backup_cloud_unavailable">Unavailable with the current Core integration. Save a backup file and choose a storage provider in the Android file picker instead.</string>
+    <string name="platform_backup_restore_body">Inspect a HootKit backup, or import a compatible legacy backup into an empty ledger</string>
+    <string name="platform_backup_cashew_unavailable">Unavailable: the current Core has no Cashew import API. No local conversion is performed.</string>
+    <string name="platform_onboarding_account_ready">An account is already on this device. Choose the main currency, then continue.</string>
+    <string name="platform_onboarding_import_body">Inspect and restore your backup safely. Compatible legacy backups require an empty ledger.</string>
+    <string name="platform_onboarding_profile_edit">Choose your photo and profile colors</string>
+    <string name="platform_provider_google_drive">Google Drive</string>
+    <string name="platform_provider_webdav">WebDAV</string>
+</resources>

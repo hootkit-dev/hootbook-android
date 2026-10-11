@@ -9,8 +9,11 @@ encrypted on the device with a key only the user's passphrase gives.
 | 1 | Local groundwork: record identity, change capture, outbox | done (database version 71) |
 | 2 | Firebase sign-in, wire protocol, push and pull, the sync page (Backup & sync → Firebase sync) | done (database version 72) |
 
-Sync is in the **standard flavor only**. The F-Droid flavor links no Firebase, Credential
-Manager or googleid code; its Firebase sync entry and page say sync is unavailable (see [Code](#code)).
+The App now builds the **standard flavor only**, with Core Firebase v2/Auth adapters.
+No separate unavailable-sync flavor remains; standard is still offline until configuration
+and sign-in are valid. See [standard-only.md](standard-only.md). The protocol/legacy-engine
+notes below retain their original migration context; current Core wiring is documented in
+[core-integration.md](core-integration.md).
 
 Contents: the local groundwork ([Synced tables](#synced-tables) to [Backups](#backups)), the
 [Wire protocol](#wire-protocol) another client (iOS) must follow, and the [Engine](#engine) this
@@ -726,7 +729,7 @@ preferences, the AI provider and key, brokerage connections and tokens, exchange
   (`SyncSettings.lastError`), the Firestore project id and the protocol version.
 - `standard`: `data/sync/firebase/*` (`FirebaseSyncBackend`, `FirestoreRemoteStore`,
   `FirebaseSyncConfig`), `di/SyncBackendModule.kt`.
-- `fdroid`: `di/SyncBackendModule.kt` with `UnavailableSyncBackend`.
+- Current builds retain only `standard`; the former unavailable-sync flavor and its module were removed.
 - No google-services Gradle plugin: `FirebaseSyncConfig` holds the project's public identifiers
   (project id, app id, API key, web OAuth client id) and `FirebaseSyncBackend` builds a named
   `FirebaseApp` from them, so variants whose applicationId has no client in google-services.json

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transaction_discard_title">Discard changes?</string>
+    <string name="transaction_discard_body">Your transaction has not been saved.</string>
+    <string name="transaction_discard_action">Discard</string>
+    <string name="transaction_continue_editing">Keep editing</string>
+</resources>

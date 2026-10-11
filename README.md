@@ -65,12 +65,12 @@ git clone https://github.com/hootkit-dev/hootbook-android.git
 cd hootbook-android
 
 ./gradlew :app:assembleStandardDebug        # standard flavor (with Firebase sync)
-./gradlew :app:assembleFdroidDebug          # F-Droid flavor (no Firebase)
 ./gradlew :app:testStandardDebugUnitTest    # unit tests
 ./gradlew :app:lintStandardDebug            # lint
 ```
 
-Requires Android 8.0+ (API 26) and JDK 21.
+Requires Android 8.0+ (API 26) and JDK 21. Only the standard flavor is built; see
+[standard-only build and validation notes](docs/standard-only.md).
 
 **Architecture**: MVVM • Jetpack Compose • Material 3 • Room • Coroutines • Hilt. See
 [docs/architecture.md](docs/architecture.md).

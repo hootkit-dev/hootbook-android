@@ -290,12 +290,12 @@ object BrandIcons {
     }
 
     fun getIconResource(merchantName: String): Int? {
-        InstitutionCatalog.find(merchantName)?.let { return it.iconResId }
+        InstitutionArtwork.findLogo(merchantName)?.let { return it.iconResId }
         val normalized = merchantName.lowercase()
         return longestBrandMatches.firstOrNull { (matches, _) -> matches(normalized) }?.second
     }
     
-    fun getBrandColor(merchantName: String): String? = InstitutionCatalog.find(merchantName)?.color ?: when {
+    fun getBrandColor(merchantName: String): String? = InstitutionArtwork.findLogo(merchantName)?.color ?: when {
         // Entertainment
         merchantName.contains("netflix", ignoreCase = true) -> "#E50914"
         merchantName.contains("spotify", ignoreCase = true) -> "#1DB954"

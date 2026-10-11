@@ -3,7 +3,7 @@
 <resources>
     <string name="sync_intro">登入同一帳號的裝置會保持同一份帳本。記錄在上傳前就在本機用同步密碼加密，只有你的裝置能讀取。附件、商家圖示、設定、AI 金鑰和券商連線都不會上傳。</string>
     <string name="sync_unavailable_title">此版本不支援同步</string>
-    <string name="sync_unavailable_body">F-Droid 版本不含 Google 服務。如需同步，請安裝標準版本；也可以在「備份與同步」中用備份檔案搬移資料。</string>
+    <string name="sync_unavailable_body">同步暫不可用。您仍可在「備份與同步」中用備份檔案搬移資料。</string>
     <string name="sync_sign_in">使用 Google 帳號登入</string>
     <string name="sync_account">帳號</string>
     <string name="sync_signed_in_as">已登入 Google 帳號</string>

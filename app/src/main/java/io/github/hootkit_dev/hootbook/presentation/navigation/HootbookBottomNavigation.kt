@@ -23,7 +23,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.toRoute
+import io.github.hootkit_dev.hootbook.presentation.core.navigation.selectCoreTab
 
 /**
  * Material 3 Expressive [ShortNavigationBar]: default colours, a pill indicator behind the icon
@@ -49,13 +49,13 @@ fun HootbookBottomNavigation(
         ShortNavigationBar {
             navigationItems.forEach { item ->
                 val selected = currentDestination?.hierarchy?.any {
-                    it.route?.contains(item.destinationType.qualifiedName ?: "") == true
+                    it.route?.substringBefore('?') == item.route
                 } == true
                 ShortNavigationBarItem(
                     selected = selected,
                     onClick = {
                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        navController.selectMainTab(item)
+                        navController.selectCoreTab(item.route)
                     },
                     // The label names the item; the icon would only repeat it
                     icon = { Icon(imageVector = item.icon, contentDescription = null) },
@@ -88,13 +88,13 @@ fun HootbookNavigationRail(
         ) {
             navigationItems.forEach { item ->
                 val selected = currentDestination?.hierarchy?.any {
-                    it.route?.contains(item.destinationType.qualifiedName ?: "") == true
+                    it.route?.substringBefore('?') == item.route
                 } == true
                 WideNavigationRailItem(
                     selected = selected,
                     onClick = {
                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        navController.selectMainTab(item)
+                        navController.selectCoreTab(item.route)
                     },
                     icon = { Icon(imageVector = item.icon, contentDescription = null) },
                     label = { Text(text = stringResource(item.titleRes), maxLines = 1) },
@@ -103,44 +103,4 @@ fun HootbookNavigationRail(
             }
         }
     }
-}
-
-private fun NavHostController.selectMainTab(item: BottomNavItem) {
-    // Keep an already selected root page; contextual routes still reset below.
-    if (isCurrentMainTabRoot(item)) return
-    MainTabTiming.request(item.route)
-    val startDestId = graph.findStartDestination().id
-    if (item.destination == Home) {
-        popBackStack(Home, inclusive = false, saveState = true)
-    } else if (isCurrentMainTab(item)) {
-        safeNavigate(item.destination) {
-            popUpTo(item.destinationType) { inclusive = true }
-            launchSingleTop = true
-        }
-    } else {
-        safeNavigate(item.destination) {
-            popUpTo(startDestId) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
-}
-
-/** Do not confuse a filtered/search transaction route with the default main tab. */
-private fun NavHostController.isCurrentMainTabRoot(item: BottomNavItem): Boolean {
-    val entry = currentBackStackEntry ?: return false
-    val routeName = item.destinationType.qualifiedName ?: return false
-    if (entry.destination.hierarchy.none { it.route?.contains(routeName) == true }) return false
-    return when (item) {
-        BottomNavItem.Transactions -> runCatching {
-            entry.toRoute<Transactions>() == Transactions()
-        }.getOrDefault(false)
-        else -> true
-    }
-}
-
-/** Read live navigation state: a rapid tap may arrive before the selected UI recomposes. */
-private fun NavHostController.isCurrentMainTab(item: BottomNavItem): Boolean {
-    val name = item.destinationType.qualifiedName ?: return false
-    return currentDestination?.hierarchy?.any { it.route?.contains(name) == true } == true
 }

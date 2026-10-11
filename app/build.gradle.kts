@@ -33,6 +33,10 @@ fun gitSha(): String {
 }
 
 val slimDebug = project.hasProperty("slimDebug")
+// Explicit isolated acceptance build only; ordinary variants always use the sole Core engine.
+val coreAcceptance = project.hasProperty("coreAcceptance")
+val realAppInstrumentation = project.hasProperty("realAppInstrumentation")
+require(!coreAcceptance || !slimDebug) { "Core acceptance requires a dedicated debuggable test build, not slimDebug" }
 
 android {
     namespace = "io.github.hootkit_dev.hootbook"
@@ -43,12 +47,15 @@ android {
     }
     defaultConfig {
         applicationId = "io.github.hootkit_dev.hootbook"
+        buildConfigField("boolean", "CORE_ACCEPTANCE", "false")
+        manifestPlaceholders["coreAcceptanceCleartext"] = "false"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 36
         versionCode = 97
         versionName = "2.1.63"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Pure UI/context instrumentation must never construct production/Hilt Application.
+        testInstrumentationRunner = if (realAppInstrumentation) "androidx.test.runner.AndroidJUnitRunner" else "io.github.hootkit_dev.hootbook.IsolatedUiTestRunner"
         val commitCount = gitCommitCount()
         val sha = gitSha()
         buildConfigField("int", "GIT_COMMIT_COUNT", commitCount.toString())
@@ -68,8 +75,16 @@ android {
     }
     signingConfigs {
         create("release") {
+            // CI preflight writes a private runner-temp keystore. Passwords stay out of argv.
+            val ciKeystore = providers.environmentVariable("KEYSTORE_FILE").orNull
+            if (!ciKeystore.isNullOrBlank()) {
+                storeFile = file(ciKeystore)
+                storePassword = providers.environmentVariable("KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("KEY_PASSWORD").get()
+            }
             val localPropertiesFile = rootProject.file("local.properties")
-            if (localPropertiesFile.exists()) {
+            if (ciKeystore.isNullOrBlank() && localPropertiesFile.exists()) {
                 val localProperties = Properties()
                 localProperties.load(localPropertiesFile.inputStream())
                 val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
@@ -84,10 +99,6 @@ android {
     }
     flavorDimensions += "version"
     productFlavors {
-        create("fdroid") {
-            dimension = "version"
-            ndk { abiFilters += setOf("arm64-v8a", "armeabi-v7a") }
-        }
         create("standard") {
             dimension = "version"
             isDefault = true
@@ -97,8 +108,7 @@ android {
         abi {
             val runTasks = gradle.startParameter.taskNames.map { it.lowercase() }
             val isBundleBuild = runTasks.any { it.contains("bundle") }
-            val isFdroidBuild = runTasks.any { it.contains("fdroid") }
-            isEnable = !slimDebug && !isBundleBuild && !isFdroidBuild
+            isEnable = !slimDebug && !isBundleBuild
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = !slimDebug
@@ -106,6 +116,9 @@ android {
     }
     buildTypes {
         debug {
+            if (coreAcceptance) { applicationIdSuffix = ".coreacceptance"; manifestPlaceholders["appLabel"] = "Hootbook Isolated Acceptance" }
+            buildConfigField("boolean", "CORE_ACCEPTANCE", coreAcceptance.toString())
+            manifestPlaceholders["coreAcceptanceCleartext"] = coreAcceptance.toString()
             buildConfigField("String", "UPDATE_CHANNEL", "\"debug\"")
             // "-debug+<short sha>" (see androidComponents below)
             versionNameSuffix = gitSha().let { if (it == "unknown") "-debug" else "-debug+$it" }
@@ -181,7 +194,11 @@ android {
         }
     }
     packaging {
-        jniLibs { useLegacyPackaging = true }
+        jniLibs {
+            useLegacyPackaging = true
+            // Preserve the pinned source build's already-stripped, hash-verified native bytes.
+            keepDebugSymbols += "**/libuniffi_hootkit_core.so"
+        }
         resources {
             excludes += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/*.kotlin_module")
             // Lookup tables for BouncyCastle's post-quantum ciphers (4 MB), which pdfbox never uses
@@ -192,7 +209,11 @@ android {
         includeInApk = false
         includeInBundle = false
     }
-    testOptions { unitTests.isReturnDefaultValues = true }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+        // Core locale/provider contracts read actual Android resources under Robolectric.
+        unitTests.isIncludeAndroidResources = true
+    }
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -227,17 +248,14 @@ if (project.hasProperty("composeReports")) {
     }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-    arg("room.incremental", "true")
-    arg("room.generateKotlin", "true")
-}
 
 dependencies {
+    implementation(project(":core-platform"))
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -264,11 +282,11 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
-    implementation(libs.androidx.security.crypto)
-    implementation(libs.play.services.auth)
-    // Sync (docs/sync.md): Firebase and Credential Manager in the standard flavor only; the
-    // F-Droid flavor links none of it. No google-services plugin: FirebaseApp is built from
-    // FirebaseSyncConfig (src/standard), so variants with another applicationId still build.
+    // Original encrypted-settings wire format; read-only legacy migration uses Tink primitives.
+    implementation("com.google.crypto.tink:tink-android:1.8.0")
+    // Sync (docs/sync.md): Firebase and Credential Manager stay in the standard source set.
+    // No google-services plugin: FirebaseApp is built from FirebaseSyncConfig (src/standard),
+    // so build types with another applicationId still build.
     "standardImplementation"(platform(libs.firebase.bom))
     "standardImplementation"(libs.firebase.auth)
     "standardImplementation"(libs.firebase.firestore)
@@ -278,14 +296,10 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     testImplementation(libs.junit)
-    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.ktor.client.mock)

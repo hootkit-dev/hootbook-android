@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_complete_greeting">Hello, %1$s</string>
+  <string name="core_complete_default_name">User</string>
+  <string name="core_complete_profile">Profile</string>
+  <string name="core_complete_banner">Profile banner</string>
+  <string name="core_complete_refresh">Refresh</string>
+  <string name="core_complete_query_failed">Core data could not be refreshed. Retry.</string>
+  <string name="core_complete_widgets_failed">Some home widgets could not be refreshed. Retry.</string>
+  <string name="core_complete_display_missing">Display conversion unavailable for %1$s; original currency is retained.</string>
+  <string name="core_complete_securities">Securities value: %1$s</string>
+  <string name="core_complete_net_worth">Net worth</string>
+  <string name="core_complete_incomplete">Partial total: some currencies could not be converted.</string>
+  <string name="core_complete_credit">Credit available: %1$s</string>
+  <string name="core_complete_card_due">Nearest card payment: %1$s</string>
+  <string name="core_complete_income">Income %1$s %2$s</string>
+  <string name="core_complete_expense">Expense %1$s %2$s</string>
+  <string name="core_complete_net">Net flow %1$s %2$s</string>
+  <string name="core_complete_missing">Missing exchange rates: %1$s</string>
+  <string name="core_complete_analytics">Analytics</string>
+  <string name="core_complete_accounts">Accounts</string>
+  <string name="core_complete_manage_accounts">Manage accounts</string>
+  <string name="core_complete_debts">People and debts</string>
+  <string name="core_complete_receivable">Receivable %1$s %2$s</string>
+  <string name="core_complete_payable">Payable %1$s %2$s</string>
+  <string name="core_complete_debt_people">%1$s people; %2$s overdue</string>
+  <string name="core_complete_budgets">Budgets</string>
+  <string name="core_complete_upcoming">Upcoming subscriptions</string>
+  <string name="core_complete_subscription_cost">Monthly %1$s · yearly %2$s %3$s</string>
+  <string name="core_complete_subscriptions">Manage subscriptions</string>
+  <string name="core_complete_recent">Recent transactions</string>
+  <string name="core_complete_transactions">Transactions</string>
+  <string name="core_complete_heatmap">Transaction activity</string>
+  <string name="core_complete_heatmap_note">Daily transaction counts from Core for the previous 26 weeks.</string>
+  <string name="core_complete_templates">Quick templates</string>
+  <string name="core_complete_categories">Categories</string>
+  <string name="core_complete_settings">Business settings</string>
+  <string name="core_complete_currencies">Currencies and exchange rates</string>
+  <string name="core_complete_backup">File backup and restore</string>
+  <string name="core_complete_layout">Appearance and home layout</string>
+</resources>

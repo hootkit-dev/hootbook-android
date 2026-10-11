@@ -15,6 +15,8 @@ concurrency:
 
 jobs:
   build-debug:
+    # Private Core access is restricted to trusted, same-repository pull requests.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     name: Build and publish debug APK
     runs-on: ubuntu-latest
     # The release key lives in the KEYSTORE environment; only main builds use it
@@ -39,15 +41,19 @@ jobs:
           # The default also installs the removed "tools" package, which now fails.
           packages: platform-tools
 
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-deps-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-deps-v2-
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -133,7 +139,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           # Public fingerprint of the release certificate (not a secret)
-          RELEASE_CERT_SHA256: 23cf2e8f08aa2a576591a1004fc628fa6ae7badee231854b1dee83c639cef726
+          RELEASE_CERT_SHA256: f3bd2660565ef8dc23e61ef5c7b48b34e1cb21244b97847d5da008ae8a9ea3a5
         run: |
           set -euo pipefail
           TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)

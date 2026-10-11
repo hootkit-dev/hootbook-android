@@ -23,11 +23,11 @@ object SharedTransitionTransforms {
     val smooth: BoundsTransform = BoundsTransform { _, _ ->
         tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
     }
-    
+
     val snappy: BoundsTransform = BoundsTransform { _, _ ->
         tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
     }
-    
+
     val quick: BoundsTransform = BoundsTransform { _, _ ->
         tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
     }

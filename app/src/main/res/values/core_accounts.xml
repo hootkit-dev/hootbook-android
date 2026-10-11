@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_accounts_1">Back</string>
+    <string name="core_accounts_2">Refresh</string>
+    <string name="core_accounts_3">Close</string>
+    <string name="core_accounts_4">Net worth</string>
+    <string name="core_accounts_5">Valuation incomplete: some exchange rates or securities values are missing</string>
+    <string name="core_accounts_6">Valuation incomplete</string>
+    <string name="core_accounts_7">Move up</string>
+    <string name="core_accounts_8">Move down</string>
+    <string name="core_accounts_9">Total incomplete: review exchange rates or securities values</string>
+    <string name="core_accounts_10">Credit card balance represents debt</string>
+    <string name="core_accounts_11">Unarchive</string>
+    <string name="core_accounts_12">Archive</string>
+    <string name="core_accounts_13">Clear default</string>
+    <string name="core_accounts_14">Set default</string>
+    <string name="core_accounts_15">Delete account</string>
+    <string name="core_accounts_16">Overdue</string>
+    <string name="core_accounts_17">Currency pockets</string>
+    <string name="core_accounts_18">Add</string>
+    <string name="core_accounts_19">Calibrate balance</string>
+    <string name="core_accounts_20">Credit limit</string>
+    <string name="core_accounts_21">Delete</string>
+    <string name="core_accounts_22">No anchors yet; calibration creates a manual anchor</string>
+    <string name="core_accounts_23">Edit</string>
+    <string name="core_accounts_24">Cancel</string>
+    <string name="core_accounts_25">Delete account only</string>
+    <string name="core_accounts_26">Permanently delete account and transactions</string>
+    <string name="core_accounts_27">Pocket transactions: %1$s (including recycle bin). Referenced transactions must be handled first; pocket deletion also removes its anchors.</string>
+    <string name="core_accounts_28">Delete balance anchor?</string>
+    <string name="core_accounts_29">Core recalculates the balance from remaining anchors and transactions. This command is committed immediately.</string>
+    <string name="core_accounts_30">Bank</string>
+    <string name="core_accounts_31">Credit card</string>
+    <string name="core_accounts_32">Wallet</string>
+    <string name="core_accounts_33">Investment</string>
+    <string name="core_accounts_34">Unknown</string>
+    <string name="core_accounts_35">Add account</string>
+    <string name="core_accounts_36">Edit account</string>
+    <string name="core_accounts_37">Name</string>
+    <string name="core_accounts_38">Last four digits (optional)</string>
+    <string name="core_accounts_39">Main currency code</string>
+    <string name="core_accounts_40">Opening debt (optional)</string>
+    <string name="core_accounts_41">Opening balance (optional)</string>
+    <string name="core_accounts_42">Opening timestamp (blank = now)</string>
+    <string name="core_accounts_43">Account credit limit (optional)</string>
+    <string name="core_accounts_44">Statement day 1–31 (optional)</string>
+    <string name="core_accounts_45">Due day 1–31 (optional)</string>
+    <string name="core_accounts_46">Clear institution</string>
+    <string name="core_accounts_47">Institution key / search</string>
+    <string name="core_accounts_48">Icon identifier (optional)</string>
+    <string name="core_accounts_49">Color #RRGGBB (optional)</string>
+    <string name="core_accounts_50">Add currency pocket</string>
+    <string name="core_accounts_51">Pocket credit limit</string>
+    <string name="core_accounts_52">Edit balance anchor</string>
+    <string name="core_accounts_53">Currency code</string>
+    <string name="core_accounts_54">Limit (blank = clear)</string>
+    <string name="core_accounts_55">Balance / debt</string>
+    <string name="core_accounts_56">ISO timestamp (blank = now)</string>
+    <string name="core_accounts_57">For example 2026-10-10T12:30:00</string>
+    <string name="core_accounts_58">Notes (optional)</string>
+    <string name="core_accounts_59">Save</string>
+    <string name="core_accounts_saving_navigation">Saving; wait before leaving or switching.</string>
+    <string name="core_accounts_view_transactions">View transactions</string>
+    <string name="core_accounts_transaction_count">Referenced transactions: %1$s (including recycle bin)</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transaction_discard_title">放弃更改？</string>
+    <string name="transaction_discard_body">这笔交易尚未保存。</string>
+    <string name="transaction_discard_action">放弃</string>
+    <string name="transaction_continue_editing">继续编辑</string>
+</resources>

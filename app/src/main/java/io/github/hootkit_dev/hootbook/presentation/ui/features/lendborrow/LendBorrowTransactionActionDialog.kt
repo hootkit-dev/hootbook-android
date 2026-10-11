@@ -52,7 +52,8 @@ fun LendBorrowTransactionActionDialog(
     onSelectMultiple: () -> Unit,
     onDismiss: () -> Unit,
     blurEffects: Boolean = LocalBlurEffects.current,
-    hazeState: HazeState = remember { HazeState() }
+    hazeState: HazeState = remember { HazeState() },
+    details: (@Composable () -> Unit)? = null
 ) {
     val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     AlertDialog(
@@ -65,6 +66,7 @@ fun LendBorrowTransactionActionDialog(
             )
         },
         title = { Text(stringResource(R.string.record_options)) },
+        text = details,
         confirmButton = {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Column(

@@ -66,7 +66,7 @@ fun MacrobenchmarkScope.seedData() {
 /** Home is usable once the bottom bar and the add button are on screen. */
 fun MacrobenchmarkScope.waitForHome() {
     val deadline = System.currentTimeMillis() + TIMEOUT_MS
-    while (!device.wait(Until.hasObject(By.desc("Add Transaction or Subscription")), 1_000)) {
+    while (!device.wait(Until.hasObject(By.desc("core-screen-home")), 1_000)) {
         if (dismissSystemAnr()) continue
         if (System.currentTimeMillis() > deadline) fail("Home did not appear")
     }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="net_worth_history_title">淨資產走勢</string>
+    <string name="net_worth_history_estimate">按目前匯率估算</string>
+    <string name="net_worth_history_about">估算說明</string>
+    <string name="net_worth_history_month">1個月</string>
+    <string name="net_worth_history_quarter">3個月</string>
+    <string name="net_worth_history_half_year">6個月</string>
+    <string name="net_worth_history_year">1年</string>
+    <string name="net_worth_history_all">全部</string>
+    <string name="net_worth_history_current">目前</string>
+    <string name="net_worth_history_no_past">暫無更早餘額紀錄</string>
+    <string name="net_worth_history_incomplete">缺少匯率或估值，暫時無法完整顯示走勢</string>
+    <string name="net_worth_history_empty">暫無可顯示的走勢</string>
+    <string name="net_worth_history_failed">暫時無法讀取走勢</string>
+    <string name="net_worth_history_stale">更新失敗，顯示上次結果</string>
+    <string name="net_worth_history_retry">重試</string>
+    <string name="net_worth_history_accessibility">估算走勢，%1$s：%2$s；目前：%3$s。點按圖表可查看各點。</string>
+    <string name="net_worth_history_explanation">歷史點使用 Core 重建的各幣別口袋日末餘額，按目前匯率折算。證券及未關聯券商的貢獻維持目前估值，並非歷史當天的市場價值。\n\n封存帳戶也計入。修改或刪除紀錄、更改帳戶類型，可能改變重建的歷史。開戶或校準之前的餘額遵循 Core 的回推規則，不擅自歸零。\n\n末段虛線連接「目前」，金額直接使用首頁同口徑的 Core 淨資產。它可能包含未來日期的紀錄和餘額錨點，不等於今日末餘額。較長範圍會在整個時段抽取真實日末點，不對金額取平均。</string>
+</resources>

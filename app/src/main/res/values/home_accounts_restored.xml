@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_trend_unavailable">Net-worth history is unavailable. Open an account to view its currency balance history.</string>
+    <string name="home_previous_month_marker">Last month</string>
+    <string name="home_recent_unavailable">Recent transactions unavailable</string>
+</resources>

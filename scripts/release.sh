@@ -260,15 +260,10 @@ if ! ./gradlew assembleStandardRelease; then
     revert_changes
 fi
 
-if ! ./gradlew assembleFdroidRelease; then
-    revert_changes
-fi
-
 echo -e "${GREEN}✅ APKs built${NC}"
 
 # 7. Rename APKs (matching GitHub Actions)
 STANDARD_PATH="app/build/outputs/apk/standard/release"
-FDROID_PATH="app/build/outputs/apk/fdroid/release"
 
 # Rename universal APK
 if [ -f "$STANDARD_PATH/app-standard-universal-release.apk" ]; then
@@ -284,22 +279,6 @@ for arch in armeabi-v7a arm64-v8a x86 x86_64; do
     fi
 done
 
-if [ -f "$FDROID_PATH/app-fdroid-universal-release.apk" ]; then
-    mv "$FDROID_PATH/app-fdroid-universal-release.apk" \
-       "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk"
-elif [ -f "$FDROID_PATH/app-fdroid-release.apk" ]; then
-    # Splits disabled → single APK without -universal- suffix
-    mv "$FDROID_PATH/app-fdroid-release.apk" \
-       "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk"
-fi
-
-for arch in armeabi-v7a arm64-v8a; do
-    if [ -f "$FDROID_PATH/app-fdroid-${arch}-release.apk" ]; then
-        mv "$FDROID_PATH/app-fdroid-${arch}-release.apk" \
-           "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-${arch}.apk"
-    fi
-done
-
 echo -e "${GREEN}✅ APKs renamed${NC}"
 
 # 8. Calculate SHA256
@@ -311,12 +290,6 @@ for apk in Hootbook-v${NEXT_VERSION}*.apk; do
     fi
 done
 
-cd "$ORIGINAL_DIR/$FDROID_PATH"
-for apk in Hootbook-fdroid-v${NEXT_VERSION}*.apk; do
-    if [ -f "$apk" ]; then
-        sha256sum "$apk" > "${apk}.sha256"
-    fi
-done
 cd "$ORIGINAL_DIR"
 
 echo -e "${GREEN}✅ SHA256 calculated${NC}"
@@ -353,13 +326,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
             "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-universal.apk" \
             "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-universal.apk.sha256" \
             "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-arm64-v8a.apk" \
-            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-universal.apk.sha256" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-arm64-v8a.apk" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-arm64-v8a.apk.sha256" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk" \
-            "$FDROID_PATH/Hootbook-fdroid-v${NEXT_VERSION}-armeabi-v7a.apk.sha256"
+            "$STANDARD_PATH/Hootbook-v${NEXT_VERSION}-arm64-v8a.apk.sha256"
         echo -e "${GREEN}✅ GitHub release created${NC}"
     else
         echo -e "${YELLOW}gh CLI not found. Create release manually at:${NC}"

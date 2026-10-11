@@ -1,0 +1,1396 @@
+{
+  "version": 72,
+  "identityHash": "6793fd1863dca2f14e1876d78c4df934",
+  "tables": [
+    {
+      "name": "transactions",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "amount",
+          "key": "amount",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "merchant_name",
+          "key": "merchantName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "category",
+          "key": "category",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "subcategory",
+          "key": "subcategory",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "transaction_type",
+          "key": "transactionType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "date_time",
+          "key": "dateTime",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "description",
+          "key": "description",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "bank_name",
+          "key": "bankName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "account_number",
+          "key": "accountNumber",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "balance_after",
+          "key": "balanceAfter",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "transaction_hash",
+          "key": "transactionHash",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_recurring",
+          "key": "isRecurring",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "is_deleted",
+          "key": "isDeleted",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "from_account",
+          "key": "fromAccount",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "to_account",
+          "key": "toAccount",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "to_amount",
+          "key": "toAmount",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "account_id",
+          "key": "accountId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "to_account_id",
+          "key": "toAccountId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "to_currency",
+          "key": "toCurrency",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "reference",
+          "key": "reference",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "billing_cycle",
+          "key": "billingCycle",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "attachments",
+          "key": "attachments",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "subscriptions",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "merchant_name",
+          "key": "merchantName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "amount",
+          "key": "amount",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "next_payment_date",
+          "key": "nextPaymentDate",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "state",
+          "key": "state",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "bank_name",
+          "key": "bankName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "category",
+          "key": "category",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "subcategory",
+          "key": "subcategory",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "notes",
+          "key": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "billing_cycle",
+          "key": "billingCycle",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "last_paid_date",
+          "key": "lastPaidDate",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "categories",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "icon_res_id",
+          "key": "iconResId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "icon_name",
+          "key": "iconName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "description",
+          "key": "description",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_system",
+          "key": "isSystem",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "is_income",
+          "key": "isIncome",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "display_order",
+          "key": "displayOrder",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "default_name",
+          "key": "defaultName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "default_color",
+          "key": "defaultColor",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "default_icon_res_id",
+          "key": "defaultIconResId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "default_icon_name",
+          "key": "defaultIconName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "default_description",
+          "key": "defaultDescription",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_balances",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "icon_res_id",
+          "key": "iconResId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "icon_name",
+          "key": "iconName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "bank_name",
+          "key": "bankName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "account_last4",
+          "key": "accountLast4",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "balance",
+          "key": "balance",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "timestamp",
+          "key": "timestamp",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "transaction_id",
+          "key": "transactionId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "credit_limit",
+          "key": "creditLimit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "is_credit_card",
+          "key": "isCreditCard",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "source_type",
+          "key": "sourceType",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_wallet",
+          "key": "isWallet",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "account_id",
+          "key": "accountId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "cards",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "card_last4",
+          "key": "cardLast4",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "card_type",
+          "key": "cardType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "bank_name",
+          "key": "bankName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "account_last4",
+          "key": "accountLast4",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "nickname",
+          "key": "nickname",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "is_active",
+          "key": "isActive",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "last_balance",
+          "key": "lastBalance",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "last_balance_date",
+          "key": "lastBalanceDate",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "exchange_rates",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "from_currency",
+          "key": "fromCurrency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "to_currency",
+          "key": "toCurrency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "rate",
+          "key": "rate",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "provider",
+          "key": "provider",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at_unix",
+          "key": "updatedAtUnix",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "expires_at",
+          "key": "expiresAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "expires_at_unix",
+          "key": "expiresAtUnix",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "is_custom",
+          "key": "isCustom",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "subcategories",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "category_id",
+          "key": "categoryId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "icon_res_id",
+          "key": "iconResId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "icon_name",
+          "key": "iconName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_system",
+          "key": "isSystem",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "default_name",
+          "key": "defaultName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "default_icon_res_id",
+          "key": "defaultIconResId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "default_icon_name",
+          "key": "defaultIconName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "default_color",
+          "key": "defaultColor",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "budgets",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "amount",
+          "key": "amount",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "year",
+          "key": "year",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "month",
+          "key": "month",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_active",
+          "key": "isActive",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "start_date",
+          "key": "startDate",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "end_date",
+          "key": "endDate",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "period_type",
+          "key": "periodType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "track_type",
+          "key": "trackType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "budget_type",
+          "key": "budgetType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "account_ids",
+          "key": "accountIds",
+          "type": "strings",
+          "required": true
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "budget_category_limits",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "budget_id",
+          "key": "budgetId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "category_name",
+          "key": "categoryName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "limit_amount",
+          "key": "limitAmount",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "lend_borrow_persons",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "phone_number",
+          "key": "phoneNumber",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "notes",
+          "key": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "avatar",
+          "key": "avatar",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "category",
+          "key": "category",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "is_archived",
+          "key": "isArchived",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "lend_borrow_transactions",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "person_id",
+          "key": "personId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "transaction_id",
+          "key": "transactionId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "type",
+          "key": "type",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "amount",
+          "key": "amount",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "title",
+          "key": "title",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "due_date",
+          "key": "dueDate",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "is_settled",
+          "key": "isSettled",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "date",
+          "key": "date",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "account_id",
+          "key": "accountId",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "category_name",
+          "key": "category",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "merchant_name",
+          "key": "merchant",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "attachments",
+          "key": "attachments",
+          "type": "strings",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "quick_templates",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "merchant_name",
+          "key": "merchantName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "category",
+          "key": "category",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "subcategory",
+          "key": "subcategory",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "transaction_type",
+          "key": "transactionType",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "amount",
+          "key": "amount",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "prefill_amount",
+          "key": "prefillAmount",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "bank_name",
+          "key": "bankName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "account_last4",
+          "key": "accountLast4",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "notes",
+          "key": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "sort_order",
+          "key": "sortOrder",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "updated_at",
+          "key": "updatedAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "accounts",
+      "fields": [
+        {
+          "column": "id",
+          "key": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "name",
+          "key": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "last4",
+          "key": "last4",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "main_currency",
+          "key": "mainCurrency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_credit_card",
+          "key": "isCreditCard",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "is_wallet",
+          "key": "isWallet",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "credit_limit",
+          "key": "creditLimit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "icon_res_id",
+          "key": "iconResId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "icon_name",
+          "key": "iconName",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "color",
+          "key": "color",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "is_sample",
+          "key": "isSample",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "statement_day",
+          "key": "statementDay",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "due_day",
+          "key": "dueDay",
+          "type": "integer",
+          "required": false
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_currencies",
+      "fields": [
+        {
+          "column": "account_id",
+          "key": "accountId",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "column": "currency",
+          "key": "currency",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "credit_limit",
+          "key": "creditLimit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "column": "created_at",
+          "key": "createdAt",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_id",
+          "key": "syncId",
+          "type": "text",
+          "required": true
+        },
+        {
+          "column": "sync_updated_at",
+          "key": "syncUpdatedAt",
+          "type": "integer",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

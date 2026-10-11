@@ -563,9 +563,7 @@
     <string name="category_friends">Æмбалтæ</string>
     <string name="category_other">Æндæр</string>
     <string name="clear_due_date">Барухс кæн аххæст фæгонд бон</string>
-    <string name="cloud_backup_failed">Облакон резерв нæ ауагъд</string>
     <string name="cloud_snapshots">Облакон копитæ</string>
-    <string name="connected_to_google_drive">Google Drive-имæ бастæ</string>
     <string name="connection_failed_format">Бæстæдзинад нæ æрцыд: %1$s</string>
     <string name="connection_verified">Бæстæдзинад сæрмагонд æрцыд!</string>
     <string name="contacts">Контакттæ</string>
@@ -596,9 +594,6 @@
     <string name="failed_restore_snapshot">Облакон копи нæ фæстæмæ сæвæрд</string>
     <string name="full_settlement">Æппæт</string>
     <string name="gets_amount">Ауæры %1$s</string>
-    <string name="google_drive_configuration">Google Drive конфигураци</string>
-    <string name="google_drive_provider_desc">Хистæр Google Drive-йы хъахъхъæд AppData папкæ</string>
-    <string name="google_drive_signin_desc">Google Drive резерв æмæ синхронизацийæн бавнал дæ Google аккаунтæй.</string>
     <string name="google_signin_failed_no_email">Google бавналын рæдыд: email нæ байсы</string>
     <string name="google_signin_failed_null">Google бавналын рæдыд: аккаунт нысан нæу</string>
     <string name="i_borrowed">Сын фыст дæн</string>
@@ -628,8 +623,6 @@
     <string name="person_avatar">Аватар</string>
     <string name="person_name">Адæймаджы ном *</string>
     <string name="phone_number_optional">Фонийы номыр (нæ фæнды — ма ныффысс)</string>
-    <string name="provider_google_drive">Google Drive</string>
-    <string name="provider_webdav">Nextcloud / WebDAV</string>
     <string name="record_options">Уавæры варианттæ</string>
     <string name="reminder_message_format">Салам %1$s, хæрзæхсæв! Нæ %2$s балансæй фæндаг.</string>
     <string name="restore">Фæстæмæ сæвæрд</string>
@@ -654,7 +647,6 @@
     <string name="size_mb_format">%.2f MB</string>
     <string name="snapshot_restored_success">Копи сæрмагонд фæстæмæ сæвæрд!</string>
     <string name="snapshot_subtitle_format">%1$s • %2$s</string>
-    <string name="starting_cloud_backup">Облакон резерв райдай...</string>
     <string name="store_backups_local_desc">Резертвтæ бæрцæй ацы æнæуæрсейы бахъахъхъæн</string>
     <string name="telegram_cd">Telegram</string>
     <string name="test_connection">Бæстæдзинад бæлвырдгæнæн</string>
@@ -666,8 +658,6 @@
     <string name="uploading_to_cloud_format">Облакомæ бабæрæг кæнын... %1$d%%</string>
     <string name="username">Хистæр дæнæг</string>
     <string name="verification_failed">Бæлвырдгæнæн нæ рацыд.</string>
-    <string name="webdav_credentials_title">Nextcloud / WebDAV архайджын дæттытæ</string>
-    <string name="webdav_provider_desc">Nextcloud, OwnCloud, Synology кæнæ хицæн WebDAV</string>
     <string name="whatsapp_cd">WhatsApp</string>
     <string name="loan_description">Раст бакæнын лæвæрд æмæ ист заёмты рекордтæ</string>
     <string name="delete_multiple_records_confirm">Are you sure you want to delete the selected records?</string>

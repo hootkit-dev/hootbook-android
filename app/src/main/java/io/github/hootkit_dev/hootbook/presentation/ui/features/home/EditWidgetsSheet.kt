@@ -58,7 +58,8 @@ import io.github.hootkit_dev.hootbook.R
 fun EditWidgetsSheet(
     onDismissRequest: () -> Unit,
     sheetState: SheetState,
-    widgets: List<HomeWidgetUiModel>,
+    widgets: List<HomeWidget>,
+    hiddenWidgets: Set<HomeWidget>,
     onToggleVisibility: (HomeWidget, Boolean) -> Unit,
     onReorder: (List<HomeWidget>) -> Unit,
     onResetLayout: () -> Unit = {},
@@ -68,10 +69,10 @@ fun EditWidgetsSheet(
     // Filter out Networth Summary
     // Net worth stays first, and the account types live under it: neither is listed here
     val fixed = setOf(HomeWidget.NETWORTH_SUMMARY, HomeWidget.ACCOUNT_CAROUSEL)
-    var reorderableWidgets by remember { mutableStateOf(widgets.filter { it.widget !in fixed }) }
+    var reorderableWidgets by remember { mutableStateOf(widgets.filter { it !in fixed }) }
 
     LaunchedEffect(widgets) {
-        val filtered = widgets.filter { it.widget !in fixed }
+        val filtered = widgets.filter { it !in fixed }
         if (reorderableWidgets != filtered) {
              reorderableWidgets = filtered
         }
@@ -116,19 +117,19 @@ fun EditWidgetsSheet(
                 val item = list.removeAt(from.index)
                 list.add(to.index, item)
                 reorderableWidgets = list
-                
+
                 // Notify parent to save (debounced)
-                onReorder(list.map { it.widget })
+                onReorder(list.map { it })
             }
 
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(reorderableWidgets, key = { it.widget.name }) { widgetModel ->
+                items(reorderableWidgets, key = { it.name }) { widgetModel ->
                     ReorderableItem(
                         state = reorderableState,
-                        key = widgetModel.widget.name
+                        key = widgetModel.name
                     ) { isDragging ->
                         val elevation = animateDpAsState(if (isDragging) 8.dp else 0.dp)
 
@@ -140,7 +141,8 @@ fun EditWidgetsSheet(
                         ) {
                             WidgetItem(
                                 widgetModel = widgetModel,
-                                onToggleVisibility = { onToggleVisibility(widgetModel.widget, it) },
+                                visible = widgetModel !in hiddenWidgets,
+                                onToggleVisibility = { onToggleVisibility(widgetModel, it) },
                                 dragModifier = Modifier.draggableHandle()
                             )
                         }
@@ -176,7 +178,8 @@ fun EditWidgetsSheet(
 @Composable
 private fun WidgetItem(
     dragModifier: Modifier = Modifier,
-    widgetModel: HomeWidgetUiModel,
+    widgetModel: HomeWidget,
+    visible: Boolean,
     onToggleVisibility: (Boolean) -> Unit,
 ) {
     Row(
@@ -186,8 +189,8 @@ private fun WidgetItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         PreferenceSwitch(
-            title = stringResource(widgetModel.widget.titleRes),
-            checked = widgetModel.isVisible,
+            title = stringResource(widgetModel.titleRes),
+            checked = visible,
             onCheckedChange = onToggleVisibility,
             leadingIcon = {
                 // Drag Handle
@@ -204,8 +207,3 @@ private fun WidgetItem(
         )
     }
 }
-
-data class HomeWidgetUiModel(
-    val widget: HomeWidget,
-    val isVisible: Boolean
-)

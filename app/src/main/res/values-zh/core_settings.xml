@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_settings_title">设置</string>
+    <string name="core_settings_back">返回</string>
+    <string name="core_settings_retry">重新加载／重试</string>
+    <string name="core_settings_saving">正在保存，请稍候再离开。</string>
+    <string name="core_settings_dismiss">关闭提示</string>
+    <string name="core_settings_main_currency">主货币</string>
+    <string name="core_settings_main_currency_note">仅改变合计显示货币，不改变已有账户、交易和预算的币种。</string>
+    <string name="core_settings_currency_code">货币代码</string>
+    <string name="core_settings_save">保存</string>
+    <string name="core_settings_reset">放弃修改</string>
+    <string name="core_settings_default_account">默认账户</string>
+    <string name="core_settings_no_default">不设默认账户</string>
+    <string name="core_settings_default_account_note">新交易、订阅和借贷记录预选此账户。</string>
+    <string name="core_settings_no_accounts">请先创建账户。</string>
+    <string name="core_settings_language">语言</string>
+    <string name="core_settings_language_note">同步更新 Android 界面及 Core 分类显示名，下次启动仍生效。</string>
+    <string name="core_settings_system_language">跟随系统</string>
+    <string name="core_settings_currencies">货币与汇率</string>
+    <string name="core_settings_backup">文件备份与恢复</string>
+</resources>

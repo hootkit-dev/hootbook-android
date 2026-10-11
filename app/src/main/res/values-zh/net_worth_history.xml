@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="net_worth_history_title">净资产走势</string>
+    <string name="net_worth_history_estimate">按当前汇率估算</string>
+    <string name="net_worth_history_about">估算说明</string>
+    <string name="net_worth_history_month">1个月</string>
+    <string name="net_worth_history_quarter">3个月</string>
+    <string name="net_worth_history_half_year">6个月</string>
+    <string name="net_worth_history_year">1年</string>
+    <string name="net_worth_history_all">全部</string>
+    <string name="net_worth_history_current">当前</string>
+    <string name="net_worth_history_no_past">暂无更早余额记录</string>
+    <string name="net_worth_history_incomplete">缺少汇率或估值，暂无法完整显示走势</string>
+    <string name="net_worth_history_empty">暂无可显示的走势</string>
+    <string name="net_worth_history_failed">暂时无法读取走势</string>
+    <string name="net_worth_history_stale">更新失败，显示上次结果</string>
+    <string name="net_worth_history_retry">重试</string>
+    <string name="net_worth_history_accessibility">估算走势，%1$s：%2$s；当前：%3$s。点按图表可查看各点。</string>
+    <string name="net_worth_history_explanation">历史点使用 Core 重建的各货币口袋日末余额，按当前汇率折算。证券及未关联券商的贡献保持当前估值，并非历史当天的市场价值。\n\n归档账户也计入。修改或删除记录、更改账户类型，可能改变重建的历史。开户或校准之前的余额遵循 Core 的回推规则，不擅自置零。\n\n末段虚线连接“当前”，金额直接使用首页同口径的 Core 净资产。它可能包含未来日期的记录和余额锚点，不等于今日末余额。较长范围会在整个时段抽取真实日末点，不对金额取平均。</string>
+</resources>

@@ -42,8 +42,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.presentation.common.icons.IconProvider
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
+import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Balance
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Edit2
@@ -58,8 +60,9 @@ import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AccountCard(
-    account: AccountBalanceEntity,
+    account: Account,
     modifier: Modifier = Modifier,
+    customSymbols: Map<String, String> = emptyMap(),
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit = {}
 ) {
@@ -74,17 +77,6 @@ fun AccountCard(
         elevation = CardDefaults.cardElevation(defaultElevation = AccountCardElevation)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            val context = LocalContext.current
-            val iconResource = remember(account.bankName, account.iconResId, account.iconName) {
-                IconProvider.getIconForTransaction(
-                    context = context,
-                    merchantName = account.bankName,
-                    accountIconResId = account.iconResId,
-                    accountIconName = account.iconName
-                )
-            }
-
-
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -98,7 +90,7 @@ fun AccountCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(if (account.isCreditCard) R.string.outstanding_label else R.string.balance_label),
+                        text = stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.outstanding_label else R.string.balance_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -106,7 +98,7 @@ fun AccountCard(
 
                 // Balance: an account in several currencies shows their sum, then each currency
                 Text(
-                    text = accountBalanceText(account),
+                    text = CoreMoneyPresentation.format(account.total.amount, account.total.currency, customSymbols),
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold
@@ -114,7 +106,8 @@ fun AccountCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-                AccountCurrencyPills(account, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                if (!account.totalComplete) Text(stringResource(R.string.core_accounts_9), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
+                AccountCurrencyPills(account, customSymbols, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
 
                 // Bottom Section (Bank Info)
                 Column {
@@ -139,7 +132,7 @@ fun AccountCard(
                         ) {
                             Column {
                                 Text(
-                                    text = account.bankName,
+                                    text = account.name,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -155,14 +148,7 @@ fun AccountCard(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                             ) {
 
-                                BrandIcon(
-                                    merchantName = account.bankName,
-                                    size = 48.dp,
-                                    showBackground = true,
-                                    accountIconResId = account.iconResId,
-                                    accountIconName = account.iconName,
-                                    accountColorHex = account.color
-                                )
+                                AccountIcon(account, Modifier.size(48.dp))
                             }
                         }
 

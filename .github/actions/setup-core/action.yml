@@ -1,0 +1,48 @@
+name: Set up pinned Rust Core
+description: Resolve the locked Core source and Android native toolchain without changing the app channel.
+inputs:
+  core-token:
+    description: Read-only token for the private hootkit-core repository (CORE_REPO_READ_TOKEN).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Require Core repository credential
+      shell: bash
+      env:
+        CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
+      run: |
+        if [ -z "$CORE_REPO_READ_TOKEN" ]; then
+          echo "::error::Missing CORE_REPO_READ_TOKEN repository secret. See docs/ci-secrets.md."
+          exit 1
+        fi
+    - name: Read Core build lock
+      id: lock
+      shell: bash
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json
+        pin = json.load(open("core-bindings/core.lock.json"))
+        print("commit=" + pin["coreCommit"])
+        print("rust=" + pin["rustVersion"])
+        print("ndk=" + pin["ndkVersion"])
+        PY
+    - uses: actions/checkout@v4
+      with:
+        repository: hootkit-dev/hootkit-core
+        ref: ${{ steps.lock.outputs.commit }}
+        path: .core-source
+        token: ${{ inputs.core-token }}
+        persist-credentials: false
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ steps.lock.outputs.rust }}
+        targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+    - name: Install locked Android NDK and expose source path
+      shell: bash
+      env:
+        CORE_NDK: ${{ steps.lock.outputs.ndk }}
+      run: |
+        sdkmanager "ndk;$CORE_NDK"
+        echo "ORG_GRADLE_PROJECT_hootkitCoreDir=$GITHUB_WORKSPACE/.core-source" >> "$GITHUB_ENV"
+        python3 scripts/core/build.py --source "$GITHUB_WORKSPACE/.core-source" --verify-only
