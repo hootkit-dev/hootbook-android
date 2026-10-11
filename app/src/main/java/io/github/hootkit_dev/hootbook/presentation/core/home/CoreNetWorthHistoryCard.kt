@@ -72,11 +72,11 @@ internal fun CoreNetWorthHistoryContent(
             }
             Text(stringResource(R.string.net_worth_history_estimate), style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                CoreHistoryRange.entries.forEach { range ->
-                    FilterChip(selected = state.range == range, onClick = { onRange(range) },
-                        label = { Text(stringResource(range.labelResource())) },
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                CoreHistoryRange.entries.forEachIndexed { index, range ->
+                    SegmentedButton(selected = state.range == range, onClick = { onRange(range) },
+                        shape = SegmentedButtonDefaults.itemShape(index, CoreHistoryRange.entries.size), icon = {},
+                        label = { Text(stringResource(range.labelResource()), maxLines = 1) },
                         modifier = Modifier.testTag("net_worth_history_range_${range.name}"))
                 }
             }

@@ -91,7 +91,7 @@ fun HomeScreen(
                             }
                         }
                     } }
-                    HomeWidget.TRANSACTION_HEATMAP -> item(key = "heatmap") { HeatmapWidget(data = state.heatmap.associate { it.date.javaDate() to it.transactions.toInt() }, blurEffects = prefs.blur && prefs.showBanner) }
+                    HomeWidget.TRANSACTION_HEATMAP -> item(key = "heatmap") { ActivityHeatmapCard(state.heatmap.associate { it.date.javaDate() to it.transactions.toInt() }, prefs.blur && prefs.showBanner) }
                     HomeWidget.BUDGET_CAROUSEL -> if (state.budgets.isNotEmpty()) item(key = "budgets") {
                         if (state.budgets.size == 1) {
                             val budget = state.budgets.first()
@@ -109,7 +109,7 @@ fun HomeScreen(
                     HomeWidget.UPCOMING_SUBSCRIPTIONS -> if (state.upcoming.isNotEmpty()) item(key = "subscriptions") { UpcomingSubscriptionsCard(state.upcoming, state.subscriptions, state.customSymbols, assets, onSubscriptions, Modifier.padding(horizontal = 16.dp)) }
                     HomeWidget.RECENT_TRANSACTIONS -> item(key = "recent") { RecentTransactionsCard(state.recent, state.overview?.accounts.orEmpty(), state.categories, state.recentDisplay, state.customSymbols, assets,
                         state.loading || state.widgetsLoading, onTransaction, onTransactions, Modifier.padding(horizontal = 16.dp),
-                        loadFailed = !state.widgetsLoaded && (state.errorResource != null || state.widgetError != null), referenceCurrency = state.overview?.netWorth?.currency) }
+                        loadFailed = !state.widgetsLoaded && (state.errorResource != null || state.widgetError != null)) }
                 } }
             }
             val visibleWidgets = prefs.homeOrder

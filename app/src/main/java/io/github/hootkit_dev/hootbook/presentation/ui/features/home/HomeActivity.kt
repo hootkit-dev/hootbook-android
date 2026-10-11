@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
 import androidx.compose.foundation.background
@@ -34,13 +35,20 @@ import io.github.hootkit_dev.hootbook.presentation.core.analytics.javaDate
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.*
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.moneyColors
 import java.time.LocalDate as JavaDate
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import io.github.hootkit_dev.hootbook.presentation.ui.components.HeatmapWidget
+import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
+import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
+import io.github.hootkit_dev.hootbook.utils.DateFormats
 import java.time.format.DateTimeFormatter
 
 @Composable
-internal fun HomeSectionHeader(title: String, onViewAll: () -> Unit, modifier: Modifier = Modifier) {
+internal fun HomeSectionHeader(title: String, onViewAll: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        TextButton(onClick = onViewAll) { Text(stringResource(R.string.home_all)) }
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
+        if (onViewAll != null) TextButton(onClick = onViewAll) { Text(stringResource(R.string.home_all)) }
     }
 }
 
@@ -70,49 +78,44 @@ internal fun AccountCategoryList(state: CoreHomeUiState, onOpen: (AccountKind) -
     }
 }
 
+/** The latest transactions grouped by day, drawn with the ledger's own rows. */
 @Composable
 internal fun RecentTransactionsCard(transactions: List<Transaction>, accounts: List<Account>, categories: List<Category>, converted: Map<String, CoreDisplayedMoney>, symbols: Map<String, String>, assets: CorePlatformAssets,
     loading: Boolean, onTransaction: (String) -> Unit, onViewAll: () -> Unit, modifier: Modifier = Modifier,
-    loadFailed: Boolean = false, referenceCurrency: String? = null) {
-    val locale = LocalConfiguration.current.locales[0]
+    loadFailed: Boolean = false) {
     val today = JavaDate.now()
+    val revision by assets.revision.collectAsStateWithLifecycle()
     Column(modifier.fillMaxWidth()) {
         HomeSectionHeader(stringResource(R.string.home_recent), onViewAll)
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
-            when {
-                loading && transactions.isEmpty() -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(40.dp)) }
-                loadFailed && transactions.isEmpty() -> Text(stringResource(R.string.home_recent_unavailable), Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                transactions.isEmpty() -> Text(stringResource(R.string.home_recent_empty), Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else -> Column(Modifier.padding(bottom = 8.dp)) {
-                    transactions.groupBy { JavaDate.of(it.dateTime.year, it.dateTime.month.toInt(), it.dateTime.day.toInt()) }.forEach { (day, rows) ->
-                        Text(when (day) { today -> stringResource(R.string.today_lbl); today.minusDays(1) -> stringResource(R.string.yesterday_lbl); else -> day.format(DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)) }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp))
-                        rows.forEach { transaction ->
-                            Surface(onClick = { onTransaction(transaction.id) }, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.testTag("home_transaction_${transaction.id}")) {
-                                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    val account = accounts.find { it.id == transaction.accountId }
-                                    val category = categories.find { it.id == transaction.categoryId }
-                                    val subcategory = category?.subcategories?.find { it.id == transaction.subcategoryId }
-                                    val target = accounts.find { it.id == transaction.toAccountId }
-                                    HomeMerchantIcon(transaction.merchant, assets, subcategory?.icon ?: category?.icon ?: account?.icon)
-                                    Column(Modifier.weight(1f)) {
-                                        Text(transaction.merchant.ifBlank { CoreKindLabel(transaction.kind) }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        val subtitle = if (transaction.kind == TransactionKind.TRANSFER && account != null && target != null) "${account.name} → ${target.name}"
-                                            else listOfNotNull(subcategory?.displayName ?: category?.displayName, account?.name).joinToString("　")
-                                        if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                    val income = transaction.kind == TransactionKind.INCOME || transaction.kind == TransactionKind.LOAN_IN
-                                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 160.dp)) {
-                                        Text((if (income) "+" else if (transaction.kind == TransactionKind.TRANSFER) "" else "−") + HomeMoneyPresentation.format(transaction.amount, transaction.currency, symbols, useCode = transaction.currency != referenceCurrency), style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"), color = if (income) moneyColors.income else if (transaction.kind == TransactionKind.TRANSFER) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-                                        if (transaction.kind == TransactionKind.TRANSFER && transaction.toAmount != null) Text(stringResource(R.string.home_received, HomeMoneyPresentation.format(transaction.toAmount, transaction.toCurrency ?: transaction.currency, symbols, useCode = (transaction.toCurrency ?: transaction.currency) != referenceCurrency)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        else converted[transaction.id]?.let { Text(HomeMoneyPresentation.format(it.amount, it.currency, symbols), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    }
-                                }
-                            }
-                        }
+        when {
+            loading && transactions.isEmpty() -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(40.dp)) }
+            transactions.isEmpty() -> Surface(shape = MaterialTheme.shapes.largeIncreased, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(if (loadFailed) R.string.home_recent_unavailable else R.string.home_recent_empty), Modifier.padding(20.dp),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            else -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                transactions.groupBy { JavaDate.of(it.dateTime.year, it.dateTime.month.toInt(), it.dateTime.day.toInt()) }.forEach { (day, rows) ->
+                    Text(when (day) { today -> stringResource(R.string.today_lbl); today.minusDays(1) -> stringResource(R.string.yesterday_lbl); else -> DateFormats.shortDate(day) },
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp))
+                    rows.forEachIndexed { index, transaction ->
+                        TransactionItem(transaction, account = accounts.find { it.id == transaction.accountId },
+                            category = categories.find { it.id == transaction.categoryId }, targetAccount = accounts.find { it.id == transaction.toAccountId },
+                            showDate = false, onClick = { onTransaction(transaction.id) }, convertedMoney = converted[transaction.id], customSymbols = symbols,
+                            merchantIcon = remember(transaction.merchant, revision) { assets.merchantIcon(transaction.merchant) },
+                            shape = ListItemPosition.from(index, rows.size).toShape())
                     }
                 }
             }
         }
+    }
+}
+
+/** How many transactions were recorded each day of the last six months. */
+@Composable
+internal fun ActivityHeatmapCard(data: Map<JavaDate, Int>, blurEffects: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
+        HomeSectionHeader(stringResource(R.string.home_activity), null, Modifier.padding(horizontal = 16.dp))
+        HeatmapWidget(data = data, blurEffects = blurEffects)
     }
 }
 
