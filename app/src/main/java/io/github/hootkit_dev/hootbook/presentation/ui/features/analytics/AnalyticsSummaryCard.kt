@@ -9,17 +9,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,20 +30,21 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.hootkit.core.Category
 import dev.hootkit.core.LedgerSummary
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
-import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
-import io.github.hootkit_dev.hootbook.presentation.ui.icons.Receipt1
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_dark
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_light
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
 import java.math.BigDecimal
 
 @Composable
@@ -58,13 +61,11 @@ fun AnalyticsSummaryCard(
 ) {
     val original =
         displayCurrency?.let { currency -> summary.perCurrency.find { it.currency == currency } }
-    val totalAmount =
-        if (displayCurrency != null) {
-            if (incomeOnly) original?.income else original?.expense
-        } else if (incomeOnly) summary.income else summary.expense
-    val incomeAmount =
-        (if (displayCurrency != null) original?.income else summary.income).takeIf { showIncome }
     val currency = displayCurrency ?: summary.currency
+    val incomeAmount = original?.income ?: summary.income
+    val expenseAmount = original?.expense ?: summary.expense
+    val netAmount = if (original != null) original.income - original.expense else summary.net
+
     val alpha by
         animateFloatAsState(
             targetValue = if (isLoading) 0.5f else 1f,
@@ -72,132 +73,193 @@ fun AnalyticsSummaryCard(
             label = "summary_alpha",
         )
 
-    Box(modifier = modifier.fillMaxWidth().alpha(alpha).clickable(onClick = onClick)) {
-        // Card Content layer
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(alpha)
+            .clickable(onClick = onClick)
+    ) {
         Column(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(Dimensions.Radius.md),
-                    )
-                    .padding(Dimensions.Padding.content)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(Spacing.lg),
+                )
+                .padding(Spacing.sm)
         ) {
-            // Top Row - Total Spent and Count
+            // Transaction count header
+            Text(
+                text = stringResource(R.string.core_analytics_count, transactionCount.toString()),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = Spacing.md, top = Spacing.xs, bottom = Spacing.sm)
+            )
+
+            // 3-Column nested rounded tiles
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text =
-                            stringResource(
-                                if (incomeAmount != null) R.string.analytics_spent
-                                else R.string.total_uppercase
-                            ),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = CurrencyFormatter.format(totalAmount, currency),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-                    )
-                    incomeAmount?.let {
-                        Text(
-                            text =
-                                stringResource(
-                                    R.string.analytics_income_beside,
-                                    CurrencyFormatter.formatCurrency(it, currency),
-                                ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color =
-                                io.github.hootkit_dev.hootbook.presentation.ui.theme.moneyColors
-                                    .income,
-                        )
-                    }
-                }
-                // Transaction Count Box
+                // Income Column
                 Box(
-                    modifier =
-                        Modifier.background(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = RoundedCornerShape(Spacing.sm),
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(
+                                topStart = Spacing.md,
+                                bottomStart = Spacing.md,
+                                topEnd = Spacing.xs,
+                                bottomEnd = Spacing.xs
                             )
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                            .align(Alignment.Bottom)
+                        )
+                        .padding(Spacing.sm),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Iconax.Receipt1,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    TotalColumn(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                contentDescription = stringResource(R.string.income),
+                                modifier = Modifier.size(18.dp),
+                                tint = if (!isAppInDarkTheme) income_light else income_dark
+                            )
+                        },
+                        label = stringResource(R.string.income),
+                        amount = CurrencyFormatter.formatCurrency(incomeAmount, currency),
+                        color = if (!isAppInDarkTheme) income_light else income_dark
+                    )
+                }
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 0.5.dp),
+                    color = Color.Transparent
+                )
+
+                // Expense Column
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(Spacing.xs)
                         )
-                        Text(
-                            text =
-                                stringResource(
-                                    R.string.transactions_format,
-                                    transactionCount.toLong(),
-                                ),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        .padding(Spacing.sm),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TotalColumn(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                contentDescription = stringResource(R.string.expenses),
+                                modifier = Modifier.size(18.dp),
+                                tint = if (!isAppInDarkTheme) expense_light else expense_dark
+                            )
+                        },
+                        label = stringResource(R.string.expenses),
+                        amount = CurrencyFormatter.formatCurrency(expenseAmount, currency),
+                        color = if (!isAppInDarkTheme) expense_light else expense_dark
+                    )
+                }
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 0.5.dp),
+                    color = Color.Transparent
+                )
+
+                // Net Column
+                val netColor = when {
+                    netAmount > BigDecimal.ZERO -> if (!isAppInDarkTheme) income_light else income_dark
+                    netAmount < BigDecimal.ZERO -> if (!isAppInDarkTheme) expense_light else expense_dark
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                val netPrefix = if (netAmount > BigDecimal.ZERO) "+" else ""
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(
+                                topStart = Spacing.xs,
+                                bottomStart = Spacing.xs,
+                                topEnd = Spacing.md,
+                                bottomEnd = Spacing.md
+                            )
                         )
-                    }
+                        .padding(Spacing.sm),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TotalColumn(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Filled.SettingsEthernet,
+                                contentDescription = stringResource(R.string.net),
+                                modifier = Modifier.size(18.dp),
+                                tint = netColor
+                            )
+                        },
+                        label = stringResource(R.string.net),
+                        amount = "$netPrefix${CurrencyFormatter.formatCurrency(netAmount, currency)}",
+                        color = netColor
+                    )
                 }
             }
 
-            topCategory?.let { category ->
-                Spacer(Modifier.height(24.dp))
-                HorizontalDivider(
-                    Modifier.fillMaxWidth(),
-                    thickness = 1.5.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(0.2f),
-                )
-                Spacer(Modifier.height(24.dp))
-                val color =
-                    runCatching { Color(android.graphics.Color.parseColor(category.color)) }
-                        .getOrNull() ?: MaterialTheme.colorScheme.primary
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Row(
-                        Modifier.background(color.copy(0.2f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CategoryIcon(category, size = 18.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            category.displayName,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-            if (!summary.complete)
+            if (!summary.complete) {
                 Text(
                     stringResource(
                         R.string.core_complete_missing,
                         summary.missingCurrencies.joinToString(),
                     ),
+                    modifier = Modifier.padding(start = Spacing.md, top = Spacing.xs),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+            }
         }
+    }
+}
+
+@Composable
+private fun TotalColumn(
+    icon: @Composable (() -> Unit)?,
+    label: String,
+    amount: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            icon?.invoke()
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = amount,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+        )
     }
 }
 
