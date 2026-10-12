@@ -16,6 +16,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -35,16 +36,38 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Unarchive
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -55,9 +78,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
@@ -70,6 +95,7 @@ import io.github.hootkit_dev.hootbook.presentation.navigation.safeNavigate
 import io.github.hootkit_dev.hootbook.presentation.navigation.safePopBackStack
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BalanceChart
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CurrencyBottomSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
@@ -108,6 +134,7 @@ fun SharedTransitionScope.AccountDetailScreen(
     manageViewModel: ManageAccountsViewModel = hiltViewModel(),
     animatedContentScope: AnimatedVisibilityScope? = null,
     initialHistory: Boolean = false,
+    onAllTransactions: (() -> Unit)? = null,
 ) {
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
     val manageState by manageViewModel.uiState.collectAsStateWithLifecycle()
@@ -122,6 +149,8 @@ fun SharedTransitionScope.AccountDetailScreen(
     var showCalibration by remember(accountId) { mutableStateOf(false) }
     var showEdit by remember(accountId) { mutableStateOf(false) }
     var showHistory by remember(accountId) { mutableStateOf(initialHistory) }
+    var showAddCurrency by remember(accountId) { mutableStateOf(false) }
+    var showDeleteConfirm by remember(accountId) { mutableStateOf(false) }
     var active by remember { mutableStateOf(true) }
     DisposableEffect(Unit) { active = true; onDispose { active = false } }
     LaunchedEffect(uiState.error, manageState.errorMessage) {
@@ -143,13 +172,131 @@ fun SharedTransitionScope.AccountDetailScreen(
                     title = uiState.account?.name ?: stringResource(R.string.account_details), hasBackButton = true,
                     hazeState = hazeState, navigationContent = { NavigationContent(onNavigateBack) },
                     actionContent = {
-                        if (uiState.account != null) io.github.hootkit_dev.hootbook.presentation.ui.components.TooltipIconButton(
-                            Iconax.Edit2, stringResource(R.string.edit_account_title), { showEdit = true })
+                        if (uiState.account != null) {
+                            val account = uiState.account!!
+                            var showMenu by remember { mutableStateOf(false) }
+                            io.github.hootkit_dev.hootbook.presentation.ui.components.TooltipIconButton(
+                                Iconax.Edit2, stringResource(R.string.edit_account_title), { showEdit = true })
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = stringResource(R.string.more_options)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (account.isDefault) R.string.account_clear_default
+                                                    else R.string.account_set_default
+                                                )
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (account.isDefault) Icons.Rounded.StarOutline else Icons.Rounded.Star,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            manageViewModel.setDefault(if (account.isDefault) null else account.id)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (account.archived) R.string.account_unarchive
+                                                    else R.string.account_archive
+                                                )
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (account.archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            manageViewModel.archive(account)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.account_move_up)) },
+                                        leadingIcon = { Icon(Icons.Rounded.ArrowUpward, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val all = manageState.overview?.accounts.orEmpty().filter { it.category() == account.category() }
+                                            val index = all.indexOfFirst { it.id == account.id }
+                                            if (index > 0) {
+                                                val mutable = all.map { it.id }.toMutableList()
+                                                val item = mutable.removeAt(index)
+                                                mutable.add(index - 1, item)
+                                                manageViewModel.reorder(mutable)
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.account_move_down)) },
+                                        leadingIcon = { Icon(Icons.Rounded.ArrowDownward, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val all = manageState.overview?.accounts.orEmpty().filter { it.category() == account.category() }
+                                            val index = all.indexOfFirst { it.id == account.id }
+                                            if (index >= 0 && index < all.size - 1) {
+                                                val mutable = all.map { it.id }.toMutableList()
+                                                val item = mutable.removeAt(index)
+                                                mutable.add(index + 1, item)
+                                                manageViewModel.reorder(mutable)
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.history)) },
+                                        leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            showHistory = true
+                                        }
+                                    )
+                                    HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(R.string.account_delete),
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.Delete,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            showDeleteConfirm = true
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     })
             }) { padding ->
             LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize().hazeSource(hazeState),
-                contentPadding = PaddingValues(top = Dimensions.Padding.content + padding.calculateTopPadding(), bottom = padding.calculateBottomPadding())) {
-                item {
+                contentPadding = PaddingValues(top = Dimensions.Padding.content + padding.calculateTopPadding(), bottom = 32.dp + padding.calculateBottomPadding()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                // 1. Balance Header Card
+                item(key = "header_summary") {
                     uiState.account?.let { account ->
                         Column(Modifier.padding(horizontal = Dimensions.Padding.content), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             AccountCard(account)
@@ -162,56 +309,246 @@ fun SharedTransitionScope.AccountDetailScreen(
                                     Text(stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText())
                                 }
                             }
-                            if (account.pockets.size > 1) io.github.hootkit_dev.hootbook.presentation.ui.components.AccountCurrencyChoice(
-                                currencies = account.pockets.map { it.currency }, selected = uiState.currency ?: account.mainCurrency,
-                                onSelect = accountDetailViewModel::selectCurrency)
-                            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                FilledTonalButton(onClick = { showCalibration = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1.8f)) {
-                                    Text(stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.update_outstanding_title else R.string.balance_calibration), maxLines = 1)
-                                }
-                                OutlinedButton(onClick = { showHistory = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.history), maxLines = 1)
-                                }
-                            }
-                            io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch(
-                                title = stringResource(R.string.default_account_title), subtitle = stringResource(R.string.default_account_hint),
-                                checked = account.isDefault, onCheckedChange = { on -> manageViewModel.setDefault(if (on) account.id else null) }, isSingle = true)
                         }
                     }
                 }
-                item { Spacer(Modifier.height(Spacing.md)) }
-                item { DateRangeFilter(selectedDateRange, accountDetailViewModel::selectDateRange) }
-                item { Spacer(Modifier.height(Spacing.md)) }
-                if (uiState.balanceSeries.isNotEmpty()) item {
-                    ExpandableBalanceChart(primaryCurrency = uiState.currency.orEmpty(), balanceHistory = uiState.balanceSeries,
-                        selectedTimeframe = selectedDateRange.getLocalizedLabel(), modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
+
+                // 2. Currencies Section
+                item(key = "section_currencies") {
+                    uiState.account?.let { account ->
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    stringResource(R.string.account_section_currencies),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                IconButton(onClick = { showAddCurrency = true }, modifier = Modifier.size(32.dp)) {
+                                    Icon(
+                                        Icons.Rounded.Add,
+                                        contentDescription = stringResource(R.string.account_currency_add),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            account.pockets.forEach { pocket ->
+                                Card(
+                                    onClick = { accountDetailViewModel.selectCurrency(pocket.currency) },
+                                    shape = MaterialTheme.shapes.large,
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = pocket.currency,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Column(Modifier.weight(1f)) {
+                                            val locale = LocalConfiguration.current.locales[0]
+                                            val currencyName = runCatching { java.util.Currency.getInstance(pocket.currency).getDisplayName(locale) }.getOrDefault(pocket.currency)
+                                            Text(currencyName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                                            Text(
+                                                if (pocket.currency == account.mainCurrency) stringResource(R.string.account_currency_main) else pocket.currency,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text(
+                                            CoreMoneyPresentation.formatCurrency(pocket.balance, pocket.currency),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                item { Spacer(Modifier.height(Spacing.md)) }
-                uiState.summary?.let { summary -> item {
-                    TransactionTotalsCard(income = summary.income, expenses = summary.expense, netBalance = summary.net,
-                        currency = summary.currency, title = selectedDateRange.getLocalizedLabel(), isEstimated = !summary.complete,
-                        isLoading = uiState.isLoading, modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
-                } }
-                item { Spacer(Modifier.height(Spacing.md)) }
-                item { SectionHeader(title = stringResource(R.string.transactions_count, uiState.total.toInt()), modifier = Modifier.padding(horizontal = Dimensions.Padding.content + Spacing.sm)) }
-                item { Spacer(Modifier.height(Spacing.sm)) }
-                if (uiState.transactions.isEmpty() && !uiState.isLoading) item { EmptyTransactionsState(Modifier.padding(horizontal = Dimensions.Padding.content)) }
-                itemsIndexed(uiState.transactions, key = { _, tx -> tx.id }) { index, transaction ->
+
+                // 3. Recent Transactions Section
+                item(key = "section_recent") {
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.account_section_recent),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (uiState.transactions.isEmpty() && !uiState.isLoading) {
+                            Card(
+                                shape = MaterialTheme.shapes.large,
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    stringResource(R.string.account_no_transactions),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                val recentTransactions = uiState.transactions.take(5)
+                itemsIndexed(recentTransactions, key = { _, tx -> "recent_${tx.id}" }) { index, transaction ->
                     val category = uiState.categories[transaction.categoryId]
                     val debt = uiState.debts[transaction.debtId]
                     val person = uiState.people[debt?.personId]
-                    TransactionItem(transaction = transaction, categoryEntity = category,
+                    val totalRows = recentTransactions.size + if (uiState.total > 0u) 1 else 0
+                    TransactionItem(
+                        transaction = transaction,
+                        categoryEntity = category,
                         subcategoryEntity = category?.subcategories?.firstOrNull { it.id == transaction.subcategoryId },
-                        accountIconName = uiState.account?.icon, accountColorHex = uiState.account?.color,
-                        mainCurrency = uiState.summary?.currency, convertedAmount = uiState.convertedAmounts[transaction.id],
-                        currentAccountContext = accountId, currentBankNameContext = uiState.account?.name,
-                        linkedLoanPersonName = person?.name, linkedLoanPersonColor = person?.color, linkedLoanPersonAvatar = person?.avatar,
-                        onClick = { onTransaction(transaction.id) }, shape = ListItemPosition.from(index, uiState.transactions.size).toShape(),
-                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content), sharedTransitionScope = this@AccountDetailScreen,
-                        animatedContentScope = animatedContentScope, sharedElementKey = "transaction_${transaction.id}")
+                        accountIconName = uiState.account?.icon,
+                        accountColorHex = uiState.account?.color,
+                        mainCurrency = uiState.summary?.currency,
+                        convertedAmount = uiState.convertedAmounts[transaction.id],
+                        currentAccountContext = accountId,
+                        currentBankNameContext = uiState.account?.name,
+                        linkedLoanPersonName = person?.name,
+                        linkedLoanPersonColor = person?.color,
+                        linkedLoanPersonAvatar = person?.avatar,
+                        onClick = { onTransaction(transaction.id) },
+                        shape = ListItemPosition.from(index, totalRows).toShape(),
+                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
+                        sharedTransitionScope = this@AccountDetailScreen,
+                        animatedContentScope = animatedContentScope,
+                        sharedElementKey = "transaction_${transaction.id}"
+                    )
                 }
-                if (uiState.isLoading || uiState.loadingMore) item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { LoadingCircle() } }
-                item { Spacer(Modifier.height(Spacing.md)) }
+                if (uiState.total > 0u) {
+                    item(key = "all_transactions_row") {
+                        Card(
+                            onClick = { onAllTransactions?.invoke() ?: onTransaction(recentTransactions.firstOrNull()?.id ?: "") },
+                            shape = ListItemPosition.Bottom.toShape(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(R.string.account_all_transactions), style = MaterialTheme.typography.bodyLarge)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("${uiState.total}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. Balance Section (holding calibrate / trend / history)
+                item(key = "section_balance") {
+                    val currency = uiState.currency ?: uiState.account?.mainCurrency.orEmpty()
+                    uiState.account?.let { account ->
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                if (account.pockets.size > 1) stringResource(R.string.account_section_balance_currency, currency)
+                                else stringResource(R.string.account_section_balance),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Card(
+                                onClick = { showCalibration = true },
+                                shape = MaterialTheme.shapes.large,
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Tune, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.update_outstanding_title else R.string.account_calibrate),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Card(
+                                onClick = { showHistory = true },
+                                shape = MaterialTheme.shapes.large,
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    Icon(Icons.Rounded.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        stringResource(R.string.account_calibrations),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (uiState.anchors.isNotEmpty()) {
+                                        Text("${uiState.anchors.size}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            DateRangeFilter(selectedDateRange, accountDetailViewModel::selectDateRange)
+                            if (uiState.balanceSeries.isNotEmpty()) {
+                                ExpandableBalanceChart(
+                                    primaryCurrency = currency,
+                                    balanceHistory = uiState.balanceSeries,
+                                    selectedTimeframe = selectedDateRange.getLocalizedLabel(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            uiState.summary?.let { summary ->
+                                TransactionTotalsCard(
+                                    income = summary.income,
+                                    expenses = summary.expense,
+                                    netBalance = summary.net,
+                                    currency = summary.currency,
+                                    title = selectedDateRange.getLocalizedLabel(),
+                                    isEstimated = !summary.complete,
+                                    isLoading = uiState.isLoading,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -237,8 +574,45 @@ fun SharedTransitionScope.AccountDetailScreen(
                 onDelete = if (uiState.accountTransactionCount == 0u) ({ manageViewModel.deleteAccount(account.id, onDeleted = { if (active) onNavigateBack() }) }) else null,
                 onSave = { input -> manageViewModel.editAccount(account, input) { if (active) showEdit = false } })
         }
+        if (showAddCurrency) {
+            CurrencyBottomSheet(
+                selectedCurrency = uiState.currency ?: account.mainCurrency,
+                onCurrencySelected = { selected ->
+                    showAddCurrency = false
+                    manageViewModel.addPocket(account.id, selected, java.math.BigDecimal.ZERO)
+                    accountDetailViewModel.selectCurrency(selected)
+                },
+                onDismiss = { showAddCurrency = false }
+            )
+        }
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(stringResource(R.string.account_delete_title, account.name)) },
+                text = { Text(stringResource(R.string.account_delete_confirm_msg)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            manageViewModel.deleteAccount(account.id, deleteTransactions = true) {
+                                if (active) onNavigateBack()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
     }
 }
+
 @Composable
 private fun ExpandableBalanceChart(
     modifier: Modifier = Modifier,
@@ -317,8 +691,6 @@ private fun ExpandableBalanceChart(
     }
 }
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangeFilter(
@@ -330,9 +702,6 @@ private fun DateRangeFilter(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         contentPadding = PaddingValues(horizontal = 0.dp)
     ) {
-        item{
-            Spacer(modifier = Modifier.width(Spacing.md))
-        }
         items(DateRange.values().toList()) { range ->
             FilterChip(
                 selected = selectedRange == range,
@@ -351,12 +720,8 @@ private fun DateRangeFilter(
                 ),
             )
         }
-        item{
-            Spacer(modifier = Modifier.width(Spacing.md))
-        }
     }
 }
-
 
 @Composable
 private fun EmptyTransactionsState(
@@ -404,6 +769,7 @@ fun DateRange.getLocalizedLabel(): String {
         DateRange.ALL_TIME -> stringResource(R.string.range_all_time)
     }
 }
+
 @Composable
 private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () -> Unit) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]

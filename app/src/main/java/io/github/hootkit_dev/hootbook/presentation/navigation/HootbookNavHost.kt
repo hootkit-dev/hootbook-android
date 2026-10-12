@@ -355,7 +355,8 @@ fun HootbookNavHost(
                                         AccountDetailScreen(accountId = route.accountId, initialHistory = route.history,
                                             animatedContentScope = this@composable, onNavigateBack = back,
                                             onTransaction = { go(TransactionDetail(it)) },
-                                            onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
+                                            onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                            onAllTransactions = { go(Transactions(accountId = route.accountId)) })
                                     }
                                 }
                             }

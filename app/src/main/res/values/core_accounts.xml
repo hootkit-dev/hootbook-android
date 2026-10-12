@@ -20,4 +20,24 @@
     <string name="core_accounts_53">Currency code</string>
     <string name="core_accounts_55">Balance / debt</string>
     <string name="core_accounts_59">Save</string>
+    <string name="account_move_up">Move up</string>
+    <string name="account_move_down">Move down</string>
+    <string name="account_archive">Archive</string>
+    <string name="account_unarchive">Unarchive</string>
+    <string name="account_set_default">Set as default</string>
+    <string name="account_clear_default">Remove as default</string>
+    <string name="account_delete">Delete account</string>
+    <string name="account_delete_title">Delete %1$s?</string>
+    <string name="account_delete_confirm_msg">Are you sure you want to delete this account?</string>
+    <string name="account_section_currencies">Currencies</string>
+    <string name="account_currency_add">Add currency</string>
+    <string name="account_currency_main">Main currency</string>
+    <string name="account_section_recent">Recent transactions</string>
+    <string name="account_no_transactions">No transactions yet</string>
+    <string name="account_all_transactions">All transactions</string>
+    <string name="account_section_balance">Balance</string>
+    <string name="account_section_balance_currency">Balance · %1$s</string>
+    <string name="account_calibrate">Calibrate balance</string>
+    <string name="account_balance_trend">Balance trend</string>
+    <string name="account_calibrations">Calibrations</string>
 </resources>
