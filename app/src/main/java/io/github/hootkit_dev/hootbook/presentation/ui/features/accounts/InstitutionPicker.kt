@@ -46,8 +46,6 @@ fun InstitutionPickerButton(
     onSelected: (Institution, String) -> Unit
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
-    val language = LocalConfiguration.current.locales[0].language
     val title = if (brokersOnly) R.string.institution_choose_broker else R.string.institution_choose
     OutlinedButton(shapes = ButtonDefaults.shapes(), onClick = { visible = true }, modifier = Modifier.fillMaxWidth()) {
         Icon(
@@ -58,22 +56,42 @@ fun InstitutionPickerButton(
         Text(stringResource(title))
     }
     if (visible) {
-        var query by rememberSaveable { mutableStateOf("") }
-        var region by rememberSaveable { mutableStateOf<String?>(null) }
-        val results = remember(institutions, query, region, brokersOnly) { institutions.filter { row ->
-            (!brokersOnly || row.kind == InstitutionKind.BROKER) && (region == null || row.region == region) &&
-                (query.isBlank() || (listOf(row.chineseName, row.englishName) + row.aliases).any { it.contains(query, true) })
-        } }
-        HootbookModalBottomSheet(
-            onDismissRequest = { visible = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
-                Text(
-                    stringResource(title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 24.dp).semantics { heading() }
-                )
+        InstitutionPickerSheet(
+            institutions = institutions,
+            brokersOnly = brokersOnly,
+            onDismiss = { visible = false },
+            onSelected = onSelected
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InstitutionPickerSheet(
+    institutions: List<Institution>,
+    brokersOnly: Boolean = false,
+    onDismiss: () -> Unit,
+    onSelected: (Institution, String) -> Unit
+) {
+    val context = LocalContext.current
+    val language = LocalConfiguration.current.locales[0].language
+    val title = if (brokersOnly) R.string.institution_choose_broker else R.string.institution_choose
+    var query by rememberSaveable { mutableStateOf("") }
+    var region by rememberSaveable { mutableStateOf<String?>(null) }
+    val results = remember(institutions, query, region, brokersOnly) { institutions.filter { row ->
+        (!brokersOnly || row.kind == InstitutionKind.BROKER) && (region == null || row.region == region) &&
+            (query.isBlank() || (listOf(row.chineseName, row.englishName) + row.aliases).any { it.contains(query, true) })
+    } }
+    HootbookModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
+            Text(
+                stringResource(title),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp).semantics { heading() }
+            )
                 TextField(
                     value = query,
                     onValueChange = { query = it },
@@ -120,12 +138,11 @@ fun InstitutionPickerButton(
                                 style = MaterialTheme.typography.labelMedium) },
                             modifier = Modifier.clickable(role = Role.Button) {
                                 onSelected(institution, if (language == "zh") institution.chineseName else institution.englishName)
-                                visible = false
+                                onDismiss()
                             }
                         )
                     }
                 }
-            }
         }
     }
 }

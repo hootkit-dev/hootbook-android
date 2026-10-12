@@ -1,41 +1,62 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
+    dev.chrisbanes.haze.ExperimentalHazeApi::class,
+)
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.investments
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.LinkOff
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
-import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -44,10 +65,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -55,26 +79,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
-import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.SearchBarBox
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
-import io.github.hootkit_dev.hootbook.presentation.ui.components.accountBalanceText
-import io.github.hootkit_dev.hootbook.presentation.ui.components.accountCurrenciesText
-import io.github.hootkit_dev.hootbook.presentation.ui.components.accountSubtitle
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
@@ -87,128 +109,205 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
 import java.math.BigDecimal
 
 /**
- * Read-only holdings and manual investment accounts. Adding one (manual, or a broker connection
- * under "Broker auto-sync") happens in Add account with the Broker type: [onAddInvestment].
+ * Investments: what each investment account is worth, the broker connections and their accounts,
+ * the ledger's investment accounts, and brokers to connect; then one broker account's holdings
+ * and cash, and one holding's details. Snapshots update only when the user refreshes.
  */
 @Composable
 fun InvestmentsScreen(
     onNavigateBack: () -> Unit,
     onManageManualAccounts: () -> Unit = {},
-    onAddInvestment: () -> Unit = {},
+    onAddInvestment: () -> Unit = onManageManualAccounts,
     viewModel: InvestmentsViewModel = hiltViewModel(),
+    onAccountHistory: (String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    BackHandler(enabled = state.busy || state.selected != null || state.linkTarget != null) {
+    val chinese = LocalConfiguration.current.locales[0].language == "zh"
+
+    fun providerName(id: String): String {
+        val provider = state.providers.find { it.id == id }
+        val institution = state.institutions.find { it.key == provider?.institutionKey }
+        return institution?.let { if (chinese) it.chineseName else it.englishName } ?: id
+    }
+
+    BackHandler(
+        state.busy ||
+            state.selected != null ||
+            state.connectProvider != null ||
+            state.linkTarget != null ||
+            state.disconnectTarget != null ||
+            state.holding != null
+    ) {
         viewModel.back()
     }
+
     InvestmentsContent(
-        connections = state.connections,
-        busy = state.busy,
-        loaded = !state.loading,
-        error = state.error,
+        state = state,
+        providerName = ::providerName,
         onBack = { if (!viewModel.back()) onNavigateBack() },
-        onAdd = onAddInvestment,
+        onRefresh = viewModel::refresh,
         onRefreshAll = viewModel::refreshAll,
-        onRetry = viewModel::reload,
-        manualAccounts = state.investmentAccounts.filter { it.broker == null },
-        onManageManualAccounts = onManageManualAccounts,
-        selected = state.selected,
+        onCancel = viewModel::cancelOperation,
+        onClearError = viewModel::clearError,
+        onConnect = viewModel::showConnect,
+        onSelect = viewModel::selectAccount,
+        onHolding = viewModel::selectHolding,
         onLink = viewModel::showLink,
+        onDisconnect = viewModel::showDisconnect,
+        onManageAccounts = { if (!state.busy) onManageManualAccounts() },
+        onAccountHistory = { if (!state.busy) onAccountHistory(it) },
+        onAddInvestment = { if (!state.busy) onAddInvestment() },
     )
+
+    // Connect dialog
+    state.connectProvider?.let { id ->
+        val provider = BrokerProviderRegistry.find(id)
+        if (provider != null) {
+            provider.ConnectDialog(
+                busy = state.busy,
+                error = state.error,
+                onDismiss = { viewModel.showConnect(null) },
+                onConnect = { label, fields -> viewModel.connect(id, label, fields) },
+            )
+        } else {
+            BrokerConnectForm(
+                busy = state.busy,
+                error = state.error,
+                providerId = id,
+                onDismiss = { viewModel.showConnect(null) },
+                onConnect = { label, fields -> viewModel.connect(id, label, fields) },
+            )
+        }
+    }
+
+    // Link dialog
     state.linkTarget?.let { ref ->
         AlertDialog(
             onDismissRequest = { viewModel.showLink(null) },
             title = { Text(stringResource(R.string.core_invest_link_title)) },
             text = {
-                Column {
-                    availableLinkAccounts(ref, state.overview?.accounts.orEmpty()).forEach { account
-                        ->
+                Column(
+                    modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(stringResource(R.string.core_invest_link_warning))
+                    val candidates = availableLinkAccounts(ref, state.overview?.accounts.orEmpty())
+                    if (candidates.isEmpty()) {
+                        Text(stringResource(R.string.core_invest_no_link_accounts))
+                    }
+                    candidates.forEach { account ->
                         TextButton(
                             enabled = !state.busy,
                             onClick = { viewModel.link(ref, account.id) },
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text(account.name)
+                            Text("${account.name} · ${account.mainCurrency}")
                         }
                     }
-                    TextButton(enabled = !state.busy, onClick = { viewModel.link(ref, null) }) {
-                        Text(stringResource(R.string.core_invest_unlink))
+                    if (linkedAccount(ref, state.connections)?.linkedAccountId != null) {
+                        TextButton(
+                            enabled = !state.busy,
+                            onClick = { viewModel.link(ref, null) },
+                        ) {
+                            Text(stringResource(R.string.core_invest_unlink))
+                        }
+                    }
+                    state.error?.let {
+                        Text(investmentFailureText(it), color = MaterialTheme.colorScheme.error)
                     }
                 }
             },
             confirmButton = {
                 TextButton(enabled = !state.busy, onClick = { viewModel.showLink(null) }) {
-                    Text(stringResource(R.string.investments_cancel))
+                    Text(stringResource(R.string.core_invest_close))
+                }
+            },
+        )
+    }
+
+    // Disconnect dialog
+    state.disconnectTarget?.let { id ->
+        AlertDialog(
+            onDismissRequest = { viewModel.showDisconnect(null) },
+            title = { Text(stringResource(R.string.core_invest_disconnect)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.core_invest_disconnect_warning))
+                    state.error?.let {
+                        Text(investmentFailureText(it), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !state.busy, onClick = { viewModel.disconnect(id) }) {
+                    Text(
+                        stringResource(R.string.core_invest_disconnect),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !state.busy, onClick = { viewModel.showDisconnect(null) }) {
+                    Text(stringResource(R.string.core_invest_cancel))
                 }
             },
         )
     }
 }
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalHazeApi::class,
-)
 @Composable
 internal fun InvestmentsContent(
-    connections: List<BrokerageConnection>,
-    busy: Boolean,
-    loaded: Boolean,
-    error: CoreInvestmentFailure?,
+    state: InvestmentsUiState,
+    providerName: (String) -> String,
     onBack: () -> Unit,
-    onAdd: () -> Unit,
+    onRefresh: (Long) -> Unit,
     onRefreshAll: () -> Unit,
-    onRetry: () -> Unit,
-    manualAccounts: List<Account> = emptyList(),
-    onManageManualAccounts: () -> Unit = {},
-    selected: BrokerAccountRef? = null,
-    onLink: (BrokerAccountRef?) -> Unit = {},
+    onCancel: () -> Unit,
+    onClearError: () -> Unit,
+    onConnect: (String?) -> Unit,
+    onSelect: (BrokerAccountRef?) -> Unit,
+    onHolding: (CoreHoldingKey?) -> Unit,
+    onLink: (BrokerAccountRef?) -> Unit,
+    onDisconnect: (Long?) -> Unit,
+    onManageAccounts: () -> Unit,
+    onAccountHistory: (String) -> Unit,
+    onAddInvestment: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    LaunchedEffect(selected, connections, loaded, error) {
-        if (selected != null && loaded) {
-            var index =
-                (if (error != null) 1 else 0) +
-                    (if (manualAccounts.isNotEmpty() || connections.isNotEmpty()) 2 else 1)
-            for (connection in connections) {
-                index += 2
-                for (account in connection.accounts) {
-                    if (selected == BrokerAccountRef(connection.id, account.accountId)) {
-                        listState.scrollToItem(index)
-                        return@LaunchedEffect
-                    }
-                    index += 2 + maxOf(1, account.holdings.size)
-                }
-            }
-        }
-    }
-    val hasHoldings = manualAccounts.isNotEmpty() || connections.isNotEmpty()
+
+    val holding = state.selectedHolding
+    val account = state.account
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CustomTitleTopAppBar(
-                title = stringResource(R.string.overview_investments),
+                title =
+                    when {
+                        holding != null -> holding.symbol
+                        account != null -> account.accountId
+                        else -> stringResource(R.string.core_invest_title)
+                    },
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehavior,
                 hazeState = hazeState,
                 hasBackButton = true,
-                hasActionButton = connections.isNotEmpty(),
+                hasActionButton = state.selected == null && state.connections.isNotEmpty(),
                 navigationContent = { NavigationContent(onBack) },
                 actionContent = {
-                    if (connections.isNotEmpty()) {
+                    if (state.selected == null && state.connections.isNotEmpty()) {
                         IconButton(
                             shapes = IconButtonDefaults.shapes(),
                             onClick = onRefreshAll,
-                            enabled = !busy,
+                            enabled = !state.busy,
                             modifier = Modifier.testTag("refresh_holdings"),
                         ) {
                             Icon(
                                 Icons.Rounded.Refresh,
-                                contentDescription = stringResource(R.string.investments_refresh),
+                                contentDescription = stringResource(R.string.core_invest_refresh_all),
                             )
                         }
                     }
@@ -216,9 +315,9 @@ internal fun InvestmentsContent(
             )
         },
         floatingActionButton = {
-            if (loaded) {
+            if (!state.loading && state.selected == null) {
                 FloatingActionButton(
-                    onClick = onAdd,
+                    onClick = onAddInvestment,
                     modifier = Modifier.testTag("add_investment"),
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -232,8 +331,8 @@ internal fun InvestmentsContent(
         },
     ) { padding ->
         PullToRefreshBox(
-            isRefreshing = busy,
-            onRefresh = onRefreshAll,
+            isRefreshing = state.busy,
+            onRefresh = { if (!state.busy) onRefreshAll() },
             modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
         ) {
             LazyColumn(
@@ -246,254 +345,683 @@ internal fun InvestmentsContent(
                 contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 96.dp),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                if (error != null) {
-                    item(key = "broker_error") { InvestmentError(error) }
-                }
-                if (!loaded && !busy) {
-                    item(key = "retry") {
-                        ListItem(
-                            headline = {
-                                Text(
-                                    stringResource(R.string.investments_retry),
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            },
-                            onClick = onRetry,
-                            shape = ListItemPosition.Single.toShape(),
-                            padding = PaddingValues(0.dp),
-                        )
+                if (state.busy) {
+                    item(key = "progress") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        ) {
+                            Text(
+                                text =
+                                    stringResource(
+                                        if (state.cancelling) R.string.core_invest_cancelling
+                                        else R.string.core_invest_working
+                                    ),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            TextButton(enabled = !state.cancelling, onClick = onCancel) {
+                                Text(stringResource(R.string.core_invest_cancel_request))
+                            }
+                        }
                     }
                 }
-                if (loaded && hasHoldings) {
-                    item(key = "accounts_header") {
-                        SectionHeader(title = stringResource(R.string.investments_accounts))
-                    }
-                    item(key = "account_breakdown") {
-                        InvestmentAccountBreakdown(
-                            manualAccounts,
-                            connections,
-                            onManageManualAccounts,
-                            onLink,
-                        )
+                state.error?.let { error ->
+                    item(key = "error") {
+                        InvestmentError(error)
                     }
                 }
-                if (loaded && !hasHoldings) {
-                    item(key = "empty") {
-                        ListItem(
-                            headline = {
-                                Text(
-                                    stringResource(R.string.investments_empty_title),
-                                    fontWeight = FontWeight.Medium,
-                                )
-                            },
-                            supporting = { Text(stringResource(R.string.investments_empty_body)) },
-                            shape = ListItemPosition.Single.toShape(),
-                            padding = PaddingValues(0.dp),
-                        )
-                    }
-                }
-                connections.forEach { connection -> connectionSection(connection, onLink) }
-                if (manualAccounts.isNotEmpty() && connections.isNotEmpty()) {
-                    item(key = "source_note") {
+                if (state.cancellationNotice) {
+                    item(key = "cancelled") {
                         Text(
-                            stringResource(R.string.overview_source_note),
-                            style = MaterialTheme.typography.bodySmall,
+                            text = stringResource(R.string.core_invest_cancelled_notice),
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
+
+                when {
+                    holding != null && account != null -> {
+                        item(key = "holding_detail") {
+                            HoldingDetails(holding, account)
+                        }
+                    }
+                    account != null -> {
+                        brokerAccountItems(
+                            account = account,
+                            state = state,
+                            enabled = !state.busy,
+                            onRefresh = onRefresh,
+                            onLink = onLink,
+                            onAccountHistory = onAccountHistory,
+                            onHolding = onHolding,
+                        )
+                    }
+                    else -> {
+                        overviewItems(
+                            state = state,
+                            enabled = !state.busy,
+                            providerName = providerName,
+                            onRefresh = onRefresh,
+                            onDisconnect = onDisconnect,
+                            onSelect = onSelect,
+                            onAccountHistory = onAccountHistory,
+                            onManageAccounts = onManageAccounts,
+                            onConnect = onConnect,
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-@Composable
-private fun InvestmentAccountBreakdown(
-    manuals: List<Account>,
-    connections: List<BrokerageConnection>,
-    onManageManualAccounts: () -> Unit,
-    onLink: (BrokerAccountRef?) -> Unit,
+private fun LazyListScope.overviewItems(
+    state: InvestmentsUiState,
+    enabled: Boolean,
+    providerName: (String) -> String,
+    onRefresh: (Long) -> Unit,
+    onDisconnect: (Long?) -> Unit,
+    onSelect: (BrokerAccountRef?) -> Unit,
+    onAccountHistory: (String) -> Unit,
+    onManageAccounts: () -> Unit,
+    onConnect: (String?) -> Unit,
 ) {
-    val brokerRows =
-        connections.flatMap { connection ->
-            connection.accounts.map { account -> connection to account }
-        }
-    val count = manuals.size + brokerRows.size
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-        manuals.forEachIndexed { index, account ->
-            ListItem(
-                headline = { Text(account.name, fontWeight = FontWeight.Medium) },
-                supporting = { Text(accountSubtitle(account)) },
-                trailing = {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(accountBalanceText(account), fontWeight = FontWeight.Medium)
-                        accountCurrenciesText(account)?.let {
-                            Text(
-                                it,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        if (!account.totalComplete)
-                            Text(
-                                stringResource(R.string.core_invest_incomplete),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                    }
-                },
-                onClick = onManageManualAccounts,
-                shape = ListItemPosition.from(index, count).toShape(),
-                padding = PaddingValues(0.dp),
-            )
-        }
-        brokerRows.forEachIndexed { index, (connection, account) ->
-            val snapshots = account.valueByCurrency
-            ListItem(
-                headline = { Text(connection.label, fontWeight = FontWeight.Medium) },
-                supporting = { Text(account.accountId) },
-                trailing = {
-                    Column(horizontalAlignment = Alignment.End) {
-                        snapshots.forEach { money ->
-                            Text(
-                                CurrencyFormatter.formatCurrency(money.amount, money.currency),
-                                fontWeight = FontWeight.Medium,
-                            )
-                        }
-                    }
-                },
-                onClick = { onLink(BrokerAccountRef(connection.id, account.accountId)) },
-                shape = ListItemPosition.from(manuals.size + index, count).toShape(),
-                padding = PaddingValues(0.dp),
-            )
-        }
-    }
-}
-
-private fun LazyListScope.connectionSection(
-    connection: BrokerageConnection,
-    onLink: (BrokerAccountRef?) -> Unit,
-) {
-    item(key = "connection_header_${connection.id}") { SectionHeader(title = connection.label) }
-    item(key = "connection_${connection.id}") {
-        ListItem(
-            headline = {
-                Text(
-                    stringResource(
-                        R.string.investments_synced,
-                        connection.syncedAt
-                            ?.coreDateText(
-                                java.time.format.DateTimeFormatter.ofLocalizedDateTime(
-                                    java.time.format.FormatStyle.SHORT
-                                )
-                            )
-                            .orEmpty(),
+    // 1. Net worth card (if accounts exist)
+    if (state.connections.isNotEmpty() || state.investmentAccounts.isNotEmpty()) {
+        item(key = "net_worth") {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.largeIncreased,
+                color = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.investments_net_worth),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                )
-            },
-            supporting = {
-                connection.lastError?.let {
-                    InvestmentError(CoreInvestmentFailure(InvestmentFailureCode.BROKERAGE, it))
+                    state.investmentAccounts.forEach { ledger ->
+                        InvestmentValue(
+                            label = ledger.name,
+                            value = CurrencyFormatter.format(ledger.total.amount, ledger.total.currency),
+                        )
+                    }
+                    state.connections.forEach { connection ->
+                        connection.accounts.filter { it.linkedAccountId == null }.forEach { account ->
+                            InvestmentValue(
+                                label = "${connection.label} · ${account.accountId}",
+                                value =
+                                    account.total?.let { CurrencyFormatter.format(it.amount, it.currency) }
+                                        ?: stringResource(R.string.core_invest_total_unavailable),
+                            )
+                        }
+                    }
+                    if (state.investmentAccounts.size + state.connections.sumOf { c -> c.accounts.count { it.linkedAccountId == null } } > 1) {
+                        Text(
+                            text = stringResource(R.string.core_parity_investment_total),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                        )
+                    }
                 }
-                val asOf =
-                    connection.accounts.map { it.asOf.coreDateText() }.distinct().joinToString()
-                if (asOf.isNotEmpty()) {
-                    Text(stringResource(R.string.investments_as_of, asOf))
-                }
-            },
-            shape = ListItemPosition.Single.toShape(),
-            padding = PaddingValues(0.dp),
-        )
+            }
+        }
     }
-    connection.accounts.forEach { account ->
-        item(key = "account_${connection.id}_${account.accountId}") {
-            SectionHeader(title = account.accountId)
+
+    // 2. Guide Header (when empty)
+    if (state.connections.isEmpty() && state.investmentAccounts.isEmpty() && !state.loading) {
+        item(key = "empty_guide") {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.largeIncreased,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.investments_empty_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(R.string.investments_empty_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
-        item(key = "account_totals_${connection.id}_${account.accountId}") {
-            AccountTotals(account)
+    }
+
+    // 3. Broker Connections section (for each connected broker, if any)
+    state.connections.forEach { connection ->
+        item(key = "connection_${connection.id}") {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = connection.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = buildString {
+                                append(providerName(connection.providerId))
+                                connection.syncedAt?.let {
+                                    append(" · ")
+                                    append(stringResource(R.string.core_invest_synced_at, investmentTime(it)))
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    BrokerOverflowMenu(
+                        enabled = enabled,
+                        onRefresh = { onRefresh(connection.id) },
+                        onDisconnect = { onDisconnect(connection.id) },
+                    )
+                }
+
+                val failure =
+                    state.connectionErrors[connection.id]
+                        ?: connection.lastError?.let {
+                            CoreInvestmentFailure(InvestmentFailureCode.BROKERAGE, it)
+                        }
+                if (failure != null) {
+                    InvestmentError(failure)
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(1.5.dp),
+                ) {
+                    connection.accounts.forEachIndexed { index, account ->
+                        ListItem(
+                            headline = { Text(account.accountId, fontWeight = FontWeight.Medium) },
+                            supporting = {
+                                Text(stringResource(R.string.core_invest_as_of, investmentDate(account.asOf)))
+                            },
+                            trailing = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(
+                                        text =
+                                            account.total?.let { CurrencyFormatter.format(it.amount, it.currency) }
+                                                ?: "—",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            },
+                            onClick = {
+                                if (enabled) onSelect(BrokerAccountRef(connection.id, account.accountId))
+                            },
+                            shape = ListItemPosition.from(index, connection.accounts.size).toShape(),
+                            padding = PaddingValues(0.dp),
+                        )
+                    }
+                }
+            }
         }
-        val holdings = account.holdings
-        if (holdings.isEmpty()) {
-            item(key = "no_positions_${connection.id}_${account.accountId}") {
+    }
+
+    // 4. Investment ledger accounts section
+    item(key = "ledger_accounts") {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionHeader(title = stringResource(R.string.core_invest_ledger_accounts))
+            val totalCount = state.investmentAccounts.size + 1
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.5.dp),
+            ) {
+                state.investmentAccounts.forEachIndexed { index, ledger ->
+                    ListItem(
+                        headline = { Text(ledger.name, fontWeight = FontWeight.Medium) },
+                        supporting = {
+                            val details =
+                                listOfNotNull(
+                                    ledger.securities?.let {
+                                        stringResource(
+                                            R.string.core_invest_securities,
+                                            CurrencyFormatter.format(it.amount, it.currency),
+                                        )
+                                    },
+                                    ledger.broker?.let {
+                                        stringResource(
+                                            R.string.core_invest_linked_broker,
+                                            it.brokerAccountId,
+                                            investmentDate(it.asOf),
+                                        )
+                                    },
+                                    if (!ledger.totalComplete)
+                                        stringResource(R.string.core_invest_incomplete)
+                                    else null,
+                                ).joinToString(" · ").ifBlank {
+                                    stringResource(R.string.core_invest_cash_history)
+                                }
+                            Text(details)
+                        },
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text(
+                                    text =
+                                        CurrencyFormatter.format(
+                                            ledger.total.amount,
+                                            ledger.total.currency,
+                                        ),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        },
+                        onClick = { if (enabled) onAccountHistory(ledger.id) },
+                        shape = ListItemPosition.from(index, totalCount).toShape(),
+                        padding = PaddingValues(0.dp),
+                    )
+                }
+
+                // Entry row: [🏛️ AccountBalance Icon with agy rounded badge] "Add or manage investment accounts"
                 ListItem(
-                    headline = { Text(stringResource(R.string.investments_no_positions)) },
-                    shape = ListItemPosition.Single.toShape(),
+                    leading = {
+                        Box(
+                            modifier =
+                                Modifier.size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AccountBalance,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    },
+                    headline = {
+                        Text(
+                            text = stringResource(R.string.core_invest_manage_accounts),
+                            fontWeight = FontWeight.Medium,
+                        )
+                    },
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    },
+                    onClick = onManageAccounts,
+                    shape = ListItemPosition.from(state.investmentAccounts.size, totalCount).toShape(),
                     padding = PaddingValues(0.dp),
                 )
             }
-        } else {
-            itemsIndexed(
-                holdings,
-                key = { _, holding ->
-                    "holding_${connection.id}_${account.accountId}_${holding.instrumentId}_${holding.currency}_${holding.model}"
+        }
+    }
+
+    // 5. Connect a broker section
+    item(key = "connect_broker_section") {
+        val providers = BrokerProviderRegistry.getProviders()
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionHeader(title = stringResource(R.string.core_invest_connect_broker))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.5.dp),
+            ) {
+                providers.forEachIndexed { index, provider ->
+                    ListItem(
+                        leading = {
+                            Box(
+                                modifier =
+                                    Modifier.size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Link,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
+                            }
+                        },
+                        headline = {
+                            Text(
+                                text = stringResource(provider.nameRes),
+                                fontWeight = FontWeight.Medium,
+                            )
+                        },
+                        supporting = {
+                            Text(stringResource(provider.descriptionRes))
+                        },
+                        trailing = {
+                            Text(
+                                text = stringResource(R.string.core_invest_connect) + " >",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        onClick = { if (enabled) onConnect(provider.id) },
+                        shape = ListItemPosition.from(index, providers.size).toShape(),
+                        padding = PaddingValues(0.dp),
+                    )
+                }
+            }
+        }
+    }
+
+    // 6. Footer note
+    item(key = "footer_note") {
+        Text(
+            text = stringResource(R.string.core_invest_snapshot_note),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun InvestmentValue(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
+private fun BrokerOverflowMenu(
+    enabled: Boolean,
+    onRefresh: () -> Unit,
+    onDisconnect: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            enabled = enabled,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.core_invest_refresh)) },
+                leadingIcon = { Icon(Icons.Rounded.Refresh, null) },
+                onClick = {
+                    expanded = false
+                    onRefresh()
                 },
-            ) { index, holding ->
-                HoldingRow(holding, ListItemPosition.from(index, holdings.size))
+            )
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(R.string.core_invest_disconnect),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.LinkOff,
+                        null,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onDisconnect()
+                },
+            )
+        }
+    }
+}
+
+private fun LazyListScope.brokerAccountItems(
+    account: BrokerageAccount,
+    state: InvestmentsUiState,
+    enabled: Boolean,
+    onRefresh: (Long) -> Unit,
+    onLink: (BrokerAccountRef?) -> Unit,
+    onAccountHistory: (String) -> Unit,
+    onHolding: (CoreHoldingKey?) -> Unit,
+) {
+    val ref = state.selected ?: return
+    item("snapshot") {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SnapshotCard(account)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChip(
+                    onClick = { onRefresh(ref.connectionId) },
+                    enabled = enabled,
+                    label = { Text(stringResource(R.string.core_invest_refresh)) },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.Refresh, null, Modifier.size(AssistChipDefaults.IconSize))
+                    },
+                )
+                AssistChip(
+                    onClick = { onLink(ref) },
+                    enabled = enabled,
+                    label = { Text(stringResource(R.string.core_invest_link_title)) },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.Link, null, Modifier.size(AssistChipDefaults.IconSize))
+                    },
+                )
+                account.linkedAccountId?.let { id ->
+                    AssistChip(
+                        onClick = { onAccountHistory(id) },
+                        enabled = enabled,
+                        label = { Text(stringResource(R.string.core_invest_cash_history)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ShowChart,
+                                null,
+                                Modifier.size(AssistChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    item("holdings_header") {
+        SectionHeader(title = stringResource(R.string.investments_accounts))
+    }
+
+    item("holdings_search") {
+        var filter by rememberSaveable(state.selected) { mutableStateOf("") }
+        val holdings =
+            account.holdings.filter {
+                filter.isBlank() ||
+                    it.symbol.contains(filter, true) ||
+                    it.description.contains(filter, true)
+            }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SearchBarBox(
+                searchQuery = TextFieldValue(filter),
+                onSearchQueryChange = { filter = it.text },
+                label = { Text(stringResource(R.string.core_invest_search_holdings)) },
+                leadingIcon = { Icon(Icons.Rounded.Search, null) },
+            )
+            if (holdings.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.core_invest_no_holdings),
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.5.dp),
+            ) {
+                holdings.forEachIndexed { index, holding ->
+                    HoldingRow(
+                        holding = holding,
+                        position = ListItemPosition.from(index, holdings.size),
+                        onClick = { if (enabled) onHolding(CoreHoldingKey.of(holding)) },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AccountTotals(account: BrokerageAccount) {
-    val currencies =
-        (account.valueByCurrency.map { it.currency } + account.cash.map { it.currency })
-            .toSortedSet()
-            .toList()
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
-        if (!account.complete)
+private fun SnapshotCard(account: BrokerageAccount) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.largeIncreased,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Text(
-                stringResource(R.string.core_invest_incomplete),
-                color = MaterialTheme.colorScheme.error,
+                text = stringResource(R.string.core_invest_as_of, investmentDate(account.asOf)),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        currencies.forEachIndexed { index, currency ->
-            val value = account.valueByCurrency.find { it.currency == currency }
-            val cash = account.cash.find { it.currency == currency }
-            ListItem(
-                headline = {
-                    Text(
+            Text(
+                text =
+                    account.total?.let { CurrencyFormatter.format(it.amount, it.currency) }
+                        ?: stringResource(R.string.core_invest_total_unavailable),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            if (!account.complete) {
+                Text(
+                    text = stringResource(R.string.core_invest_incomplete),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            account.valueByCurrency.forEach {
+                Text(
+                    text =
                         stringResource(
-                            R.string.investments_snapshot_total,
-                            currency,
-                            decimal(value?.amount),
+                            R.string.core_invest_original_value,
+                            CurrencyFormatter.format(it.amount, it.currency),
                         ),
-                        fontWeight = FontWeight.Medium,
-                    )
-                },
-                supporting = {
-                    Text(
-                        if (cash != null && cash.endingCash.signum() < 0)
-                            stringResource(
-                                R.string.investments_margin_debit,
-                                currency,
-                                decimal(cash.endingCash.abs()),
-                            )
-                        else if (cash != null)
-                            stringResource(
-                                R.string.investments_cash,
-                                currency,
-                                decimal(cash.endingCash),
-                            )
-                        else stringResource(R.string.investments_cash_missing)
-                    )
-                },
-                shape = ListItemPosition.from(index, currencies.size).toShape(),
-                padding = PaddingValues(0.dp),
-            )
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
-        if (currencies.isEmpty())
-            ListItem(
-                headline = {
-                    Text(stringResource(R.string.investments_as_of, account.asOf.coreDateText()))
-                },
-                supporting = { Text(stringResource(R.string.investments_no_positions)) },
-                shape = ListItemPosition.Single.toShape(),
-                padding = PaddingValues(0.dp),
-            )
     }
 }
 
 @Composable
-private fun HoldingRow(holding: Holding, position: ListItemPosition) {
+private fun HoldingDetails(holding: Holding, account: BrokerageAccount) {
+    val money = { value: BigDecimal? ->
+        value?.let { CurrencyFormatter.format(it, holding.currency) } ?: "—"
+    }
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = holding.description,
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+        )
+        val details =
+            listOf(
+                stringResource(R.string.core_invest_as_of, investmentDate(account.asOf)),
+                stringResource(R.string.core_invest_quantity, investmentDecimal(holding.quantity)),
+                stringResource(R.string.core_invest_market_value, money(holding.marketValue)),
+                stringResource(R.string.core_invest_cost_basis, money(holding.costBasis)),
+                stringResource(R.string.core_invest_pnl, money(holding.unrealizedPnl)),
+                stringResource(R.string.core_invest_asset_class, holding.assetClass.ifEmpty { "—" }),
+                stringResource(R.string.core_invest_model, holding.model.ifEmpty { "—" }),
+                stringResource(R.string.core_invest_instrument_id, holding.instrumentId),
+            )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(1.5.dp),
+        ) {
+            details.forEachIndexed { index, line ->
+                ListItem(
+                    headline = { Text(line, fontWeight = FontWeight.Normal) },
+                    shape = ListItemPosition.from(index, details.size).toShape(),
+                    padding = PaddingValues(0.dp),
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.core_invest_snapshot_note),
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+internal fun HoldingRow(
+    holding: Holding,
+    position: ListItemPosition,
+    onClick: () -> Unit = {},
+) {
     val dark = isAppInDarkTheme
     val pnl = holding.unrealizedPnl
     val pnlColor =
@@ -513,7 +1041,10 @@ private fun HoldingRow(holding: Holding, position: ListItemPosition) {
                 }
                 append('\n')
                 append(
-                    stringResource(R.string.investments_quantity, holding.quantity.toPlainString())
+                    stringResource(
+                        R.string.investments_quantity,
+                        investmentDecimal(holding.quantity),
+                    )
                 )
             }
             Text(detail)
@@ -524,31 +1055,30 @@ private fun HoldingRow(holding: Holding, position: ListItemPosition) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    stringResource(
-                        R.string.investments_value,
-                        holding.currency,
-                        decimal(holding.marketValue),
-                    ),
+                    text =
+                        holding.marketValue?.let {
+                            CurrencyFormatter.format(it, holding.currency)
+                        } ?: "—",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    stringResource(
-                        R.string.investments_pnl,
-                        holding.currency,
-                        decimal(holding.unrealizedPnl),
-                    ),
+                    text =
+                        holding.unrealizedPnl?.let {
+                            (if (it.signum() > 0) "+" else "") +
+                                CurrencyFormatter.format(it, holding.currency)
+                        } ?: "—",
                     style = MaterialTheme.typography.bodySmall,
                     color = pnlColor,
                 )
             }
         },
+        onClick = onClick,
         shape = position.toShape(),
         padding = PaddingValues(0.dp),
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeApi::class)
 @Composable
 internal fun IbkrConnectDialog(
     busy: Boolean,
@@ -684,9 +1214,6 @@ internal fun InvestmentError(error: CoreInvestmentFailure) {
         modifier = Modifier.testTag("broker_error"),
     )
 }
-
-private fun decimal(value: BigDecimal?): String =
-    value?.let { CurrencyFormatter.formatAmount(it) } ?: "—"
 
 @Composable
 internal fun investmentFailureText(failure: CoreInvestmentFailure): String =

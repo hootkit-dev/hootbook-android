@@ -24,6 +24,9 @@ interface BrokerProvider {
     /** Whether this provider is currently available for connection. */
     val isAvailable: Boolean get() = true
 
+    /** Associated Institution key (e.g. "ibkr"). */
+    val institutionKey: String get() = "ibkr"
+
     /**
      * Composable dialog / sheet for gathering user credentials and initiating connection.
      */
@@ -41,7 +44,8 @@ interface BrokerProvider {
  */
 object IbkrFlexBrokerProvider : BrokerProvider {
     override val id: String = "ibkr_flex"
-    override val nameRes: Int = R.string.broker_name_label
+    override val institutionKey: String = "ibkr"
+    override val nameRes: Int = R.string.broker_interactive_brokers
     override val descriptionRes: Int = R.string.broker_auto_sync_body
     override val iconResId: Int? = null
 
@@ -73,5 +77,9 @@ object BrokerProviderRegistry {
 
     fun find(id: String): BrokerProvider? = providers.firstOrNull { it.id == id }
 
+    fun findByInstitution(key: String?): BrokerProvider? = providers.firstOrNull { it.institutionKey == key }
+
     fun all(): List<BrokerProvider> = providers
+
+    fun getProviders(): List<BrokerProvider> = providers
 }

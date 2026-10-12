@@ -233,7 +233,7 @@ fun ManageAccountsScreen(
                                 }
                                 item(key = "investments_add_broker") {
                                     InvestmentsEmptySection(
-                                        onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) },
+                                        onAdd = { onBrokerage(0L, "") },
                                         showTitle = false
                                     )
                                 }
@@ -249,7 +249,7 @@ fun ManageAccountsScreen(
                             }
                             item(key = "investment_empty") {
                                 InvestmentsEmptySection(
-                                    onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) },
+                                    onAdd = { onBrokerage(0L, "") },
                                     showTitle = false
                                 )
                             }

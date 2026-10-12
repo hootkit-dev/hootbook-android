@@ -27,11 +27,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.abs
 import dev.hootkit.core.Category
 import dev.hootkit.core.CategoryTotal
 import dev.hootkit.core.LedgerSummary
@@ -77,6 +80,8 @@ fun SpendingLineChart(
     val themeColors = MaterialTheme.colorScheme
     val series = trendTypes(typeFilters)
     val seriesLabels = series.associateWith { stringResource(it.labelRes) }
+    val suffixMillion = stringResource(R.string.suffix_million)
+    val suffixThousand = stringResource(R.string.suffix_thousand)
 
     val labels =
         remember(data, series, currency, themeColors) {
@@ -99,107 +104,103 @@ fun SpendingLineChart(
             }
         }
 
-    LineChart(
-        modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = Spacing.md),
-        data =
-            series.map { type ->
-                val color = if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
-                Line(
-                    label = seriesLabels.getValue(type),
-                    values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
-                    color = SolidColor(color),
-                    firstGradientFillColor = color.copy(alpha = 0.3f),
-                    secondGradientFillColor = Color.Transparent,
-                    strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
-                    gradientAnimationDelay = 750,
-                    drawStyle = DrawStyle.Stroke(width = 2.dp),
-                    curvedEdges = true,
-                    dotProperties =
-                        DotProperties(
-                            enabled = true,
-                            color = SolidColor(color),
-                            strokeWidth = 3.dp,
-                            radius = 4.dp,
-                            strokeColor = SolidColor(themeColors.surface),
+    val maxVal = data.maxOfOrNull { point ->
+        series.maxOfOrNull { type -> point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 } ?: 0.0
+    } ?: 0.0
+    val axisStart = indicatorWidth(maxVal, currency, suffixMillion, suffixThousand)
+
+    Column {
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(260.dp).padding(top = Spacing.md),
+            data =
+                series.map { type ->
+                    val color = if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
+                    Line(
+                        label = seriesLabels.getValue(type),
+                        values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
+                        color = SolidColor(color),
+                        firstGradientFillColor = color.copy(alpha = 0.3f),
+                        secondGradientFillColor = Color.Transparent,
+                        strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
+                        gradientAnimationDelay = 750,
+                        drawStyle = DrawStyle.Stroke(width = 2.dp),
+                        curvedEdges = true,
+                        dotProperties =
+                            DotProperties(
+                                enabled = true,
+                                color = SolidColor(color),
+                                strokeWidth = 3.dp,
+                                radius = 4.dp,
+                                strokeColor = SolidColor(themeColors.surface),
+                            ),
+                    )
+                },
+            dividerProperties =
+                DividerProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
                         ),
-                )
-            },
-        dividerProperties =
-            DividerProperties(
-                enabled = true,
-                xAxisProperties =
-                    LineProperties(
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                        thickness = 0.dp,
-                    ),
-                yAxisProperties =
-                    LineProperties(
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                        thickness = 0.dp,
-                    ),
-            ),
-        indicatorProperties =
-            HorizontalIndicatorProperties(
-                enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurfaceVariant.copy(0.6f),
-                        textAlign = TextAlign.Center,
-                    ),
-                contentBuilder = { value -> CurrencyFormatter.formatCurrency(value, currency) },
-            ),
-        labelHelperProperties =
-            LabelHelperProperties(
-                enabled = true,
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurface,
-                        textAlign = TextAlign.End,
-                    ),
-            ),
-        labelProperties =
-            LabelProperties(
-                enabled = true,
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurface.copy(0.6f),
-                        textAlign = TextAlign.End,
-                    ),
-                labels = labels,
-                padding = 16.dp,
-                rotation =
-                    LabelProperties.Rotation(
-                        mode = LabelProperties.Rotation.Mode.Force,
-                        degree = -45f,
-                    ),
-            ),
-        zeroLineProperties =
-            ZeroLineProperties(
-                enabled = true,
-                style = StrokeStyle.Dashed(),
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-            ),
-        gridProperties =
-            GridProperties(
-                enabled = true,
-                xAxisProperties =
-                    GridProperties.AxisProperties(
-                        enabled = true,
-                        style = StrokeStyle.Dashed(),
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-                    ),
-                yAxisProperties =
-                    GridProperties.AxisProperties(
-                        enabled = true,
-                        style = StrokeStyle.Dashed(),
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-                    ),
-            ),
-        animationMode = AnimationMode.Together(delayBuilder = { it * 200L }),
-    )
+                    yAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                ),
+            indicatorProperties =
+                HorizontalIndicatorProperties(
+                    enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurfaceVariant.copy(0.6f),
+                            textAlign = TextAlign.Center,
+                        ),
+                    padding = IndicatorPadding,
+                    contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) },
+                ),
+            labelHelperProperties =
+                LabelHelperProperties(
+                    enabled = true,
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurface,
+                            textAlign = TextAlign.End,
+                        ),
+                ),
+            labelProperties =
+                LabelProperties(
+                    enabled = false,
+                    labels = emptyList(),
+                ),
+            zeroLineProperties =
+                ZeroLineProperties(
+                    enabled = true,
+                    style = StrokeStyle.Dashed(),
+                    color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                ),
+            gridProperties =
+                GridProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                    yAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                ),
+            animationMode = AnimationMode.Together(delayBuilder = { it * 200L }),
+            popupProperties = chartPopup(currency),
+        )
+        DateAxis(labels, axisStart)
+    }
 }
 
 @Composable
@@ -212,6 +213,8 @@ fun SpendingBarChart(
     val themeColors = MaterialTheme.colorScheme
     val series = trendTypes(typeFilters)
     val seriesLabels = series.associateWith { stringResource(it.labelRes) }
+    val suffixMillion = stringResource(R.string.suffix_million)
+    val suffixThousand = stringResource(R.string.suffix_thousand)
 
     val columnData =
         remember(data, series, currency, themeColors, seriesLabels) {
@@ -250,92 +253,89 @@ fun SpendingBarChart(
         } }.maxOrNull()?.times(1.2) ?: 0.0
     }
 
-    ColumnChart(
-        modifier = Modifier.fillMaxWidth().height(280.dp).padding(vertical = Spacing.md),
-        data = columnData,
-        maxValue = maxValue,
-        barProperties =
-            BarProperties(
-                cornerRadius =
-                    Bars.Data.Radius.Rectangle(
-                        topLeft = 6.dp,
-                        topRight = 6.dp,
-                        bottomLeft = 6.dp,
-                        bottomRight = 6.dp,
-                    ),
-                spacing = 8.dp,
-                thickness = 12.dp,
-            ),
-        dividerProperties =
-            DividerProperties(
-                enabled = true,
-                xAxisProperties =
-                    LineProperties(
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                        thickness = 0.dp,
-                    ),
-                yAxisProperties =
-                    LineProperties(
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                        thickness = 0.dp,
-                    ),
-            ),
-        indicatorProperties =
-            HorizontalIndicatorProperties(
-                enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurfaceVariant.copy(0.6f),
-                        textAlign = TextAlign.Center,
-                    ),
-                contentBuilder = { value -> CurrencyFormatter.formatCurrency(value, currency) },
-            ),
-        labelHelperProperties =
-            LabelHelperProperties(
-                enabled = true,
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurface,
-                        textAlign = TextAlign.End,
-                    ),
-            ),
-        labelProperties =
-            LabelProperties(
-                enabled = true,
-                textStyle =
-                    TextStyle.Default.copy(
-                        fontSize = 10.sp,
-                        color = themeColors.onSurface.copy(0.6f),
-                        textAlign = TextAlign.End,
-                    ),
-                padding = 16.dp,
-                rotation =
-                    LabelProperties.Rotation(
-                        mode = LabelProperties.Rotation.Mode.Force,
-                        degree = -45f,
-                    ),
-            ),
-        gridProperties =
-            GridProperties(
-                enabled = true,
-                xAxisProperties =
-                    GridProperties.AxisProperties(
-                        enabled = true,
-                        style = StrokeStyle.Dashed(),
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-                    ),
-                yAxisProperties =
-                    GridProperties.AxisProperties(
-                        enabled = true,
-                        style = StrokeStyle.Dashed(),
-                        color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-                    ),
-            ),
-        animationSpec =
-            tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
-    )
+    val maxVal = data.maxOfOrNull { point ->
+        series.maxOfOrNull { type -> point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 } ?: 0.0
+    } ?: 0.0
+    val axisStart = indicatorWidth(maxVal, currency, suffixMillion, suffixThousand)
+
+    Column {
+        ColumnChart(
+            modifier = Modifier.fillMaxWidth().height(260.dp).padding(top = Spacing.md),
+            data = columnData,
+            maxValue = maxValue,
+            barProperties =
+                BarProperties(
+                    cornerRadius =
+                        Bars.Data.Radius.Rectangle(
+                            topLeft = 6.dp,
+                            topRight = 6.dp,
+                            bottomLeft = 6.dp,
+                            bottomRight = 6.dp,
+                        ),
+                    spacing = 8.dp,
+                    thickness = 12.dp,
+                ),
+            dividerProperties =
+                DividerProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                    yAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                ),
+            indicatorProperties =
+                HorizontalIndicatorProperties(
+                    enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurfaceVariant.copy(0.6f),
+                            textAlign = TextAlign.Center,
+                        ),
+                    padding = IndicatorPadding,
+                    contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) },
+                ),
+            labelHelperProperties =
+                LabelHelperProperties(
+                    enabled = true,
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurface,
+                            textAlign = TextAlign.End,
+                        ),
+                ),
+            labelProperties =
+                LabelProperties(
+                    enabled = false,
+                    labels = emptyList(),
+                ),
+            gridProperties =
+                GridProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                    yAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                ),
+            animationSpec =
+                tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
+            popupProperties = chartPopup(currency),
+        )
+        DateAxis(columnData.map { it.label }, axisStart)
+    }
 }
 
 @Composable
@@ -645,3 +645,65 @@ internal fun LedgerSummary.chartAmount(currency: String, incomeOnly: Boolean): B
 internal fun trendTypes(types: Set<TransactionTypeFilter>): List<TransactionTypeFilter> =
     if (TransactionTypeFilter.ALL in types) listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE)
     else listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE).filter { it in types }
+
+private val IndicatorPadding = 12.dp
+
+fun formatPremiumCurrency(value: Double, currency: String, suffixMillion: String, suffixThousand: String): String {
+    val absValue = abs(value)
+    val symbol = CurrencyFormatter.getCurrencySymbol(currency)
+
+    return when {
+        absValue >= 1_000_000 -> {
+            val millions = absValue / 1_000_000
+            val suffix = suffixMillion
+            "${symbol}${String.format("%.1f", millions)}${suffix}"
+        }
+        absValue >= 1_000 -> {
+            val thousands = absValue / 1_000
+            val suffix = suffixThousand
+            "${symbol}${String.format("%.1f", thousands)}${suffix}"
+        }
+        else -> "${symbol}${absValue.toInt()}"
+    }
+}
+
+@Composable
+private fun indicatorWidth(max: Double, currency: String, million: String, thousand: String): androidx.compose.ui.unit.Dp {
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelSmall
+    val density = LocalDensity.current
+    val widest = listOf(max, 0.0).maxOf { measurer.measure(formatPremiumCurrency(it, currency, million, thousand), style).size.width }
+    return with(density) { widest.toDp() } + IndicatorPadding
+}
+
+private fun List<String>.thinned(max: Int = 6): List<String> =
+    if (size <= max) this else (0 until max).map { this[Math.round(it * (size - 1) / (max - 1).toFloat())] }
+
+@Composable
+private fun chartPopup(currency: String) = ir.ehsannarmani.compose_charts.models.PopupProperties(
+    textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.inverseOnSurface),
+    containerColor = MaterialTheme.colorScheme.inverseSurface,
+    contentBuilder = { popup ->
+        CurrencyFormatter.format(
+            BigDecimal.valueOf(popup.value).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros(), currency
+        )
+    },
+)
+
+@Composable
+private fun DateAxis(labels: List<String>, start: androidx.compose.ui.unit.Dp) {
+    val shown = labels.thinned(max = 6)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = start, top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        shown.forEach {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+    }
+}

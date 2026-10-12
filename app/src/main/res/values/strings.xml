@@ -717,4 +717,11 @@
     <string name="add_manually_title">Add manually</string>
     <string name="add_manually_subtitle">Create a bank, card, wallet or investment account manually</string>
     <string name="more_brokers_coming_soon">More brokers coming soon</string>
+    <string name="suffix_million">M</string>
+    <string name="suffix_thousand">k</string>
+    <string name="change_broker">Change</string>
+    <string name="connect_for_auto_sync">Connect for auto-sync</string>
+    <string name="manual_recording_available_below">Or record balance manually below</string>
+    <string name="broker_auto_sync_not_supported">Auto-sync is not available for this broker yet. Please record balance manually below.</string>
+    <string name="broker_interactive_brokers">Interactive Brokers</string>
 </resources>

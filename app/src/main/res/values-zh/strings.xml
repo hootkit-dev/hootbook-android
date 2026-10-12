@@ -654,4 +654,11 @@
     <string name="add_manually_title">手动添加账户</string>
     <string name="add_manually_subtitle">手动记录银行卡、信用卡、现金钱包或投资账户</string>
     <string name="more_brokers_coming_soon">更多券商接入中</string>
+    <string name="suffix_million">百万</string>
+    <string name="suffix_thousand">千</string>
+    <string name="change_broker">更改</string>
+    <string name="connect_for_auto_sync">连接自动同步</string>
+    <string name="manual_recording_available_below">或在下方手动记账</string>
+    <string name="broker_auto_sync_not_supported">当前券商暂不支持自动同步，请在下方手动记账。</string>
+    <string name="broker_interactive_brokers">盈透证券</string>
 </resources>

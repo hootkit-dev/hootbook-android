@@ -11,15 +11,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.ripple
 import io.github.hootkit_dev.hootbook.presentation.ui.components.maskAccountNumber
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.ui.res.painterResource
+import dev.hootkit.core.InstitutionKind
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerProviderRegistry
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -171,6 +179,43 @@ fun EditAccountSheet(
     var addingCurrency by remember { mutableStateOf(false) }
     var editingAddedCurrency by remember { mutableStateOf<String?>(null) }
 
+
+    val chinese = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "zh"
+    val defaultBroker = remember(institutions) {
+        institutions.find { it.key == "ibkr" } ?: institutions.firstOrNull { it.kind == InstitutionKind.BROKER }
+    }
+    val currentBroker = remember(institutions, institutionKey) {
+        institutions.find { it.key == institutionKey && it.kind == InstitutionKind.BROKER } ?: defaultBroker
+    }
+    var showBrokerPickerSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isBroker) {
+        if (isBroker && account == null && (institutionKey == null || institutions.none { it.key == institutionKey && it.kind == InstitutionKind.BROKER })) {
+            defaultBroker?.let { broker ->
+                institutionKey = broker.key
+                bankName = if (chinese) broker.chineseName else broker.englishName
+                iconName = broker.iconName
+                iconResId = IconResolutionUtils.nameToResId(context, broker.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                colorHex = broker.color
+            }
+        }
+    }
+
+    if (showBrokerPickerSheet) {
+        InstitutionPickerSheet(
+            institutions = institutions,
+            brokersOnly = true,
+            onDismiss = { showBrokerPickerSheet = false },
+            onSelected = { institution, name ->
+                institutionKey = institution.key
+                bankName = name
+                iconName = institution.iconName
+                iconResId = IconResolutionUtils.nameToResId(context, institution.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                colorHex = institution.color
+                showBrokerPickerSheet = false
+            }
+        )
+    }
 
     LaunchedEffect(bankName, accountLast4) {
         onClearSaveError()
@@ -482,11 +527,20 @@ fun EditAccountSheet(
                     Surface(
                         onClick = {
                             if (isWallet || !isBroker) {
-                                bankName = ""
-                                accountLast4 = ""
-                                iconResId = R.drawable.type_finance_chart_increasing
-                                iconName = IconResolutionUtils.resIdToName(context, iconResId)
-                                colorHex = "#33B5E5"
+                                val broker = currentBroker ?: defaultBroker
+                                if (broker != null) {
+                                    institutionKey = broker.key
+                                    bankName = if (chinese) broker.chineseName else broker.englishName
+                                    iconName = broker.iconName
+                                    iconResId = IconResolutionUtils.nameToResId(context, broker.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                                    colorHex = broker.color
+                                } else {
+                                    bankName = ""
+                                    accountLast4 = ""
+                                    iconResId = R.drawable.type_finance_chart_increasing
+                                    iconName = IconResolutionUtils.resIdToName(context, iconResId)
+                                    colorHex = "#33B5E5"
+                                }
                             }
                             isBroker = true
                             isCreditCard = false
@@ -532,21 +586,172 @@ fun EditAccountSheet(
                 }
             }
 
-            // Broker: connect for read-only holdings, or keep the manual account below
-            if (isBroker && account == null && brokerAutoSync != null) {
-                brokerAutoSync()
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    Text(
-                        stringResource(R.string.broker_manual_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.semantics { heading() }
-                    )
-                    Text(
-                        stringResource(R.string.broker_manual_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // Broker: pick broker first, show capabilities (auto-sync or note), then details
+            AnimatedVisibility(
+                visible = isBroker && account == null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Section 1: Choose Broker (置顶第一步：选择券商)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.institution_choose_broker),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.semantics { heading() }
+                        )
+
+                        Surface(
+                            onClick = { showBrokerPickerSheet = true },
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                val brokerLogoRes = currentBroker?.iconName?.let {
+                                    IconResolutionUtils.nameToResId(context, it).takeIf { id -> id != 0 }
+                                } ?: R.drawable.type_finance_chart_increasing
+
+                                Image(
+                                    painter = painterResource(brokerLogoRes),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.White)
+                                        .padding(4.dp)
+                                )
+
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = currentBroker?.let { if (chinese) it.chineseName else it.englishName }
+                                            ?: stringResource(R.string.broker_name_label),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = currentBroker?.let { "${it.region} · ${it.currency}" }
+                                            ?: stringResource(R.string.connect_broker_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                TextButton(
+                                    onClick = { showBrokerPickerSheet = true },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.change_broker),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Section 2: Capability for selected broker (第二步：根据所选券商展示能力)
+                    val supportsAutoSync = currentBroker?.key == "ibkr" ||
+                        BrokerProviderRegistry.findByInstitution(currentBroker?.key) != null
+
+                    if (supportsAutoSync && brokerAutoSync != null) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            brokerAutoSync.invoke()
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.AccountBalance,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.manual_recording_available_below),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    } else if (currentBroker != null && !supportsAutoSync) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ShowChart,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.broker_auto_sync_not_supported),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Section 3: Account Details & Balance Header (第三步：填写/确认账户参数)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                    ) {
+                        Text(
+                            stringResource(R.string.broker_manual_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.semantics { heading() }
+                        )
+                        Text(
+                            stringResource(R.string.broker_manual_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -744,8 +949,8 @@ fun EditAccountSheet(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (!isWallet) {
-                    InstitutionPickerButton(institutions = institutions, brokersOnly = isBroker) { institution, name ->
+                if (!isWallet && !isBroker) {
+                    InstitutionPickerButton(institutions = institutions, brokersOnly = false) { institution, name ->
                         bankName = name
                         iconName = institution.iconName
                         iconResId = IconResolutionUtils.nameToResId(context, institution.iconName)

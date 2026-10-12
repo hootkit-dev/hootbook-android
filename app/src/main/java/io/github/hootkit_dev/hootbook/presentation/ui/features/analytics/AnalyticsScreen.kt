@@ -355,7 +355,7 @@ fun AnalyticsScreen(
                     // Analytics Summary
                     item {
                         BlurredAnimatedVisibility(
-                            uiState.summary != null && uiState.transactionCount > 0u,
+                            uiState.summary != null,
                             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
                             exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
                         ) {
