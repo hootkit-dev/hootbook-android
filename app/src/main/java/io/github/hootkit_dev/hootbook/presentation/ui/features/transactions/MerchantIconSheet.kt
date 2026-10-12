@@ -27,7 +27,10 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -175,7 +178,7 @@ fun MerchantIconSheet(
                 stringResource(R.string.merchant_icon_title),
                 style = MaterialTheme.typography.titleLarge,
             )
-            OutlinedTextField(
+            TextField(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
@@ -190,6 +193,8 @@ fun MerchantIconSheet(
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { viewModel.search(query) }),
+                shape = RoundedCornerShape(12.dp),
+                colors = hootbookTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -113,9 +114,11 @@ internal fun BackupActions(blurEffects: Boolean, hazeState: HazeState, viewModel
                 ExportCheckbox(stringResource(R.string.core_backup_legacy), legacy, !state.busy) {
                     legacy = it; viewModel.invalidateInspection(); replaceConfirmed = false; sensitiveConfirmed = false
                 }
-                OutlinedTextField(password, { password = it; viewModel.invalidateInspection(); sensitiveConfirmed = false },
+                TextField(password, { password = it; viewModel.invalidateInspection(); sensitiveConfirmed = false },
                     label = { Text(stringResource(R.string.core_backup_password)) }, singleLine = true,
-                    enabled = !state.busy, visualTransformation = PasswordVisualTransformation())
+                    enabled = !state.busy, visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(12.dp), colors = hootbookTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth())
                 TextButton(onClick = { pick.launch(arrayOf("*/*")) }, enabled = !state.busy) { Text(stringResource(R.string.core_backup_select)) }
                 if (state.source != null) TextButton(onClick = { viewModel.inspect(password.takeIf(String::isNotEmpty), legacy) }, enabled = !state.busy) {
                     Text(stringResource(R.string.core_backup_inspect))
@@ -163,7 +166,9 @@ private fun ExportOptionsDialog(onDismiss: () -> Unit, onConfirm: (Boolean, Bool
             if (brokerage) Text(stringResource(R.string.backup_brokerage_credentials_warning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             ExportCheckbox(stringResource(R.string.backup_ai_key), ai, !busy) { ai = it }
             if (ai) Text(stringResource(R.string.backup_ai_key_warning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            OutlinedTextField(password, { password = it }, singleLine = true, label = { Text(stringResource(R.string.core_backup_password)) }, visualTransformation = PasswordVisualTransformation())
+            TextField(password, { password = it }, singleLine = true, label = { Text(stringResource(R.string.core_backup_password)) },
+                visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(12.dp),
+                colors = hootbookTextFieldColors(), modifier = Modifier.fillMaxWidth())
         } },
         confirmButton = { DialogConfirmButton(stringResource(R.string.export), enabled = !busy, onClick = {
             onConfirm(true, ai, brokerage, password.takeIf(String::isNotEmpty))

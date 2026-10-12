@@ -31,7 +31,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -617,7 +618,7 @@ internal fun IbkrConnectDialog(
                 ) {
                     Text(stringResource(R.string.investments_help))
                 }
-                OutlinedTextField(
+                TextField(
                     value = label,
                     onValueChange = { label = it.take(60) },
                     label = { Text(stringResource(R.string.investments_label)) },
@@ -625,8 +626,9 @@ internal fun IbkrConnectDialog(
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
+                    colors = hootbookTextFieldColors(),
                 )
-                OutlinedTextField(
+                TextField(
                     value = token,
                     onValueChange = { token = it.trim().take(128) },
                     label = { Text("Flex Token") },
@@ -636,8 +638,9 @@ internal fun IbkrConnectDialog(
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth().testTag("flex_token"),
                     shape = MaterialTheme.shapes.large,
+                    colors = hootbookTextFieldColors(),
                 )
-                OutlinedTextField(
+                TextField(
                     value = query,
                     onValueChange = { query = it.trim().take(32) },
                     label = { Text("Query ID") },
@@ -646,6 +649,7 @@ internal fun IbkrConnectDialog(
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth().testTag("flex_query"),
                     shape = MaterialTheme.shapes.large,
+                    colors = hootbookTextFieldColors(),
                 )
                 if (error != null) InvestmentError(error)
                 if (busy) {

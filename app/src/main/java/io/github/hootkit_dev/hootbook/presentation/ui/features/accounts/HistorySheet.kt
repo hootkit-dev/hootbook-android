@@ -43,8 +43,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -347,7 +350,7 @@ private fun HistoryRecordItem(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = editingValue,
                         onValueChange = onEditValueChange,
                         keyboardOptions = KeyboardOptions(
@@ -355,6 +358,8 @@ private fun HistoryRecordItem(
                         ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = hootbookTextFieldColors(),
                         label = { Text(stringResource(R.string.new_balance_label)) },
                         prefix = {
                             Text(

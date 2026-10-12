@@ -25,7 +25,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -414,14 +416,16 @@ private fun DraftForm(
             }
         }
     }
-    OutlinedTextField(
+    TextField(
         value = draft.merchant,
         onValueChange = { onChange(draft.copy(merchant = it)) },
         label = { Text(stringResource(R.string.ai_merchant)) },
         singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = hootbookTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
-    OutlinedTextField(
+    TextField(
         value = draft.amount,
         onValueChange = { onChange(draft.copy(amount = it)) },
         label = { Text(stringResource(R.string.amount)) },
@@ -429,6 +433,8 @@ private fun DraftForm(
         isError = draft.amount.toBigDecimalOrNull()?.takeIf { it.signum() > 0 } == null,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        colors = hootbookTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
     FieldButton(
@@ -457,10 +463,12 @@ private fun DraftForm(
             placeholder = stringResource(R.string.select_target_account),
         )
     }
-    OutlinedTextField(
+    TextField(
         value = draft.notes,
         onValueChange = { onChange(draft.copy(notes = it)) },
         label = { Text(stringResource(R.string.notes)) },
+        shape = RoundedCornerShape(12.dp),
+        colors = hootbookTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
 

@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -72,7 +73,16 @@ fun MerchantIconsScreen(onNavigateBack: () -> Unit, merchant: String? = null, vi
         hasBackButton = true, navigationContent = { NavigationContent(onNavigateBack) }) }) { padding ->
         Column(Modifier.fillMaxSize().hazeSource(haze).verticalScroll(rememberScrollState()).padding(padding)
             .padding(Dimensions.Padding.content), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            OutlinedTextField(name, { name = it }, enabled = !busy, label = { Text(stringResource(R.string.core_ui_merchant_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            TextField(
+                name,
+                { name = it },
+                enabled = !busy,
+                label = { Text(stringResource(R.string.core_ui_merchant_name)) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = hootbookTextFieldColors(),
+                modifier = Modifier.fillMaxWidth()
+            )
             image?.let { AsyncImage(it, name, Modifier.size(96.dp)) }
             Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
                 ListItem(headline = { Text(stringResource(R.string.merchant_icon_search_hint)) },

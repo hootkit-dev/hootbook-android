@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -73,12 +74,14 @@ fun InstitutionPickerButton(
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(horizontal = 24.dp).semantics { heading() }
                 )
-                OutlinedTextField(
+                TextField(
                     value = query,
                     onValueChange = { query = it },
                     label = { Text(stringResource(R.string.institution_search)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
                 )
                 Row(

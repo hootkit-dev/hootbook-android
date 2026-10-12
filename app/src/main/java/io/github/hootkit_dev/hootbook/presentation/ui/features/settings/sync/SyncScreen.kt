@@ -50,8 +50,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -306,7 +309,7 @@ private fun PassphraseSection(
             Text(stringResource(R.string.sync_passphrase_warning), style = MaterialTheme.typography.bodyMedium)
         }
     }
-    OutlinedTextField(
+    TextField(
         value = passphrase,
         onValueChange = { passphrase = it; onEdit() },
         label = { Text(stringResource(R.string.sync_passphrase)) },
@@ -325,6 +328,8 @@ private fun PassphraseSection(
                 onClick = { visible = !visible }
             )
         },
+        shape = RoundedCornerShape(12.dp),
+        colors = hootbookTextFieldColors(),
         enabled = !state.busy,
         modifier = Modifier.fillMaxWidth()
     )

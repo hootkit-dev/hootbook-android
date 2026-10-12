@@ -46,8 +46,10 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -264,11 +266,13 @@ fun AiAssistantScreen(
                         )
                     }
                     item(key = "request") {
-                        OutlinedTextField(
+                        TextField(
                             value = state.request,
                             onValueChange = viewModel::request,
                             placeholder = { Text(stringResource(R.string.ai_request_hint)) },
                             minLines = 3,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = hootbookTextFieldColors(),
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -571,7 +575,7 @@ private fun ProviderForm(
     }
     // Claude keeps its address editable for a proxy or relay
     if (preset != AiPreset.OPENROUTER) {
-        OutlinedTextField(
+        TextField(
             value = baseUrl,
             onValueChange = { baseUrl = it },
             singleLine = true,
@@ -583,16 +587,20 @@ private fun ProviderForm(
                 )
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            shape = RoundedCornerShape(12.dp),
+            colors = hootbookTextFieldColors(),
             modifier = Modifier.fillMaxWidth(),
         )
     }
-    OutlinedTextField(
+    TextField(
         value = apiKey,
         onValueChange = { apiKey = it },
         singleLine = true,
         label = { Text(stringResource(R.string.ai_api_key)) },
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        shape = RoundedCornerShape(12.dp),
+        colors = hootbookTextFieldColors(),
         modifier = Modifier.fillMaxWidth(),
     )
     if (ready) {
@@ -728,12 +736,14 @@ private fun ModelPicker(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
-        OutlinedTextField(
+        TextField(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             placeholder = { Text(stringResource(R.string.ai_search_models)) },
+            shape = RoundedCornerShape(12.dp),
+            colors = hootbookTextFieldColors(),
             modifier = Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
         )
         LazyColumn(contentPadding = PaddingValues(vertical = Spacing.sm)) {
@@ -880,13 +890,15 @@ private fun PasswordDialog(name: String, onResult: (String?) -> Unit) {
         onDismissRequest = { onResult(null) },
         title = { Text(stringResource(R.string.ai_pdf_password_title, name)) },
         text = {
-            OutlinedTextField(
+            TextField(
                 value = password,
                 onValueChange = { password = it },
                 singleLine = true,
                 label = { Text(stringResource(R.string.ai_pdf_password)) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                shape = RoundedCornerShape(12.dp),
+                colors = hootbookTextFieldColors(),
             )
         },
         confirmButton = {

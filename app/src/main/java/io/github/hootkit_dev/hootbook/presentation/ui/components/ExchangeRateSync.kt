@@ -43,13 +43,15 @@ fun CurrencyCalculatorDialog(
         title = { Text(stringResource(R.string.rate_calculator)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                OutlinedTextField(
+                TextField(
                     value = amountText,
                     onValueChange = { text -> amountText = text.filter { it.isDigit() || it == '.' } },
                     label = { Text(stringResource(R.string.rate_calculator_amount)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     trailingIcon = { CurrencyPicker(from, currencies) { from = it } },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {

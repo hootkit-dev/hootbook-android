@@ -58,8 +58,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -277,20 +279,24 @@ private fun QuickTemplateEditDialog(
         title = { Text(stringResource(R.string.quick_template_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                OutlinedTextField(
+                TextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.quick_template_name)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                TextField(
                     value = amountText,
                     onValueChange = { amountText = it },
                     label = { Text(stringResource(R.string.quick_template_amount)) },
                     isError = amountInvalid,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
