@@ -12,7 +12,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -23,8 +23,8 @@ import coil3.compose.AsyncImage
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.data.preferences.HomeWidget
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.coreDateText
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.CoreKindLabel
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon
 
 @Composable

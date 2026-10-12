@@ -7,7 +7,6 @@ import java.time.LocalDateTime as JavaDateTime
 internal fun JavaDate.coreDate()=LocalDate(year,monthValue.toUByte(),dayOfMonth.toUByte())
 internal fun LocalDate.javaDate()=JavaDate.of(year,month.toInt(),day.toInt())
 internal fun JavaDateTime.coreTime()=LocalDateTime(year,monthValue.toUByte(),dayOfMonth.toUByte(),hour.toUByte(),minute.toUByte(),second.toUByte(),nano.toUInt())
-fun LocalDate.coreDateText()=javaDate().toString()
 /** Query-day boundaries are UI input windows, never budget-cycle or money calculations. */
 internal fun dayFilter(date:JavaDate,base:TransactionFilter)=base.copy(from=date.atStartOfDay().coreTime(),to=date.plusDays(1).atStartOfDay().coreTime())
 internal fun emptyCoreFilter()=TransactionFilter(null,null,emptyList(),emptyList(),emptyList(),null,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)

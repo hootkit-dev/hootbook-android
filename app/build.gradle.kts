@@ -227,6 +227,10 @@ androidComponents {
     }
 }
 
+composeCompiler {
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose-stability.conf"))
+}
+
 // ./gradlew :app:compileStandardReleaseKotlin -PcomposeReports
 // writes stability reports and metrics to app/build/compose_compiler.
 if (project.hasProperty("composeReports")) {

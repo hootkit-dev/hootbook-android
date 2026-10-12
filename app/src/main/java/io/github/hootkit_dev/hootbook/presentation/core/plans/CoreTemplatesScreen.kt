@@ -19,7 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreTextField
-import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreKindLabel
+import io.github.hootkit_dev.hootbook.presentation.format.CoreKindLabel
 import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIcon
 
 @Composable

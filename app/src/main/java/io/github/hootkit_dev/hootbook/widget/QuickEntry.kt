@@ -17,7 +17,7 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.CoreProcess
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.di.ApplicationScope
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.*

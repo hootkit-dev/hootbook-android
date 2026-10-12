@@ -2,7 +2,7 @@ package io.github.hootkit_dev.hootbook.widget
 
 import dev.hootkit.core.QuickTemplate
 import dev.hootkit.core.TransactionKind
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import java.math.BigDecimal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

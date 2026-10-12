@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.analytics
+package io.github.hootkit_dev.hootbook.presentation.format
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

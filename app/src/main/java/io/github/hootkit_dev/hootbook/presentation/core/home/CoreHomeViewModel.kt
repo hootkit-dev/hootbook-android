@@ -12,8 +12,8 @@ import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.data.preferences.HomeWidget
 import io.github.hootkit_dev.hootbook.presentation.core.analytics.*
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreDisplayedMoney
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

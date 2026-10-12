@@ -1,6 +1,6 @@
 package io.github.hootkit_dev.hootbook.utils
 
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale

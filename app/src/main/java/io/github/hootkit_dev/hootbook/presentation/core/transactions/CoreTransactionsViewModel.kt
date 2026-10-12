@@ -6,8 +6,8 @@ import android.os.Bundle
 import java.io.File
 import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreDisplayedMoney
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel

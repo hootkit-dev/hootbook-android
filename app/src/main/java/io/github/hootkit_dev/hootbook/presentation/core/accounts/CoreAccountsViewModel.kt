@@ -3,8 +3,8 @@ package io.github.hootkit_dev.hootbook.presentation.core.accounts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreMoneyPresentation
-import io.github.hootkit_dev.hootbook.presentation.core.common.CoreDisplayedMoney
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.CoreDisplayedMoney
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.hootkit.core.*

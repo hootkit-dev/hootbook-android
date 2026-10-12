@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.core.common
+package io.github.hootkit_dev.hootbook.presentation.format
 
 import dev.hootkit.core.CurrencyInterface
 import java.math.BigDecimal
