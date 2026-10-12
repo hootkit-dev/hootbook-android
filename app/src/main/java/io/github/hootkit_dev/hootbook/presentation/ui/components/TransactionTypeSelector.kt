@@ -2,6 +2,8 @@ package io.github.hootkit_dev.hootbook.presentation.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -13,17 +15,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.hootkit.core.TransactionKind
 import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.presentation.format.transactionKindFullLabelRes
 import io.github.hootkit_dev.hootbook.presentation.format.transactionKindLabelRes
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionTypeSelector(
     selectedKind: TransactionKind,
@@ -46,38 +51,47 @@ fun TransactionTypeSelector(
 
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         primaryKinds.forEach { kind ->
             val isSelected = selectedKind == kind
-            FilterChip(
-                selected = isSelected,
+            Surface(
                 onClick = { onSelectKind(kind) },
-                label = {
-                    Text(
-                        text = stringResource(kind.transactionKindLabelRes()),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                },
-                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    labelColor = MaterialTheme.colorScheme.onSurface
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    borderWidth = 0.dp,
-                    borderColor = Color.Transparent,
-                    selected = isSelected,
-                    enabled = true
-                )
-            )
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .weight(1f)
+                    .minimumInteractiveComponentSize()
+                    .height(40.dp)
+                    .semantics {
+                        role = Role.RadioButton
+                        this.selected = isSelected
+                    }
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp)
+                ) {
+                    BasicText(
+                        text = stringResource(kind.transactionKindLabelRes()),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        ),
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 11.sp,
+                            maxFontSize = MaterialTheme.typography.labelLarge.fontSize,
+                            stepSize = 0.5.sp
+                        )
+                    )
+                }
+            }
         }
 
         Box(modifier = Modifier.weight(1f)) {
@@ -87,40 +101,51 @@ fun TransactionTypeSelector(
                 stringResource(R.string.type_more)
             }
 
-            FilterChip(
-                selected = isSecondarySelected,
+            Surface(
                 onClick = { menuExpanded = true },
-                label = {
-                    Text(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSecondarySelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = if (isSecondarySelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .minimumInteractiveComponentSize()
+                    .height(40.dp)
+                    .semantics {
+                        role = Role.RadioButton
+                        this.selected = isSecondarySelected
+                    }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BasicText(
                         text = moreLabel,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = if (isSecondarySelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSecondarySelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        ),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 10.sp,
+                            maxFontSize = MaterialTheme.typography.labelLarge.fontSize,
+                            stepSize = 0.5.sp
+                        ),
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                },
-                trailingIcon = {
+                    Spacer(Modifier.width(2.dp))
                     Icon(
                         imageVector = Icons.Rounded.ArrowDropDown,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp),
+                        tint = if (isSecondarySelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    labelColor = MaterialTheme.colorScheme.onSurface
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    borderWidth = 0.dp,
-                    borderColor = Color.Transparent,
-                    selected = isSecondarySelected,
-                    enabled = true
-                )
-            )
+                }
+            }
 
             DropdownMenu(
                 expanded = menuExpanded,
@@ -133,7 +158,7 @@ fun TransactionTypeSelector(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = stringResource(kind.transactionKindLabelRes()),
+                                text = stringResource(kind.transactionKindFullLabelRes()),
                                 fontWeight = if (isKindSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         },

@@ -261,6 +261,7 @@ internal fun WelcomeStep(syncAvailable: Boolean, onSync: () -> Unit, onImportBac
             description = stringResource(R.string.onboarding_import_description),
             onClick = onImportBackup
         )
+        Spacer(Modifier.height(32.dp))
     }
 }
 

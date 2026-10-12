@@ -20,5 +20,11 @@ fun dev.hootkit.core.TransactionKind.transactionKindLabelRes(): Int = when (this
     dev.hootkit.core.TransactionKind.UNKNOWN -> io.github.hootkit_dev.hootbook.R.string.core_kind_unknown
 }
 
+fun dev.hootkit.core.TransactionKind.transactionKindFullLabelRes(): Int = when (this) {
+    dev.hootkit.core.TransactionKind.LOAN_OUT -> io.github.hootkit_dev.hootbook.R.string.type_loan_out_full
+    dev.hootkit.core.TransactionKind.LOAN_IN -> io.github.hootkit_dev.hootbook.R.string.type_loan_in_full
+    else -> transactionKindLabelRes()
+}
+
 /** Unsigned Core clock fields must be unboxed before Java integer formatting. */
 fun coreClockPart(value: UByte): String = String.format("%02d", value.toInt())

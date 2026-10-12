@@ -352,6 +352,8 @@
     <string name="type_expense">支出</string>
     <string name="type_loan_out">借出</string>
     <string name="type_loan_in">借入</string>
+    <string name="type_loan_out_full">借出／还出</string>
+    <string name="type_loan_in_full">借入／还入</string>
     <string name="type_more">更多</string>
     <string name="estimated_amount_format">预计 %1$s</string>
     <string name="net">净额</string>
