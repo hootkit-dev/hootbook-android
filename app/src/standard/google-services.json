@@ -61,6 +61,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "382165299926-mu7lkfbu49qe1kqg82ajn95dhlcjlesq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.github.hootkit_dev.hootbook",
+            "certificate_hash": "3c6b6062eac2156f0550d5c142eccedef73fe047"
+          }
+        },
+        {
           "client_id": "382165299926-0gs2f6jivkmeu0ktn0r6iuj2d4qscq8b.apps.googleusercontent.com",
           "client_type": 3
         }
