@@ -407,7 +407,7 @@ internal fun InvestmentsContent(
                             onDisconnect = onDisconnect,
                             onSelect = onSelect,
                             onAccountHistory = onAccountHistory,
-                            onManageAccounts = onManageAccounts,
+                            onAddInvestment = onAddInvestment,
                             onConnect = onConnect,
                         )
                     }
@@ -425,7 +425,7 @@ private fun LazyListScope.overviewItems(
     onDisconnect: (Long?) -> Unit,
     onSelect: (BrokerAccountRef?) -> Unit,
     onAccountHistory: (String) -> Unit,
-    onManageAccounts: () -> Unit,
+    onAddInvestment: () -> Unit,
     onConnect: (String?) -> Unit,
 ) {
     // 1. Net worth card (if accounts exist)
@@ -591,108 +591,73 @@ private fun LazyListScope.overviewItems(
     }
 
     // 4. Investment ledger accounts section
-    item(key = "ledger_accounts") {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SectionHeader(title = stringResource(R.string.core_invest_ledger_accounts))
-            val totalCount = state.investmentAccounts.size + 1
+    if (state.investmentAccounts.isNotEmpty()) {
+        item(key = "ledger_accounts") {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(1.5.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                state.investmentAccounts.forEachIndexed { index, ledger ->
-                    ListItem(
-                        headline = { Text(ledger.name, fontWeight = FontWeight.Medium) },
-                        supporting = {
-                            val details =
-                                listOfNotNull(
-                                    ledger.securities?.let {
-                                        stringResource(
-                                            R.string.core_invest_securities,
-                                            CurrencyFormatter.format(it.amount, it.currency),
-                                        )
-                                    },
-                                    ledger.broker?.let {
-                                        stringResource(
-                                            R.string.core_invest_linked_broker,
-                                            it.brokerAccountId,
-                                            investmentDate(it.asOf),
-                                        )
-                                    },
-                                    if (!ledger.totalComplete)
-                                        stringResource(R.string.core_invest_incomplete)
-                                    else null,
-                                ).joinToString(" · ").ifBlank {
-                                    stringResource(R.string.core_invest_cash_history)
+                SectionHeader(title = stringResource(R.string.core_invest_ledger_accounts))
+                val totalCount = state.investmentAccounts.size
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(1.5.dp),
+                ) {
+                    state.investmentAccounts.forEachIndexed { index, ledger ->
+                        ListItem(
+                            headline = { Text(ledger.name, fontWeight = FontWeight.Medium) },
+                            supporting = {
+                                val details =
+                                    listOfNotNull(
+                                        ledger.securities?.let {
+                                            stringResource(
+                                                R.string.core_invest_securities,
+                                                CurrencyFormatter.format(it.amount, it.currency),
+                                            )
+                                        },
+                                        ledger.broker?.let {
+                                            stringResource(
+                                                R.string.core_invest_linked_broker,
+                                                it.brokerAccountId,
+                                                investmentDate(it.asOf),
+                                            )
+                                        },
+                                        if (!ledger.totalComplete)
+                                            stringResource(R.string.core_invest_incomplete)
+                                        else null,
+                                    ).joinToString(" · ").ifBlank {
+                                        stringResource(R.string.core_invest_cash_history)
+                                    }
+                                Text(details)
+                            },
+                            trailing = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(
+                                        text =
+                                            CurrencyFormatter.format(
+                                                ledger.total.amount,
+                                                ledger.total.currency,
+                                            ),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
+                                    )
                                 }
-                            Text(details)
-                        },
-                        trailing = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text =
-                                        CurrencyFormatter.format(
-                                            ledger.total.amount,
-                                            ledger.total.currency,
-                                        ),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Icon(
-                                    imageVector = Icons.Rounded.ChevronRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        },
-                        onClick = { if (enabled) onAccountHistory(ledger.id) },
-                        shape = ListItemPosition.from(index, totalCount).toShape(),
-                        padding = PaddingValues(0.dp),
-                    )
+                            },
+                            onClick = { if (enabled) onAccountHistory(ledger.id) },
+                            shape = ListItemPosition.from(index, totalCount).toShape(),
+                            padding = PaddingValues(0.dp),
+                        )
+                    }
                 }
-
-                // Entry row: [🏛️ AccountBalance Icon with agy rounded badge] "Add or manage investment accounts"
-                ListItem(
-                    leading = {
-                        Box(
-                            modifier =
-                                Modifier.size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AccountBalance,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
-                    },
-                    headline = {
-                        Text(
-                            text = stringResource(R.string.core_invest_manage_accounts),
-                            fontWeight = FontWeight.Medium,
-                        )
-                    },
-                    trailing = {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    },
-                    onClick = onManageAccounts,
-                    shape = ListItemPosition.from(state.investmentAccounts.size, totalCount).toShape(),
-                    padding = PaddingValues(0.dp),
-                )
             }
         }
     }
@@ -744,7 +709,7 @@ private fun LazyListScope.overviewItems(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         },
-                        onClick = { if (enabled) onConnect(provider.id) },
+                        onClick = { if (enabled) onAddInvestment() },
                         shape = ListItemPosition.from(index, providers.size).toShape(),
                         padding = PaddingValues(0.dp),
                     )

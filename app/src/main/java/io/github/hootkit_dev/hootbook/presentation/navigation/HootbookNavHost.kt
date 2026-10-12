@@ -502,12 +502,17 @@ fun HootbookNavHost(
                                     LaunchedEffect(route, state.loading) {
                                         val connection = route.connectionId?.toLongOrNull()
                                         val account = route.accountId
-                                        if (!state.loading && !opened && connection != null && account != null) {
+                                        if (!state.loading && !opened && connection != null && connection > 0L && !account.isNullOrBlank()) {
                                             opened = true
                                             vm.selectAccount(BrokerAccountRef(connection, account))
                                         }
                                     }
-                                    InvestmentsScreen(back, { go(ManageAccounts) }, { go(AddAccount(category = AccountCategory.INVESTMENTS.name)) }, vm)
+                                    InvestmentsScreen(
+                                        onNavigateBack = back,
+                                        onManageManualAccounts = back,
+                                        onAddInvestment = { go(AddAccount(category = AccountCategory.INVESTMENTS.name)) },
+                                        viewModel = vm
+                                    )
                                 }
                             }
                             composable<AiAssistant>(
