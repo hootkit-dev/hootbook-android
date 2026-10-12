@@ -409,6 +409,9 @@
     <string name="type_investment">Investment</string>
     <string name="type_income">Income</string>
     <string name="type_expense">Expense</string>
+    <string name="type_loan_out">Loan Out</string>
+    <string name="type_loan_in">Loan In</string>
+    <string name="type_more">More</string>
     <!-- Estimated amounts -->
     <string name="estimated_amount_format">est. %1$s</string>
     <string name="net">Net</string>

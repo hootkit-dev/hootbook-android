@@ -110,6 +110,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionTypeSelector
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
@@ -1180,52 +1181,10 @@ private fun EditableTransactionHeader(
 
             // Transaction Type
             Column(modifier = Modifier.fillMaxWidth()) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TransactionKind.entries.filter { it != TransactionKind.UNKNOWN }.forEach { type ->
-                        FilterChip(
-                            selected = transaction.kind == type,
-                            onClick = { viewModel.updateTransactionType(type) },
-                            label = {
-                                Text(
-                                    text = stringResource(type.transactionKindLabelRes()),
-                                    maxLines = 1
-                                )
-                            },
-                            leadingIcon = if (transaction.kind == type) {
-                                {
-                                    Icon(
-                                         imageVector = when (type) {
-                                             TransactionKind.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
-                                             TransactionKind.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                                             TransactionKind.TRANSFER -> Icons.Rounded.SwapHoriz
-                                             TransactionKind.INVESTMENT -> Icons.AutoMirrored.Filled.ShowChart
-                                             TransactionKind.UNKNOWN -> Icons.Rounded.SwapHoriz
-                                             TransactionKind.LOAN_OUT -> Icons.AutoMirrored.Filled.TrendingDown
-                                             TransactionKind.LOAN_IN -> Icons.AutoMirrored.Filled.TrendingUp
-                                         },
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                }
-                            } else null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderWidth = 0.dp,
-                                selected = transaction.kind == type,
-                                enabled = true
-                            ),
-                        )
-                    }
-                }
+                TransactionTypeSelector(
+                    selectedKind = transaction.kind,
+                    onSelectKind = { viewModel.updateTransactionType(it) }
+                )
             }
 
             // Date and Time

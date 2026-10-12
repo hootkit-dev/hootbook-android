@@ -15,6 +15,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionTypeSelector
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material.icons.rounded.Bolt
 
@@ -242,42 +243,10 @@ fun TransactionTabContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TransactionKind.entries.filter { it != TransactionKind.UNKNOWN }.forEach { type ->
-                        FilterChip(
-                            selected = draft.kind == type,
-                            onClick = { viewModel.updateTransactionType(type) },
-                            label = {
-                                Text(stringResource(type.transactionKindLabelRes()))
-                            },
-                            leadingIcon =
-                                if (draft.kind == type) {
-                                    {
-                                        Icon(
-                                            Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderWidth = 0.dp,
-                                selected = draft.kind == type,
-                                enabled = true
-                            ),
-                        )
-                    }
-                }
+                TransactionTypeSelector(
+                    selectedKind = draft.kind,
+                    onSelectKind = { viewModel.updateTransactionType(it) }
+                )
             }
             // Date and Time Selection
             Row(
