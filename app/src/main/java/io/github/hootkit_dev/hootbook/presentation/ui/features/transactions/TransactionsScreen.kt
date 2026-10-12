@@ -166,25 +166,10 @@ fun TransactionsScreen(
     onTransactionSelected: ((String) -> Unit)? = null
 ) {
     var showExport by rememberSaveable { mutableStateOf(false) }
-    var detailTransactionId by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val view = LocalView.current
     val uiState by transactionsViewModel.uiState.collectAsStateWithLifecycle()
     if (showExport) ExportTransactionsDialog(filter = uiState.filter, total = uiState.total, onDismiss = { showExport = false })
-    detailTransactionId?.let { id ->
-        val transaction = uiState.transactions.firstOrNull { it.id == id }
-        if (transaction != null) {
-            TransactionSummarySheet(
-                transaction = transaction,
-                categories = uiState.categories, accounts = uiState.accounts,
-                onDismiss = { detailTransactionId = null },
-                onOpenDetails = {
-                    detailTransactionId = null
-                    onTransactionClick(id, "transaction_$id")
-                }
-            )
-        }
-    }
     val searchQuery = uiState.filter.text.orEmpty()
     val selectedPeriod = uiState.period
     val categoryFilter = uiState.filter.categoryIds
@@ -739,7 +724,7 @@ fun TransactionsScreen(
                                         shape = position.toShape(),
                                         onClick = {
                                             onTransactionSelected?.invoke(transaction.id)
-                                                ?: run { detailTransactionId = transaction.id }
+                                                ?: onTransactionClick(transaction.id, "transaction_${transaction.id}")
                                         },
                                         isSelectionMode = selectionMode,
                                         isSelected = selectedTransactionIds.contains(transaction.id),
