@@ -1,4 +1,6 @@
 {
+  "coreVersion": "0.1.0",
+  "coreReleaseTag": "v0.1.0",
   "coreCommit": "9ca2916045e5d5145776ec75f2ea723e022f0a61",
   "specCommit": "e662bb9c876c52d4672e80da5977bc7e32c664f9",
   "uniffiVersion": "0.29.5",

@@ -55,6 +55,8 @@ docs/interview prep/
 # Release artifacts
 *.apk
 *.aab
+*.aar
+core-bindings/libs/
 app/release/
 app/build/outputs/
 RELEASE_NOTES.md
@@ -70,3 +72,8 @@ deploy.sh
 
 # Local persistent debug signing configuration (private)
 .debug-signing/
+
+# Python cache
+__pycache__/
+*.pyc
+

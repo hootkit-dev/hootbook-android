@@ -14,55 +14,28 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Require Core repository credential
-        env:
-          CORE_REPO_READ_TOKEN: ${{ secrets.CORE_REPO_READ_TOKEN }}
-        run: |
-          if [ -z "$CORE_REPO_READ_TOKEN" ]; then
-            echo "::error::Missing CORE_REPO_READ_TOKEN repository secret. See docs/ci-secrets.md."
-            exit 1
-          fi
-      - name: Read pinned Core commit
-        id: core-pin
-        run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          pin = json.load(open("core-bindings/core.lock.json"))
-          print("commit=" + pin["coreCommit"])
-          PY
-      - uses: actions/checkout@v4
-        with:
-          repository: hootkit-dev/hootkit-core
-          ref: ${{ steps.core-pin.outputs.commit }}
-          path: .core-source
-          token: ${{ secrets.CORE_REPO_READ_TOKEN }}
-          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: temurin
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: '1.97.0'
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Install pinned NDK
-        run: sdkmanager "ndk;28.2.13676358"
+      - name: Set up Core release
+        uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ~/.cargo/registry
-            core-bindings/build/rust
-          key: ${{ runner.os }}-core-${{ hashFiles('core-bindings/core.lock.json', 'scripts/core/*.py', '**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+          key: ${{ runner.os }}-core-gradle-${{ hashFiles('core-bindings/core.lock.json', '**/*.gradle.kts', 'gradle/libs.versions.toml') }}
       - name: Core platform tests, Android test APK and native packaging
         run: |
           ./gradlew :core-platform:testDebugUnitTest :core-platform:lintDebug \
             :core-bindings:assembleDebug :core-platform:assembleDebugAndroidTest \
-            -PhootkitCoreDir="$PWD/.core-source" --no-configuration-cache
+            --no-configuration-cache
           PYTHONDONTWRITEBYTECODE=1 python3 scripts/core/verify.py
       - uses: actions/upload-artifact@v4
         if: always()
@@ -73,7 +46,6 @@ jobs:
             core-platform/build/reports/lint-results-debug.html
             core-platform/build/outputs/apk/androidTest/debug/
             core-bindings/build/outputs/aar/
-            core-bindings/build/generated/*-provenance.json
           retention-days: 7
   app-tests:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository

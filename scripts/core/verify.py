@@ -59,22 +59,27 @@ def main():
         verify_runner(args.runner_apk)
         return
     directory = ROOT / "core-bindings/build/generated"
-    bindings = json.loads((directory / "bindings-provenance.json").read_text())
-    native = json.loads((directory / "native-provenance.json").read_text())
+    filename = build.LIBRARY_FILE
     lock = build.LOCK
-    contract = build.packaging_contract()
-    require(bindings.get("packaging") == native.get("packaging") == contract, "Generated loader/native packaging contract mismatch")
-    filename = contract["libraryFile"]
-    for field in lock:
-        require(bindings[field] == native[field] == lock[field], f"Provenance mismatch: {field}")
-    for name, sha in bindings["bindings"].items():
-        require(build.sha(directory / "kotlin" / name) == sha, "Generated binding hash mismatch")
-    require(set(native["libraries"]) == set(lock["abis"]), "Native ABI coverage mismatch")
-    for abi, info in native["libraries"].items():
-        require(build.verify_elf(directory / "jniLibs" / abi / filename, abi) == info,
-                f"Native library mismatch: {abi}")
-    print(f"PASS: generated loader {contract['libraryName']} matches four native paths {filename}")
-    print("PASS: same pinned source for Kotlin and four Android ABI libraries; ELF 16 KB alignment")
+    has_source_provenance = (directory / "bindings-provenance.json").exists() and (directory / "native-provenance.json").exists()
+
+    if has_source_provenance:
+        bindings = json.loads((directory / "bindings-provenance.json").read_text())
+        native = json.loads((directory / "native-provenance.json").read_text())
+        contract = build.packaging_contract()
+        require(bindings.get("packaging") == native.get("packaging") == contract, "Generated loader/native packaging contract mismatch")
+        filename = contract["libraryFile"]
+        for field in ["coreCommit", "specCommit", "uniffiVersion", "rustVersion", "ndkVersion", "minSdk", "abis"]:
+            if field in lock:
+                require(bindings.get(field) == native.get(field) == lock[field], f"Provenance mismatch: {field}")
+        for name, sha in bindings["bindings"].items():
+            require(build.sha(directory / "kotlin" / name) == sha, "Generated binding hash mismatch")
+        require(set(native["libraries"]) == set(lock["abis"]), "Native ABI coverage mismatch")
+        for abi, info in native["libraries"].items():
+            require(build.verify_elf(directory / "jniLibs" / abi / filename, abi) == info,
+                    f"Native library mismatch: {abi}")
+        print(f"PASS: generated loader {contract['libraryName']} matches four native paths {filename}")
+        print("PASS: same pinned source for Kotlin and four Android ABI libraries; ELF 16 KB alignment")
 
     aar = ROOT / "core-bindings/build/outputs/aar/core-bindings-debug.aar"
     with zipfile.ZipFile(aar) as archive:
@@ -82,11 +87,26 @@ def main():
                   if name.startswith("jni/") and name.endswith("/" + filename)}
         require(not any(name.endswith("/libhootkit_core.so") for name in archive.namelist()), "Stale native library basename packaged")
         require(actual == set(lock["abis"]), "Packaged ABI coverage mismatch")
-        for abi, info in native["libraries"].items():
-            require(hashlib.sha256(archive.read(f"jni/{abi}/{filename}")).hexdigest() == info["sha256"],
-                    f"AAR library hash mismatch: {abi}")
-        with zipfile.ZipFile(io.BytesIO(archive.read("classes.jar"))) as classes:
-            require("dev/hootkit/core/HootKitCore.class" in classes.namelist(), "Generated API absent from AAR")
+        if has_source_provenance:
+            for abi, info in native["libraries"].items():
+                require(hashlib.sha256(archive.read(f"jni/{abi}/{filename}")).hexdigest() == info["sha256"],
+                        f"AAR library hash mismatch: {abi}")
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                for abi in lock["abis"]:
+                    p = Path(temp_dir) / f"{abi}.so"
+                    p.write_bytes(archive.read(f"jni/{abi}/{filename}"))
+                    build.verify_elf(p, abi)
+            print("PASS: prebuilt AAR covers all four ABIs with verified ELF 16 KB alignment")
+        class_entries = set()
+        if "classes.jar" in archive.namelist():
+            with zipfile.ZipFile(io.BytesIO(archive.read("classes.jar"))) as classes:
+                class_entries.update(classes.namelist())
+        for name in archive.namelist():
+            if name.startswith("libs/") and name.endswith(".jar"):
+                with zipfile.ZipFile(io.BytesIO(archive.read(name))) as classes:
+                    class_entries.update(classes.namelist())
+        require("dev/hootkit/core/HootKitCore.class" in class_entries, "Generated API absent from AAR")
         require("proguard.txt" in archive.namelist(), "Consumer R8 rules absent")
     print("PASS: bindings AAR contains generated API, all four exact native libraries and consumer rules")
 
