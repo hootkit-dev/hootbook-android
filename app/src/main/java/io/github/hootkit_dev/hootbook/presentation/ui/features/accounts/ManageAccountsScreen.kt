@@ -130,7 +130,6 @@ fun ManageAccountsScreen(
     val accounts = uiState.overview?.accounts.orEmpty().filter { category == null || it.category() == category }
     val connections = uiState.connections.takeIf { category == null || category == AccountCategory.INVESTMENTS }.orEmpty()
     val sections = remember(accounts) { accounts.accountSections() }
-    var expanded by remember { mutableStateOf(emptySet<AccountCategory>()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
@@ -178,27 +177,81 @@ fun ManageAccountsScreen(
                     contentPadding = PaddingValues(start = Dimensions.Padding.content, end = Dimensions.Padding.content,
                         top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
                         bottom = 96.dp + paddingValues.calculateBottomPadding()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     sections.forEach { (kind, members) ->
                         if (members.isNotEmpty() || (kind == AccountCategory.INVESTMENTS && connections.isNotEmpty())) {
-                            item(key = "category_$kind", contentType = "category_card") {
-                                AccountCategoryCard(
-                                    kind = kind,
-                                    accounts = members,
-                                    connections = if (kind == AccountCategory.INVESTMENTS) connections else emptyList(),
-                                    expanded = (category != null || kind in expanded),
-                                    onToggle = if (category == null) ({
-                                        expanded = if (kind in expanded) expanded - kind else expanded + kind
-                                    }) else null,
-                                    titleOverride = category?.titleRes,
-                                    onNavigateToAccountDetail = onNavigateToAccountDetail,
-                                    onBrokerage = onBrokerage,
-                                    onNavigateToAddAccount = onNavigateToAddAccount,
+                            item(key = "header_$kind") {
+                                val count = members.size + (if (kind == AccountCategory.INVESTMENTS) connections.size else 0)
+                                Text(
+                                    text = stringResource(category?.titleRes ?: kind.titleRes) + if (count > 0) " · $count" else "",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp)
                                 )
                             }
+                            items(members, key = { "account_${it.id}" }) { account ->
+                                CompactAccountCard(
+                                    account = account,
+                                    isMain = account.isDefault,
+                                    onClick = { onNavigateToAccountDetail(account.id) }
+                                ) {
+                                    if (account.kind == AccountKind.CREDIT_CARD) {
+                                        AccountCreditDetails(account)
+                                    }
+                                    account.broker?.let { broker ->
+                                        TextButton(
+                                            onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) },
+                                            modifier = Modifier.padding(horizontal = 8.dp)
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText(),
+                                                style = MaterialTheme.typography.labelMedium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            if (kind == AccountCategory.INVESTMENTS) {
+                                connections.forEach { connection ->
+                                    connection.accounts.forEach { snapshot ->
+                                        item(key = "conn_${connection.id}_${snapshot.accountId}") {
+                                            io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
+                                                connection,
+                                                snapshot,
+                                                onClick = { onBrokerage(connection.id, snapshot.accountId) }
+                                            )
+                                        }
+                                    }
+                                    if (connection.accounts.isEmpty()) {
+                                        item(key = "conn_${connection.id}") {
+                                            io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
+                                                headline = { Text(connection.label) },
+                                                onClick = { onBrokerage(connection.id, "") }
+                                            )
+                                        }
+                                    }
+                                }
+                                item(key = "investments_add_broker") {
+                                    InvestmentsEmptySection(
+                                        onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) },
+                                        showTitle = false
+                                    )
+                                }
+                            }
                         } else if (kind == AccountCategory.INVESTMENTS && category == null) {
+                            item(key = "header_investments") {
+                                Text(
+                                    text = stringResource(R.string.overview_investments),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp)
+                                )
+                            }
                             item(key = "investment_empty") {
-                                InvestmentsEmptySection(onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) })
+                                InvestmentsEmptySection(
+                                    onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) },
+                                    showTitle = false
+                                )
                             }
                         }
                     }
