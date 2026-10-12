@@ -47,6 +47,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.CardDefaults
@@ -549,6 +550,40 @@ fun TransactionsScreen(
                         contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                     ) {
+                        // Advanced filter button with active count
+                        item {
+                            FilterChip(
+                                selected = activeFilterCount > 0,
+                                onClick = { showFilterSheet = true },
+                                label = {
+                                    Text(
+                                        if (activeFilterCount > 0) stringResource(R.string.txn_filter_count, activeFilterCount)
+                                        else stringResource(R.string.txn_filter)
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.FilterList,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    borderWidth = 0.dp,
+                                    selected = activeFilterCount > 0,
+                                    enabled = true
+                                ),
+                            )
+                        }
+
                         // Period filter chips
                         items(timePeriods) { period ->
                             FilterChip(

@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -185,12 +186,45 @@ fun AnalyticsScreen(
                     // Filters (Period and Type)
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            // Time Period Filter
+                            // Time Period Filter with leading FilterChip
                             LazyRow(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                item { Spacer(modifier = Modifier.width(16.dp)) }
+                                // Filter chip toggles advanced filters & displays active count
+                                item {
+                                    FilterChip(
+                                        selected = activeFilterCount > 0 || showAdvancedFilters,
+                                        onClick = { showAdvancedFilters = !showAdvancedFilters },
+                                        label = {
+                                            Text(
+                                                if (activeFilterCount > 0) stringResource(R.string.txn_filter_count, activeFilterCount)
+                                                else stringResource(R.string.txn_filter)
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.FilterList,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
+                                            labelColor = MaterialTheme.colorScheme.onSurface,
+                                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            borderWidth = 0.dp,
+                                            selected = activeFilterCount > 0 || showAdvancedFilters,
+                                            enabled = true
+                                        ),
+                                    )
+                                }
                                 items(timePeriods) { period ->
                                     FilterChip(
                                         selected =
@@ -243,21 +277,19 @@ fun AnalyticsScreen(
                                             ),
                                     )
                                 }
-                                item { Spacer(modifier = Modifier.width(16.dp)) }
                             }
 
-                            // Collapsible Filter Row for Type
-                            CollapsibleFilterRow(
-                                isExpanded = showAdvancedFilters,
-                                activeFilterCount = activeFilterCount,
-                                onToggle = { showAdvancedFilters = !showAdvancedFilters },
-                                modifier = Modifier.fillMaxWidth(),
+                            // Expandable Filter Row for Type
+                            AnimatedVisibility(
+                                visible = showAdvancedFilters,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
                             ) {
                                 LazyRow(
                                     modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                 ) {
-                                    item { Spacer(modifier = Modifier.width(16.dp)) }
                                     items(
                                         listOf(
                                             TransactionTypeFilter.ALL,
@@ -299,7 +331,6 @@ fun AnalyticsScreen(
                                                 ),
                                         )
                                     }
-                                    item { Spacer(modifier = Modifier.width(16.dp)) }
                                 }
                             }
                         }

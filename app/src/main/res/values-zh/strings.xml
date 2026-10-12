@@ -647,4 +647,11 @@
     <string name="quick_template_amount_not_prefilled">不预填</string>
     <string name="reset_layout">重置布局</string>
     <string name="turkmençe">土库曼语</string>
+    <string name="txn_filter">筛选</string>
+    <string name="txn_filter_count">筛选 · %1$d</string>
+    <string name="connect_broker_title">连接券商</string>
+    <string name="connect_broker_subtitle">从支持的券商自动同步持仓快照</string>
+    <string name="add_manually_title">手动添加账户</string>
+    <string name="add_manually_subtitle">手动记录银行卡、信用卡、现金钱包或投资账户</string>
+    <string name="more_brokers_coming_soon">更多券商接入中</string>
 </resources>

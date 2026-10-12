@@ -710,4 +710,11 @@
     <string name="quick_template_amount_not_prefilled">not pre-filled</string>
     <string name="reset_layout">Reset layout</string>
     <string name="turkmençe">Türkmençe</string>
+    <string name="txn_filter">Filter</string>
+    <string name="txn_filter_count">Filter · %1$d</string>
+    <string name="connect_broker_title">Connect a broker</string>
+    <string name="connect_broker_subtitle">Sync holdings snapshots automatically from supported brokers</string>
+    <string name="add_manually_title">Add manually</string>
+    <string name="add_manually_subtitle">Create a bank, card, wallet or investment account manually</string>
+    <string name="more_brokers_coming_soon">More brokers coming soon</string>
 </resources>

@@ -57,6 +57,7 @@ import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 @Composable
 fun BrokerAutoSyncSection(
     modifier: Modifier = Modifier,
+    showTitle: Boolean = true,
     onOpenConnection: (BrokerageConnection) -> Unit = {},
     viewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
@@ -72,6 +73,7 @@ fun BrokerAutoSyncSection(
         institutions = state.institutions.associateBy { it.key },
         connections = connections,
         busy = busy,
+        showTitle = showTitle,
         // A failed connection shows in its form; other failures (disconnect) show here
         error = error.takeIf { connecting == null },
         onConnect = viewModel::showConnect,
@@ -125,6 +127,7 @@ internal fun BrokerAutoSyncContent(
     onConnect: (String) -> Unit,
     onDisconnect: (BrokerageConnection) -> Unit,
     modifier: Modifier = Modifier,
+    showTitle: Boolean = true,
     onOpenConnection: (BrokerageConnection) -> Unit = {},
 ) {
     val language = LocalConfiguration.current.locales[0].language
@@ -135,17 +138,19 @@ internal fun BrokerAutoSyncContent(
             listOf<Any>(provider) + connections.filter { it.providerId == provider.id }
         }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(
-            stringResource(R.string.broker_auto_sync_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.semantics { heading() },
-        )
-        Text(
-            stringResource(R.string.broker_auto_sync_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (showTitle) {
+            Text(
+                stringResource(R.string.broker_auto_sync_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                stringResource(R.string.broker_auto_sync_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
             rows.forEachIndexed { index, row ->
                 val shape = ListItemPosition.from(index, rows.size).toShape()
@@ -266,22 +271,20 @@ internal fun BrokerConnectForm(
     onDismiss: () -> Unit,
     onConnect: (label: String, fields: Map<String, String>) -> Unit,
 ) {
-    when (providerId) {
-        "ibkr_flex" ->
-            IbkrConnectDialog(busy, error, onDismiss) { label, token, query ->
-                onConnect(label, mapOf("token" to token.trim(), "queryId" to query.trim()))
-            }
-        else ->
-            AlertDialog(
-                onDismissRequest = onDismiss,
-                text = { Text(stringResource(R.string.broker_auto_sync_unsupported)) },
-                confirmButton = {
-                    DialogConfirmButton(
-                        text = stringResource(R.string.investments_cancel),
-                        onClick = onDismiss,
-                    )
-                },
-                containerColor = HootbookDialogDefaults.containerColor,
-            )
+    val provider = BrokerProviderRegistry.find(providerId)
+    if (provider != null) {
+        provider.ConnectDialog(busy, error, onDismiss, onConnect)
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            text = { Text(stringResource(R.string.broker_auto_sync_unsupported)) },
+            confirmButton = {
+                DialogConfirmButton(
+                    text = stringResource(R.string.investments_cancel),
+                    onClick = onDismiss,
+                )
+            },
+            containerColor = HootbookDialogDefaults.containerColor,
+        )
     }
 }

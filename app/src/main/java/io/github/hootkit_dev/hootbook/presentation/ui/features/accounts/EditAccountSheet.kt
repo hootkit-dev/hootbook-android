@@ -58,6 +58,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -317,14 +326,15 @@ fun EditAccountSheet(
 
             // Account Type Selection
             if (account == null) {
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    SegmentedButton(
-                        selected = !isCreditCard && !isWallet && !isBroker,
+                    val isBankSelected = !isCreditCard && !isWallet && !isBroker
+                    // 1. Bank
+                    Surface(
                         onClick = {
-                            if (isWallet || (isBroker)) {
-                                // Clear fields if coming from Wallet, or a broker's name
+                            if (isWallet || isBroker) {
                                 bankName = ""
                                 accountLast4 = ""
                                 iconResId = R.drawable.type_finance_bank
@@ -335,46 +345,91 @@ fun EditAccountSheet(
                             isWallet = false
                             isBroker = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isBankSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isBankSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isBankSelected
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.AccountBalance, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_bank))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.AccountBalance, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_bank),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isBankSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isBankSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isCreditCard,
+
+                    // 2. Card
+                    Surface(
                         onClick = {
                             isCreditCard = true
                             isWallet = false
                             isBroker = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isCreditCard) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isCreditCard) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isCreditCard
+                            }
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Iconax.Card, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_card))
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Iconax.Card, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_card),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isCreditCard) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isCreditCard) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isWallet,
+
+                    // 3. Wallet
+                    Surface(
                         onClick = {
                             isWallet = true
                             isCreditCard = false
@@ -385,26 +440,48 @@ fun EditAccountSheet(
                             iconResId = R.drawable.type_finance_dollar_banknote
                             colorHex = "#8BC34A"
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isWallet) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isWallet) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isWallet
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Iconax.Wallet3, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_wallet))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Iconax.Wallet3, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_wallet),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isWallet) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isWallet) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isBroker,
+
+                    // 4. Broker
+                    Surface(
                         onClick = {
                             if (isWallet || !isBroker) {
-                                // Start from an empty broker, not a wallet's or bank's name
                                 bankName = ""
                                 accountLast4 = ""
                                 iconResId = R.drawable.type_finance_chart_increasing
@@ -415,19 +492,41 @@ fun EditAccountSheet(
                             isCreditCard = false
                             isWallet = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isBroker) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isBroker) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isBroker
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Rounded.ShowChart, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_broker))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.AutoMirrored.Rounded.ShowChart, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_broker),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isBroker) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isBroker) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
                 }
