@@ -2,6 +2,7 @@
 <resources>
     <string name="account_section_expanded">已展开全部账户</string>
     <string name="account_section_collapsed">仅显示汇总，明细已收起</string>
+    <string name="onb_existing_data">已有数据？</string>
     <string name="onboarding_import_backup">导入旧备份</string>
     <string name="onboarding_import_description">从 Hootbook ZIP 或 JSON 备份恢复账户、交易和偏好设置，无需先新建账户。</string>
     <string name="onboarding_sync_title">开启同步</string>

@@ -2,6 +2,7 @@
 <resources>
     <string name="account_section_expanded">All accounts shown</string>
     <string name="account_section_collapsed">Summary only; account details are collapsed</string>
+    <string name="onb_existing_data">Already have data?</string>
     <string name="onboarding_import_backup">Import old backup</string>
     <string name="onboarding_import_description">Bring back your accounts, transactions and preferences from a Hootbook ZIP or JSON backup. No new account needed.</string>
     <string name="onboarding_sync_title">Turn on sync</string>
