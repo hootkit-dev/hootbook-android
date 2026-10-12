@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -26,14 +24,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
@@ -44,9 +38,9 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -130,21 +124,52 @@ fun InvestmentsScreen(
         return institution?.let { if (chinese) it.chineseName else it.englishName } ?: id
     }
 
+    var pendingDisconnect by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.disconnectTarget) {
+        if (state.disconnectTarget != null) {
+            pendingDisconnect = true
+        }
+    }
+    LaunchedEffect(pendingDisconnect, state.busy, state.selected) {
+        if (pendingDisconnect && !state.busy && state.selected == null) {
+            onNavigateBack()
+        }
+    }
+
     BackHandler(
         state.busy ||
-            state.selected != null ||
+            state.holding != null ||
             state.connectProvider != null ||
             state.linkTarget != null ||
-            state.disconnectTarget != null ||
-            state.holding != null
+            state.disconnectTarget != null
     ) {
-        viewModel.back()
+        if (state.holding != null) {
+            viewModel.selectHolding(null)
+        } else if (state.connectProvider != null) {
+            viewModel.showConnect(null)
+        } else if (state.linkTarget != null) {
+            viewModel.showLink(null)
+        } else if (state.disconnectTarget != null) {
+            viewModel.showDisconnect(null)
+        }
     }
 
     InvestmentsContent(
         state = state,
         providerName = ::providerName,
-        onBack = { if (!viewModel.back()) onNavigateBack() },
+        onBack = {
+            if (state.holding != null) {
+                viewModel.selectHolding(null)
+            } else if (state.connectProvider != null) {
+                viewModel.showConnect(null)
+            } else if (state.linkTarget != null) {
+                viewModel.showLink(null)
+            } else if (state.disconnectTarget != null) {
+                viewModel.showDisconnect(null)
+            } else {
+                onNavigateBack()
+            }
+        },
         onRefresh = viewModel::refresh,
         onRefreshAll = viewModel::refreshAll,
         onCancel = viewModel::cancelOperation,
@@ -295,44 +320,32 @@ internal fun InvestmentsContent(
                 scrollBehaviorLarge = scrollBehavior,
                 hazeState = hazeState,
                 hasBackButton = true,
-                hasActionButton = state.selected == null && state.connections.isNotEmpty(),
+                hasActionButton = account != null && holding == null,
                 navigationContent = { NavigationContent(onBack) },
                 actionContent = {
-                    if (state.selected == null && state.connections.isNotEmpty()) {
-                        IconButton(
-                            shapes = IconButtonDefaults.shapes(),
-                            onClick = onRefreshAll,
-                            enabled = !state.busy,
-                            modifier = Modifier.testTag("refresh_holdings"),
-                        ) {
-                            Icon(
-                                Icons.Rounded.Refresh,
-                                contentDescription = stringResource(R.string.core_invest_refresh_all),
+                    if (account != null && holding == null) {
+                        val connectionId = state.selected?.connectionId
+                        if (connectionId != null) {
+                            BrokerAccountActionsMenu(
+                                enabled = !state.busy,
+                                onRefresh = { onRefresh(connectionId) },
+                                onLink = { onLink(state.selected) },
+                                onDisconnect = { onDisconnect(connectionId) },
                             )
                         }
                     }
                 },
             )
         },
-        floatingActionButton = {
-            if (!state.loading && state.selected == null) {
-                FloatingActionButton(
-                    onClick = onAddInvestment,
-                    modifier = Modifier.testTag("add_investment"),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ) {
-                    Icon(
-                        Icons.Rounded.Add,
-                        contentDescription = stringResource(R.string.investments_add),
-                    )
-                }
-            }
-        },
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.busy,
-            onRefresh = { if (!state.busy) onRefreshAll() },
+            onRefresh = {
+                if (!state.busy) {
+                    val connectionId = state.selected?.connectionId
+                    if (connectionId != null) onRefresh(connectionId) else onRefreshAll()
+                }
+            },
             modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
         ) {
             LazyColumn(
@@ -398,403 +411,114 @@ internal fun InvestmentsContent(
                             onHolding = onHolding,
                         )
                     }
-                    else -> {
-                        overviewItems(
-                            state = state,
-                            enabled = !state.busy,
-                            providerName = providerName,
-                            onRefresh = onRefresh,
-                            onDisconnect = onDisconnect,
-                            onSelect = onSelect,
-                            onAccountHistory = onAccountHistory,
-                            onAddInvestment = onAddInvestment,
-                            onConnect = onConnect,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun LazyListScope.overviewItems(
-    state: InvestmentsUiState,
-    enabled: Boolean,
-    providerName: (String) -> String,
-    onRefresh: (Long) -> Unit,
-    onDisconnect: (Long?) -> Unit,
-    onSelect: (BrokerAccountRef?) -> Unit,
-    onAccountHistory: (String) -> Unit,
-    onAddInvestment: () -> Unit,
-    onConnect: (String?) -> Unit,
-) {
-    // 1. Net worth card (if accounts exist)
-    if (state.connections.isNotEmpty() || state.investmentAccounts.isNotEmpty()) {
-        item(key = "net_worth") {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.largeIncreased,
-                color = MaterialTheme.colorScheme.primaryContainer,
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.investments_net_worth),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                    state.investmentAccounts.forEach { ledger ->
-                        InvestmentValue(
-                            label = ledger.name,
-                            value = CurrencyFormatter.format(ledger.total.amount, ledger.total.currency),
-                        )
-                    }
-                    state.connections.forEach { connection ->
-                        connection.accounts.filter { it.linkedAccountId == null }.forEach { account ->
-                            InvestmentValue(
-                                label = "${connection.label} · ${account.accountId}",
-                                value =
-                                    account.total?.let { CurrencyFormatter.format(it.amount, it.currency) }
-                                        ?: stringResource(R.string.core_invest_total_unavailable),
-                            )
-                        }
-                    }
-                    if (state.investmentAccounts.size + state.connections.sumOf { c -> c.accounts.count { it.linkedAccountId == null } } > 1) {
-                        Text(
-                            text = stringResource(R.string.core_parity_investment_total),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // 2. Guide Header (when empty)
-    if (state.connections.isEmpty() && state.investmentAccounts.isEmpty() && !state.loading) {
-        item(key = "empty_guide") {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.largeIncreased,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.investments_empty_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = stringResource(R.string.investments_empty_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-
-    // 3. Broker Connections section (for each connected broker, if any)
-    state.connections.forEach { connection ->
-        item(key = "connection_${connection.id}") {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = connection.label,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            text = buildString {
-                                append(providerName(connection.providerId))
-                                connection.syncedAt?.let {
-                                    append(" · ")
-                                    append(stringResource(R.string.core_invest_synced_at, investmentTime(it)))
-                                }
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    BrokerOverflowMenu(
-                        enabled = enabled,
-                        onRefresh = { onRefresh(connection.id) },
-                        onDisconnect = { onDisconnect(connection.id) },
-                    )
-                }
-
-                val failure =
-                    state.connectionErrors[connection.id]
-                        ?: connection.lastError?.let {
-                            CoreInvestmentFailure(InvestmentFailureCode.BROKERAGE, it)
-                        }
-                if (failure != null) {
-                    InvestmentError(failure)
-                }
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(1.5.dp),
-                ) {
-                    connection.accounts.forEachIndexed { index, account ->
-                        ListItem(
-                            headline = { Text(account.accountId, fontWeight = FontWeight.Medium) },
-                            supporting = {
-                                Text(stringResource(R.string.core_invest_as_of, investmentDate(account.asOf)))
-                            },
-                            trailing = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Text(
-                                        text =
-                                            account.total?.let { CurrencyFormatter.format(it.amount, it.currency) }
-                                                ?: "—",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Rounded.ChevronRight,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            },
-                            onClick = {
-                                if (enabled) onSelect(BrokerAccountRef(connection.id, account.accountId))
-                            },
-                            shape = ListItemPosition.from(index, connection.accounts.size).toShape(),
-                            padding = PaddingValues(0.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // 4. Investment ledger accounts section
-    if (state.investmentAccounts.isNotEmpty()) {
-        item(key = "ledger_accounts") {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SectionHeader(title = stringResource(R.string.core_invest_ledger_accounts))
-                val totalCount = state.investmentAccounts.size
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(1.5.dp),
-                ) {
-                    state.investmentAccounts.forEachIndexed { index, ledger ->
-                        ListItem(
-                            headline = { Text(ledger.name, fontWeight = FontWeight.Medium) },
-                            supporting = {
-                                val details =
-                                    listOfNotNull(
-                                        ledger.securities?.let {
-                                            stringResource(
-                                                R.string.core_invest_securities,
-                                                CurrencyFormatter.format(it.amount, it.currency),
-                                            )
-                                        },
-                                        ledger.broker?.let {
-                                            stringResource(
-                                                R.string.core_invest_linked_broker,
-                                                it.brokerAccountId,
-                                                investmentDate(it.asOf),
-                                            )
-                                        },
-                                        if (!ledger.totalComplete)
-                                            stringResource(R.string.core_invest_incomplete)
-                                        else null,
-                                    ).joinToString(" · ").ifBlank {
-                                        stringResource(R.string.core_invest_cash_history)
-                                    }
-                                Text(details)
-                            },
-                            trailing = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Text(
-                                        text =
-                                            CurrencyFormatter.format(
-                                                ledger.total.amount,
-                                                ledger.total.currency,
-                                            ),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Rounded.ChevronRight,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            },
-                            onClick = { if (enabled) onAccountHistory(ledger.id) },
-                            shape = ListItemPosition.from(index, totalCount).toShape(),
-                            padding = PaddingValues(0.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // 5. Connect a broker section
-    item(key = "connect_broker_section") {
-        val providers = BrokerProviderRegistry.getProviders()
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SectionHeader(title = stringResource(R.string.core_invest_connect_broker))
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(1.5.dp),
-            ) {
-                providers.forEachIndexed { index, provider ->
-                    ListItem(
-                        leading = {
+                    state.loading -> {
+                        item(key = "loading") {
                             Box(
-                                modifier =
-                                    Modifier.size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                modifier = Modifier.fillMaxWidth().padding(48.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Link,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                )
+                                CircularProgressIndicator()
                             }
-                        },
-                        headline = {
-                            Text(
-                                text = stringResource(provider.nameRes),
-                                fontWeight = FontWeight.Medium,
-                            )
-                        },
-                        supporting = {
-                            Text(stringResource(provider.descriptionRes))
-                        },
-                        trailing = {
-                            Text(
-                                text = stringResource(R.string.core_invest_connect) + " >",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = { if (enabled) onAddInvestment() },
-                        shape = ListItemPosition.from(index, providers.size).toShape(),
-                        padding = PaddingValues(0.dp),
-                    )
+                        }
+                    }
+                    else -> {
+                        item(key = "empty") {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.core_invest_no_holdings),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Button(onClick = onBack) {
+                                        Text(stringResource(R.string.core_shell_close))
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-
-    // 6. Footer note
-    item(key = "footer_note") {
-        Text(
-            text = stringResource(R.string.core_invest_snapshot_note),
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
 
 @Composable
-private fun InvestmentValue(label: String, value: String) {
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-        )
-    }
-}
-
-@Composable
-private fun BrokerOverflowMenu(
+private fun BrokerAccountActionsMenu(
     enabled: Boolean,
     onRefresh: () -> Unit,
+    onLink: () -> Unit,
     onDisconnect: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Box {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(
-            onClick = { expanded = true },
+            onClick = onRefresh,
             enabled = enabled,
+            modifier = Modifier.testTag("refresh_holdings"),
         ) {
             Icon(
-                imageVector = Icons.Rounded.MoreVert,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                imageVector = Icons.Rounded.Refresh,
+                contentDescription = stringResource(R.string.core_invest_refresh),
             )
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.core_invest_refresh)) },
-                leadingIcon = { Icon(Icons.Rounded.Refresh, null) },
-                onClick = {
-                    expanded = false
-                    onRefresh()
-                },
-            )
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(R.string.core_invest_disconnect),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Rounded.LinkOff,
-                        null,
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                },
-                onClick = {
-                    expanded = false
-                    onDisconnect()
-                },
-            )
+        Box {
+            IconButton(
+                onClick = { expanded = true },
+                enabled = enabled,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.core_invest_refresh)) },
+                    leadingIcon = { Icon(Icons.Rounded.Refresh, null) },
+                    onClick = {
+                        expanded = false
+                        onRefresh()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.core_invest_link_title)) },
+                    leadingIcon = { Icon(Icons.Rounded.Link, null) },
+                    onClick = {
+                        expanded = false
+                        onLink()
+                    },
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(R.string.core_invest_disconnect),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.LinkOff,
+                            null,
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        onDisconnect()
+                    },
+                )
+            }
         }
     }
 }

@@ -138,8 +138,8 @@ fun SharedTransitionScope.HomeScreen(
         val investments = io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountCategory.INVESTMENTS
         if (it == investments && uiState.connections.isEmpty() && uiState.overview?.accounts.orEmpty().none { a -> a.category() == investments })
             navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.AddAccount(investments.name))
-        else if (it == investments) navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.Investments)
-        else navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.AccountCategoryRoute(it.name))
+        else
+            navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.AccountCategoryRoute(it.name))
     }
     val hazeStateBanner = remember { HazeState()}
     val blurEffects = prefs.blur

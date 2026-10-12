@@ -499,18 +499,28 @@ fun HootbookNavHost(
                                     val vm: InvestmentsViewModel = hiltViewModel()
                                     val state by vm.state.collectAsStateWithLifecycle()
                                     var opened by rememberSaveable { mutableStateOf(false) }
-                                    LaunchedEffect(route, state.loading) {
+                                    LaunchedEffect(route, state.loading, state.connections) {
                                         val connection = route.connectionId?.toLongOrNull()
                                         val account = route.accountId
-                                        if (!state.loading && !opened && connection != null && connection > 0L && !account.isNullOrBlank()) {
-                                            opened = true
-                                            vm.selectAccount(BrokerAccountRef(connection, account))
+                                        if (!state.loading && !opened) {
+                                            if (connection != null && connection > 0L && !account.isNullOrBlank()) {
+                                                opened = true
+                                                vm.selectAccount(BrokerAccountRef(connection, account))
+                                            } else if (state.connections.isNotEmpty()) {
+                                                val firstConn = state.connections.first()
+                                                val firstAccount = firstConn.accounts.firstOrNull()?.accountId
+                                                if (firstAccount != null) {
+                                                    opened = true
+                                                    vm.selectAccount(BrokerAccountRef(firstConn.id, firstAccount))
+                                                }
+                                            }
                                         }
                                     }
                                     InvestmentsScreen(
                                         onNavigateBack = back,
                                         onManageManualAccounts = back,
                                         onAddInvestment = { go(AddAccount(category = AccountCategory.INVESTMENTS.name)) },
+                                        onAccountHistory = { go(AccountDetail(it)) },
                                         viewModel = vm
                                     )
                                 }

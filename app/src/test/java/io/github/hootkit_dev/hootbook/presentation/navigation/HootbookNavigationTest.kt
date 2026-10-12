@@ -48,6 +48,7 @@ class HootbookNavigationTest {
             composable<About> { }
             composable<CloudSync> { }
             composable<Investments> { }
+            composable<ManageAccounts> { }
             composable<AiAssistant> { }
         }
         if (onboarded) nav.navigate(Home) { popUpTo<OnBoarding> { inclusive = true } }
@@ -178,5 +179,15 @@ class HootbookNavigationTest {
         nav.settle()
         assertTrue(nav.routeIngress(CoreIngressTarget.Ai, true))
         nav.assertRoute(AiAssistant)
+    }
+
+    @Test fun investmentsBrokerAccountPopsDirectlyToCaller() {
+        val nav = nav()
+        nav.navigate(ManageAccounts)
+        nav.assertRoute(ManageAccounts)
+        nav.navigate(Investments(connectionId = "1", accountId = "U15116568"))
+        nav.assertRoute(Investments(connectionId = "1", accountId = "U15116568"))
+        assertTrue(nav.popBackStack())
+        nav.assertRoute(ManageAccounts)
     }
 }
