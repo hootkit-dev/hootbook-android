@@ -178,41 +178,28 @@ fun ManageAccountsScreen(
                     contentPadding = PaddingValues(start = Dimensions.Padding.content, end = Dimensions.Padding.content,
                         top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
                         bottom = 96.dp + paddingValues.calculateBottomPadding()),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     sections.forEach { (kind, members) ->
                         if (members.isNotEmpty() || (kind == AccountCategory.INVESTMENTS && connections.isNotEmpty())) {
-                            item(key = "summary_$kind", contentType = "section_summary") {
-                                AccountSectionSummary(kind = kind, accounts = members, connectionCount = if (kind == AccountCategory.INVESTMENTS) connections.size else 0, expanded = kind in expanded,
-                                    onToggle = if (category == null) ({ expanded = if (kind in expanded) expanded - kind else expanded + kind }) else null)
-                            }
-                            if (category != null || kind in expanded) items(members, key = { it.id }, contentType = { "account" }) { account ->
-                                CompactAccountCard(account, account.isDefault, { onNavigateToAccountDetail(account.id) }) {
-                                    if (account.kind == AccountKind.CREDIT_CARD) AccountCreditDetails(account)
-                                    account.broker?.let { broker ->
-                                        TextButton(onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                            Text(stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText())
-                                        }
-                                    }
-                                }
-                            }
-                            if (kind == AccountCategory.INVESTMENTS && (category != null || kind in expanded)) {
-                                connections.forEach { connection ->
-                                    items(connection.accounts, key = { "broker:${connection.id}:${it.accountId}" }, contentType = { "broker_connection" }) { snapshot ->
-                                        io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
-                                            connection, snapshot, onClick = { onBrokerage(connection.id, snapshot.accountId) })
-                                    }
-                                    if (connection.accounts.isEmpty()) item(key = "broker:${connection.id}") {
-                                        io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
-                                            headline = { Text(connection.label) },
-                                            onClick = { onBrokerage(connection.id, "") })
-                                    }
-                                }
-                                item(key = "investment_add") {
-                                    InvestmentsEmptySection(onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) }, showTitle = false)
-                                }
+                            item(key = "category_$kind", contentType = "category_card") {
+                                AccountCategoryCard(
+                                    kind = kind,
+                                    accounts = members,
+                                    connections = if (kind == AccountCategory.INVESTMENTS) connections else emptyList(),
+                                    expanded = (category != null || kind in expanded),
+                                    onToggle = if (category == null) ({
+                                        expanded = if (kind in expanded) expanded - kind else expanded + kind
+                                    }) else null,
+                                    titleOverride = category?.titleRes,
+                                    onNavigateToAccountDetail = onNavigateToAccountDetail,
+                                    onBrokerage = onBrokerage,
+                                    onNavigateToAddAccount = onNavigateToAddAccount,
+                                )
                             }
                         } else if (kind == AccountCategory.INVESTMENTS && category == null) {
-                            item(key = "investment_empty") { InvestmentsEmptySection(onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) }) }
+                            item(key = "investment_empty") {
+                                InvestmentsEmptySection(onAdd = { onNavigateToAddAccount(AccountCategory.INVESTMENTS) })
+                            }
                         }
                     }
                 }

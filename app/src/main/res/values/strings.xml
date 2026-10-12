@@ -86,6 +86,8 @@
     <string name="section_wallets">Wallets</string>
     <string name="section_bank_accounts">Bank Accounts</string>
     <string name="section_credit_cards">Credit Cards</string>
+    <string name="account_summary_balance">Balance summary</string>
+    <string name="account_summary_outstanding">Outstanding balance</string>
     <string name="update_outstanding_title">Update Outstanding</string>
     <string name="update_balance">Update Balance</string>
     <string name="label_available">Available</string>

@@ -77,6 +77,8 @@
     <string name="section_wallets">钱包</string>
     <string name="section_bank_accounts">银行账户</string>
     <string name="section_credit_cards">信用卡</string>
+    <string name="account_summary_balance">余额汇总</string>
+    <string name="account_summary_outstanding">待还款汇总</string>
     <string name="update_outstanding_title">校准欠款</string>
     <string name="update_balance">更新余额</string>
     <string name="label_available">可用</string>
