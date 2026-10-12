@@ -51,8 +51,12 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      GRADLE_OPTS: -Dorg.gradle.workers.max=2 -Dorg.gradle.jvmargs="-Xmx3072m -XX:+UseG1GC"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -77,6 +81,13 @@ jobs:
         run: chmod +x gradlew
       - name: App unit tests
         run: ./gradlew :app:testStandardDebugUnitTest --no-configuration-cache --stacktrace
+      - name: Diagnostic test failure report
+        if: failure()
+        run: |
+          find app/build/test-results/testStandardDebugUnitTest/ -name "*.xml" -exec grep -l "<failure" {} + | while read -r f; do
+            echo "::error file=$f::Failed test in $(basename "$f")"
+            cat "$f"
+          done
       - name: App Android Lint
         run: ./gradlew :app:lintStandardDebug --no-configuration-cache --stacktrace
       # The package wildcard includes accounts/categories/transactions/home and

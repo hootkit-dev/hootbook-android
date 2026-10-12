@@ -13,22 +13,20 @@ plugins {
 fun gitCommitCount(): Int {
     project.findProperty("gitCommitCount")?.toString()?.toIntOrNull()?.let { return it }
     return runCatching {
-        ProcessBuilder("git", "rev-list", "--count", "HEAD")
-            .directory(rootProject.projectDir)
-            .redirectErrorStream(true)
-            .start()
-            .inputStream.bufferedReader().use { it.readText().trim().toInt() }
+        providers.exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+            workingDir(rootProject.projectDir)
+        }.standardOutput.asText.get().trim().toInt()
     }.getOrDefault(0)
 }
 
 fun gitSha(): String {
     project.findProperty("gitSha")?.toString()?.takeIf { it.isNotBlank() }?.let { return it }
     return runCatching {
-        ProcessBuilder("git", "rev-parse", "--short=7", "HEAD")
-            .directory(rootProject.projectDir)
-            .redirectErrorStream(true)
-            .start()
-            .inputStream.bufferedReader().use { it.readText().trim() }
+        providers.exec {
+            commandLine("git", "rev-parse", "--short=7", "HEAD")
+            workingDir(rootProject.projectDir)
+        }.standardOutput.asText.get().trim()
     }.getOrDefault("unknown")
 }
 
@@ -312,3 +310,12 @@ dependencies {
     implementation(libs.reorderable)
     implementation(libs.pdfbox.android)
 }
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("failed", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+    }
+}
+
