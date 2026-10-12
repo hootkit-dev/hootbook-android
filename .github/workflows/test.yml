@@ -68,26 +68,30 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~/.gradle/caches/modules-2
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-app-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-app-gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-app-gradle-
-      - name: Unit tests and lint
-        run: ./gradlew :app:testStandardDebugUnitTest :app:lintStandardDebug --continue --no-configuration-cache
+            ${{ runner.os }}-app-gradle-v2-
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: App unit tests
+        run: ./gradlew :app:testStandardDebugUnitTest --no-configuration-cache --stacktrace
+      - name: App Android Lint
+        run: ./gradlew :app:lintStandardDebug --no-configuration-cache --stacktrace
       # The package wildcard includes accounts/categories/transactions/home and
       # budgets/plans/debts/settings/currencies/backup and navigation; no brittle hard-coded case count or obsolete class list.
       - name: Isolated Core UI and business regression tests
         run: |
           ./gradlew :app:compileStandardDebugKotlin \
-            :app:testStandardDebugUnitTest --no-configuration-cache \
+            :app:testStandardDebugUnitTest --no-configuration-cache --stacktrace \
             --tests 'io.github.hootkit_dev.hootbook.core.*' \
-            --tests 'io.github.hootkit_dev.hootbook.presentation.core.*'
+            --tests 'io.github.hootkit_dev.hootbook.presentation.*'
       - name: Compile and package modern App device tests (standard)
         run: |
           ./gradlew :app:compileStandardDebugAndroidTestKotlin \
             :app:assembleStandardDebugAndroidTest \
-            --no-configuration-cache
+            --no-configuration-cache --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
