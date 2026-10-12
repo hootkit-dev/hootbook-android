@@ -87,7 +87,7 @@ dependencies {
     implementation("androidx.annotation:annotation:1.9.1")
 
     if (usePrebuiltAar) {
-        api(files(layout.buildDirectory.file("aar-extracted/classes.jar")))
+        api(files(layout.buildDirectory.file("aar-extracted/classes.jar")).builtBy(tasks.named("unpackCoreAar")))
     }
 }
 

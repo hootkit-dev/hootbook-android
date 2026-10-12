@@ -108,6 +108,9 @@ android {
     }
     buildTypes {
         debug {
+            if (signingConfigs.getByName("release").storeFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             if (coreAcceptance) { applicationIdSuffix = ".coreacceptance"; manifestPlaceholders["appLabel"] = "Hootbook Isolated Acceptance" }
             buildConfigField("boolean", "CORE_ACCEPTANCE", coreAcceptance.toString())
             manifestPlaceholders["coreAcceptanceCleartext"] = coreAcceptance.toString()
