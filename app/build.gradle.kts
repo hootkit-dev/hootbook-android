@@ -50,8 +50,8 @@ android {
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 37
-        versionCode = 97
-        versionName = "2.1.63"
+        versionCode = 98
+        versionName = "3.0"
         // Pure UI/context instrumentation must never construct production/Hilt Application.
         testInstrumentationRunner = if (realAppInstrumentation) "androidx.test.runner.AndroidJUnitRunner" else "io.github.hootkit_dev.hootbook.IsolatedUiTestRunner"
         val commitCount = gitCommitCount()
