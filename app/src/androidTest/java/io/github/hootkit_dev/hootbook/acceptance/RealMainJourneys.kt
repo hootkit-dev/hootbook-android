@@ -36,7 +36,7 @@ class RealMainJourneys {
         f=NativeScenarioFixture();runBlocking{f.core();f.preferences.ready()}
         activityRule.scenario.onActivity{main=it;launchIntent=Intent(it.intent)}
         automation.serviceInfo=automation.serviceInfo.apply{flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS}
-        awaitCondition{nodes().any{it.contentDescription?.toString()?.startsWith("core-screen-")==true}}
+        awaitCondition{nodes().any{it.viewIdResourceName?.startsWith("hootbook-screen-")==true}}
         if(!f.preferences.state.value.onboardingFinished){
             click(R.string.core_shell_finish)
             awaitCondition{f.preferences.state.value.onboardingFinished}
@@ -123,9 +123,9 @@ class RealMainJourneys {
         Thread.sleep(850)
     }
     private fun home(){
-        if(nodes().any{it.contentDescription?.toString()=="core-screen-home"})return // Selected bottom tab legitimately omits redundant click action.
-        click(R.string.core_shell_home)
-        try{awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-home"}}}catch(failure:IllegalStateException){shot("failed-home-navigation");throw failure}
+        if(nodes().any{it.viewIdResourceName=="hootbook-screen-Home"})return // Selected bottom tab legitimately omits redundant click action.
+        typed(QuickEntry.Entry.Home)
+        try{awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-Home"}}}catch(failure:IllegalStateException){shot("failed-home-navigation");throw failure}
     }
     private fun shot(name:String){
         Thread.sleep(850) // Capture after real NavHost crossfade, not a transient overlapping frame.
@@ -248,11 +248,11 @@ class RealMainJourneys {
         awaitCondition{f.preferences.state.value.appLockEnabled}
         assertTrue(main.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE!=0)
         click(R.string.core_ui_lock_now);awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_locked)}}
-        assertFalse(nodes().any{it.contentDescription?.toString()?.startsWith("core-screen-")==true})
+        assertFalse(nodes().any{it.viewIdResourceName?.startsWith("hootbook-screen-")==true})
         click(R.string.core_ui_unlock);awaitCondition{nodes().any{it.isEditable&&it.isPassword}};InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
         awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_ui_locked)}}
-        assertFalse(nodes().any{it.contentDescription?.toString()?.startsWith("core-screen-")==true})
-        click(R.string.core_ui_unlock);enterFixturePin();awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-app-lock"}}
+        assertFalse(nodes().any{it.viewIdResourceName?.startsWith("hootbook-screen-")==true})
+        click(R.string.core_ui_unlock);enterFixturePin();awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-AppLockSettings"}}
         layout("ui-lock-authenticated-restored-route");f.note("ui-lock-pin","actual owned system PIN -> enable secure, lock hides Core, cancel preserves locked, fresh PIN restores original route; left enabled for real cold CLI check")
     }
     @Test fun nativePlatformReminderMutedScanAndSameDayDedup()=runBlocking{
@@ -295,7 +295,7 @@ class RealMainJourneys {
         assertTrue(nodes().any{it.isEditable&&it.isPassword})
         val before=f.core().brokerage().use{it.connections().size}
         click(R.string.core_invest_cancel)
-        awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-investments"}}
+        awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-Investments"}}
         assertEquals(before,f.core().brokerage().use{it.connections().size})
         shot("ui-investments-cancel-no-connection");f.note("ui-investments","actual provider connect dialog empty credential inputs secure, cancel retained no native connection; no realbroker network")
     }
@@ -397,7 +397,7 @@ class RealMainJourneys {
         click(R.string.core_full_attachment_add);documentDownloads();clickText("hoot-core-accept-image.png")
         awaitCondition{nodes().any{it.text?.toString()==f.text(R.string.core_full_attachment_view)}}
         click(R.string.core_full_attachment_view);click(R.string.core_attachment_share)
-        awaitCondition{nodes().none{it.contentDescription?.toString()=="core-screen-transactions"}};systemBack();click(R.string.core_attachment_close)
+        awaitCondition{nodes().none{it.viewIdResourceName=="hootbook-screen-AddTransaction"}};systemBack();click(R.string.core_attachment_close)
         clickPrefix(R.string.core_full_label_40);clickText(c.categories().use{it.list(CategoryKind.EXPENSE,false).first().displayName});click(R.string.core_full_label_71)
         val filter=TransactionFilter(null,null,listOf(TransactionKind.EXPENSE),emptyList(),emptyList(),merchant,null,DeletedFilter.EXCLUDE,SortOrder.NEWEST_FIRST)
         awaitCondition{runBlocking{c.ledger().use{it.list(filter,PageRequest(0u,1u)).total==1u}}}
@@ -411,8 +411,8 @@ class RealMainJourneys {
         documentDownloads()
         val edit=nodes().first{it.isEditable&&it.isEnabled};check(edit.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
         val fileName="${f.tag}-ui.hkbak";check(edit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,Bundle().apply{putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,fileName)}));clickText("Save")
-        awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-backup"}}
-        click(R.string.core_backup_share);awaitCondition{nodes().none{it.contentDescription?.toString()=="core-screen-backup"}};systemBack()
+        awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-DataPrivacy"}}
+        click(R.string.core_backup_share);awaitCondition{nodes().none{it.viewIdResourceName=="hootbook-screen-DataPrivacy"}};systemBack()
         click(R.string.core_backup_select);documentDownloads();clickText(fileName)
         field(R.string.core_backup_password,"fixture-password",last=true);click(R.string.core_backup_inspect)
         val source=root.walkTopDown().filter{it.isFile&&it.name=="source.backup"}.maxBy{it.lastModified()}
@@ -432,12 +432,12 @@ class RealMainJourneys {
         home();click(R.string.core_complete_settings)
         for(label in listOf(R.string.core_shell_profile,R.string.core_shell_appearance,R.string.core_shell_app_lock,
             R.string.core_shell_notifications,R.string.core_shell_about,R.string.core_shell_sync,R.string.core_shell_investments)){
-            click(label);awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-"+when(label){R.string.core_shell_profile->"profile";R.string.core_shell_appearance->"appearance";R.string.core_shell_app_lock->"app-lock";R.string.core_shell_notifications->"notifications";R.string.core_shell_about->"about";R.string.core_shell_sync->"sync";else->"investments"}}};shot("menu-$label");f.note("menu","real route label=${f.text(label)}")
+            click(label);awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-"+when(label){R.string.core_shell_profile->"Profile";R.string.core_shell_appearance->"Appearance";R.string.core_shell_app_lock->"AppLockSettings";R.string.core_shell_notifications->"NotificationSettings";R.string.core_shell_about->"About";R.string.core_shell_sync->"CloudSync";else->"Investments"}}};shot("menu-$label");f.note("menu","real route label=${f.text(label)}")
             InstrumentationRegistry.getInstrumentation().runOnMainSync{main.onBackPressedDispatcher.onBackPressed()};Thread.sleep(850)
         }
         home();for(label in listOf(R.string.core_complete_categories,R.string.core_complete_currencies,R.string.core_complete_backup,
             R.string.core_complete_templates,R.string.core_complete_subscriptions,R.string.core_complete_debts,R.string.core_complete_budgets)){
-            click(label);awaitCondition{nodes().any{it.contentDescription?.toString()=="core-screen-"+when(label){R.string.core_complete_categories->"categories";R.string.core_complete_currencies->"currencies";R.string.core_complete_backup->"backup";R.string.core_complete_templates->"templates";R.string.core_complete_subscriptions->"subscriptions";R.string.core_complete_debts->"debts";else->"budgets"}}};shot("home-route-$label");f.note("menu","real home route=${f.text(label)}")
+            click(label);awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-"+when(label){R.string.core_complete_categories->"Categories";R.string.core_complete_currencies->"CurrencySettings";R.string.core_complete_backup->"DataPrivacy";R.string.core_complete_templates->"QuickTemplates";R.string.core_complete_subscriptions->"Subscriptions";R.string.core_complete_debts->"LendBorrow";else->"Budgets"}}};shot("home-route-$label");f.note("menu","real home route=${f.text(label)}")
             home()
         }
     }

@@ -1,5 +1,7 @@
 package io.github.hootkit_dev.hootbook.presentation.core.navigation
 
+import io.github.hootkit_dev.hootbook.presentation.navigation.HootbookNavHost
+
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -27,7 +29,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
             CoreBootstrapState.CORE_FAILED -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
                 Text(stringResource(R.string.core_host_open_failed)); Button(onClick = bootstrap::start) { Text(stringResource(R.string.core_shell_retry)) }
             }
-            CoreBootstrapState.READY -> CoreAppLockGate(lock) { CoreNavHost(session, capabilities, prefs, ingress) }
+            CoreBootstrapState.READY -> CoreAppLockGate(lock) { HootbookNavHost(session, prefs, ingress) }
             else -> Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         }
     }

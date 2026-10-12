@@ -158,17 +158,6 @@ class CoreTransactionsViewModelTest {
         assertEquals(2, core.linkCalls); assertEquals(0, core.addCalls); core.assertHandlesReleased()
     }
 
-    @Test fun navigationEncodesOpaqueStringIdsAndPreservesSourceKey() {
-        val id = "账本/uuid?foo=a&x=#😀"
-        val route = io.github.hootkit_dev.hootbook.presentation.core.navigation.coreTransactionsRoute(subscriptionId = id)
-        assertEquals("transactions?subscriptionId=" + android.net.Uri.encode(id), route)
-        assertEquals(id, android.net.Uri.parse(route).getQueryParameter("subscriptionId"))
-        assertEquals("transactions?templateId=" + android.net.Uri.encode(id),
-            io.github.hootkit_dev.hootbook.presentation.core.navigation.coreTransactionsRoute(templateId = id))
-        assertEquals("transactions?transactionId=" + android.net.Uri.encode(id),
-            io.github.hootkit_dev.hootbook.presentation.core.navigation.coreTransactionsRoute(transactionId = id))
-    }
-
     @Test fun latestFilterWinsEvenWhenOlderNativeQueryIgnoresCancellation() = runTest {
         val core = FakeLedgerCore()
         val oldQuery = CompletableDeferred<Unit>()

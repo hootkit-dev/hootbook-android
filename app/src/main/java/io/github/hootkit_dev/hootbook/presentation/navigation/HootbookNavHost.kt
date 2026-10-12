@@ -1,0 +1,795 @@
+package io.github.hootkit_dev.hootbook.presentation.navigation
+
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.compose.LocalOwnersProvider
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import io.github.hootkit_dev.hootbook.presentation.core.investments.BrokerAccountRef
+import dev.hootkit.core.Table
+import dev.hootkit.core.TransactionKind
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.core.CoreIntentIngress
+import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
+import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreAccountsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.accounts.CoreAccountsViewModel
+import io.github.hootkit_dev.hootbook.presentation.core.ai.CoreAiScreen
+import io.github.hootkit_dev.hootbook.presentation.core.analytics.CoreAnalyticsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.appearance.CoreAppearanceScreen
+import io.github.hootkit_dev.hootbook.presentation.core.applock.CoreAppLockSettingsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.backup.CoreBackupScreen
+import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.budgets.CoreBudgetsViewModel
+import io.github.hootkit_dev.hootbook.presentation.core.categories.CoreCategoriesScreen
+import io.github.hootkit_dev.hootbook.presentation.core.currencies.CoreCurrenciesScreen
+import io.github.hootkit_dev.hootbook.presentation.core.debts.CoreDebtsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.home.CoreHomeScreen
+import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.investments.CoreInvestmentsViewModel
+import io.github.hootkit_dev.hootbook.presentation.core.navigation.CoreLocaleGate
+import io.github.hootkit_dev.hootbook.presentation.core.notifications.CoreNotificationPreferencesScreen
+import io.github.hootkit_dev.hootbook.presentation.core.onboarding.CoreOnboardingScreen
+import io.github.hootkit_dev.hootbook.presentation.core.plans.CoreSubscriptionsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.plans.CoreTemplatesScreen
+import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreMerchantIconsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.profile.CoreProfileScreen
+import io.github.hootkit_dev.hootbook.presentation.core.settings.CoreSettingsScreen
+import io.github.hootkit_dev.hootbook.presentation.core.sync.CoreSyncScreen
+import io.github.hootkit_dev.hootbook.presentation.core.transactions.CoreTransactionsScreen
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.adaptive.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.about.AboutScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.about.LicensesScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun HootbookNavHost(
+    session: CoreSession,
+    preferences: CoreUiPreferencesStore,
+    ingress: CoreIntentIngress,
+    navController: NavHostController = rememberNavController(),
+    modifier: Modifier = Modifier,
+) {
+    val prefs by preferences.state.collectAsStateWithLifecycle()
+    val pending by ingress.pending.collectAsStateWithLifecycle()
+    val shareFailure by ingress.failed.collectAsStateWithLifecycle()
+    val stableStartDestination = remember { if (prefs.onboardingFinished) Home else OnBoarding }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    ObserveMainTabSettled(navBackStackEntry)
+    val visibleEntries by navController.visibleEntries.collectAsStateWithLifecycle()
+    val addEntry = visibleEntries.lastOrNull { it.destination.hasRoute<AddTransaction>() }
+    val addStateHolder = rememberSaveableStateHolder()
+    val currentDestination = navBackStackEntry?.destination
+    val currentRoute = currentDestination?.route
+    val showBottomNav = BOTTOM_NAV_ROUTES.any { name -> currentRoute?.contains(name.orEmpty()) == true }
+    val isHomeScreen = currentRoute?.contains(Home::class.qualifiedName.orEmpty()) == true
+    val isTransactionsScreen = currentRoute?.contains(Transactions::class.qualifiedName.orEmpty()) == true
+    val isAddTransactionScreen = currentRoute?.contains(AddTransaction::class.qualifiedName.orEmpty()) == true
+    val isSubscriptionsScreen = currentRoute?.contains(Subscriptions::class.qualifiedName.orEmpty()) == true
+    val isBudgetDetailScreen = currentRoute?.contains(BudgetDetail::class.qualifiedName.orEmpty()) == true
+    val windowLayout = rememberWindowLayout()
+    val isFullScreenFlow = !prefs.onboardingFinished
+    val showRail = windowLayout.useNavigationRail && currentRoute != null && !isFullScreenFlow
+    val showBottomBar = showBottomNav && !windowLayout.useNavigationRail && !isFullScreenFlow
+    val hazeState = remember { HazeState() }
+    val view = LocalView.current
+    var schema by remember(session) { mutableStateOf<UInt?>(null) }
+    var recordHint by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(session) {
+        try { schema = session.withCore { it.version().schema } }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (_: Exception) { /* Schema metadata is optional; startup owns Core failures. */ }
+    }
+    val back: () -> Unit = { navController.safePopBackStack() }
+    fun go(route: Any) { navController.safeNavigate(route) { launchSingleTop = true } }
+    fun coreScreen(route: String) { go(coreScreenDestination(route)) }
+    fun record(table: Table, id: String) {
+        val destination = when (table) {
+            Table.TRANSACTIONS -> TransactionDetail(id)
+            Table.ACCOUNTS -> AccountDetail(id)
+            Table.BUDGETS -> BudgetDetail(id)
+            Table.SUBSCRIPTIONS -> Subscriptions(id)
+            Table.PEOPLE -> PersonDetail(id)
+            else -> {
+                recordHint = "$table · $id"
+                when (table) {
+                    Table.QUICK_TEMPLATES -> QuickTemplates
+                    Table.CATEGORIES, Table.SUBCATEGORIES -> Categories
+                    Table.DEBTS -> LendBorrow()
+                    else -> ManageAccounts
+                }
+            }
+        }
+        go(destination)
+    }
+
+    CoreLocaleGate(session) {
+        LaunchedEffect(pending.firstOrNull()?.token, prefs.onboardingFinished, navBackStackEntry?.id) {
+            val entry = pending.firstOrNull() ?: return@LaunchedEffect
+            if (navController.routeIngress(entry.target, prefs.onboardingFinished)) ingress.consumed(entry.token)
+        }
+        CompositionLocalProvider(LocalWindowLayout provides windowLayout) {
+            Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                Column(Modifier.fillMaxSize()
+                    .padding(start = if (showRail) NavigationRailWidth else 0.dp)
+                    .hazeSource(hazeState)) {
+                    if (shareFailure) {
+                        TextButton(onClick = ingress::dismissFailure, modifier = Modifier.statusBarsPadding()) {
+                            Text(stringResource(R.string.core_shell_share_failed))
+                        }
+                    }
+                    recordHint?.let { hint ->
+                        Row(Modifier.statusBarsPadding()) {
+                            Text(hint, Modifier.weight(1f))
+                            TextButton(onClick = { recordHint = null }) { Text(stringResource(R.string.core_shell_close)) }
+                        }
+                    }
+                    // Temporary Core screens do not reserve the original shell's bottom-bar space.
+                    Box(Modifier.weight(1f).padding(bottom = if (showBottomBar) 64.dp else 0.dp)
+                        .safeDrawingPadding().consumeWindowInsets(WindowInsets.safeDrawing)
+                        .semantics { testTagsAsResourceId = true }
+                        .testTag("hootbook-screen-" + currentRoute?.substringBefore('?')?.substringBefore('/')?.substringAfterLast('.').orEmpty())) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = stableStartDestination,
+                            modifier = Modifier.fillMaxSize(),
+                            enterTransition = HootbookTransitions.horizontalSlideEnter,
+                            exitTransition = HootbookTransitions.horizontalSlideExit,
+                            popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                            popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                        ) {
+                            composable<OnBoarding>(
+                                enterTransition = HootbookTransitions.noneEnter,
+                                exitTransition = HootbookTransitions.noneExit,
+                                popEnterTransition = HootbookTransitions.noneEnter,
+                                popExitTransition = HootbookTransitions.noneExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until onboarding is migrated
+                                    CoreOnboardingScreen(session, preferences, ::coreScreen) {
+                                        navController.navigate(Home) { popUpTo<OnBoarding> { inclusive = true } }
+                                    }
+                                }
+                            }
+                            composable<Home>(
+                                enterTransition = MainTabMotion.enter,
+                                exitTransition = MainTabMotion.exit,
+                                popEnterTransition = MainTabMotion.popEnter,
+                                popExitTransition = MainTabMotion.popExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until home is migrated
+                                    CoreHomeScreen(
+                                        onAccounts = { go(ManageAccounts) }, onCategories = { go(Categories) },
+                                        onTransactions = { go(Transactions()) }, onBudgets = { go(Budgets()) },
+                                        onSubscriptions = { go(Subscriptions()) }, onTemplates = { go(QuickTemplates) },
+                                        onDebts = { go(LendBorrow()) }, onSettings = { go(Settings) },
+                                        onCurrencies = { go(CurrencySettings()) }, onBackup = { go(DataPrivacy) },
+                                        onProfile = { go(Profile) }, onAppearance = { go(Appearance) },
+                                        onAnalytics = { go(Analytics) }, onAccount = { go(AccountDetail(it)) },
+                                        onBudget = { go(BudgetDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
+                                        onSubscription = { go(Subscriptions(it)) },
+                                    )
+                                }
+                            }
+                            composable<Transactions>(
+                                enterTransition = MainTabMotion.enter,
+                                exitTransition = MainTabMotion.exit,
+                                popEnterTransition = MainTabMotion.popEnter,
+                                popExitTransition = MainTabMotion.popExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until transactions is migrated
+                                    val route = entry.toRoute<Transactions>()
+                                    CoreTransactionsScreen(
+                                        onBack = back, accountId = route.accountId, subscriptionId = route.subscriptionId,
+                                        initialCategoryId = route.categoryId, initialFrom = route.from, initialTo = route.to,
+                                        initialCurrency = route.currency,
+                                        initialKinds = route.kinds?.split(",")?.map(TransactionKind::valueOf).orEmpty(),
+                                        onManageDebts = { go(LendBorrow()) },
+                                        onManageSubscriptions = { go(Subscriptions(it)) },
+                                        onManageMerchantIcon = { go(MerchantIcons(it)) },
+                                    )
+                                }
+                            }
+                            composable<TransactionDetail>(
+                                enterTransition = HootbookTransitions.noneEnter,
+                                exitTransition = HootbookTransitions.noneExit,
+                                popEnterTransition = HootbookTransitions.noneEnter,
+                                popExitTransition = HootbookTransitions.noneExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until transaction detail is migrated
+                                    CoreTransactionsScreen(
+                                        onBack = back, initialTransactionId = entry.toRoute<TransactionDetail>().transactionId,
+                                        onManageDebts = { go(LendBorrow()) }, onManageSubscriptions = { go(Subscriptions(it)) },
+                                        onManageMerchantIcon = { go(MerchantIcons(it)) },
+                                    )
+                                }
+                            }
+                            composable<AddTransaction>(
+                                enterTransition = HootbookTransitions.noneEnter,
+                                exitTransition = HootbookTransitions.noneExit,
+                                popEnterTransition = HootbookTransitions.noneEnter,
+                                popExitTransition = HootbookTransitions.noneExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    Box(Modifier.fillMaxSize())
+                                }
+                            }
+                            composable<Analytics>(
+                                enterTransition = MainTabMotion.enter,
+                                exitTransition = MainTabMotion.exit,
+                                popEnterTransition = MainTabMotion.popEnter,
+                                popExitTransition = MainTabMotion.popExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until analytics is migrated
+                                    CoreAnalyticsScreen(
+                                        onBack = back, onTransactions = { go(Transactions(categoryId = it)) },
+                                        onFilterTransactions = { filter ->
+                                            go(Transactions(
+                                                categoryId = filter.categoryIds.singleOrNull(), from = filter.from?.coreDateText()?.substringBefore('T'),
+                                                to = filter.to?.coreDateText()?.substringBefore('T'), currency = filter.currency,
+                                                kinds = filter.kinds.joinToString(",") { it.name },
+                                            ))
+                                        },
+                                    )
+                                }
+                            }
+                            composable<ManageAccounts>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until account management is migrated
+                                    CoreAccountsScreen(
+                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                    )
+                                }
+                            }
+                            composable<AccountCategoryRoute>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until account categories is migrated
+                                    CoreAccountsScreen(
+                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                    )
+                                }
+                            }
+                            composable<AccountDetail>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until account detail is migrated
+                                    val route = entry.toRoute<AccountDetail>()
+                                    CoreAccountsScreen(
+                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                        initialAccountId = route.accountId, initialHistory = route.history,
+                                    )
+                                }
+                            }
+                            composable<AddAccount>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until add account is migrated
+                                    val vm: CoreAccountsViewModel = hiltViewModel()
+                                    var opened by rememberSaveable { mutableStateOf(false) }
+                                    LaunchedEffect(Unit) {
+                                        if (!opened) { opened = true; if (vm.state.value.draft == null) vm.edit() }
+                                    }
+                                    CoreAccountsScreen(
+                                        onBack = back, onTransactions = { go(Transactions(accountId = it)) },
+                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                        viewModel = vm,
+                                    )
+                                }
+                            }
+                            composable<Categories>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until categories is migrated
+                                    CoreCategoriesScreen(back)
+                                }
+                            }
+                            composable<Budgets>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until budgets is migrated
+                                    CoreBudgetsScreen(back)
+                                }
+                            }
+                            composable<BudgetDetail>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until budget detail is migrated
+                                    val route = entry.toRoute<BudgetDetail>()
+                                    TemporaryBudgetScreen(back, route.budgetId, start = route.startDate, end = route.endDate)
+                                }
+                            }
+                            composable<BudgetHistory>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until budget history is migrated
+                                    TemporaryBudgetScreen(back, entry.toRoute<BudgetHistory>().budgetId, history = true)
+                                }
+                            }
+                            composable<Subscriptions>(
+                                enterTransition = HootbookTransitions.noneEnter,
+                                exitTransition = HootbookTransitions.noneExit,
+                                popEnterTransition = HootbookTransitions.noneEnter,
+                                popExitTransition = HootbookTransitions.noneExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until subscriptions is migrated
+                                    CoreSubscriptionsScreen(
+                                        onBack = back, subscriptionId = entry.toRoute<Subscriptions>().subscriptionId,
+                                        onRecordPayment = { go(AddTransaction(subscriptionId = it)) },
+                                    )
+                                }
+                            }
+                            composable<QuickTemplates>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until quick templates is migrated
+                                    CoreTemplatesScreen(back, { go(AddTransaction(templateId = it)) })
+                                }
+                            }
+                            composable<LendBorrow>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until lending and borrowing is migrated
+                                    CoreDebtsScreen(back, onOpenTransactions = { go(TransactionDetail(it)) })
+                                }
+                            }
+                            composable<Contacts>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until contacts is migrated
+                                    CoreDebtsScreen(back, initialPersonId = entry.toRoute<Contacts>().personId,
+                                        onOpenTransactions = { go(TransactionDetail(it)) })
+                                }
+                            }
+                            composable<PersonDetail>(
+                                enterTransition = HootbookTransitions.noneEnter,
+                                exitTransition = HootbookTransitions.noneExit,
+                                popEnterTransition = HootbookTransitions.noneEnter,
+                                popExitTransition = HootbookTransitions.noneExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until person detail is migrated
+                                    CoreDebtsScreen(back, initialPersonId = entry.toRoute<PersonDetail>().personId,
+                                        onOpenTransactions = { go(TransactionDetail(it)) })
+                                }
+                            }
+                            composable<Investments> { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until investments is migrated
+                                    val route = entry.toRoute<Investments>()
+                                    val vm: CoreInvestmentsViewModel = hiltViewModel()
+                                    val state by vm.state.collectAsStateWithLifecycle()
+                                    var opened by rememberSaveable { mutableStateOf(false) }
+                                    LaunchedEffect(route, state.loading) {
+                                        val connection = route.connectionId?.toLongOrNull()
+                                        val account = route.accountId
+                                        if (!state.loading && !opened && connection != null && account != null) {
+                                            opened = true
+                                            vm.selectAccount(BrokerAccountRef(connection, account))
+                                        }
+                                    }
+                                    CoreInvestmentsScreen(back, { go(ManageAccounts) }, { go(AccountDetail(it, history = true)) }, vm)
+                                }
+                            }
+                            composable<AiAssistant>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until AI assistant is migrated
+                                    CoreAiScreen(back)
+                                }
+                            }
+                            composable<Settings>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until settings is migrated
+                                    CoreSettingsScreen(back, { go(CurrencySettings()) }, { go(DataPrivacy) },
+                                        onRoute = ::coreScreen, coreSchemaVersion = schema)
+                                }
+                            }
+                            composable<CurrencySettings>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until currency settings is migrated
+                                    CoreCurrenciesScreen(back, entry.toRoute<CurrencySettings>().currency)
+                                }
+                            }
+                            composable<DataPrivacy>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until data and privacy is migrated
+                                    CoreBackupScreen(back)
+                                }
+                            }
+                            composable<CloudSync>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until sync is migrated
+                                    CoreSyncScreen(back, { go(DataPrivacy) }, ::record)
+                                }
+                            }
+                            composable<Profile>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until profile is migrated
+                                    CoreProfileScreen(back, { go(Contacts()) }, { go(MerchantIcons()) })
+                                }
+                            }
+                            composable<MerchantIcons> { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until merchant icons is migrated
+                                    CoreMerchantIconsScreen(back, entry.toRoute<MerchantIcons>().name)
+                                }
+                            }
+                            composable<Appearance>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until appearance is migrated
+                                    CoreAppearanceScreen(back, { go(AppLockSettings) })
+                                }
+                            }
+                            composable<AppLockSettings> { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until app-lock settings is migrated
+                                    CoreAppLockSettingsScreen(back)
+                                }
+                            }
+                            composable<NotificationSettings>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    // TEMP(restore-ui): mount Core screen until notification settings is migrated
+                                    CoreNotificationPreferencesScreen(back)
+                                }
+                            }
+                            composable<About>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    AboutScreen(back, { go(Licenses) }, blurEffects = prefs.blur, coreSchemaVersion = schema)
+                                }
+                            }
+                            composable<Licenses>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    LicensesScreen(back, coreSchemaVersion = schema)
+                                }
+                            }
+                        }
+                    }
+                }
+                SharedTransitionLayout {
+                    AnimatedVisibility(
+                        visible = isAddTransactionScreen,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        addEntry?.let { entry ->
+                            entry.LocalOwnersProvider(addStateHolder) {
+                                Box(
+                                    Modifier.sharedBounds(
+                                        rememberSharedContentState(key = "fab_to_add"),
+                                        animatedVisibilityScope = this@AnimatedVisibility,
+                                        boundsTransform = { _, _ ->
+                                            tween(MotionDurations.standard, easing = FastOutSlowInEasing)
+                                        },
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
+                                            contentScale = ContentScale.Fit,
+                                            alignment = Alignment.BottomEnd,
+                                        ),
+                                    ).skipToLookaheadSize()
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .fillMaxSize().safeDrawingPadding()
+                                        .consumeWindowInsets(WindowInsets.safeDrawing)
+                                ) {
+                                    val route = entry.toRoute<AddTransaction>()
+                                    if (route.initialTab == 1) {
+                                        // TEMP(restore-ui): mount Core screen until add subscription is migrated
+                                        CoreSubscriptionsScreen(
+                                            onBack = back, subscriptionId = route.subscriptionId,
+                                            onRecordPayment = { go(AddTransaction(subscriptionId = it)) },
+                                            initialCreate = route.subscriptionId == null,
+                                        )
+                                    } else {
+                                        // TEMP(restore-ui): mount Core screen until add transaction is migrated
+                                        CoreTransactionsScreen(
+                                            onBack = back, subscriptionId = route.subscriptionId, templateId = route.templateId,
+                                            initialNewKind = if (route.subscriptionId == null && route.templateId == null)
+                                                route.type?.let(TransactionKind::valueOf) ?: TransactionKind.EXPENSE else null,
+                                            onManageDebts = { go(LendBorrow()) }, onManageSubscriptions = { go(Subscriptions(it)) },
+                                            onManageMerchantIcon = { go(MerchantIcons(it)) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // FABs Container - Shown on Home, Transactions, Subscriptions, and Budget Detail
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        AnimatedVisibility(
+                            visible = isHomeScreen || isTransactionsScreen || isSubscriptionsScreen || isBudgetDetailScreen,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(Dimensions.Padding.content)
+                                // Clear of the 64 dp ShortNavigationBar when it shows
+                                .padding(bottom = if (showBottomBar) 64.dp else 0.dp)
+                                .navigationBarsPadding()
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                            ) {
+                                // Add FAB
+                                FloatingActionButton(
+                                    onClick = {
+                                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                        val initialTab = if (isSubscriptionsScreen) 1 else 0
+                                        navController.safeNavigate(AddTransaction(initialTab = initialTab))
+                                    },
+                                    modifier = Modifier
+                                        .then(
+                                            Modifier.sharedBounds(
+                                                rememberSharedContentState(key = "fab_to_add"),
+                                                animatedVisibilityScope = this@AnimatedVisibility,
+                                                boundsTransform = { _, _ ->
+                                                    tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
+                                                },
+                                                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
+                                                    contentScale = ContentScale.FillBounds,
+                                                    alignment = Alignment.Center
+                                                )
+                                            )
+                                                .skipToLookaheadSize()
+                                        ),
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Add,
+                                        contentDescription = stringResource(R.string.add_transaction_subscription_cd)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                // Block pointer input while a navigation transition is in progress so a quick tap
+                // meant for the destination screen doesn't hit the still-composed outgoing screen.
+                // Placed under the navigation bar so tab taps are never swallowed: switching tabs
+                // rapidly used to drop taps that landed during the previous tab's fade.
+                NavigationTransitionInputBlocker(
+                    navController = navController,
+                    isAddTransactionScreen = isAddTransactionScreen
+                )
+
+                // Bottom Navigation
+                HootbookBottomNavigation(
+                    navController = navController,
+                    currentDestination = currentDestination,
+                    visible = showBottomBar,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+
+                // Navigation rail on wide windows
+                HootbookNavigationRail(
+                    navController = navController,
+                    currentDestination = currentDestination,
+                    visible = showRail,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Overlays a transparent full-screen surface that consumes all pointer input while the current
+ * destination is not yet RESUMED (i.e. a navigation transition is animating). Shared element
+ * transitions hold the outgoing screen composed during the transition, which would otherwise
+ * let a quick tap meant for the list hit a clickable element on the screen being popped.
+ */
+private const val TransitionBlockGraceMillis = 600L
+
+@Composable
+private fun NavigationTransitionInputBlocker(
+    navController: NavHostController,
+    isAddTransactionScreen: Boolean
+) {
+    val entry by navController.currentBackStackEntryAsState()
+    val topState = entry?.lifecycle?.let { lifecycle ->
+        lifecycle.currentStateFlow.collectAsStateWithLifecycle(
+            initialValue = lifecycle.currentState,
+            lifecycle = lifecycle
+        ).value
+    }
+    val inTransition = !isAddTransactionScreen &&
+        topState != null && topState != Lifecycle.State.RESUMED
+    // Safety valve: a transition interrupted by rapid tab taps can leave the top entry STARTED
+    // without ever reaching RESUMED. Blocking must never outlive a real transition, so it ends
+    // after a short grace period regardless of lifecycle state.
+    var timedOut by remember(entry?.id) { mutableStateOf(false) }
+    LaunchedEffect(entry?.id, inTransition) {
+        timedOut = false
+        if (inTransition) {
+            kotlinx.coroutines.delay(TransitionBlockGraceMillis)
+            timedOut = true
+        }
+    }
+    val shouldBlock = inTransition && !timedOut
+    if (shouldBlock) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                        }
+                    }
+                }
+        )
+    }
+}
+
+/** Temporary detail/history selection uses Core-returned periods without deriving budget dates. */
+@Composable
+private fun TemporaryBudgetScreen(
+    back: () -> Unit,
+    budgetId: String,
+    history: Boolean = false,
+    start: String? = null,
+    end: String? = null,
+) {
+    val vm: CoreBudgetsViewModel = hiltViewModel()
+    val state by vm.state.collectAsStateWithLifecycle()
+    var opened by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.selected, state.history) {
+        if (!opened && state.selected?.id == budgetId) {
+            if (history) { opened = true; vm.history(true) }
+            else if (start != null && end != null) {
+                state.history.firstOrNull { it.start.coreDateText() == start && it.end.coreDateText() == end }
+                    ?.let { opened = true; vm.history(true); vm.historyPeriod(it) }
+                if (!opened && state.historyCursor != null && !state.historyLoading) vm.loadMoreHistory()
+            } else opened = true
+        }
+    }
+    CoreBudgetsScreen(back, initialBudgetId = budgetId, viewModel = vm)
+}
