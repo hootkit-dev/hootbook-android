@@ -661,4 +661,7 @@
     <string name="manual_recording_available_below">或在下方手动记账</string>
     <string name="broker_auto_sync_not_supported">当前券商暂不支持自动同步，请在下方手动记账。</string>
     <string name="broker_interactive_brokers">盈透证券</string>
+    <string name="broker_mode_auto_sync">自动同步</string>
+    <string name="broker_mode_manual">手动建账</string>
+    <string name="broker_auto_sync_hint">将通过券商官方接口自动拉取持仓与余额。如需自定义录入，请切换至「手动建账」。</string>
 </resources>

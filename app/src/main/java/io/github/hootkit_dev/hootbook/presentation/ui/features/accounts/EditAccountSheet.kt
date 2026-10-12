@@ -46,8 +46,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Pin
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -120,6 +122,11 @@ import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 
+enum class BrokerAddMode {
+    AUTO_SYNC,
+    MANUAL
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun EditAccountSheet(
@@ -188,6 +195,22 @@ fun EditAccountSheet(
         institutions.find { it.key == institutionKey && it.kind == InstitutionKind.BROKER } ?: defaultBroker
     }
     var showBrokerPickerSheet by remember { mutableStateOf(false) }
+
+    val supportsAutoSync = remember(currentBroker, brokerAutoSync) {
+        (currentBroker?.key == "ibkr" ||
+            BrokerProviderRegistry.findByInstitution(currentBroker?.key) != null) && brokerAutoSync != null
+    }
+    var brokerAddMode by remember { mutableStateOf(BrokerAddMode.AUTO_SYNC) }
+
+    LaunchedEffect(currentBroker?.key, supportsAutoSync) {
+        if (!supportsAutoSync) {
+            brokerAddMode = BrokerAddMode.MANUAL
+        } else {
+            brokerAddMode = BrokerAddMode.AUTO_SYNC
+        }
+    }
+
+    val showManualForm = !isBroker || account != null || !supportsAutoSync || brokerAddMode == BrokerAddMode.MANUAL
 
     LaunchedEffect(isBroker) {
         if (isBroker && account == null && (institutionKey == null || institutions.none { it.key == institutionKey && it.kind == InstitutionKind.BROKER })) {
@@ -674,38 +697,129 @@ fun EditAccountSheet(
                         }
                     }
 
-                    // Section 2: Capability for selected broker (第二步：根据所选券商展示能力)
-                    val supportsAutoSync = currentBroker?.key == "ibkr" ||
-                        BrokerProviderRegistry.findByInstitution(currentBroker?.key) != null
-
+                    // Section 2: Mode Tab (如果支持自动同步，展示「自动同步」与「手动建账」切换 Tab)
                     if (supportsAutoSync && brokerAutoSync != null) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            brokerAutoSync.invoke()
-
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                // 1. Auto Sync Tab
+                                val isAutoSync = brokerAddMode == BrokerAddMode.AUTO_SYNC
+                                Surface(
+                                    onClick = { brokerAddMode = BrokerAddMode.AUTO_SYNC },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isAutoSync) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    contentColor = if (isAutoSync) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp)
+                                        .semantics {
+                                            role = Role.Tab
+                                            selected = isAutoSync
+                                        }
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.AccountBalance,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.manual_recording_available_below),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Rounded.Sync, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        BasicText(
+                                            text = stringResource(R.string.broker_mode_auto_sync),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isAutoSync) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isAutoSync) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(
+                                                minFontSize = 9.sp,
+                                                maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                                stepSize = 0.5.sp
+                                            )
+                                        )
+                                    }
+                                }
+
+                                // 2. Manual Tab
+                                val isManual = brokerAddMode == BrokerAddMode.MANUAL
+                                Surface(
+                                    onClick = { brokerAddMode = BrokerAddMode.MANUAL },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isManual) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    contentColor = if (isManual) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp)
+                                        .semantics {
+                                            role = Role.Tab
+                                            selected = isManual
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Iconax.Edit2, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        BasicText(
+                                            text = stringResource(R.string.broker_mode_manual),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isManual) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isManual) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(
+                                                minFontSize = 9.sp,
+                                                maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                                stepSize = 0.5.sp
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Auto Sync Mode content
+                        if (brokerAddMode == BrokerAddMode.AUTO_SYNC) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                brokerAutoSync.invoke()
+
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CloudSync,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.broker_auto_sync_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -735,31 +849,34 @@ fun EditAccountSheet(
                         }
                     }
 
-                    // Section 3: Account Details & Balance Header (第三步：填写/确认账户参数)
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                    ) {
-                        Text(
-                            stringResource(R.string.broker_manual_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.semantics { heading() }
-                        )
-                        Text(
-                            stringResource(R.string.broker_manual_body),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    // Section 3: Account Details & Balance Header (仅在手动录入模式展示)
+                    if (showManualForm) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                        ) {
+                            Text(
+                                stringResource(R.string.broker_manual_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.semantics { heading() }
+                            )
+                            Text(
+                                stringResource(R.string.broker_manual_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
 
-            // Preview Section
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
+            if (showManualForm) {
+                // Preview Section
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
                 PreviewAccountCard(
                     bankName = bankName.ifEmpty { stringResource(R.string.preview_bank_name) },
                     balance = balance,
@@ -1116,10 +1233,12 @@ fun EditAccountSheet(
                     }
                 )
             }
+            }
 
         }
 
         // Action Buttons at Bottom
+        if (showManualForm) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1205,6 +1324,7 @@ fun EditAccountSheet(
                     }
                 }
             }
+        }
         }
     }
 }
