@@ -2,6 +2,13 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
@@ -85,9 +92,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowSummary
-import io.github.hootkit_dev.hootbook.domain.model.PersonCategory
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookCheckbox
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
@@ -113,7 +117,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeEffectScope
@@ -128,7 +132,7 @@ import java.math.BigDecimal
 @Composable
 fun SharedTransitionScope.LendBorrowScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToPersonDetail: (Long) -> Unit,
+    onNavigateToPersonDetail: (String) -> Unit,
     viewModel: LendBorrowViewModel = hiltViewModel(),
     animatedContentScope: AnimatedContentScope? = null,
     blurEffects: Boolean = LocalBlurEffects.current
@@ -268,6 +272,7 @@ fun SharedTransitionScope.LendBorrowScreen(
             }
         }
     ) { paddingValues ->
+        uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier
@@ -292,11 +297,12 @@ fun SharedTransitionScope.LendBorrowScreen(
                 verticalArrangement = Arrangement.spacedBy(1.5.dp)
             ) {
                 item {
-                    LendBorrowSummaryHeader(
-                        summary = uiState.summary,
+                    uiState.summary?.let { summary -> DebtSummaryHeader(
+                        summary = summary,
+                            people = uiState.persons,
                         currency = uiState.baseCurrency,
                         animatedContentScope = animatedContentScope
-                    )
+                    ) }
                 }
 
                 item {
@@ -383,7 +389,7 @@ fun SharedTransitionScope.LendBorrowScreen(
                                             thickness = 1.5.dp,
                                             color = MaterialTheme.colorScheme.surface
                                         )
-                                        PersonCategory.entries.forEachIndexed { index, category ->
+                                        PersonRelation.entries.filter { it != PersonRelation.UNKNOWN }.forEachIndexed { index, category ->
                                             DropdownMenuItem(
                                                 text = { Text(categoryLabel(category)) },
                                                 onClick = {
@@ -391,7 +397,7 @@ fun SharedTransitionScope.LendBorrowScreen(
                                                     showCategoryMenu = false
                                                 }
                                             )
-                                            if (index < PersonCategory.entries.size - 1) {
+                                            if (index < PersonRelation.entries.size - 1) {
                                                 HorizontalDivider(
                                                     thickness = 1.5.dp,
                                                     color = MaterialTheme.colorScheme.surface
@@ -444,6 +450,7 @@ fun SharedTransitionScope.LendBorrowScreen(
                         val position = ListItemPosition.from(index, uiState.filteredPersons.size)
                         PersonListItemCard(
                             person = person,
+                        attachmentStore = viewModel.attachmentStore,
                             onClick = { onNavigateToPersonDetail(person.id) },
                             onLongClick = {
                                 view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -471,16 +478,13 @@ fun SharedTransitionScope.LendBorrowScreen(
             AddEditLendBorrowTransactionSheet(
                 personsList = uiState.persons,
                 initialPerson = uiState.selectedPersonForTx,
-                accounts = uiState.accounts,
-                categories = uiState.categories,
-                attachmentService = viewModel.attachmentService,
+                accounts = uiState.accounts.values.toList(),
+                attachmentStore = viewModel.attachmentStore,
                 onDismiss = { viewModel.showAddTransactionSheet(false) },
-                onAddPerson = { name, phone, notes, color, avatar, category ->
-                    viewModel.addPerson(name, phone, notes, color, avatar, category)
-                },
-                onSave = { personId, type, amount, title, dueDate, accountId, category, merchant, attachments ->
-                    viewModel.addTransaction(personId, type, amount, title, dueDate, accountId, category, merchant, attachments)
-                }
+                onAddPerson = viewModel::createPerson,
+                mainCurrency = uiState.baseCurrency,
+                saving = uiState.saving, error = uiState.error,
+                onSave = viewModel::addTransaction
             )
         }
 
@@ -508,8 +512,9 @@ fun SharedTransitionScope.LendBorrowScreen(
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun SharedTransitionScope.LendBorrowSummaryHeader(
-    summary: LendBorrowSummary,
+private fun SharedTransitionScope.DebtSummaryHeader(
+    summary: DebtSummary,
+    people: List<Person>,
     currency: String,
     animatedContentScope: AnimatedContentScope? = null
 ) {
@@ -525,6 +530,7 @@ private fun SharedTransitionScope.LendBorrowSummaryHeader(
         ) {
             LoanBalanceContent(
                 summary = summary,
+                people = people,
                 currency = currency,
                 animatedContentScope = animatedContentScope
             )
@@ -535,7 +541,8 @@ private fun SharedTransitionScope.LendBorrowSummaryHeader(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.PersonListItemCard(
-    person: LendBorrowPerson,
+    person: Person,
+    attachmentStore: CoreAttachmentStore,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     isSelectionMode: Boolean = false,
@@ -553,11 +560,11 @@ fun SharedTransitionScope.PersonListItemCard(
         android.graphics.Color.parseColor("#4CAF50")
     }
 
-    val isGet = person.netBalance > BigDecimal.ZERO
-    val isOwe = person.netBalance < BigDecimal.ZERO
+    val isGet = person.totals.net > BigDecimal.ZERO
+    val isOwe = person.totals.net < BigDecimal.ZERO
     val statusText = when {
-        isGet -> stringResource(R.string.gets_amount, CurrencyFormatter.formatCurrency(person.netBalance, currency))
-        isOwe -> stringResource(R.string.owes_amount, CurrencyFormatter.formatCurrency(person.netBalance.abs(), currency))
+        isGet -> stringResource(R.string.gets_amount, CurrencyFormatter.formatCurrency(person.totals.net, currency))
+        isOwe -> stringResource(R.string.owes_amount, CurrencyFormatter.formatCurrency(person.totals.net.abs(), currency))
         else -> stringResource(R.string.settled_tag)
     }
 
@@ -595,16 +602,17 @@ fun SharedTransitionScope.PersonListItemCard(
             )
         },
         supporting = {
+            if (!person.totals.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                 modifier = Modifier.basicMarquee()
             ) {
                 SubtitleTag(
-                    text = categoryLabel(person.category ?: PersonCategory.OTHER),
-                    color = categoryColor(person.category ?: PersonCategory.OTHER)
+                    text = categoryLabel(person.relation ?: PersonRelation.OTHER),
+                    color = categoryColor(person.relation ?: PersonRelation.OTHER)
                 )
-                if (person.hasOverdue) {
+                if (person.totals.overdue) {
                     SubtitleTag(
                         text = stringResource(R.string.overdue_tag),
                         color = MaterialTheme.colorScheme.error
@@ -631,7 +639,7 @@ fun SharedTransitionScope.PersonListItemCard(
                 ) {
                     if (person.avatar != null) {
                         AsyncImage(
-                            model = person.avatar,
+                            model = person.avatar?.let(attachmentStore::resolve),
                             contentDescription = null,
                             modifier = Modifier.size(40.dp).clip(CircleShape),
                             contentScale = ContentScale.Crop
@@ -671,17 +679,17 @@ fun SharedTransitionScope.PersonListItemCard(
 }
 
 @Composable
-fun categoryLabel(category: PersonCategory): String = when (category) {
-    PersonCategory.FRIEND -> stringResource(R.string.category_friends)
-    PersonCategory.FAMILY -> stringResource(R.string.category_family)
-    PersonCategory.COLLEAGUE -> stringResource(R.string.category_colleagues)
-    PersonCategory.OTHER -> stringResource(R.string.category_other)
+fun categoryLabel(category: PersonRelation): String = when (category) {
+    PersonRelation.FRIEND -> stringResource(R.string.category_friends)
+    PersonRelation.FAMILY -> stringResource(R.string.category_family)
+    PersonRelation.COLLEAGUE -> stringResource(R.string.category_colleagues)
+    PersonRelation.OTHER, PersonRelation.UNKNOWN -> stringResource(R.string.category_other)
 }
 
 @Composable
-fun categoryColor(category: PersonCategory): Color = when (category) {
-    PersonCategory.FRIEND -> Color(0xFF6D7CFF)
-    PersonCategory.FAMILY -> Color(0xFFF06292)
-    PersonCategory.COLLEAGUE -> Color(0xFF26A69A)
-    PersonCategory.OTHER -> Color(0xFF9E9E9E)
+fun categoryColor(category: PersonRelation): Color = when (category) {
+    PersonRelation.FRIEND -> Color(0xFF6D7CFF)
+    PersonRelation.FAMILY -> Color(0xFFF06292)
+    PersonRelation.COLLEAGUE -> Color(0xFF26A69A)
+    PersonRelation.OTHER, PersonRelation.UNKNOWN -> Color(0xFF9E9E9E)
 }

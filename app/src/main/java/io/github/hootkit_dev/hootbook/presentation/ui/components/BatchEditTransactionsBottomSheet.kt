@@ -54,8 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPad
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Calendar
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DocumentText2
@@ -66,7 +66,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.ReceiptItem
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoTime
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import dev.chrisbanes.haze.HazeState
 import java.math.BigDecimal
 import java.time.Instant
@@ -79,8 +79,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BatchEditTransactionsBottomSheet(
     selectedIdsCount: Int,
-    categories: Map<String, CategoryEntity>,
-    subcategoriesMap: Map<Long, List<SubcategoryEntity>>,
+    categories: Map<String, Category>,
+    subcategoriesMap: Map<String, List<Subcategory>>,
     onDismiss: () -> Unit,
     onApply: (
         newDate: LocalDate?,
@@ -104,8 +104,8 @@ fun BatchEditTransactionsBottomSheet(
     var showTimePicker by remember { mutableStateOf(false) }
 
     var updateCategory by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf<CategoryEntity?>(null) }
-    var selectedSubcategory by remember { mutableStateOf<SubcategoryEntity?>(null) }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var selectedSubcategory by remember { mutableStateOf<Subcategory?>(null) }
     var showCategorySheet by remember { mutableStateOf(false) }
 
     var updateAmount by remember { mutableStateOf(false) }
@@ -176,14 +176,6 @@ fun BatchEditTransactionsBottomSheet(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
-
-//                item {
-//                    Text(
-//                        text = stringResource(R.string.batch_edit_toggle_hint),
-//                        style = MaterialTheme.typography.labelLarge,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//                }
 
                 // Date Card
                 item {
@@ -282,14 +274,14 @@ fun BatchEditTransactionsBottomSheet(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = selectedCategory?.name?.let { io.github.hootkit_dev.hootbook.presentation.common.categoryName(it) } ?: stringResource(R.string.batch_edit_select_category),
+                                    text = selectedCategory?.displayName ?: stringResource(R.string.batch_edit_select_category),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (selectedCategory != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 if (selectedSubcategory != null) {
                                     Text(
-                                        text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(selectedSubcategory?.name),
+                                        text = selectedSubcategory?.displayName.orEmpty(),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -326,7 +318,7 @@ fun BatchEditTransactionsBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = selectedAmount?.let { CurrencyFormatter.formatAmount(it) }
+                                text = selectedAmount?.let { CoreMoneyPresentation.formatAmount(it) }
                                     ?: "0.00",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
@@ -391,8 +383,8 @@ fun BatchEditTransactionsBottomSheet(
                         onApply(
                             if (updateDate) selectedDate else null,
                             if (updateTime) selectedTime else null,
-                            if (updateCategory) selectedCategory?.name else null,
-                            if (updateCategory) selectedSubcategory?.name else null,
+                            if (updateCategory) selectedCategory?.id else null,
+                            if (updateCategory) selectedSubcategory?.id else null,
                             if (updateAmount) selectedAmount else null,
                             if (updateNote) noteText else null
                         )

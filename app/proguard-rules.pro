@@ -20,16 +20,6 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# Room
--keep class * extends androidx.room.RoomDatabase
--keep @androidx.room.Entity class *
--keep @androidx.room.Dao class *
--keepclassmembers @androidx.room.Entity class * {
-    *;
-}
--keep class io.github.hootkit_dev.hootbook.data.database.entity.** { *; }
--keep class io.github.hootkit_dev.hootbook.data.database.dao.** { *; }
-
 # Hilt
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
@@ -65,10 +55,6 @@
 -keep class * extends androidx.work.ListenableWorker {
     public <init>(android.content.Context,androidx.work.WorkerParameters);
 }
-
-# Keep data classes
--keep class io.github.hootkit_dev.hootbook.data.model.** { *; }
--keep class io.github.hootkit_dev.hootbook.domain.model.** { *; }
 
 # Keep enum classes
 -keepclassmembers enum * {

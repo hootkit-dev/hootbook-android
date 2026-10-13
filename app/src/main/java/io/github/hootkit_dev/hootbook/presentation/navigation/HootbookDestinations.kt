@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 
 // Centralized transition definitions
 object HootbookTransitions {
-    
+
     // Horizontal slide transitions for sub-screens
     val horizontalSlideEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         slideInHorizontally(
@@ -28,28 +28,28 @@ object HootbookTransitions {
             animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
         ) + fadeIn(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
-    
+
     val horizontalSlideExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         slideOutHorizontally(
             targetOffsetX = { -it / 4 },
             animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
         ) + fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
-    
+
     val horizontalSlidePopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         slideInHorizontally(
             initialOffsetX = { -it / 4 },
             animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
         ) + fadeIn(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
-    
+
     val horizontalSlidePopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         slideOutHorizontally(
             targetOffsetX = { it },
             animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
         ) + fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
-    
+
     // Shared axis X between peer tabs: a short slide (a tenth of the width) with a fade, in
     // the direction of travel (+1 to the right in the tab bar, -1 to the left)
     fun sharedAxisXEnter(direction: Int): EnterTransition =
@@ -72,7 +72,7 @@ object HootbookTransitions {
                 animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
             )
     }
-    
+
     val fabScaleExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard)) +
             scaleOut(
@@ -80,7 +80,7 @@ object HootbookTransitions {
                 animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
             )
     }
-    
+
     val fabScalePopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         fadeIn(animationSpec = tween(durationMillis = MotionDurations.standard)) +
             scaleIn(
@@ -88,7 +88,7 @@ object HootbookTransitions {
                 animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
             )
     }
-    
+
     val fabScalePopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard)) +
             scaleOut(
@@ -96,29 +96,29 @@ object HootbookTransitions {
                 animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
             )
     }
-    
+
     // Scale transitions for detail screens
     val scaleEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         fadeIn(animationSpec = tween(durationMillis = MotionDurations.standard)) +
             scaleIn(animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing))
     }
-    
+
     val scaleExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard)) +
             scaleOut(animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing))
     }
-    
+
     // None transitions - for screens using shared element transitions entirely
     val noneEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         fadeIn(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
-    
+
     val noneExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         fadeOut(animationSpec = tween(durationMillis = MotionDurations.standard))
     }
 }
 
-@Serializable object AppLock
+@Serializable object AppLockSettings
 
 @Serializable object OnBoarding
 
@@ -126,37 +126,36 @@ object HootbookTransitions {
 
 @Serializable
 data class Transactions(
-    val category: String? = null,
-    val merchant: String? = null,
-    val period: String? = null,
+    val accountId: String? = null,
+    val categoryId: String? = null,
+    val subscriptionId: String? = null,
+    val from: String? = null,
+    val to: String? = null,
     val currency: String? = null,
-    val type: String? = null,
-    val focusSearch: Boolean = false
+    val kinds: String? = null,
 )
 
-
 @Serializable object Settings
-@Serializable object CurrencySettings
-@Serializable object Subscriptions
+@Serializable data class CurrencySettings(val currency: String? = null)
+@Serializable data class Subscriptions(val subscriptionId: String? = null)
 @Serializable object Categories
 
 @Serializable object Analytics
 
 
-@Serializable data class TransactionDetail(val transactionId: Long, val sharedElementKey: String? = null)
+@Serializable data class TransactionDetail(val transactionId: String, val sharedElementKey: String? = null)
 
 @Serializable data class AddTransaction(
     val initialTab: Int = 0,
-    val subscriptionId: Long? = null,
+    val subscriptionId: String? = null,
     val type: String? = null,
     // A quick template to fill the form with, from a launcher shortcut or the home-screen widget
-    val templateId: Long? = null
+    val templateId: String? = null
 )
 
-@Serializable data class AccountDetail(val bankName: String, val accountLast4: String)
+@Serializable data class AccountDetail(val accountId: String, val history: Boolean = false)
 
 
-@Serializable object Faq
 
 @Serializable object QuickTemplates
 
@@ -165,20 +164,20 @@ data class Transactions(
 
 @Serializable object Appearance
 
-@Serializable object Investments
+// Brokerage connections are Core-local numeric handles, transported as text in navigation.
+@Serializable data class Investments(val connectionId: String? = null, val accountId: String? = null)
 
 @Serializable object ManageAccounts
 
 @Serializable object Profile
 
 @Serializable data class Contacts(
-    val personId: Long? = null,
+    val personId: String? = null,
     val sharedElementKey: String? = null
 )
 
 
 @Serializable object DataPrivacy
-@Serializable object CloudBackup
 
 /** Settings → Sync: multi-device sync through Firebase (docs/sync.md) */
 @Serializable object CloudSync
@@ -186,16 +185,16 @@ data class Transactions(
 
 @Serializable object NotificationSettings
 
-@Serializable data class Budgets(val sharedElementPrefix: Long? = null)
+@Serializable data class Budgets(val sharedElementPrefix: String? = null)
 
 @Serializable data class BudgetDetail(
-    val budgetId: Long, 
+    val budgetId: String,
     val sharedElementKey: String? = null,
     val startDate: String? = null,
     val endDate: String? = null
 )
 
-@Serializable data class BudgetHistory(val budgetId: Long)
+@Serializable data class BudgetHistory(val budgetId: String)
 
 
 @Serializable data class AddAccount(val category: String? = null)
@@ -209,7 +208,7 @@ data class Transactions(
 @Serializable data class LendBorrow(val filter: String? = null)
 
 @Serializable data class PersonDetail(
-    val personId: Long,
+    val personId: String,
     val sharedElementKey: String? = null
 )
 
@@ -221,3 +220,5 @@ val BOTTOM_NAV_ROUTES = setOf(
 )
 
 @Serializable data class AccountCategoryRoute(val category: String)
+
+@Serializable data class MerchantIcons(val name: String? = null)

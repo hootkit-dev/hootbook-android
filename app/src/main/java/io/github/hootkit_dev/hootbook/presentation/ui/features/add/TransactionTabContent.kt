@@ -7,7 +7,6 @@ import io.github.hootkit_dev.hootbook.utils.DateFormats
 import io.github.hootkit_dev.hootbook.utils.pickerDate
 import io.github.hootkit_dev.hootbook.utils.toPickerMillis
 
-import io.github.hootkit_dev.hootbook.data.repository.LocalAccountHoldings
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AddCurrencyConfirmation
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountCurrencyChoice
 import androidx.compose.ui.text.input.KeyboardType
@@ -16,6 +15,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookSwitch
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionTypeSelector
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material.icons.rounded.Bolt
 
@@ -101,7 +101,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.AddEditPersonSheet
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import dev.hootkit.core.CategoryKind
+import dev.hootkit.core.PersonRelation
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -116,7 +119,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.core.graphics.toColorInt
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
+import dev.hootkit.core.TransactionKind
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountSelectionSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AttachmentSection
@@ -128,12 +131,13 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.TimePicker
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPad
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Box2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Calendar
+import io.github.hootkit_dev.hootbook.presentation.ui.icons.Clock
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DocumentText2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Shop
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import io.github.hootkit_dev.hootbook.utils.horizontalFadingEdge
 import dev.chrisbanes.haze.HazeState
@@ -152,22 +156,20 @@ fun TransactionTabContent(
     hazeState: HazeState
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.transactionUiState.collectAsState()
-    // Accounts' currencies change when one is added
-    val holdingsVersion = LocalAccountHoldings.current
-    val categories by viewModel.categories.collectAsState()
-    val transactionSubcategories by viewModel.transactionSubcategories.collectAsState()
-    val transactionAttachments by viewModel.transactionAttachments.collectAsState()
-    val persons by viewModel.persons.collectAsState()
-
+    val state by viewModel.uiState.collectAsState()
+    val draft = state.transaction
+    val categories = state.categories.values.toList()
+    val persons = state.people.values.toList()
+    val accounts = state.accounts.values.toList()
+    val selectedAccount = state.accounts[draft.accountId]
+    val targetAccount = state.accounts[draft.toAccountId]
+    val selectedCategoryObj = state.categories[draft.categoryId]
+    val transactionSubcategories = selectedCategoryObj?.subcategories.orEmpty()
+    val selectedSubcategoryObj = transactionSubcategories.find { it.id == draft.subcategoryId }
+    val transactionAttachments = draft.attachments
+    val allSubcategories = state.categories.mapValues { it.value.subcategories }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    val selectedCategoryObj = remember(uiState.category, categories) {
-        categories.find { it.name == uiState.category }
-    }
-    val selectedSubcategoryObj = remember(uiState.subcategory, transactionSubcategories) {
-        transactionSubcategories.find { it.name == uiState.subcategory }
-    }
+    LaunchedEffect(draft) { viewModel.checkDuplicates() }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -175,7 +177,7 @@ fun TransactionTabContent(
     var showNumberPad by remember { mutableStateOf(false) }
 
     // A template without an amount (tapped here, or from a shortcut or the widget) asks for it
-    val amountPadRequested by viewModel.amountPadRequested.collectAsState()
+    val amountPadRequested = state.amountPadRequested
     LaunchedEffect(amountPadRequested) {
         if (amountPadRequested) {
             showNumberPad = true
@@ -199,14 +201,15 @@ fun TransactionTabContent(
         ) {
             // Saved and suggested templates. A tap fills the form and, unless the template
             // carries the amount, opens the number pad for it.
-            val quickTemplates by viewModel.quickTemplates.collectAsState()
-            val suggestedTemplates by viewModel.suggestedTemplates.collectAsState()
+            val quickTemplates = state.templates
+            val suggestedTemplates = state.suggestions
             if (quickTemplates.isNotEmpty() || suggestedTemplates.isNotEmpty()) {
                 TemplateRow(
                     templates = quickTemplates,
                     suggested = suggestedTemplates,
                     categories = categories,
                     onSelect = viewModel::applyQuickTemplate,
+                    onSuggestedSelect = viewModel::applySuggestedTemplate,
                     onPin = viewModel::pinSuggestedTemplate,
                     onDismiss = viewModel::dismissSuggestedTemplate
                 )
@@ -214,8 +217,8 @@ fun TransactionTabContent(
 
             // Amount Input
             AmountInput(
-                amount = uiState.amount.ifEmpty { "0" },
-                currencySymbol = CurrencyFormatter.getCurrencySymbol(uiState.currency),
+                amount = state.amount.ifEmpty { "0" },
+                currencySymbol = CoreMoneyPresentation.getCurrencySymbol(draft.currency.orEmpty()),
                 onClick = {
                     showNumberPad = true
                 },
@@ -223,11 +226,11 @@ fun TransactionTabContent(
             )
 
             // An account holding several currencies: which one the money is in
-            val sourceCurrencies = remember(uiState.selectedAccount, holdingsVersion) { viewModel.currenciesOf(uiState.selectedAccount) }
+            val sourceCurrencies = remember(selectedAccount) { viewModel.currenciesOf(selectedAccount) }
             if (sourceCurrencies.size > 1) {
                 AccountCurrencyChoice(
                     currencies = sourceCurrencies,
-                    selected = uiState.currency,
+                    selected = draft.currency.orEmpty(),
                     onSelect = viewModel::updateTransactionCurrency
                 )
             }
@@ -240,76 +243,29 @@ fun TransactionTabContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TransactionType.entries.filter { it != TransactionType.BALANCE_UPDATE }.forEach { type ->
-                        FilterChip(
-                            selected = uiState.transactionType == type,
-                            onClick = { viewModel.updateTransactionType(type) },
-                            label = {
-                                Text(stringResource(type.labelRes))
-                            },
-                            leadingIcon =
-                                if (uiState.transactionType == type) {
-                                    {
-                                        Icon(
-                                            Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderWidth = 0.dp,
-                                selected = uiState.transactionType == type,
-                                enabled = true
-                            ),
-                        )
-                    }
-                }
-            }
-            // The categories used most for this type, one tap each
-            if (uiState.transactionType in setOf(TransactionType.EXPENSE, TransactionType.INCOME,
-                    TransactionType.CREDIT, TransactionType.INVESTMENT)) {
-                val commonCategories by viewModel.commonCategories.collectAsState()
-                CommonCategoryRow(
-                    common = commonCategories,
-                    categories = categories,
-                    isIncome = uiState.transactionType == TransactionType.INCOME,
-                    selected = uiState.category,
-                    onSelect = viewModel::updateTransactionCategory,
-                    onShowAll = { showCategoryMenu = true }
+                TransactionTypeSelector(
+                    selectedKind = draft.kind,
+                    onSelectKind = { viewModel.updateTransactionType(it) }
                 )
             }
-
             // Date and Time Selection
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Date Button
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(Dimensions.Radius.md)
-                        )
-                        .padding(8.dp)
+                        .clip(RoundedCornerShape(Dimensions.Radius.md))
+                        .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
                         .clickable(
                             onClick = { showDatePicker = true },
                             indication = ripple(),
                             interactionSource = remember { MutableInteractionSource() }
-                        ),
+                        )
+                        .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -326,22 +282,22 @@ fun TransactionTabContent(
                         Spacer(Modifier.size(8.dp))
 
                         val dateLabel =
-                            uiState.date.format(DateFormats.monthDayFormatter())
+                            draft.dateTime.toJavaDateTime().format(DateFormats.monthDayFormatter())
                         val yearLabel =
-                            uiState.date.format(DateTimeFormatter.ofPattern("yyyy"))
+                            draft.dateTime.toJavaDateTime().format(DateTimeFormatter.ofPattern("yyyy"))
                         Column(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Text(
                                 text = yearLabel,
-                                
+
                                 textAlign = TextAlign.Start,
                                 color = themeColors.primary,
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
                                 text = dateLabel,
-                                
+
                                 textAlign = TextAlign.Start,
                                 color = themeColors.onSurface,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -358,31 +314,44 @@ fun TransactionTabContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 8.dp, vertical = 12.dp)
-                        .clickable { showTimePicker = true },
-                    contentAlignment = Alignment.CenterEnd
+                        .clip(RoundedCornerShape(Dimensions.Radius.md))
+                        .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable(
+                            onClick = { showTimePicker = true },
+                            indication = ripple(),
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        val hour = uiState.date.hour
-                        val minute = uiState.date.minute
-                        Box(modifier = Modifier
-                            .padding(5.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary.copy(0.2f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                        val themeColors = MaterialTheme.colorScheme
+                        Icon(
+                            imageVector = Iconax.Clock,
+                            contentDescription = stringResource(R.string.select_time),
+                            tint = themeColors.onSurface
+                        )
+                        Spacer(Modifier.size(8.dp))
+
+                        val hour = draft.dateTime.toJavaDateTime().hour
+                        val minute = draft.dateTime.toJavaDateTime().minute
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(0.2f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = String.format("%02d", hour),
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 16.sp,
-                                modifier = Modifier.padding(5.dp)
                             )
                         }
 
@@ -391,117 +360,34 @@ fun TransactionTabContent(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
 
                         Box(
                             modifier = Modifier
-                                .padding(5.dp)
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(8.dp)
                                 )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = String.format("%02d", minute),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 16.sp,
-                                modifier = Modifier.padding(5.dp)
                             )
                         }
                     }
-                }
-            }
-
-            // Due Date (only relevant for Lent / Borrowed loans)
-            BlurredAnimatedVisibility(
-                uiState.transactionType == TransactionType.LENT ||
-                    uiState.transactionType == TransactionType.BORROWED
-            ) {
-                var showDueDatePicker by remember { mutableStateOf(false) }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(Dimensions.Radius.md)
-                        )
-                        .clip(RoundedCornerShape(Dimensions.Radius.md))
-                        .clickable { showDueDatePicker = true }
-                        .padding(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Iconax.Calendar,
-                            contentDescription = null,
-                            tint = if (uiState.dueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.due_date),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = uiState.dueDate?.format(DateFormats.fullDateFormatter())
-                                    ?: stringResource(R.string.no_due_date),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (uiState.dueDate != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.basicMarquee()
-                            )
-                        }
-                        if (uiState.dueDate != null) {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = stringResource(R.string.clear_due_date),
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable {
-                                        showDueDatePicker = false
-                                        viewModel.updateTransactionDueDate(null)
-                                    },
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                if (showDueDatePicker) {
-                    val dueDatePickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = (uiState.dueDate ?: java.time.LocalDateTime.now()).toLocalDate().toPickerMillis()
-                    )
-                    DatePicker(
-                        onDismiss = { showDueDatePicker = false },
-                        onConfirm = {
-                            dueDatePickerState.selectedDateMillis?.let { millis ->
-                                viewModel.updateTransactionDueDate(
-                                    pickerDate(millis).atStartOfDay()
-                                )
-                            }
-                            showDueDatePicker = false
-                        },
-                        datePickerState = dueDatePickerState,
-                        blurEffects = blurEffects,
-                        hazeState = hazeState
-                    )
                 }
             }
 
             // Person Selection for Lent / Borrowed
             BlurredAnimatedVisibility(
-                uiState.transactionType == TransactionType.LENT ||
-                    uiState.transactionType == TransactionType.BORROWED
+                draft.kind == TransactionKind.LOAN_OUT ||
+                    draft.kind == TransactionKind.LOAN_IN
             ) {
                 var showAddPersonSheet by remember { mutableStateOf(false) }
-                var lastAddedPersonName by remember { mutableStateOf<String?>(null) }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -558,7 +444,7 @@ fun TransactionTabContent(
                         }
 
                         items(persons, key = { it.id }) { person ->
-                            val isSelected = uiState.selectedPersonId == person.id
+                            val isSelected = state.personId == person.id
                             val colorInt = try {
                                 android.graphics.Color.parseColor(person.color)
                             } catch (_: Exception) {
@@ -585,7 +471,7 @@ fun TransactionTabContent(
                                 ) {
                                     if (person.avatar != null) {
                                         AsyncImage(
-                                            model = person.avatar,
+                                            model = person.avatar?.let(viewModel.attachmentStore::resolve),
                                             contentDescription = null,
                                             modifier = Modifier
                                                 .size(56.dp)
@@ -617,35 +503,26 @@ fun TransactionTabContent(
 
                 if (showAddPersonSheet) {
                     AddEditPersonSheet(
-                        attachmentService = viewModel.attachmentService,
-                        onDismiss = { showAddPersonSheet = false },
+                        attachmentStore = viewModel.attachmentStore,
+                        saving = state.writing, error = state.error,
+                        onDismiss = { if (!state.writing) showAddPersonSheet = false },
                         onSave = { name, phone, notes, color, avatar, category ->
-                            lastAddedPersonName = name
-                            viewModel.addPerson(name, phone, notes, color, avatar, category)
-                            showAddPersonSheet = false
+                            viewModel.addPerson(name, phone, notes, color, avatar, category) {
+                                showAddPersonSheet = false
+                            }
                         }
                     )
-                }
-
-                LaunchedEffect(persons) {
-                    val lastAdded = lastAddedPersonName
-                    if (lastAdded != null) {
-                        persons.firstOrNull { it.name == lastAdded }?.let {
-                            viewModel.updateTransactionPersonId(it.id)
-                        }
-                        lastAddedPersonName = null
-                    }
                 }
             }
 
             // Accounts Section
-            val accounts by viewModel.accounts.collectAsState()
+
             var showAccountSheet by remember { mutableStateOf(false) }
             var showTargetAccountSheet by remember { mutableStateOf(false) }
             var pendingTargetCurrency by remember { mutableStateOf<String?>(null) }
 
             // Conditional UI based on transaction type
-            BlurredAnimatedVisibility(uiState.transactionType == TransactionType.TRANSFER) {
+            BlurredAnimatedVisibility(draft.kind == TransactionKind.TRANSFER) {
                 // Transfer Type UI: Source Account + Exchange Icon + Target Account + Category
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -661,7 +538,7 @@ fun TransactionTabContent(
                         ) {
                             // Source Account Card
                             AccountField(
-                                account = uiState.selectedAccount,
+                                account = selectedAccount,
                                 onClick = { showAccountSheet = true },
                                 placeholder = stringResource(R.string.select_source_account),
                                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
@@ -669,7 +546,7 @@ fun TransactionTabContent(
 
                             // Target Account Card
                             AccountField(
-                                account = uiState.targetAccount,
+                                account = targetAccount,
                                 onClick = { showTargetAccountSheet = true },
                                 placeholder = stringResource(R.string.select_target_account),
                                 shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
@@ -703,21 +580,21 @@ fun TransactionTabContent(
 
                     // Into an account in another currency: what arrives there
                     // Which of the target's currencies it goes into; one it lacks can be added
-                    val target = uiState.targetAccount
+                    val target = targetAccount
                     if (target != null) {
-                        val targetCurrencies = remember(target, holdingsVersion) { viewModel.currenciesOf(target) }
-                        val missing = uiState.currency.takeIf { it !in targetCurrencies }
+                        val targetCurrencies = remember(target) { viewModel.currenciesOf(target) }
+                        val missing = draft.currency.orEmpty().takeIf { it !in targetCurrencies }
                         if (targetCurrencies.size > 1 || missing != null) {
                             if (missing != null) {
                                 Text(
-                                    text = stringResource(R.string.transfer_target_lacks_currency, target.bankName, missing),
+                                    text = stringResource(R.string.transfer_target_lacks_currency, target.name, missing),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             AccountCurrencyChoice(
                                 currencies = targetCurrencies,
-                                selected = uiState.targetCurrency,
+                                selected = draft.toCurrency,
                                 onSelect = viewModel::updateTransactionTargetCurrency,
                                 suggested = missing,
                                 onAddSuggested = { pendingTargetCurrency = missing }
@@ -728,23 +605,23 @@ fun TransactionTabContent(
                         AddCurrencyConfirmation(
                             currency = currency,
                             onConfirm = {
-                                uiState.targetAccount?.let { viewModel.addCurrencyToAccount(it, currency, asTarget = true) }
+                                targetAccount?.let { viewModel.addCurrencyToAccount(it, currency, asTarget = true) }
                                 pendingTargetCurrency = null
                             },
                             onDismiss = { pendingTargetCurrency = null }
                         )
                     }
 
-                    val targetCurrency = uiState.targetCurrency
-                    if (targetCurrency != null && targetCurrency != uiState.currency) {
+                    val targetCurrency = draft.toCurrency
+                    if (targetCurrency != null && targetCurrency != draft.currency.orEmpty()) {
                         TextField(
-                            value = uiState.targetAmount,
+                            value = state.targetAmount,
                             onValueChange = viewModel::updateTargetAmount,
                             label = {
                                 Text(stringResource(R.string.transfer_received_amount, targetCurrency), fontWeight = FontWeight.SemiBold)
                             },
                             supportingText = {
-                                Text(stringResource(R.string.transfer_received_amount_hint, uiState.currency, targetCurrency))
+                                Text(stringResource(R.string.transfer_received_amount_hint, draft.currency.orEmpty(), targetCurrency))
                             },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -761,87 +638,32 @@ fun TransactionTabContent(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Category Selection with full rounded corners
-                    val categoryInteractionSource = remember { MutableInteractionSource() }
-                    TextField(
-                        value = io.github.hootkit_dev.hootbook.presentation.common.categoryName(uiState.category),
-                        onValueChange = {},
-                        label = { Text(stringResource(R.string.category_label), fontWeight = FontWeight.SemiBold) },
-                        readOnly = true,
-                        singleLine = true,
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .clickable(
-                                    interactionSource = categoryInteractionSource,
-                                    indication = ripple()
-                                ) {
-                                    showCategoryMenu = true
-                                },
-                        shape = RoundedCornerShape(16.dp),
-                        leadingIcon = {
-                            val context = LocalContext.current
-                            val resolvedResId = remember(selectedCategoryObj) {
-                                selectedCategoryObj?.let { cat ->
-                                    if (!cat.iconName.isNullOrEmpty()) {
-                                        val res = IconResolutionUtils.nameToResId(context, cat.iconName)
-                                        if (res != 0) res else cat.iconResId
-                                    } else cat.iconResId
-                                } ?: 0
-                            }
 
-                            if (resolvedResId != 0) {
-                                Icon(
-                                    painter = painterResource(id = resolvedResId),
-                                    contentDescription = null,
-                                    tint = Color.Unspecified,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Icon(Iconax.Box2, contentDescription = null)
-                            }
-                        },
-                        trailingIcon = {
-                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
-                        },
-                        isError = uiState.categoryError != null,
-                        supportingText = uiState.categoryError?.let { { Text(it) } },
-                        enabled = false,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                0.7f
-                            ),
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            disabledIndicatorColor = Color.Transparent,
-                            disabledLabelColor = MaterialTheme.colorScheme.primary,
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
                 }
             }
-            BlurredAnimatedVisibility(uiState.transactionType != TransactionType.TRANSFER){
+            BlurredAnimatedVisibility(draft.kind != TransactionKind.TRANSFER){
                 // Non-Transfer Type UI: Original layout with connected sections
+                val hasCategoryBelow = draft.kind == TransactionKind.EXPENSE || draft.kind == TransactionKind.INCOME
                 Column(
                     modifier = Modifier.animateContentSize().fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(1.5.dp)
                 ) {
                     AccountField(
-                        account = uiState.selectedAccount,
+                        account = selectedAccount,
                         onClick = { showAccountSheet = true },
                         placeholder = stringResource(R.string.select_account),
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
+                        shape = if (hasCategoryBelow) {
+                            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                        } else {
+                            RoundedCornerShape(16.dp)
+                        },
                     )
-                    
+
+                    if (draft.kind == TransactionKind.EXPENSE || draft.kind == TransactionKind.INCOME) {
                     // Category Selection
                     val categoryInteractionSource = remember { MutableInteractionSource() }
                     TextField(
-                        value = io.github.hootkit_dev.hootbook.presentation.common.categoryName(uiState.category),
+                        value = selectedCategoryObj?.displayName.orEmpty(),
                         onValueChange = {},
                         label = { Text(stringResource(R.string.category_label), fontWeight = FontWeight.SemiBold) },
                         readOnly = true,
@@ -865,10 +687,10 @@ fun TransactionTabContent(
                             val context = LocalContext.current
                             val resolvedResId = remember(selectedCategoryObj) {
                                 selectedCategoryObj?.let { cat ->
-                                    if (!cat.iconName.isNullOrEmpty()) {
-                                        val res = IconResolutionUtils.nameToResId(context, cat.iconName)
-                                        if (res != 0) res else cat.iconResId
-                                    } else cat.iconResId
+                                    if (!cat.icon.isNullOrEmpty()) {
+                                        val res = IconResolutionUtils.nameToResId(context, cat.icon)
+                                        if (res != 0) res else 0
+                                    } else 0
                                 } ?: 0
                             }
 
@@ -886,8 +708,8 @@ fun TransactionTabContent(
                         trailingIcon = {
                             Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
                         },
-                        isError = uiState.categoryError != null,
-                        supportingText = uiState.categoryError?.let { { Text(it) } },
+                        isError = false,
+                        supportingText = null,
                         enabled = false, // Disable typing, handle click above
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -906,10 +728,10 @@ fun TransactionTabContent(
                     )
 
                     // Subcategory Display (Read-only, selected via sheet)
-                    if (uiState.subcategory != null) {
+                    if (draft.subcategoryId != null) {
                         Spacer(modifier = Modifier.height(Spacing.md))
                         TextField(
-                            value = uiState.subcategory?.let { io.github.hootkit_dev.hootbook.presentation.common.categoryName(it) } ?: stringResource(R.string.none_label),
+                            value = state.categories[draft.categoryId]?.subcategories?.find { it.id == draft.subcategoryId }?.displayName ?: stringResource(R.string.none_label),
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.subcategory_label)) },
@@ -917,10 +739,10 @@ fun TransactionTabContent(
                                 val context = LocalContext.current
                                 val resolvedResId = remember(selectedSubcategoryObj) {
                                     selectedSubcategoryObj?.let { sub ->
-                                        if (!sub.iconName.isNullOrEmpty()) {
-                                            val res = IconResolutionUtils.nameToResId(context, sub.iconName)
-                                            if (res != 0) res else sub.iconResId
-                                        } else sub.iconResId
+                                        if (!sub.icon.isNullOrEmpty()) {
+                                            val res = IconResolutionUtils.nameToResId(context, sub.icon)
+                                            if (res != 0) res else 0
+                                        } else 0
                                     } ?: 0
                                 }
 
@@ -975,81 +797,11 @@ fun TransactionTabContent(
                             }
                         )
                     }
+                    }
                 }
             }
 
             // Show subcategory for Transfer type outside the conditional
-            if (uiState.transactionType == TransactionType.TRANSFER && uiState.subcategory != null) {
-                Spacer(modifier = Modifier.height(Spacing.md))
-                TextField(
-                    value = uiState.subcategory?.let { io.github.hootkit_dev.hootbook.presentation.common.categoryName(it) } ?: stringResource(R.string.none_label),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.subcategory_label)) },
-                    leadingIcon = {
-                        val context = LocalContext.current
-                        val resolvedResId = remember(selectedSubcategoryObj) {
-                            selectedSubcategoryObj?.let { sub ->
-                                if (!sub.iconName.isNullOrEmpty()) {
-                                    val res = IconResolutionUtils.nameToResId(context, sub.iconName)
-                                    if (res != 0) res else sub.iconResId
-                                } else sub.iconResId
-                            } ?: 0
-                        }
-
-                        if (resolvedResId != 0) {
-                            Icon(
-                                painter = painterResource(id = resolvedResId),
-                                contentDescription = null,
-                                tint = Color.Unspecified,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        } else {
-                            Icon(
-                                Icons.Default.SubdirectoryArrowRight,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false,
-                    colors = if (selectedSubcategoryObj != null) {
-                        val color = try {
-                            Color(selectedSubcategoryObj.color.toColorInt())
-                        } catch (e: Exception) {
-                            MaterialTheme.colorScheme.surfaceContainerLow
-                        }
-                        TextFieldDefaults.colors(
-                            focusedContainerColor = color.copy(alpha = 0.2f),
-                            unfocusedContainerColor = color.copy(alpha = 0.2f),
-                            disabledContainerColor = color.copy(alpha = 0.2f),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f),
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    } else {
-                        TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f),
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            disabledIndicatorColor = Color.Transparent,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                )
-            }
-
-
             if (showAccountSheet) {
                 HootbookModalBottomSheet(
                     onDismissRequest = { showAccountSheet = false },
@@ -1058,7 +810,7 @@ fun TransactionTabContent(
                 ) {
                     AccountSelectionSheet(
                         accounts = accounts,
-                        selectedAccount = uiState.selectedAccount,
+                        selectedAccount = selectedAccount,
                         onAccountSelected = {
                             viewModel.updateTransactionAccount(it)
                             showAccountSheet = false
@@ -1079,11 +831,11 @@ fun TransactionTabContent(
                     // Filter out the source account from target selection
                     // The source itself only when it holds another currency to exchange into
                     val availableTargetAccounts = accounts.filter {
-                        it.id != uiState.selectedAccount?.id || viewModel.currenciesOf(it).size > 1
+                        it.id != selectedAccount?.id || viewModel.currenciesOf(it).size > 1
                     }
                     AccountSelectionSheet(
                         accounts = availableTargetAccounts,
-                        selectedAccount = uiState.targetAccount,
+                        selectedAccount = targetAccount,
                         title = stringResource(R.string.select_target_account),
                         onAccountSelected = {
                             viewModel.updateTransactionTargetAccount(it)
@@ -1104,7 +856,7 @@ fun TransactionTabContent(
                     dragHandle = { BottomSheetDefaults.DragHandle() }
                 ) {
                     NumberPad(
-                        initialValue = uiState.amount.ifEmpty { "0" },
+                        initialValue = state.amount.ifEmpty { "0" },
                         onDone = { newAmount ->
                             viewModel.updateTransactionAmount(newAmount)
                             showNumberPad = false
@@ -1116,20 +868,19 @@ fun TransactionTabContent(
 
             // Category Selection Sheet
             if (showCategoryMenu) {
-                val allSubcategories by viewModel.allSubcategories.collectAsState(initial = emptyMap())
+
                 HootbookModalBottomSheet(
                     onDismissRequest = { showCategoryMenu = false },
                     dragHandle = { BottomSheetDefaults.DragHandle() },
                     containerColor = MaterialTheme.colorScheme.surface,
                 ) {
-                    val commonCategories by viewModel.commonCategories.collectAsState()
+
                     CategorySelectionSheet(
-                        categories = categories,
+                        categories = categories.filter { !it.hidden && it.kind == if (draft.kind == TransactionKind.INCOME) CategoryKind.INCOME else CategoryKind.EXPENSE },
                         subcategoriesMap = allSubcategories,
-                        recentCategories = commonCategories,
                         onSelectionComplete = { category, subcategory ->
-                            viewModel.updateTransactionCategory(category.name)
-                            viewModel.updateTransactionSubcategory(subcategory?.name)
+                            viewModel.updateTransactionCategory(category.id)
+                            viewModel.updateTransactionSubcategory(subcategory?.id)
                             showCategoryMenu = false
                         },
                         onDismiss = { showCategoryMenu = false }
@@ -1144,18 +895,15 @@ fun TransactionTabContent(
                 verticalArrangement = Arrangement.spacedBy(1.5.dp)
             ) {
                 BlurredAnimatedVisibility(
-                    uiState.transactionType != TransactionType.LENT &&
-                        uiState.transactionType != TransactionType.BORROWED
+                    draft.kind != TransactionKind.LOAN_OUT &&
+                        draft.kind != TransactionKind.LOAN_IN
                 ) {
                 // Merchant Name Input (optional), completed from earlier entries
                 var merchantFocused by remember { mutableStateOf(false) }
-                val merchantSuggestions by viewModel.merchantSuggestions.collectAsState()
-                val merchantMatches = remember(merchantSuggestions, uiState.merchant, uiState.transactionType) {
-                    EntrySuggestions.matchMerchants(merchantSuggestions, uiState.merchant, uiState.transactionType)
-                }
+                val merchantMatches = state.merchants
                 Column {
                 TextField(
-                    value = uiState.merchant,
+                    value = draft.merchant,
                     onValueChange = viewModel::updateTransactionMerchant,
                     label = { Text(stringResource(R.string.merchant_optional), fontWeight = FontWeight.SemiBold) },
                     singleLine = true,
@@ -1181,7 +929,6 @@ fun TransactionTabContent(
                 if (merchantFocused && merchantMatches.isNotEmpty()) {
                     MerchantSuggestionRow(
                         suggestions = merchantMatches,
-                        categories = categories,
                         onSelect = viewModel::applyMerchantSuggestion
                     )
                 }
@@ -1189,9 +936,9 @@ fun TransactionTabContent(
                 }
 
                 // Save this entry as a quick-add template (not for transfers / loans)
-                if (uiState.transactionType != TransactionType.TRANSFER &&
-                    uiState.transactionType != TransactionType.LENT &&
-                    uiState.transactionType != TransactionType.BORROWED
+                if (draft.kind != TransactionKind.TRANSFER &&
+                    draft.kind != TransactionKind.LOAN_OUT &&
+                    draft.kind != TransactionKind.LOAN_IN
                 ) {
                     Row(
                         modifier = Modifier
@@ -1199,7 +946,7 @@ fun TransactionTabContent(
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .toggleable(
-                                value = uiState.saveAsQuickTemplate,
+                                value = state.saveAsTemplate,
                                 role = Role.Switch,
                                 onValueChange = viewModel::updateSaveAsQuickTemplate
                             )
@@ -1214,18 +961,18 @@ fun TransactionTabContent(
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f)
                         )
-                        HootbookSwitch(checked = uiState.saveAsQuickTemplate, onCheckedChange = null)
+                        HootbookSwitch(checked = state.saveAsTemplate, onCheckedChange = null)
                     }
                 }
 
                 // Notes/Description (Optional)
                 TextField(
-                    value = uiState.notes,
+                    value = draft.notes.orEmpty(),
                     onValueChange = viewModel::updateTransactionNotes,
                 label = { Text(stringResource(R.string.notes_optional), fontWeight = FontWeight.SemiBold) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = if (uiState.transactionType == TransactionType.LENT ||
-                    uiState.transactionType == TransactionType.BORROWED
+                shape = if (draft.kind == TransactionKind.LOAN_OUT ||
+                    draft.kind == TransactionKind.LOAN_IN
                 ) RoundedCornerShape(16.dp) else
                     RoundedCornerShape(
                         topStart = 4.dp,
@@ -1250,35 +997,17 @@ fun TransactionTabContent(
             // Attachments Section
             AttachmentSection(
                 attachments = transactionAttachments,
-                attachmentService = viewModel.attachmentService,
+                attachmentStore = viewModel.attachmentStore,
                 onAddAttachment = viewModel::addTransactionAttachment,
                 onRemoveAttachment = viewModel::removeTransactionAttachment,
-                onAttachmentClick = { path ->
-                    if (viewModel.attachmentService.isUrl(path)) {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(path))
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            // Handle error
-                        }
-                    } else {
-                        val uri = viewModel.attachmentService.getAttachmentUri(path)
-                        if (uri != null) {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(uri, viewModel.attachmentService.getAttachmentMimeType(path))
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                // Handle error
-                            }
-                        }
-                    }
-                },
+
                 isEditable = true
             )
 
+            state.error?.let { message ->
+                Text(stringResource(message), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm))
+            }
             // Bottom padding for keyboard
             Spacer(modifier = Modifier.height(80.dp))
         }
@@ -1306,9 +1035,9 @@ fun TransactionTabContent(
                     .align(Alignment.BottomCenter)
                     .height(56.dp),
                 shapes = ButtonDefaults.shapes(),
-                enabled = uiState.isValid && !uiState.isLoading,
+                enabled = state.amount.toBigDecimalOrNull() != null && !(state.writing || state.loadingSource || state.importing),
             ) {
-                if (uiState.isLoading) {
+                if ((state.writing || state.loadingSource || state.importing)) {
                     LoadingIndicator(modifier = Modifier.size(24.dp))
                 } else {
                     Icon(Icons.Default.Done, contentDescription = null)
@@ -1319,32 +1048,14 @@ fun TransactionTabContent(
         }
     }
 
-    uiState.overdraftBalance?.let { projected ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissOverdraftWarning,
-            title = { Text(stringResource(R.string.balance_overdraft_title)) },
-            text = { Text(stringResource(R.string.balance_overdraft_message,
-                uiState.currency, projected.toPlainString())) },
-            confirmButton = {
-                TextButton(shapes = ButtonDefaults.shapes(), onClick = { viewModel.saveTransaction(allowOverdraft = true, onSuccess = onSave) },
-                    enabled = !uiState.isLoading) {
-                    Text(stringResource(R.string.balance_overdraft_continue))
-                }
-            },
-            dismissButton = {
-                TextButton(shapes = ButtonDefaults.shapes(), onClick = viewModel::dismissOverdraftWarning) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
+
 
     // Date Picker Dialog
     if (showDatePicker) {
         val datePickerState =
             rememberDatePickerState(
                 initialSelectedDateMillis =
-                    uiState.date
+                    draft.dateTime.toJavaDateTime()
                         .toLocalDate()
                         .atStartOfDay()
                         .toInstant(ZoneOffset.UTC)
@@ -1369,8 +1080,8 @@ fun TransactionTabContent(
     if (showTimePicker) {
         val timePickerState =
             rememberTimePickerState(
-                initialHour = uiState.date.hour,
-                initialMinute = uiState.date.minute,
+                initialHour = draft.dateTime.toJavaDateTime().hour,
+                initialMinute = draft.dateTime.toJavaDateTime().minute,
                 is24Hour = true
             )
 

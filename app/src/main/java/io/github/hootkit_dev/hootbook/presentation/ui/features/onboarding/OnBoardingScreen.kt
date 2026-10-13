@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CloudSync
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.sync.SyncManager.Stage
+import dev.hootkit.core.SyncPhase
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CurrencyBottomSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.InstitutionPickerButton
@@ -71,7 +74,7 @@ fun OnBoardingScreen(
     SyncMessagesEffect(syncViewModel, snackbar)
     // Signing in or the first sync is running: leaving the step would hide its outcome
     val syncing = state.step == OnboardingStep.SYNC && syncState.busy
-    val syncReady = syncState.stage == Stage.ACTIVE
+    val syncReady = syncState.status?.phase in setOf(SyncPhase.IDLE, SyncPhase.PAUSED, SyncPhase.SYNCING, SyncPhase.FAILED)
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onBoardingViewModel::importBackup)
     }
@@ -81,7 +84,7 @@ fun OnBoardingScreen(
     }
     val importBackup = { importLauncher.launch(arrayOf("application/zip", "application/json", "application/octet-stream", "application/x-zip-compressed")) }
     LaunchedEffect(state.onboardingFinished) { if (state.onboardingFinished) onOnBoardingComplete() }
-    LaunchedEffect(state.step, syncReady, syncState.lastSyncAt) {
+    LaunchedEffect(state.step, syncReady, syncState.status?.lastSuccess) {
         if (state.step == OnboardingStep.SYNC && syncReady) onBoardingViewModel.refreshSyncSummary()
     }
     BackHandler(enabled = state.isLoading || syncing || state.step != OnboardingStep.WELCOME) {
@@ -127,6 +130,7 @@ fun OnBoardingScreen(
                 onSelectCurrency = { onBoardingViewModel.toggleCurrencyBottomSheet(true) }
             )
             OnboardingStep.ACCOUNT -> ManualAccountEntryStep(
+                institutions = state.institutions, onSelectInstitution = onBoardingViewModel::selectInstitution,
                 accountName = state.manualAccountName, balance = state.manualAccountBalance,
                 accountLast4 = state.manualAccountLast4, selectedCurrency = state.selectedCurrency,
                 onUpdateName = onBoardingViewModel::updateManualAccountName,
@@ -228,11 +232,20 @@ internal fun WelcomeStep(syncAvailable: Boolean, onSync: () -> Unit, onImportBac
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Surface(shape = MaterialTheme.shapes.extraLargeIncreased, color = MaterialTheme.colorScheme.primaryContainer) {
-            Icon(Icons.Rounded.AccountBalanceWallet, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(40.dp).size(72.dp))
+            Image(
+                painter = painterResource(R.drawable.hootbook_icon_white),
+                contentDescription = null,
+                modifier = Modifier.size(120.dp)
+            )
         }
         Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.displaySmallEmphasized, textAlign = TextAlign.Center)
         Text(stringResource(R.string.onboarding_welcome_body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-        // The F-Droid build has no sync
+        Text(
+            text = stringResource(R.string.onb_existing_data),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
         if (syncAvailable) {
             WelcomeChoice(
                 icon = Icons.Rounded.CloudSync,
@@ -247,6 +260,7 @@ internal fun WelcomeStep(syncAvailable: Boolean, onSync: () -> Unit, onImportBac
             description = stringResource(R.string.onboarding_import_description),
             onClick = onImportBackup
         )
+        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -259,10 +273,29 @@ private fun WelcomeChoice(icon: ImageVector, title: String, description: String,
         shape = MaterialTheme.shapes.extraLargeIncreased,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
     ) {
-        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(icon, contentDescription = null)
-            Text(title, style = MaterialTheme.typography.titleLarge)
-            Text(description, style = MaterialTheme.typography.bodyMedium)
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+            )
         }
     }
 }
@@ -354,7 +387,9 @@ fun ManualAccountEntryStep(
     onUpdateBalance: (String) -> Unit,
     onUpdateLast4: (String) -> Unit,
     onSelectCurrency: () -> Unit,
-    onImportBackup: () -> Unit
+    onImportBackup: () -> Unit,
+    institutions: List<dev.hootkit.core.Institution> = emptyList(),
+    onSelectInstitution: (dev.hootkit.core.Institution, String) -> Unit = { _, name -> onUpdateName(name) }
 ) {
     Column(
         modifier = Modifier
@@ -393,7 +428,7 @@ fun ManualAccountEntryStep(
             Text(stringResource(R.string.onboarding_import_backup))
         }
         Spacer(Modifier.height(24.dp))
-        InstitutionPickerButton { _, name -> onUpdateName(name) }
+        InstitutionPickerButton(institutions = institutions, onSelected = onSelectInstitution)
         Spacer(modifier = Modifier.height(Spacing.sm))
 
         TextField(

@@ -1,12 +1,15 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.hootkit_dev.hootbook.data.repository.BudgetWithSpending
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -19,20 +22,20 @@ import androidx.compose.animation.SharedTransitionScope
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.BudgetCarousel(
-    budgets: List<BudgetWithSpending>,
-    onBudgetClick: (Long) -> Unit,
-    onEditClick: (Long) -> Unit,
-    onHistoryClick: (Long) -> Unit = {},
+    budgets: List<Budget>,
+    onBudgetClick: (String) -> Unit,
+    onEditClick: (String) -> Unit,
+    onHistoryClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
-    val isTransitioning = animatedVisibilityScope?.transition?.let { 
-        it.currentState != it.targetState 
+    val isTransitioning = animatedVisibilityScope?.transition?.let {
+        it.currentState != it.targetState
     } ?: false
 
 
     if (budgets.isEmpty()) return
-    
+
     if (budgets.size == 1) {
         // Single budget - show full-width card
         Box(
@@ -42,17 +45,17 @@ fun SharedTransitionScope.BudgetCarousel(
         ) {
             BudgetCard(
                 budgetWithSpending = budgets.first(),
-                onClick = { onBudgetClick(budgets.first().budget.id) },
+                onClick = { onBudgetClick(budgets.first().id) },
                 onHistoryClick = onHistoryClick,
                 modifier = Modifier.fillMaxWidth(),
                 animatedVisibilityScope = animatedVisibilityScope,
-                sharedElementKey = "budget_card_${budgets.first().budget.id}"
+                sharedElementKey = "budget_card_${budgets.first().id}"
             )
         }
     } else {
         // Multiple budgets - show as carousel with snapping
         val pagerState = rememberPagerState(pageCount = { budgets.size })
-        
+
         HorizontalPager(
             state = pagerState,
             modifier = modifier.fillMaxWidth(),
@@ -63,11 +66,11 @@ fun SharedTransitionScope.BudgetCarousel(
             val budgetWithSpending = budgets[page]
             BudgetCardCompact(
                 budgetWithSpending = budgetWithSpending,
-                onClick = { onBudgetClick(budgetWithSpending.budget.id) },
+                onClick = { onBudgetClick(budgetWithSpending.id) },
                 onHistoryClick = onHistoryClick,
                 modifier = Modifier.fillMaxWidth(),
                 animatedVisibilityScope = animatedVisibilityScope,
-                sharedElementKey = "budget_card_${budgetWithSpending.budget.id}"
+                sharedElementKey = "budget_card_${budgetWithSpending.id}"
             )
         }
     }

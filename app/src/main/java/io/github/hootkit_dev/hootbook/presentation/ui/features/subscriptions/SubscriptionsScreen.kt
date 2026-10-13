@@ -2,6 +2,10 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
@@ -88,9 +92,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubscriptionEntity
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
@@ -106,13 +107,10 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
-import io.github.hootkit_dev.hootbook.utils.SubscriptionUtils
-import io.github.hootkit_dev.hootbook.utils.formatAmount
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import androidx.core.graphics.toColorInt
@@ -134,20 +132,23 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
 fun SubscriptionsScreen(
     subscriptionsViewModel: SubscriptionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onEditSubscription: (Long) -> Unit = {},
+    onEditSubscription: (String) -> Unit = {},
+    onRecordPayment: (String) -> Unit = {},
+    initialSubscriptionId: String? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedContentScope: AnimatedVisibilityScope? = null
 ) {
     val context = LocalContext.current
-    val uiState by subscriptionsViewModel.uiState.collectAsState()
-    val categoriesMap by subscriptionsViewModel.categoriesMap.collectAsState()
-    val subcategoriesMap by subscriptionsViewModel.subcategoriesMap.collectAsState()
+    val uiState by subscriptionsViewModel.uiState.collectAsStateWithLifecycle()
+    val categoriesMap = uiState.categories
+    val subcategoriesMap = uiState.subcategories
+    LaunchedEffect(initialSubscriptionId) { subscriptionsViewModel.selectId(initialSubscriptionId) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.lastHiddenSubscription) {
         uiState.lastHiddenSubscription?.let { subscription ->
             val result = snackbarHostState.showSnackbar(
-                message = context.getString(R.string.subscription_hidden_format, subscription.merchantName),
+                message = context.getString(R.string.subscription_hidden_format, subscription.name),
                 actionLabel = context.getString(R.string.undo),
                 duration = SnackbarDuration.Short
             )
@@ -156,12 +157,12 @@ fun SubscriptionsScreen(
             }
         }
     }
-    
+
     val hazeState = remember { HazeState() }
     val lazyListState = rememberLazyListState()
     val scrollBehaviorSmall = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val scrollBehaviorLarge = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    
+
 
     Box(
         modifier = Modifier.then(
@@ -199,11 +200,11 @@ fun SubscriptionsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         val selectedSubscription = uiState.selectedSubscription
-        var subscriptionToDelete by remember { mutableStateOf<SubscriptionEntity?>(null) }
-        
+        var subscriptionToDelete by remember { mutableStateOf<Subscription?>(null) }
+
         if (subscriptionToDelete != null) {
             DeleteSubscriptionDialog(
-                subscriptionName = subscriptionToDelete!!.merchantName,
+                subscriptionName = subscriptionToDelete!!.name,
                 onDismiss = { subscriptionToDelete = null },
                 onDelete = {
                     subscriptionToDelete?.let {
@@ -218,12 +219,13 @@ fun SubscriptionsScreen(
         if (selectedSubscription != null) {
             PaymentStatusBottomSheet(
                 subscription = selectedSubscription,
-                categoryEntity = categoriesMap[selectedSubscription.category],
-                subcategoryEntity = subcategoriesMap[selectedSubscription.subcategory],
+                categoryEntity = categoriesMap[selectedSubscription.categoryId],
+                subcategoryEntity = subcategoriesMap[selectedSubscription.subcategoryId],
                 convertedAmount = uiState.convertedAmounts[selectedSubscription.id],
-                targetCurrency = uiState.targetCurrency,
+                convertedMonthlyAmount = uiState.convertedMonthlyAmounts[selectedSubscription.id],
+                targetCurrency = uiState.summary?.currency.orEmpty(),
                 onDismiss = { subscriptionsViewModel.selectSubscription(null) },
-                onMarkAsPaid = { subscriptionsViewModel.markAsPaid(selectedSubscription) },
+                onMarkAsPaid = { subscriptionsViewModel.selectSubscription(null); onRecordPayment(selectedSubscription.id) },
                 onEdit = {
                     subscriptionsViewModel.selectSubscription(null)
                     onEditSubscription(selectedSubscription.id)
@@ -243,26 +245,27 @@ fun SubscriptionsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            uiState.error?.let { error -> item { Text(stringResource(error), color = MaterialTheme.colorScheme.error) } }
             // Total Monthly & Yearly Subscriptions Summary
-            item {
+            uiState.summary?.let { summary -> item {
                 TotalSubscriptionsSummary(
-                    monthlyAmount = uiState.totalMonthlyAmount,
-                    yearlyAmount = uiState.totalYearlyAmount,
-                    activeCount = uiState.activeSubscriptions.size,
-                    currency = uiState.targetCurrency,
-                    conversionFailureCount = uiState.conversionFailureCount
+                    monthlyAmount = summary.monthly,
+                    yearlyAmount = summary.yearly,
+                    activeCount = summary.count.toInt(),
+                    currency = summary.currency,
+                    complete = summary.complete
                 )
-            }
-            
+            } }
+
             // Active Subscriptions
             if (uiState.activeSubscriptions.isNotEmpty()) {
                 items(
                     items = uiState.activeSubscriptions,
                     key = { it.id }
                 ) { subscription ->
-                    val categoryEntity = categoriesMap[subscription.category]
-                    val subcategoryEntity = if (categoryEntity != null && subscription.subcategory != null) {
-                        subcategoriesMap[subscription.subcategory]
+                    val categoryEntity = categoriesMap[subscription.categoryId]
+                    val subcategoryEntity = if (categoryEntity != null && subscription.subcategoryId != null) {
+                        subcategoriesMap[subscription.subcategoryId]
                     } else null
 
                     SwipeableSubscriptionItem(
@@ -270,7 +273,7 @@ fun SubscriptionsScreen(
                         categoryEntity = categoryEntity,
                         subcategoryEntity = subcategoryEntity,
                         convertedAmount = uiState.convertedAmounts[subscription.id],
-                        targetCurrency = uiState.targetCurrency,
+                        targetCurrency = uiState.summary?.currency.orEmpty(),
                         onDelete = { subscriptionToDelete = subscription },
                         onEdit = {
                             onEditSubscription(subscription.id)
@@ -279,14 +282,14 @@ fun SubscriptionsScreen(
                     )
                 }
             }
-            
+
             // Empty State
             if (uiState.activeSubscriptions.isEmpty() && !uiState.isLoading) {
                 item {
                     EmptySubscriptionsState()
                 }
             }
-            
+
             // Loading State
             if (uiState.isLoading) {
                 item {
@@ -311,7 +314,7 @@ private fun TotalSubscriptionsSummary(
     yearlyAmount: BigDecimal,
     activeCount: Int,
     currency: String,
-    conversionFailureCount: Int = 0
+    complete: Boolean = true
 ) {
     HootbookCard(
         modifier = Modifier.fillMaxWidth(),
@@ -361,7 +364,7 @@ private fun TotalSubscriptionsSummary(
                 }
             }
             Spacer(modifier = Modifier.height(Spacing.md))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
@@ -438,10 +441,10 @@ private fun TotalSubscriptionsSummary(
                     )
                 }
             }
-            if (conversionFailureCount > 0) {
+            if (!complete) {
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
-                    text = stringResource(R.string.conversion_failure_message_format, conversionFailureCount, currency),
+                    text = stringResource(R.string.core_complete_incomplete),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
@@ -455,9 +458,9 @@ private fun TotalSubscriptionsSummary(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableSubscriptionItem(
-    subscription: SubscriptionEntity,
-    categoryEntity: CategoryEntity? = null,
-    subcategoryEntity: SubcategoryEntity? = null,
+    subscription: Subscription,
+    categoryEntity: Category? = null,
+    subcategoryEntity: Subcategory? = null,
     convertedAmount: BigDecimal? = null,
     targetCurrency: String? = null,
     onDelete: () -> Unit,
@@ -465,7 +468,7 @@ private fun SwipeableSubscriptionItem(
     onClick: () -> Unit
 ) {
     var showNotes by remember { mutableStateOf(false) }
-    
+
     val dismissState = rememberSwipeToDismissBoxState()
     var isInitialized by remember { mutableStateOf(false) }
 
@@ -567,13 +570,13 @@ private fun SwipeableSubscriptionItem(
                     ) {
                         // Brand Icon
                         BrandIcon(
-                            merchantName = subscription.merchantName,
+                            merchantName = subscription.name,
                             size = 48.dp,
                             showBackground = true,
                             categoryEntity = categoryEntity,
                             subcategoryEntity = subcategoryEntity
                         )
-                        
+
                         // Content
                         Column(
                             modifier = Modifier
@@ -581,25 +584,23 @@ private fun SwipeableSubscriptionItem(
                                 .padding(end = Spacing.sm)
                         ) {
                             Text(
-                                text = subscription.merchantName,
+                                text = subscription.name,
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            
+
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val today = LocalDate.now()
-                                val subscriptionDate = subscription.nextPaymentDate
+                                val subscriptionDate = subscription.nextDue
 
                                 // Date Tag
                                 if (subscriptionDate != null) {
-                                    val daysUntilNext = ChronoUnit.DAYS.between(today, subscriptionDate)
-                                    val isOverdue = subscriptionDate.isBefore(today) && 
-                                                   (subscription.lastPaidDate == null || subscription.lastPaidDate!!.isBefore(subscriptionDate))
+                                    val daysUntilNext = subscription.daysUntil ?: Int.MAX_VALUE
+                                    val isOverdue = subscription.overdue
 
                                     val dateTagColor = remember(subscriptionDate) {
                                         val colors = listOf(income_dark, expense_dark, credit_dark, transfer_dark, investment_dark)
@@ -619,10 +620,10 @@ private fun SwipeableSubscriptionItem(
                                         },
                                         text = when {
                                             isOverdue -> stringResource(R.string.overdue)
-                                            daysUntilNext == 0L -> stringResource(R.string.due_today)
-                                            daysUntilNext == 1L -> stringResource(R.string.due_tomorrow)
+                                            daysUntilNext == 0 -> stringResource(R.string.due_today)
+                                            daysUntilNext == 1 -> stringResource(R.string.due_tomorrow)
                                             daysUntilNext in 2..7 -> stringResource(R.string.due_in_days_format, daysUntilNext)
-                                            else -> subscriptionDate.format(DateFormats.monthDayFormatter())
+                                            else -> subscriptionDate.coreDateText(DateFormats.monthDayFormatter())
                                         },
                                         color = if (isOverdue || daysUntilNext <= 3) MaterialTheme.colorScheme.error else dateTagColor
                                     )
@@ -630,14 +631,14 @@ private fun SwipeableSubscriptionItem(
 
                                 // Billing Cycle Tag
                                 SubtitleTag(
-                                    text = io.github.hootkit_dev.hootbook.presentation.ui.components.billingCycleLabel(subscription.billingCycle),
+                                    text = io.github.hootkit_dev.hootbook.presentation.ui.components.billingCycleLabel(subscription.cycle),
                                     color = MaterialTheme.colorScheme.tertiary
                                 )
 
                                 // Category Tag
                                 categoryEntity?.let { category ->
                                     SubtitleTag(
-                                        text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(category.name),
+                                        text = category.displayName,
                                         color = try {
                                             Color(category.color.toColorInt())
                                         } catch (e: Exception) {
@@ -657,19 +658,19 @@ private fun SwipeableSubscriptionItem(
                                 }
                             }
                         }
-                        
+
                         Column(
                             horizontalAlignment = Alignment.End,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = subscription.formatAmount(),
+                                text = CurrencyFormatter.formatCurrency(subscription.amount.amount, subscription.amount.currency),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (!isAppInDarkTheme) expense_light else expense_dark
                             )
 
-                            if (convertedAmount != null && targetCurrency != null && subscription.currency != targetCurrency) {
+                            if (convertedAmount != null && targetCurrency != null && subscription.amount.currency != targetCurrency) {
                                 Text(
                                     text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, targetCurrency)}",
                                     style = MaterialTheme.typography.labelSmall,
@@ -680,7 +681,7 @@ private fun SwipeableSubscriptionItem(
                         }
                     }
                 }
-                
+
                 // Notes
                 if (showNotes && !subscription.notes.isNullOrBlank()) {
                     Card(
@@ -710,9 +711,9 @@ private fun SwipeableSubscriptionItem(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(Spacing.sm))
-                            
+
 
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
@@ -720,7 +721,7 @@ private fun SwipeableSubscriptionItem(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = subscription.notes,
+                                    text = subscription.notes.orEmpty(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.padding(Spacing.md)
                                 )
@@ -736,20 +737,19 @@ private fun SwipeableSubscriptionItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PaymentStatusBottomSheet(
-    subscription: SubscriptionEntity,
-    categoryEntity: CategoryEntity? = null,
-    subcategoryEntity: SubcategoryEntity? = null,
+    subscription: Subscription,
+    categoryEntity: Category? = null,
+    subcategoryEntity: Subcategory? = null,
     convertedAmount: BigDecimal? = null,
+    convertedMonthlyAmount: BigDecimal? = null,
     targetCurrency: String? = null,
     onDismiss: () -> Unit,
     onMarkAsPaid: () -> Unit,
     onEdit: () -> Unit
 ) {
     var showNotes by remember { mutableStateOf(false) }
-    val today = LocalDate.now()
-    val isOverdue = subscription.nextPaymentDate?.isBefore(today) == true && 
-                    (subscription.lastPaidDate == null || subscription.lastPaidDate!!.isBefore(subscription.nextPaymentDate!!))
-    
+    val isOverdue = subscription.overdue
+
     HootbookModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -772,7 +772,7 @@ private fun PaymentStatusBottomSheet(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -789,7 +789,7 @@ private fun PaymentStatusBottomSheet(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(Spacing.md))
 
             Card(
@@ -805,19 +805,19 @@ private fun PaymentStatusBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     BrandIcon(
-                        merchantName = subscription.merchantName,
+                        merchantName = subscription.name,
                         size = 56.dp,
                         showBackground = true,
                         categoryEntity = categoryEntity,
                         subcategoryEntity = subcategoryEntity
                     )
-                    
+
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.Start
                     ) {
                         Text(
-                            text = stringResource(R.string.payment_for_format, subscription.merchantName),
+                            text = stringResource(R.string.payment_for_format, subscription.name),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
@@ -825,41 +825,33 @@ private fun PaymentStatusBottomSheet(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = subscription.formatAmount(),
+                            text = CurrencyFormatter.formatCurrency(subscription.amount.amount, subscription.amount.currency),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
                         )
-                        val displayAmount = convertedAmount ?: subscription.amount
-                        val displayCurrency = if (convertedAmount != null) {
-                            targetCurrency ?: subscription.currency
-                        } else {
-                            subscription.currency
-                        }
                         val cycleSubtitle = io.github.hootkit_dev.hootbook.presentation.ui.components.billingCycleSubtitle(
-                            amount = displayAmount,
-                            currency = displayCurrency,
-                            billingCycle = subscription.billingCycle
-                        )
+                            subscription.cycle, convertedMonthlyAmount ?: subscription.monthlyEquivalent,
+                            if (convertedMonthlyAmount != null) targetCurrency ?: subscription.amount.currency else subscription.amount.currency)
                         Text(
                             text = cycleSubtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                                     else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                         )
-                        if (subscription.nextPaymentDate != null) {
+                        if (subscription.nextDue != null) {
                             Text(
-                                text = if (isOverdue) stringResource(R.string.overdue_since_format, subscription.nextPaymentDate.format(DateFormats.fullDateFormatter()))
-                                       else stringResource(R.string.due_on_format, subscription.nextPaymentDate.format(DateFormats.fullDateFormatter())),
+                                text = if (isOverdue) stringResource(R.string.overdue_since_format, subscription.nextDue!!.coreDateText(DateFormats.fullDateFormatter()))
+                                       else stringResource(R.string.due_on_format, subscription.nextDue!!.coreDateText(DateFormats.fullDateFormatter())),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f) 
+                                color = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                                        else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
                         }
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(Spacing.lg))
 
             Text(
@@ -881,7 +873,7 @@ private fun PaymentStatusBottomSheet(
                 ) {
                     Text(stringResource(R.string.no), style = MaterialTheme.typography.titleMedium)
                 }
-                
+
                 Button(
                     shapes = ButtonDefaults.shapes(),
                     onClick = onMarkAsPaid,
@@ -890,7 +882,7 @@ private fun PaymentStatusBottomSheet(
                     Text(stringResource(R.string.yes_its_paid), style = MaterialTheme.typography.titleMedium)
                 }
             }
-            
+
             if (!subscription.notes.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(Spacing.lg))
 
@@ -916,7 +908,7 @@ private fun PaymentStatusBottomSheet(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = subscription.notes,
+                            text = subscription.notes.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(16.dp)
                         )

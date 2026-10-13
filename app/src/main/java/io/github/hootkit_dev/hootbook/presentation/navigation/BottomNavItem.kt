@@ -26,7 +26,7 @@ sealed class BottomNavItem(
         destination = HomeDestination,
         destinationType = HomeDestination::class
     )
-    
+
     data object Analytics : BottomNavItem(
         route = "analytics",
         titleRes = R.string.analytics,

@@ -71,6 +71,10 @@ jobs:
           # The default also installs the removed "tools" package, which now fails.
           packages: platform-tools
       
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -207,20 +211,11 @@ jobs:
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD
           
-          # Build F-Droid flavor
-          echo "Building signed F-Droid release APK..."
-          ./gradlew assembleFdroidRelease --no-configuration-cache \
-            -Pandroid.injected.signing.store.file=${{ github.workspace }}/app/release.keystore \
-            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
-            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
-      
       - name: Rename APKs
         if: ${{ !inputs.dry_run }}
         run: |
           VERSION="${{ steps.next_version.outputs.version }}"
           STANDARD_PATH="app/build/outputs/apk/standard/release"
-          FDROID_PATH="app/build/outputs/apk/fdroid/release"
           
           # Rename universal APK (contains all architectures)
           if [ -f "$STANDARD_PATH/app-standard-universal-release.apk" ]; then
@@ -236,28 +231,8 @@ jobs:
             fi
           done
           
-          # Rename F-Droid APKs
-          # When ABI splits are disabled, Gradle outputs a single app-fdroid-release.apk (no -universal- suffix).
-          # When splits are enabled it outputs app-fdroid-universal-release.apk, so handle both.
-          if [ -f "$FDROID_PATH/app-fdroid-universal-release.apk" ]; then
-            mv "$FDROID_PATH/app-fdroid-universal-release.apk" \
-               "$FDROID_PATH/Hootbook-fdroid-v${VERSION}-universal.apk"
-          elif [ -f "$FDROID_PATH/app-fdroid-release.apk" ]; then
-            mv "$FDROID_PATH/app-fdroid-release.apk" \
-               "$FDROID_PATH/Hootbook-fdroid-v${VERSION}-universal.apk"
-          fi
-          
-          for arch in armeabi-v7a arm64-v8a; do
-            if [ -f "$FDROID_PATH/app-fdroid-${arch}-release.apk" ]; then
-              mv "$FDROID_PATH/app-fdroid-${arch}-release.apk" \
-                 "$FDROID_PATH/Hootbook-fdroid-v${VERSION}-${arch}.apk"
-            fi
-          done
-          
           echo "Standard APKs:"
           ls -la "$STANDARD_PATH/"
-          echo "F-Droid APKs:"
-          ls -la "$FDROID_PATH/"
       
       - name: Calculate SHA256
         if: ${{ !inputs.dry_run }}
@@ -274,16 +249,6 @@ jobs:
             fi
           done
           
-          # SHA256 for all F-Droid APKs
-          cd ../../fdroid/release/
-          for apk in Hootbook-fdroid-v${VERSION}*.apk; do
-            if [ -f "$apk" ]; then
-              sha256sum "$apk" > "${apk}.sha256"
-              echo "SHA256 for $apk:"
-              cat "${apk}.sha256"
-            fi
-          done
-      
       # Commit version bump and push removed - version should be pre-set in build.gradle.kts
 
       
@@ -325,7 +290,6 @@ jobs:
             app/build/outputs/apk/standard/release/Hootbook-v${{ steps.next_version.outputs.version }}-universal.apk
             app/build/outputs/apk/standard/release/Hootbook-v${{ steps.next_version.outputs.version }}-arm64-v8a.apk
             app/build/outputs/apk/standard/release/Hootbook-v${{ steps.next_version.outputs.version }}-armeabi-v7a.apk
-            app/build/outputs/apk/fdroid/release/Hootbook-fdroid-v${{ steps.next_version.outputs.version }}-universal.apk
           draft: false
           prerelease: ${{ steps.prerelease.outputs.value }}
           make_latest: ${{ steps.prerelease.outputs.value == 'true' && 'false' || 'true' }}

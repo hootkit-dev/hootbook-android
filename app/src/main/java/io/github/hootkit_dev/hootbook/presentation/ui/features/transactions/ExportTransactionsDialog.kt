@@ -37,6 +37,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,8 +55,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.data.export.ExportResult
+import dev.hootkit.core.TransactionFilter
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.ImportArrow01
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
@@ -73,7 +76,8 @@ import io.github.hootkit_dev.hootbook.R
 @OptIn(ExperimentalHazeApi::class)
 @Composable
 fun ExportTransactionsDialog(
-    transactions: List<TransactionEntity>,
+    filter: TransactionFilter,
+    total: UInt,
     onDismiss: () -> Unit,
     blurEffects: Boolean = LocalBlurEffects.current,
     viewModel: ExportViewModel = hiltViewModel(),
@@ -82,8 +86,11 @@ fun ExportTransactionsDialog(
     val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var exportState by remember { mutableStateOf<ExportState>(ExportState.Ready) }
-    
+    val exportState by viewModel.state.collectAsStateWithLifecycle()
+    val preview by viewModel.preview.collectAsStateWithLifecycle()
+    LaunchedEffect(filter) { viewModel.reset(); viewModel.observeFilter(filter) }
+    DisposableEffect(viewModel) { onDispose { viewModel.stopPreview() } }
+
     Dialog(onDismissRequest = {
         if (exportState !is ExportState.Exporting) {
             onDismiss()
@@ -108,7 +115,7 @@ fun ExportTransactionsDialog(
                     is ExportState.Success -> Icons.Rounded.CheckCircle
                     is ExportState.Error -> Icons.Rounded.Error
                 }
-                
+
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
@@ -119,9 +126,9 @@ fun ExportTransactionsDialog(
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Title
                 Text(
                     text = when (exportState) {
@@ -133,21 +140,21 @@ fun ExportTransactionsDialog(
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Content based on state
                 when (val state = exportState) {
                     is ExportState.Ready -> {
                         Text(
-                            text = stringResource(R.string.export_transactions_desc, transactions.size),
+                            text = stringResource(R.string.export_transactions_desc, total.toInt()),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f),
                             textAlign = TextAlign.Center
                         )
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // Summary info
                         Surface(
                             shape = MaterialTheme.shapes.large,
@@ -167,54 +174,43 @@ fun ExportTransactionsDialog(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        text = transactions.size.toString(),
+                                        text = total.toInt().toString(),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
-                                
-                                // Date range in column layout to prevent wrapping
-                                if (transactions.isNotEmpty()) {
+                                if (preview.oldest != null && preview.newest != null) {
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    
-                                    val dateFormatter = DateFormats.fullDateFormatter()
-                                    val startDate = transactions.last().dateTime.format(dateFormatter)
-                                    val endDate = transactions.first().dateTime.format(dateFormatter)
-                                    
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.date_range),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "$startDate - $endDate",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
+                                    Column(Modifier.fillMaxWidth()) {
+                                        Text(stringResource(R.string.date_range), style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        val formatter = io.github.hootkit_dev.hootbook.utils.DateFormats.fullDateFormatter()
+                                        Text("${preview.oldest!!.dateTime.toJavaDateTime().format(formatter)} - ${preview.newest!!.dateTime.toJavaDateTime().format(formatter)}",
+                                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
+                                preview.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+
+
                             }
                         }
                     }
-                    
+
                     is ExportState.Exporting -> {
                         LinearWavyProgressIndicator(
-                            progress = { state.progress },
+                            progress = { if (state.total == 0u) 0f else state.written.toFloat() / state.total.toFloat() },
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Text(
-                            text = state.message,
+                            text = if (state.total > 0u) "${state.written} / ${state.total}" else stringResource(R.string.exporting),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
+
                     is ExportState.Success -> {
                         Text(
                             text = stringResource(R.string.export_success_msg_format, state.transactionCount),
@@ -222,9 +218,9 @@ fun ExportTransactionsDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         // File info
                         Card(
                             colors = CardDefaults.cardColors(
@@ -260,19 +256,19 @@ fun ExportTransactionsDialog(
                             }
                         }
                     }
-                    
+
                     is ExportState.Error -> {
                         Text(
-                            text = state.message,
+                            text = stringResource(state.message),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Buttons
                 DialogActionsRow {
                     when (val state = exportState) {
@@ -280,25 +276,9 @@ fun ExportTransactionsDialog(
                             DialogDismissButton(stringResource(R.string.cancel), onDismiss)
                             DialogConfirmButton(
                                 text = stringResource(R.string.export),
-                                enabled = transactions.isNotEmpty(),
+                                enabled = total > 0u,
                                 onClick = {
-                                    scope.launch {
-                                        viewModel.exportTransactions(transactions).collect { result ->
-                                            exportState = when (result) {
-                                                is ExportResult.Progress -> ExportState.Exporting(
-                                                    progress = result.progress,
-                                                    message = result.message
-                                                )
-                                                is ExportResult.Success -> ExportState.Success(
-                                                    uri = result.uri,
-                                                    fileName = result.fileName,
-                                                    transactionCount = result.transactionCount,
-                                                    fileSizeBytes = result.fileSizeBytes
-                                                )
-                                                is ExportResult.Error -> ExportState.Error(message = result.message)
-                                            }
-                                        }
-                                    }
+                                    viewModel.exportTransactions(filter)
                                 }
                             )
                         }
@@ -327,7 +307,7 @@ fun ExportTransactionsDialog(
                             DialogDismissButton(stringResource(R.string.close), onDismiss)
                             DialogConfirmButton(
                                 text = stringResource(R.string.retry),
-                                onClick = { exportState = ExportState.Ready }
+                                onClick = { viewModel.reset() }
                             )
                         }
                     }
@@ -337,16 +317,16 @@ fun ExportTransactionsDialog(
     }
 }
 
-private sealed class ExportState {
+sealed class ExportState {
     object Ready : ExportState()
-    data class Exporting(val progress: Float, val message: String) : ExportState()
+    data class Exporting(val written: UInt = 0u, val total: UInt = 0u) : ExportState()
     data class Success(
         val uri: Uri,
         val fileName: String,
         val transactionCount: Int,
         val fileSizeBytes: Long
     ) : ExportState()
-    data class Error(val message: String) : ExportState()
+    data class Error(val message: Int) : ExportState()
 }
 
 private fun formatFileSize(bytes: Long): String {

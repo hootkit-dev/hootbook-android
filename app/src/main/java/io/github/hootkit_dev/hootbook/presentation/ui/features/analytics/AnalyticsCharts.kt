@@ -1,16 +1,8 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.analytics
 
-import io.github.hootkit_dev.hootbook.utils.DateFormats
-
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
-
-import androidx.compose.animation.core.FastOutSlowInEasing
-
-import androidx.compose.animation.core.tween
-
-import io.github.hootkit_dev.hootbook.utils.maxDoubleOrNull
-import io.github.hootkit_dev.hootbook.utils.sumOfDouble
 import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -19,12 +11,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -36,18 +26,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
-import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.presentation.common.icons.CategoryMapping
-import androidx.compose.ui.res.stringResource
+import kotlin.math.abs
+import dev.hootkit.core.Category
+import dev.hootkit.core.CategoryTotal
+import dev.hootkit.core.LedgerSummary
 import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
+import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
+import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
+import io.github.hootkit_dev.hootbook.utils.DateFormats
+import io.github.hootkit_dev.hootbook.utils.maxDoubleOrNull
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.PieChart
@@ -66,316 +65,348 @@ import ir.ehsannarmani.compose_charts.models.LineProperties
 import ir.ehsannarmani.compose_charts.models.Pie
 import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import ir.ehsannarmani.compose_charts.models.ZeroLineProperties
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
-import kotlin.math.abs
 
 @Composable
 fun SpendingLineChart(
-    data: List<BalancePoint>,
+    data: List<Map.Entry<LocalDate, LedgerSummary>>,
     currency: String,
-    typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE)
+    typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE),
 ) {
     if (data.isEmpty()) return
     val themeColors = MaterialTheme.colorScheme
+    val series = trendTypes(typeFilters)
+    val seriesLabels = series.associateWith { stringResource(it.labelRes) }
     val suffixMillion = stringResource(R.string.suffix_million)
     val suffixThousand = stringResource(R.string.suffix_thousand)
-    val totalLabel = stringResource(R.string.total)
-    val filterLabelStrings = typeFilters.map { stringResource(it.labelRes) }
 
-    val cashFlowData = remember(data) { data.map { it.balance.toDouble() } }
-    val labels = remember(data) {
-        val isYearly = data.size > 1 && data.all { it.timestamp.dayOfYear == 1 }
-        val isMonthly = !isYearly && data.all { it.timestamp.dayOfMonth == 1 }
-        val spansMultipleYears = if (data.isNotEmpty()) {
-            data.first().timestamp.year != data.last().timestamp.year
-        } else false
+    val labels =
+        remember(data, series, currency, themeColors) {
+            val isYearly = data.size > 1 && data.all { it.key.dayOfYear == 1 }
+            val isMonthly = !isYearly && data.all { it.key.dayOfMonth == 1 }
+            val spansMultipleYears =
+                if (data.isNotEmpty()) {
+                    data.first().key.year != data.last().key.year
+                } else false
 
-        data.map {
-            val date = it.timestamp
-            when {
-                isYearly -> date.format(DateTimeFormatter.ofPattern("yyyy"))
-                isMonthly && spansMultipleYears -> date.format(DateFormats.shortYearMonthFormatter())
-                isMonthly -> date.format(DateFormats.monthFormatter())
-                else -> date.format(DateFormats.monthDayFormatter())
+            data.map {
+                val date = it.key
+                when {
+                    isYearly -> date.format(DateTimeFormatter.ofPattern("yyyy"))
+                    isMonthly && spansMultipleYears ->
+                        date.format(DateFormats.shortYearMonthFormatter())
+                    isMonthly -> date.format(DateFormats.monthFormatter())
+                    else -> date.format(DateFormats.monthDayFormatter())
+                }
             }
         }
-    }
 
-    LineChart(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-            .padding(vertical = Spacing.md),
-        data = listOf(
-            Line(
-                label = if (typeFilters.contains(TransactionTypeFilter.ALL) || typeFilters.size > 2) {
-                    totalLabel
-                } else {
-                    filterLabelStrings.joinToString(" & ")
+    val maxVal = data.maxOfOrNull { point ->
+        series.maxOfOrNull { type -> point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 } ?: 0.0
+    } ?: 0.0
+    val axisStart = indicatorWidth(maxVal, currency, suffixMillion, suffixThousand)
+
+    Column {
+        LineChart(
+            modifier = Modifier.fillMaxWidth().height(260.dp).padding(top = Spacing.md),
+            data =
+                series.map { type ->
+                    val color = if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
+                    Line(
+                        label = seriesLabels.getValue(type),
+                        values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
+                        color = SolidColor(color),
+                        firstGradientFillColor = color.copy(alpha = 0.3f),
+                        secondGradientFillColor = Color.Transparent,
+                        strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
+                        gradientAnimationDelay = 750,
+                        drawStyle = DrawStyle.Stroke(width = 2.dp),
+                        curvedEdges = true,
+                        dotProperties =
+                            DotProperties(
+                                enabled = true,
+                                color = SolidColor(color),
+                                strokeWidth = 3.dp,
+                                radius = 4.dp,
+                                strokeColor = SolidColor(themeColors.surface),
+                            ),
+                    )
                 },
-                values = cashFlowData,
-                color = SolidColor(themeColors.primary),
-                firstGradientFillColor = themeColors.primary.copy(alpha = 0.3f),
-                secondGradientFillColor = Color.Transparent,
-                strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
-                gradientAnimationDelay = 750,
-                drawStyle = DrawStyle.Stroke(width = 2.dp),
-                curvedEdges = true,
-                dotProperties = DotProperties(
+            dividerProperties =
+                DividerProperties(
                     enabled = true,
-                    color = SolidColor(themeColors.primary),
-                    strokeWidth = 3.dp,
-                    radius = 4.dp,
-                    strokeColor = SolidColor(themeColors.surface)
-                )
-            )
-        ),
-        dividerProperties = DividerProperties(
-            enabled = true,
-            xAxisProperties = LineProperties(
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                thickness = 0.dp
-            ),
-            yAxisProperties = LineProperties(
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                thickness = 0.dp
-            )
-        ),
-        indicatorProperties = HorizontalIndicatorProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurfaceVariant.copy(0.6f),
-                textAlign = TextAlign.Center
-            ),
-            contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) }
-        ),
-        labelHelperProperties = LabelHelperProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurface,
-                textAlign = TextAlign.End
-            ),
-        ),
-        labelProperties = LabelProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurface.copy(0.6f),
-                textAlign = TextAlign.End
-            ),
-            labels = labels,
-            padding = 16.dp,
-            rotation = LabelProperties.Rotation(
-                mode = LabelProperties.Rotation.Mode.Force,
-                degree = -45f
-            )
-        ),
-        zeroLineProperties = ZeroLineProperties(
-            enabled = true,
-            style = StrokeStyle.Dashed(),
-            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
-        ),
-        gridProperties = GridProperties(
-            enabled = true,
-            xAxisProperties = GridProperties.AxisProperties(
-                enabled = true,
-                style = StrokeStyle.Dashed(),
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f))
-            ),
-            yAxisProperties = GridProperties.AxisProperties(
-                enabled = true,
-                style = StrokeStyle.Dashed(),
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f))
-            )
-        ),
-        animationMode = AnimationMode.Together(delayBuilder = { it * 200L }),
-    )
+                    xAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                    yAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                ),
+            indicatorProperties =
+                HorizontalIndicatorProperties(
+                    enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurfaceVariant.copy(0.6f),
+                            textAlign = TextAlign.Center,
+                        ),
+                    padding = IndicatorPadding,
+                    contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) },
+                ),
+            labelHelperProperties =
+                LabelHelperProperties(
+                    enabled = true,
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurface,
+                            textAlign = TextAlign.End,
+                        ),
+                ),
+            labelProperties =
+                LabelProperties(
+                    enabled = false,
+                    labels = emptyList(),
+                ),
+            zeroLineProperties =
+                ZeroLineProperties(
+                    enabled = true,
+                    style = StrokeStyle.Dashed(),
+                    color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                ),
+            gridProperties =
+                GridProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                    yAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                ),
+            animationMode = AnimationMode.Together(delayBuilder = { it * 200L }),
+            popupProperties = chartPopup(currency),
+        )
+        DateAxis(labels, axisStart)
+    }
 }
 
 @Composable
 fun SpendingBarChart(
-    data: List<BalancePoint>,
+    data: List<Map.Entry<LocalDate, LedgerSummary>>,
     currency: String,
-    typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE)
+    typeFilters: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE),
 ) {
     if (data.isEmpty()) return
     val themeColors = MaterialTheme.colorScheme
+    val series = trendTypes(typeFilters)
+    val seriesLabels = series.associateWith { stringResource(it.labelRes) }
     val suffixMillion = stringResource(R.string.suffix_million)
     val suffixThousand = stringResource(R.string.suffix_thousand)
-    val totalLabel = stringResource(R.string.total)
-    val filterLabelStrings = typeFilters.map { stringResource(it.labelRes) }
 
-    val columnData = remember(data) {
-        val isYearly = data.size > 1 && data.all { it.timestamp.dayOfYear == 1 }
-        val isMonthly = !isYearly && data.all { it.timestamp.dayOfMonth == 1 }
-        val spansMultipleYears = if (data.isNotEmpty()) {
-            data.first().timestamp.year != data.last().timestamp.year
-        } else false
+    val columnData =
+        remember(data, series, currency, themeColors, seriesLabels) {
+            val isYearly = data.size > 1 && data.all { it.key.dayOfYear == 1 }
+            val isMonthly = !isYearly && data.all { it.key.dayOfMonth == 1 }
+            val spansMultipleYears =
+                if (data.isNotEmpty()) {
+                    data.first().key.year != data.last().key.year
+                } else false
 
-        data.map { point ->
-            val label = when {
-                isYearly -> point.timestamp.format(DateTimeFormatter.ofPattern("yyyy"))
-                isMonthly && spansMultipleYears -> point.timestamp.format(DateFormats.shortYearMonthFormatter())
-                isMonthly -> point.timestamp.format(DateFormats.monthFormatter())
-                else -> point.timestamp.format(DateFormats.monthDayFormatter())
-            }
-            Bars(
-                label = label,
-                values = listOf(
-                    Bars.Data(
-                        label = if (typeFilters.contains(TransactionTypeFilter.ALL) || typeFilters.size > 2) {
-                            totalLabel
-                        } else {
-                            filterLabelStrings.joinToString(" & ")
-                        },
-                        value = point.balance.toDouble(),
-                        color = SolidColor(themeColors.primary.copy(alpha = 0.8f))
-                    )
+            data.map { point ->
+                val label =
+                    when {
+                        isYearly -> point.key.format(DateTimeFormatter.ofPattern("yyyy"))
+                        isMonthly && spansMultipleYears ->
+                            point.key.format(DateFormats.shortYearMonthFormatter())
+                        isMonthly -> point.key.format(DateFormats.monthFormatter())
+                        else -> point.key.format(DateFormats.monthDayFormatter())
+                    }
+                Bars(
+                    label = label,
+                    values = series.map { type ->
+                        Bars.Data(
+                            label = seriesLabels.getValue(type),
+                            value = point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0,
+                            color = SolidColor((if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary).copy(alpha = 0.8f)),
+                        )
+                    },
                 )
-            )
+            }
         }
+
+    val maxValue = remember(data, series, currency) {
+        data.flatMap { point -> series.map { type ->
+            point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0
+        } }.maxOrNull()?.times(1.2) ?: 0.0
     }
 
-    val maxValue = remember(data) { (data.maxDoubleOrNull { point: BalancePoint -> point.balance.toDouble() } ?: 0.0) * 1.2 }
+    val maxVal = data.maxOfOrNull { point ->
+        series.maxOfOrNull { type -> point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 } ?: 0.0
+    } ?: 0.0
+    val axisStart = indicatorWidth(maxVal, currency, suffixMillion, suffixThousand)
 
-    ColumnChart(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-            .padding(vertical = Spacing.md),
-        data = columnData,
-        maxValue = maxValue,
-        barProperties = BarProperties(
-            cornerRadius = Bars.Data.Radius.Rectangle(
-                topLeft = 6.dp,
-                topRight = 6.dp,
-                bottomLeft = 6.dp,
-                bottomRight = 6.dp
-            ),
-            spacing = 8.dp,
-            thickness = 12.dp
-        ),
-        dividerProperties = DividerProperties(
-            enabled = true,
-            xAxisProperties = LineProperties(
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                thickness = 0.dp
-            ),
-            yAxisProperties = LineProperties(
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
-                thickness = 0.dp
-            )
-        ),
-        indicatorProperties = HorizontalIndicatorProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurfaceVariant.copy(0.6f),
-                textAlign = TextAlign.Center
-            ),
-            contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) }
-        ),
-        labelHelperProperties = LabelHelperProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurface,
-                textAlign = TextAlign.End
-            ),
-        ),
-        labelProperties = LabelProperties(
-            enabled = true,
-            textStyle = TextStyle.Default.copy(
-                fontSize = 10.sp,
-                color = themeColors.onSurface.copy(0.6f),
-                textAlign = TextAlign.End
-            ),
-            padding = 16.dp,
-            rotation = LabelProperties.Rotation(
-                mode = LabelProperties.Rotation.Mode.Force,
-                degree = -45f
-            )
-        ),
-        gridProperties = GridProperties(
-            enabled = true,
-            xAxisProperties = GridProperties.AxisProperties(
-                enabled = true,
-                style = StrokeStyle.Dashed(),
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f))
-            ),
-            yAxisProperties = GridProperties.AxisProperties(
-                enabled = true,
-                style = StrokeStyle.Dashed(),
-                color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f))
-            )
-        ),
-        animationSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
-    )
+    Column {
+        ColumnChart(
+            modifier = Modifier.fillMaxWidth().height(260.dp).padding(top = Spacing.md),
+            data = columnData,
+            maxValue = maxValue,
+            barProperties =
+                BarProperties(
+                    cornerRadius =
+                        Bars.Data.Radius.Rectangle(
+                            topLeft = 6.dp,
+                            topRight = 6.dp,
+                            bottomLeft = 6.dp,
+                            bottomRight = 6.dp,
+                        ),
+                    spacing = 8.dp,
+                    thickness = 12.dp,
+                ),
+            dividerProperties =
+                DividerProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                    yAxisProperties =
+                        LineProperties(
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0f)),
+                            thickness = 0.dp,
+                        ),
+                ),
+            indicatorProperties =
+                HorizontalIndicatorProperties(
+                    enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurfaceVariant.copy(0.6f),
+                            textAlign = TextAlign.Center,
+                        ),
+                    padding = IndicatorPadding,
+                    contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) },
+                ),
+            labelHelperProperties =
+                LabelHelperProperties(
+                    enabled = true,
+                    textStyle =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = themeColors.onSurface,
+                            textAlign = TextAlign.End,
+                        ),
+                ),
+            labelProperties =
+                LabelProperties(
+                    enabled = false,
+                    labels = emptyList(),
+                ),
+            gridProperties =
+                GridProperties(
+                    enabled = true,
+                    xAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                    yAxisProperties =
+                        GridProperties.AxisProperties(
+                            enabled = true,
+                            style = StrokeStyle.Dashed(),
+                            color = SolidColor(themeColors.onSurface.copy(alpha = 0.1f)),
+                        ),
+                ),
+            animationSpec =
+                tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
+            popupProperties = chartPopup(currency),
+        )
+        DateAxis(columnData.map { it.label }, axisStart)
+    }
 }
 
 @Composable
 fun CategoryPieChart(
     modifier: Modifier = Modifier,
-    categories: List<CategoryData>,
-    currency: String
+    categories: List<CategoryTotal>,
+    currency: String,
+    lookups: Map<String, Category>,
+    amounts: Map<String, dev.hootkit.core.Money?> = emptyMap(),
+    onClick: (String) -> Unit = {},
 ) {
-    if (categories.isEmpty()) return
+    if (categories.isEmpty() || amounts.values.any { it == null }) return
 
-    val total = categories.sumOfDouble { cat: CategoryData -> cat.amount.toDouble() }
-    if (total == 0.0) return
+    if (categories.none { it.total.signum() > 0 }) return
 
     // Categories without a mapped color fall back to the scheme's neutral, not a fixed grey
     val fallbackColor = MaterialTheme.colorScheme.outline
-    val pieData = remember(categories, fallbackColor) {
-        categories.map { category ->
-            Pie(
-                label = category.name,
-                data = category.amount.toDouble(),
-                color = CategoryMapping.categories[category.name]?.color ?: fallbackColor,
-                selectedColor = (CategoryMapping.categories[category.name]?.color
-                    ?: fallbackColor).copy(alpha = 0.8f),
-                selected = false,
-                scaleAnimEnterSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
-                colorAnimEnterSpec = tween(500)
-            )
+    val pieData =
+        remember(categories, lookups, amounts, fallbackColor) {
+            categories.map { category ->
+                Pie(
+                    label = lookups[category.categoryId]?.displayName.orEmpty(),
+                    data =
+                        (if (category.categoryId in amounts) amounts[category.categoryId]?.amount
+                            else category.total)
+                            ?.toDouble() ?: 0.0,
+                    color =
+                        lookups[category.categoryId]?.color?.let {
+                            runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull()
+                        } ?: fallbackColor,
+                    selectedColor =
+                        (lookups[category.categoryId]?.color?.let {
+                                runCatching { Color(android.graphics.Color.parseColor(it)) }
+                                    .getOrNull()
+                            } ?: fallbackColor)
+                            .copy(alpha = 0.8f),
+                    selected = false,
+                    scaleAnimEnterSpec =
+                        tween(
+                            durationMillis = MotionDurations.standard,
+                            easing = FastOutSlowInEasing,
+                        ),
+                    colorAnimEnterSpec = tween(500),
+                )
+            }
         }
-    }
 
     var chartData by remember(pieData) { mutableStateOf(pieData) }
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .padding(Spacing.sm),
+        modifier = modifier.fillMaxWidth().height(200.dp).padding(Spacing.sm),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .weight(1.2f)
-                .fillMaxHeight(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.weight(1.2f).fillMaxHeight(), contentAlignment = Alignment.Center) {
             PieChart(
                 modifier = Modifier.size(160.dp),
                 data = chartData,
                 onPieClick = { clickedPie ->
                     val pieIndex = chartData.indexOf(clickedPie)
-                    chartData = chartData.mapIndexed { index, pie ->
-                        pie.copy(selected = index == pieIndex)
-                    }
+                    categories.getOrNull(pieIndex)?.let { onClick(it.categoryId) }
+                    chartData =
+                        chartData.mapIndexed { index, pie ->
+                            pie.copy(selected = index == pieIndex)
+                        }
                 },
                 selectedScale = 1.1f,
-                scaleAnimEnterSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
+                scaleAnimEnterSpec =
+                    tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
                 colorAnimEnterSpec = tween(500),
-                style = Pie.Style.Stroke(width = 12.dp)
+                style = Pie.Style.Stroke(width = 12.dp),
             )
 
             // Center Icon Overlay
@@ -383,43 +414,44 @@ fun CategoryPieChart(
             BlurredAnimatedVisibility(
                 visible = selectedPie != null,
                 enter = fadeIn() + scaleIn(),
-                exit = fadeOut() +scaleOut(),
-                modifier = Modifier.align(Alignment.Center)
+                exit = fadeOut() + scaleOut(),
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 if (selectedPie != null && selectedPie.label != null) {
-                    CategoryIcon(
-                        category = selectedPie.label!!,
-                        size = 32.dp,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(selectedPie.color.copy(alpha = 0.2f))
-                            .padding(12.dp)
-                    )
+                    lookups[categories[chartData.indexOf(selectedPie)].categoryId]?.let {
+                        Box(
+                            Modifier.size(56.dp)
+                                .clip(CircleShape)
+                                .background(selectedPie.color.copy(alpha = 0.2f))
+                                .padding(12.dp)
+                        ) {
+                            CategoryIcon(category = it, size = 32.dp)
+                        }
+                    }
                 }
             }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(start = Spacing.md)
-        ) {
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxHeight().padding(start = Spacing.md)) {
             items(chartData.sortedByDescending { it.data }) { pie ->
                 LegendItem(
-                    label = io.github.hootkit_dev.hootbook.presentation.common.categoryName(pie.label ?: "Miscellaneous"),
-                    value = pie.data,
+                    label = pie.label.orEmpty(),
+                    value =
+                        categories[chartData.indexOf(pie)].let { category ->
+                            if (category.categoryId in amounts) amounts[category.categoryId]?.amount
+                            else category.total
+                        },
                     color = pie.color,
                     isSelected = pie.selected,
                     currency = currency,
-                    totalAmount = total,
                     onClick = {
                         val pieIndex = chartData.indexOf(pie)
-                        chartData = chartData.mapIndexed { index, p ->
-                            p.copy(selected = index == pieIndex)
-                        }
-                    }
+                        categories.getOrNull(pieIndex)?.let { onClick(it.categoryId) }
+                        chartData =
+                            chartData.mapIndexed { index, p ->
+                                p.copy(selected = index == pieIndex)
+                            }
+                    },
                 )
             }
         }
@@ -429,31 +461,27 @@ fun CategoryPieChart(
 @Composable
 fun LegendItem(
     label: String,
-    value: Double,
+    value: BigDecimal?,
     color: Color,
     currency: String,
     isSelected: Boolean,
-    totalAmount: Double,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    val percentage = (value / totalAmount * 100).toInt()
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else Color.Transparent)
-            .padding(6.dp)
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    else Color.Transparent
+                )
+                .padding(6.dp)
+                .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
+        Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -461,18 +489,13 @@ fun LegendItem(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = formatPremiumCurrency(value, currency, stringResource(R.string.suffix_million), stringResource(R.string.suffix_thousand)),
+                    text = CurrencyFormatter.format(value, currency),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = stringResource(R.string.percentage_format, percentage),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -481,100 +504,112 @@ fun LegendItem(
 
 @Composable
 fun SpendingHeatmap(
-    data: List<BalancePoint>,
-    modifier: Modifier = Modifier
+    data: List<Map.Entry<LocalDate, LedgerSummary>>,
+    incomeOnly: Boolean = false,
+    currency: String,
+    onClick: (LocalDate) -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     if (data.isEmpty()) return
 
-    val maxAmount = remember(data) { data.maxDoubleOrNull { point: BalancePoint -> point.balance.toDouble() } ?: 1.0 }
-    val groupedData = remember(data) {
-        data.associate { it.timestamp.toLocalDate() to it.balance.toDouble() }
-    }
-    
-    val sortedDates = remember(data) { data.map { it.timestamp.toLocalDate() }.distinct().sorted() }
+    val maxAmount =
+        remember(data, incomeOnly, currency) {
+            data.maxDoubleOrNull { point: Map.Entry<LocalDate, LedgerSummary> ->
+                (point.value.chartAmount(currency, incomeOnly)?.toDouble() ?: 0.0)
+            } ?: 1.0
+        }
+    val groupedData =
+        remember(data, incomeOnly, currency) {
+            data.associate {
+                it.key to (it.value.chartAmount(currency, incomeOnly)?.toDouble() ?: 0.0)
+            }
+        }
+
+    val sortedDates =
+        remember(data, incomeOnly, currency) { data.map { it.key }.distinct().sorted() }
     val startDate = sortedDates.first().with(java.time.DayOfWeek.MONDAY)
     val endDate = sortedDates.last()
-    
-    val totalWeeks = ChronoUnit.WEEKS.between(startDate, endDate.plusDays(1)).toInt() + 1
-    
-    val monthLabels = remember(startDate, endDate) {
-        val allMonthStarts = mutableListOf<Pair<Int, String>>()
-        var current = startDate
-        var lastMonth = -1
-        var weekIndex = 0
-        
-        while (current <= endDate) {
-            if (current.monthValue != lastMonth) {
-                val formatter = DateFormats.monthFormatter()
-                allMonthStarts.add(weekIndex to current.format(formatter))
-                lastMonth = current.monthValue
-            }
-            current = current.plusWeeks(1)
-            weekIndex++
-        }
 
-        val filteredLabels = mutableListOf<Pair<Int, String>>()
-        for (i in allMonthStarts.indices) {
-            val (week, label) = allMonthStarts[i]
-            
-            if (i == 0 && allMonthStarts.size > 1) {
-                val nextWeek = allMonthStarts[1].first
-                if (nextWeek - week < 4) continue
+    val totalWeeks = ChronoUnit.WEEKS.between(startDate, endDate.plusDays(1)).toInt() + 1
+
+    val monthLabels =
+        remember(startDate, endDate) {
+            val allMonthStarts = mutableListOf<Pair<Int, String>>()
+            var current = startDate
+            var lastMonth = -1
+            var weekIndex = 0
+
+            while (current <= endDate) {
+                if (current.monthValue != lastMonth) {
+                    val formatter = DateFormats.monthFormatter()
+                    allMonthStarts.add(weekIndex to current.format(formatter))
+                    lastMonth = current.monthValue
+                }
+                current = current.plusWeeks(1)
+                weekIndex++
             }
-            
-            if (filteredLabels.isEmpty()) {
-                filteredLabels.add(week to label)
-            } else {
-                val lastAddedWeek = filteredLabels.last().first
-                if (week - lastAddedWeek >= 4) {
+
+            val filteredLabels = mutableListOf<Pair<Int, String>>()
+            for (i in allMonthStarts.indices) {
+                val (week, label) = allMonthStarts[i]
+
+                if (i == 0 && allMonthStarts.size > 1) {
+                    val nextWeek = allMonthStarts[1].first
+                    if (nextWeek - week < 4) continue
+                }
+
+                if (filteredLabels.isEmpty()) {
                     filteredLabels.add(week to label)
+                } else {
+                    val lastAddedWeek = filteredLabels.last().first
+                    if (week - lastAddedWeek >= 4) {
+                        filteredLabels.add(week to label)
+                    }
                 }
             }
+            filteredLabels
         }
-        filteredLabels
-    }
 
     val scrollState = rememberScrollState()
-    LaunchedEffect(data) {
-        scrollState.scrollTo(scrollState.maxValue)
-    }
+    LaunchedEffect(data) { scrollState.scrollTo(scrollState.maxValue) }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(0.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Column(
-            modifier = Modifier.horizontalScroll(scrollState)
-        ) {
+        Column(modifier = Modifier.horizontalScroll(scrollState)) {
             // Heatmap Grid
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             ) {
                 for (w in 0 until totalWeeks) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         for (d in 0 until 7) {
                             val date = startDate.plusWeeks(w.toLong()).plusDays(d.toLong())
                             val amount = groupedData[date] ?: 0.0
-                            val intensity = if (maxAmount > 0) (amount / maxAmount).toFloat().coerceIn(0f, 1f) else 0f
-                            
+                            val intensity =
+                                if (maxAmount > 0) (amount / maxAmount).toFloat().coerceIn(0f, 1f)
+                                else 0f
+
                             val primary = MaterialTheme.colorScheme.primary
-                            val color = when {
-                                date > endDate -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                amount == 0.0 -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                intensity < 0.25f -> primary.copy(alpha = 0.25f)
-                                intensity < 0.5f -> primary.copy(alpha = 0.5f)
-                                intensity < 0.75f -> primary.copy(alpha = 0.75f)
-                                else -> primary
-                            }
+                            val color =
+                                when {
+                                    date > endDate -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                    amount == 0.0 -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                    intensity < 0.25f -> primary.copy(alpha = 0.25f)
+                                    intensity < 0.5f -> primary.copy(alpha = 0.5f)
+                                    intensity < 0.75f -> primary.copy(alpha = 0.75f)
+                                    else -> primary
+                                }
 
                             Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(color)
+                                modifier =
+                                    Modifier.size(16.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(color)
+                                        .clickable(enabled = date in groupedData) { onClick(date) }
                             )
                         }
                     }
@@ -589,8 +624,7 @@ fun SpendingHeatmap(
                         text = label,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        
-                        modifier = Modifier.offset(x = xOffset)
+                        modifier = Modifier.offset(x = xOffset),
                     )
                 }
             }
@@ -598,10 +632,26 @@ fun SpendingHeatmap(
     }
 }
 
+/** Select a Core-returned amount; never add kinds or convert money in chart code. */
+internal fun LedgerSummary.chartAmount(currency: String, incomeOnly: Boolean): BigDecimal? =
+    if (currency == this.currency) {
+        if (incomeOnly) income else expense
+    } else
+        perCurrency
+            .find { it.currency == currency }
+            ?.let { if (incomeOnly) it.income else it.expense }
+
+/** Each mixed trend uses the two totals returned by Core, with no combined gross total. */
+internal fun trendTypes(types: Set<TransactionTypeFilter>): List<TransactionTypeFilter> =
+    if (TransactionTypeFilter.ALL in types) listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE)
+    else listOf(TransactionTypeFilter.INCOME, TransactionTypeFilter.EXPENSE).filter { it in types }
+
+private val IndicatorPadding = 12.dp
+
 fun formatPremiumCurrency(value: Double, currency: String, suffixMillion: String, suffixThousand: String): String {
     val absValue = abs(value)
     val symbol = CurrencyFormatter.getCurrencySymbol(currency)
-    
+
     return when {
         absValue >= 1_000_000 -> {
             val millions = absValue / 1_000_000
@@ -614,5 +664,46 @@ fun formatPremiumCurrency(value: Double, currency: String, suffixMillion: String
             "${symbol}${String.format("%.1f", thousands)}${suffix}"
         }
         else -> "${symbol}${absValue.toInt()}"
+    }
+}
+
+@Composable
+private fun indicatorWidth(max: Double, currency: String, million: String, thousand: String): androidx.compose.ui.unit.Dp {
+    val measurer = rememberTextMeasurer()
+    val style = MaterialTheme.typography.labelSmall
+    val density = LocalDensity.current
+    val widest = listOf(max, 0.0).maxOf { measurer.measure(formatPremiumCurrency(it, currency, million, thousand), style).size.width }
+    return with(density) { widest.toDp() } + IndicatorPadding
+}
+
+private fun List<String>.thinned(max: Int = 6): List<String> =
+    if (size <= max) this else (0 until max).map { this[Math.round(it * (size - 1) / (max - 1).toFloat())] }
+
+@Composable
+private fun chartPopup(currency: String) = ir.ehsannarmani.compose_charts.models.PopupProperties(
+    textStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.inverseOnSurface),
+    containerColor = MaterialTheme.colorScheme.inverseSurface,
+    contentBuilder = { popup ->
+        CurrencyFormatter.format(
+            BigDecimal.valueOf(popup.value).setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros(), currency
+        )
+    },
+)
+
+@Composable
+private fun DateAxis(labels: List<String>, start: androidx.compose.ui.unit.Dp) {
+    val shown = labels.thinned(max = 6)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = start, top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        shown.forEach {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }

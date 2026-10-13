@@ -70,7 +70,9 @@ fun EditProfileSheet(
         onBackgroundColorChange: (Color) -> Unit,
         onBannerImageChange: (Uri?) -> Unit,
         onSave: () -> Unit,
-        onCancel: () -> Unit
+        onCancel: () -> Unit,
+        saving: Boolean = false,
+        error: Int? = null
 ) {
 
     // Launchers for image picking
@@ -105,6 +107,7 @@ fun EditProfileSheet(
                 modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
             )
 
+            error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             // Preview Card
             ProfileCardPreview(
                 profileImageUri = state.editedProfileImageUri,
@@ -216,7 +219,7 @@ fun EditProfileSheet(
                     .align(Alignment.BottomCenter)
                     .height(56.dp),
                 shapes = ButtonDefaults.shapes(),
-                enabled = state.hasChanges
+                enabled = state.hasChanges && !saving
             ) {
                 Icon(Icons.Default.Done, contentDescription = null)
                 Spacer(Modifier.width(Spacing.sm))

@@ -1,5 +1,12 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,8 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountSelectionSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountField
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
@@ -54,22 +59,24 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.DocumentText2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Information
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettleUpSheet(
-    person: LendBorrowPerson,
-    accounts: List<AccountBalanceEntity> = emptyList(),
-    defaultAccountId: Long? = null,
+    person: Person,
+    accounts: List<Account> = emptyList(),
+    defaultAccountId: String? = null,
+    saving: Boolean = false,
+    error: Int? = null,
     onDismiss: () -> Unit,
-    onSettle: (amount: BigDecimal, note: String, isLentSettlement: Boolean, accountId: Long?) -> Unit
+    onSettle: (SettleDraft) -> Unit
 ) {
-    // If person.netBalance > 0, person owes user (User gets -> SETTLEMENT_LENT).
-    // If person.netBalance < 0, user owes person (User pays -> SETTLEMENT_BORROWED).
-    val isLentSettlement = person.netBalance > BigDecimal.ZERO
-    val suggestedAmount = person.netBalance.abs()
+    // If person.totals.net > 0, person owes user (User gets -> REPAID_TO_ME).
+    // If person.totals.net < 0, user owes person (User pays -> REPAID_BY_ME).
+    val isLentSettlement = person.totals.net > BigDecimal.ZERO
+    val suggestedAmount = person.totals.net.abs()
 
     var selectedIndex by remember { mutableStateOf(0) } // 0 = Full, 1 = Partial
     var amountText by remember { mutableStateOf(suggestedAmount.toPlainString()) }
@@ -82,7 +89,7 @@ fun SettleUpSheet(
     var showAccountSheet by remember { mutableStateOf(false) }
 
     HootbookModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!saving) onDismiss() },
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
@@ -102,6 +109,8 @@ fun SettleUpSheet(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+                if (!person.totals.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error)
                 // Full / Partial Tabs
                 GenericTypeSwitcher(
                     selectedIndex = selectedIndex,
@@ -168,7 +177,7 @@ fun SettleUpSheet(
                 AmountInput(
                     amount = if (amountText.isBlank()) "0" else amountText,
                     currencySymbol = CurrencyFormatter.getCurrencySymbol(
-                        selectedAccount?.currency ?: "CNY"
+                        person.totals.currency
                     ),
                     onClick = { showNumberPad = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -231,13 +240,14 @@ fun SettleUpSheet(
                 contentAlignment = Alignment.BottomCenter
             ) {
                 Button(
+                    enabled = !saving,
                     onClick = {
                         val parsedAmount = amountText.toBigDecimalOrNull()
-                        if (parsedAmount == null || parsedAmount <= BigDecimal.ZERO) {
+                        if (selectedIndex == 1 && (parsedAmount == null || parsedAmount <= BigDecimal.ZERO)) {
                             return@Button
                         }
-                        val amount = if (selectedIndex == 0) suggestedAmount else parsedAmount
-                        onSettle(amount, noteText, isLentSettlement, selectedAccount?.id)
+                        val amount = if (selectedIndex == 0) null else Money(parsedAmount!!, person.totals.currency)
+                        onSettle(SettleDraft(amount, selectedAccount?.id, noteText, java.time.LocalDateTime.now().toCoreDateTime()))
                     },
                     modifier = Modifier
                         .padding(horizontal = Dimensions.Padding.content)

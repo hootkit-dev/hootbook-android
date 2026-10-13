@@ -25,7 +25,7 @@ a backup in Cashiro and restore it in Hootbook.
   transactions before saving; cloud models only, with your own API key
 - **Broker holdings**: read-only IBKR Flex sync
 - **Multi-device sync** (standard build): Firebase, end-to-end encrypted with your passphrase
-- **Backups**: local file, Google Drive or WebDAV, optionally encrypted; CSV export
+- **Backups**: local files, optionally encrypted; CSV export
 
 ## Screenshots
 
@@ -65,20 +65,20 @@ git clone https://github.com/hootkit-dev/hootbook-android.git
 cd hootbook-android
 
 ./gradlew :app:assembleStandardDebug        # standard flavor (with Firebase sync)
-./gradlew :app:assembleFdroidDebug          # F-Droid flavor (no Firebase)
 ./gradlew :app:testStandardDebugUnitTest    # unit tests
 ./gradlew :app:lintStandardDebug            # lint
 ```
 
-Requires Android 8.0+ (API 26) and JDK 21.
+Requires Android 8.0+ (API 26) and JDK 21. Only the standard flavor is built; see
+[standard-only build and validation notes](docs/standard-only.md).
 
-**Architecture**: MVVM • Jetpack Compose • Material 3 • Room • Coroutines • Hilt. See
+**Architecture**: MVVM • Jetpack Compose • Material 3 • Rust Core • Coroutines • Hilt. See
 [docs/architecture.md](docs/architecture.md).
 
 ```
 io.github.hootkit_dev.hootbook
-├── data          Room, repositories, preferences, sync, backup, AI
-├── domain        Use cases and models
+├── core          Core session, platform preferences, sync and system entry points
+├── data          UI preferences, icons and updates
 ├── presentation  Compose UI, feature ViewModels, navigation
 ├── di            Hilt modules
 └── utils

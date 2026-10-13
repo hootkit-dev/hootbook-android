@@ -1,8 +1,7 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionDecoration
-import io.github.hootkit_dev.hootbook.utils.displayTitle
+import io.github.hootkit_dev.hootbook.presentation.format.displayTitle
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
@@ -13,6 +12,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
@@ -41,10 +41,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
+import dev.hootkit.core.Transaction
+import dev.hootkit.core.TransactionKind
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Card
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
@@ -59,8 +59,9 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.investment_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.transfer_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
-import io.github.hootkit_dev.hootbook.utils.formatAmount
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
+import io.github.hootkit_dev.hootbook.presentation.format.formatAmount
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import androidx.core.graphics.toColorInt
@@ -73,12 +74,12 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Paperclip2
 fun TransactionItem(
     sharedTransitionScope: SharedTransitionScope? = null,
     modifier: Modifier = Modifier,
-    transaction: TransactionEntity? = null,
+    transaction: Transaction? = null,
     merchantName: String? = null,
     amount: BigDecimal? = null,
-    transactionType: TransactionType? = null,
-    categoryEntity: CategoryEntity? = null,
-    subcategoryEntity: SubcategoryEntity? = null,
+    transactionType: TransactionKind? = null,
+    categoryEntity: Category? = null,
+    subcategoryEntity: Subcategory? = null,
     accountIconResId: Int = 0,
     accountIconName: String? = null,
     accountColorHex: String? = null,
@@ -89,8 +90,6 @@ fun TransactionItem(
     subtitleOverride: String? = null,
     amountOverride: String? = null,
     amountColorOverride: Color? = null,
-    balanceAfter: BigDecimal? = null,
-    balanceCurrency: String? = null,
     animatedContentScope: AnimatedVisibilityScope? = null,
     sharedElementKey: String? = null,
     isSelectionMode: Boolean = false,
@@ -106,31 +105,21 @@ fun TransactionItem(
     linkedLoanPersonName: String? = null,
     linkedLoanPersonColor: String? = null,
     linkedLoanPersonAvatar: String? = null,
-    // Category, account, person and converted amount looked up for a list row; explicit
-    // arguments above take precedence over it
-    decoration: TransactionDecoration? = null
+    useHomeStyle: Boolean = false,
+    customSymbols: Map<String, String> = emptyMap(),
 ) {
-    val categoryEntity = categoryEntity ?: decoration?.category
-    val subcategoryEntity = subcategoryEntity ?: decoration?.subcategory
-    val accountIconResId = accountIconResId.takeIf { it != 0 } ?: decoration?.account?.iconResId ?: 0
-    val accountIconName = accountIconName ?: decoration?.account?.iconName
-    val accountColorHex = accountColorHex ?: decoration?.account?.color
-    val convertedAmount = convertedAmount ?: decoration?.convertedAmount
-    val rateLoading = rateLoading || decoration?.rateLoading == true
-    val linkedLoanPersonName = linkedLoanPersonName ?: decoration?.person?.name
-    val linkedLoanPersonColor = linkedLoanPersonColor ?: decoration?.person?.color
-    val linkedLoanPersonAvatar = linkedLoanPersonAvatar ?: decoration?.person?.avatar
-    val finalMerchantName = merchantName ?: transaction?.displayTitle() ?: ""
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val attachmentStore = remember(context) { io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore(context) }
+    val finalMerchantName = merchantName ?: transaction?.displayTitle(categoryEntity?.displayName) ?: ""
     val finalAmount = amount ?: transaction?.amount ?: BigDecimal.ZERO
-    val finalType = transactionType ?: transaction?.transactionType ?: TransactionType.EXPENSE
-    val isRecurring = transaction?.isRecurring ?: false
+    val finalType = transactionType ?: transaction?.kind ?: TransactionKind.EXPENSE
+    val isRecurring = transaction?.subscriptionId != null
     val isDark = isAppInDarkTheme
     val effectiveSign = remember(transaction, currentAccountContext, currentBankNameContext) {
-        if (transaction?.transactionType == TransactionType.TRANSFER && currentAccountContext != null && currentBankNameContext != null) {
-            val isSender = transaction.bankName == currentBankNameContext && 
-                (transaction.accountNumber == currentAccountContext || transaction.fromAccount == currentAccountContext)
-            val isReceiver = !isSender && transaction.toAccount == currentAccountContext
-            
+        if (transaction?.kind == TransactionKind.TRANSFER && currentAccountContext != null) {
+            val isSender = transaction.accountId == currentAccountContext
+            val isReceiver = !isSender && transaction.toAccountId == currentAccountContext
+
             if (isSender) "-" else if (isReceiver) "+" else null
         } else null
     }
@@ -142,14 +131,13 @@ fun TransactionItem(
             if (!isDark) income_light else income_dark
         } else {
             when (finalType) {
-                TransactionType.INCOME -> if (!isDark) income_light else income_dark
-                TransactionType.EXPENSE -> if (!isDark) expense_light else expense_dark
-                TransactionType.CREDIT -> if (!isDark) credit_light else credit_dark
-                TransactionType.TRANSFER -> if (!isDark) transfer_light else transfer_dark
-                TransactionType.INVESTMENT -> if (!isDark) investment_light else investment_dark
-                TransactionType.BALANCE_UPDATE -> if (!isDark) transfer_light else transfer_dark
-                TransactionType.BORROWED -> if (!isDark) income_light else income_dark
-                TransactionType.LENT -> if (!isDark) expense_light else expense_dark
+                TransactionKind.INCOME -> if (!isDark) income_light else income_dark
+                TransactionKind.EXPENSE -> if (!isDark) expense_light else expense_dark
+                TransactionKind.TRANSFER -> if (!isDark) transfer_light else transfer_dark
+                TransactionKind.INVESTMENT -> if (!isDark) investment_light else investment_dark
+                TransactionKind.UNKNOWN -> if (!isDark) transfer_light else transfer_dark
+                TransactionKind.LOAN_IN -> if (!isDark) income_light else income_dark
+                TransactionKind.LOAN_OUT -> if (!isDark) expense_light else expense_dark
             }
         }
     }
@@ -158,14 +146,14 @@ fun TransactionItem(
     val dateTimeFormatter = remember(locale) {
         DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)
     }
-    val defaultSubtitle = remember(transaction?.dateTime) { 
-        transaction?.dateTime?.format(dateTimeFormatter) ?: "" 
+    val defaultSubtitle = remember(transaction?.dateTime) {
+        transaction?.dateTime?.toJavaDateTime()?.format(dateTimeFormatter) ?: ""
     }
     val amountText = remember(transaction, amountOverride, finalAmount, effectiveSign) {
         amountOverride ?: transaction?.let {
              // The receiving side of a transfer between currencies shows what arrived there
              val received = it.toAmount?.takeIf { effectiveSign == "+" }
-             val formatted = if (received != null) CurrencyFormatter.formatCurrency(received, it.toCurrency ?: it.currency)
+             val formatted = if (received != null) CoreMoneyPresentation.formatCurrency(received, it.toCurrency ?: it.currency)
                  else it.formatAmount()
              if (effectiveSign != null) "$effectiveSign $formatted" else formatted
         } ?: finalAmount.toString()
@@ -174,7 +162,7 @@ fun TransactionItem(
     val dateTagColor = remember(transaction?.dateTime,) {
         val colors = listOf(income_dark, expense_dark, credit_dark, transfer_dark, investment_dark)
 
-        val dateHash = transaction?.dateTime?.toLocalDate()?.hashCode() ?: 0
+        val dateHash = transaction?.dateTime?.toJavaDateTime()?.toLocalDate()?.hashCode() ?: 0
         val index = Math.abs(dateHash) % colors.size
         colors[index]
     }
@@ -227,7 +215,7 @@ fun TransactionItem(
                 ) {
                     if (!linkedLoanPersonAvatar.isNullOrBlank()) {
                         AsyncImage(
-                            model = linkedLoanPersonAvatar,
+                            model = linkedLoanPersonAvatar?.let(attachmentStore::resolve),
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -248,8 +236,8 @@ fun TransactionItem(
                     showBackground = true,
                     categoryEntity = categoryEntity,
                     subcategoryEntity = subcategoryEntity,
-                    category = transaction?.category,
-                    subcategory = transaction?.subcategory,
+                    category = categoryEntity?.displayName,
+                    subcategory = subcategoryEntity?.displayName,
                     accountIconResId = accountIconResId,
                     accountIconName = accountIconName,
                     accountColorHex = accountColorHex,
@@ -268,15 +256,11 @@ fun TransactionItem(
 
     // Build subtitle parts
     val recurringStr = stringResource(R.string.recurring)
-    val balanceAfterStr = balanceAfter?.let { balance ->
-        stringResource(R.string.balance_after_format, CurrencyFormatter.formatCurrency(balance, balanceCurrency ?: transaction?.currency ?: "CNY"))
-    }
     val (subtitleParts, subtitleFinal) = remember(
         subtitleOverride,
         defaultSubtitle,
         isRecurring,
-        recurringStr,
-        balanceAfterStr
+        recurringStr
     ) {
         val parts = buildList {
             if (subtitleOverride != null) {
@@ -287,10 +271,37 @@ fun TransactionItem(
                 }
                 if (isRecurring) add(recurringStr)
 
-                balanceAfterStr?.let { add(it) }
             }
         }
         parts to parts.joinToString(" • ")
+    }
+
+    if (useHomeStyle) {
+        val secondaryAmount = when {
+            transaction?.kind == TransactionKind.TRANSFER && transaction.toAmount != null -> stringResource(
+                R.string.home_received, CoreMoneyPresentation.format(transaction.toAmount, transaction.toCurrency ?: transaction.currency, customSymbols))
+            convertedAmount != null && mainCurrency != null -> CoreMoneyPresentation.format(convertedAmount, mainCurrency, customSymbols)
+            else -> null
+        }
+        Row(
+            itemModifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 64.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            leadingContent()
+            Column(Modifier.weight(1f)) {
+                Text(finalMerchantName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitleFinal.isNotEmpty()) Text(subtitleFinal, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(amountText, style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"), color = amountColor, maxLines = 1)
+                if (secondaryAmount != null) Text(secondaryAmount, style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
+        return
     }
 
     if (useCardStyle) {
@@ -323,7 +334,7 @@ fun TransactionItem(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
                     var needsSeparator = false
-                    
+
                     @Composable
                     fun TagSeparator() {
                         if (needsSeparator) {
@@ -336,7 +347,7 @@ fun TransactionItem(
                     }
 
                     // Date Tag
-                    if (subtitleOverride == null && defaultSubtitle.isNotEmpty()) {
+                    if (showDate && subtitleOverride == null && defaultSubtitle.isNotEmpty()) {
                         TagSeparator()
                         SubtitleTag(
                             icon = {
@@ -357,7 +368,7 @@ fun TransactionItem(
                     categoryEntity?.let { category ->
                         TagSeparator()
                         SubtitleTag(
-                            text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(category.name),
+                            text = category.displayName,
                             color = try {
                                 Color(category.color.toColorInt())
                             } catch (e: Exception) {
@@ -389,19 +400,8 @@ fun TransactionItem(
                         }
 
 
-                        // Balance Tag
-                        balanceAfter?.let { balance ->
-                            TagSeparator()
-                            SubtitleTag(
-                                text = stringResource(R.string.balance_after_format, CurrencyFormatter.formatCurrency(balance, balanceCurrency ?: transaction?.currency ?: "CNY")),
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            needsSeparator = true
-                        }
-
                         // Description Indicator
-                        if (transaction?.description?.isNotBlank() == true) {
-                            TagSeparator()
+                        if (transaction?.notes?.isNotBlank() == true) {
                             Icon(
                                 imageVector = Iconax.DocumentText2,
                                 contentDescription = stringResource(R.string.description_indicator_desc),
@@ -412,8 +412,7 @@ fun TransactionItem(
                         }
 
                         // Attachments Indicator
-                        if (transaction?.attachments?.isNotBlank() == true) {
-                            TagSeparator()
+                        if (transaction?.attachments?.isNotEmpty() == true) {
                             Icon(
                                 imageVector = Iconax.Paperclip2,
                                 contentDescription = stringResource(R.string.attachments_indicator_desc),
@@ -437,60 +436,54 @@ fun TransactionItem(
                     ) {
                         if (subtitleOverride == null) {
                             when (finalType) {
-                                TransactionType.CREDIT -> Icon(
-                                    Iconax.Card,
-                                    contentDescription = stringResource(R.string.type_credit_card),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) credit_light else credit_dark
-                                )
 
-                                TransactionType.TRANSFER -> Icon(
+                                TransactionKind.TRANSFER -> Icon(
                                     Icons.Rounded.SwapHoriz,
                                     contentDescription = stringResource(R.string.type_transfer),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) transfer_light else transfer_dark
+                                    tint = if (!isDark) transfer_light else transfer_dark
                                 )
 
-                                TransactionType.INVESTMENT -> Icon(
+                                TransactionKind.INVESTMENT -> Icon(
                                     Icons.AutoMirrored.Filled.ShowChart,
                                     contentDescription = stringResource(R.string.type_investment),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) investment_light else investment_dark
+                                    tint = if (!isDark) investment_light else investment_dark
                                 )
 
-                                TransactionType.INCOME -> Icon(
+                                TransactionKind.INCOME -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = stringResource(R.string.type_income),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) income_light else income_dark
+                                    tint = if (!isDark) income_light else income_dark
                                 )
 
-                                TransactionType.EXPENSE -> Icon(
+                                TransactionKind.EXPENSE -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = stringResource(R.string.type_expense),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) expense_light else expense_dark
+                                    tint = if (!isDark) expense_light else expense_dark
                                 )
 
-                                TransactionType.BALANCE_UPDATE -> Icon(
+                                TransactionKind.UNKNOWN -> Icon(
                                     Icons.Rounded.SwapHoriz,
                                     contentDescription = stringResource(R.string.type_balance_update),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) transfer_light else transfer_dark
+                                    tint = if (!isDark) transfer_light else transfer_dark
                                 )
 
-                                TransactionType.LENT -> Icon(
+                                TransactionKind.LOAN_OUT -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = stringResource(R.string.type_lent),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) expense_light else expense_dark
+                                    tint = if (!isDark) expense_light else expense_dark
                                 )
 
-                                TransactionType.BORROWED -> Icon(
+                                TransactionKind.LOAN_IN -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = stringResource(R.string.type_borrowed),
                                     modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isAppInDarkTheme) income_light else income_dark
+                                    tint = if (!isDark) income_light else income_dark
                                 )
                             }
                         }
@@ -507,7 +500,7 @@ fun TransactionItem(
                     val foreign = mainCurrency != null && transaction?.currency?.equals(mainCurrency, ignoreCase = true) != true
                     val convertedText = when {
                         !foreign -> null
-                        convertedAmount != null -> "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, mainCurrency!!)}"
+                        convertedAmount != null -> "≈ ${CoreMoneyPresentation.formatCurrency(convertedAmount, mainCurrency!!)}"
                         transaction == null -> null
                         rateLoading -> stringResource(R.string.rate_loading)
                         else -> stringResource(R.string.rate_unavailable)
@@ -541,29 +534,3 @@ fun TransactionItem(
 
 
 /** A stable 40dp slot avoids two visibility/blur layout trees on every transaction row. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-internal fun TransactionLeadingSlot(
-    isSelectionMode: Boolean,
-    isSelected: Boolean,
-    onSelectionToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: @Composable () -> Unit
-) {
-    Crossfade(
-        targetState = isSelectionMode,
-        modifier = modifier.size(40.dp),
-        animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
-        label = "transactionLeadingSelection"
-    ) { selectionMode ->
-        if (selectionMode) {
-            HootbookCheckbox(
-                checked = isSelected,
-                onCheckedChange = { onSelectionToggle() },
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            icon()
-        }
-    }
-}

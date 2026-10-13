@@ -2,6 +2,13 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import androidx.compose.material3.LoadingIndicator
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookDialogDefaults
 import io.github.hootkit_dev.hootbook.presentation.ui.components.DialogConfirmButton
@@ -90,10 +97,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.LendBorrowType
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowTransactionItem
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookCard
@@ -118,7 +121,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Whatsapp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.LocalBlurEffects
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeEffectScope
@@ -134,7 +137,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun SharedTransitionScope.PersonDetailScreen(
     onNavigateBack: () -> Unit,
-    onTransactionClick: (Long, String) -> Unit = { _, _ -> },
+    onTransactionClick: (String, String) -> Unit = { _, _ -> },
     sharedElementKey: String? = null,
     animatedContentScope: AnimatedContentScope? = null,
     viewModel: PersonDetailViewModel = hiltViewModel()
@@ -287,6 +290,7 @@ fun SharedTransitionScope.PersonDetailScreen(
             )
         },
     ) { paddingValues ->
+        uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier
@@ -314,7 +318,7 @@ fun SharedTransitionScope.PersonDetailScreen(
         val reminderMessage = stringResource(
             R.string.reminder_message_format,
             person.name,
-            CurrencyFormatter.formatCurrency(person.netBalance.abs(), uiState.baseCurrency)
+            CurrencyFormatter.formatCurrency(person.totals.net.abs(), uiState.baseCurrency)
         )
 
         LazyColumn(
@@ -333,22 +337,23 @@ fun SharedTransitionScope.PersonDetailScreen(
                 if (!uiState.isSelectionMode) {
                     PersonHeaderCard(
                         person = person,
+                        attachmentStore = viewModel.attachmentStore,
                         onSettleClick = { viewModel.showSettleSheet(true) },
                         onCallClick = {
-                            person.phoneNumber?.let { phone ->
+                            person.phone?.let { phone ->
                                 val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
                                 context.startActivity(intent)
                             }
                         },
                         onWhatsAppClick = {
-                            person.phoneNumber?.let { phone ->
+                            person.phone?.let { phone ->
                                 val normalized = phone.filter { it.isDigit() }
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$normalized?text=${Uri.encode(reminderMessage)}"))
                                 context.startActivity(intent)
                             }
                         },
                         onTelegramClick = {
-                            person.phoneNumber?.let { phone ->
+                            person.phone?.let { phone ->
                                 val normalized = phone.filter { it.isDigit() }
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/+$normalized?text=${Uri.encode(reminderMessage)}"))
                                 context.startActivity(intent)
@@ -375,11 +380,13 @@ fun SharedTransitionScope.PersonDetailScreen(
                 }
             } else {
                 itemsIndexed(uiState.transactions, key = { _, item -> item.id }) { index, item ->
-                    val category = uiState.categories.find { it.name == item.category }
+                    val linked = uiState.linkedTransactions[item.transactionId]
+                    val category = uiState.categories[linked?.categoryId]
                     val position = ListItemPosition.from(index, uiState.transactions.size)
                     LendBorrowTransactionListItem(
                         item = item,
                         categoryEntity = category,
+                        transaction = linked,
                         onClick = {
                             if (uiState.isSelectionMode) {
                                 viewModel.toggleRecordSelection(item.id)
@@ -410,7 +417,8 @@ fun SharedTransitionScope.PersonDetailScreen(
         if (uiState.showEditPersonSheet) {
             AddEditPersonSheet(
                 personToEdit = person,
-                attachmentService = viewModel.attachmentService,
+                saving = uiState.saving, error = uiState.error,
+                attachmentStore = viewModel.attachmentStore,
                 onDismiss = { viewModel.showEditPersonSheet(false) },
                 onSave = { name, phone, notes, color, avatar, category ->
                     viewModel.updatePerson(name, phone, notes, color, avatar, category)
@@ -421,12 +429,11 @@ fun SharedTransitionScope.PersonDetailScreen(
         if (uiState.showSettleSheet) {
             SettleUpSheet(
                 person = person,
-                accounts = uiState.accounts,
+                accounts = uiState.accounts.values.toList(),
+                saving = uiState.saving, error = uiState.error,
                 defaultAccountId = uiState.transactions.firstOrNull { it.accountId != null }?.accountId,
                 onDismiss = { viewModel.showSettleSheet(false) },
-                onSettle = { amount, note, isLent, accountId ->
-                    viewModel.settle(amount, note, isLent, accountId)
-                }
+                onSettle = viewModel::settle
             )
         }
 
@@ -466,17 +473,14 @@ fun SharedTransitionScope.PersonDetailScreen(
             AddEditLendBorrowTransactionSheet(
                 personsList = listOf(person),
                 initialPerson = person,
-                accounts = uiState.accounts,
-                categories = uiState.categories,
-                attachmentService = viewModel.attachmentService,
+                accounts = uiState.accounts.values.toList(),
+                attachmentStore = viewModel.attachmentStore,
                 showPersonSelection = false,
                 onDismiss = { viewModel.showAddTransactionSheet(false) },
-                onAddPerson = { name, phone, notes, color, avatar, category ->
-                    viewModel.addPerson(name, phone, notes, color, avatar, category)
-                },
-                onSave = { _, type, amount, title, dueDate, accountId, category, merchant, attachments ->
-                    viewModel.addTransaction(type, amount, title, dueDate, accountId, category, merchant, attachments)
-                }
+                onAddPerson = viewModel::createPerson,
+                mainCurrency = uiState.baseCurrency,
+                saving = uiState.saving, error = uiState.error,
+                onSave = viewModel::addTransaction
             )
         }
     }
@@ -502,24 +506,16 @@ fun SharedTransitionScope.PersonDetailScreen(
             AddEditLendBorrowTransactionSheet(
                 personsList = listOf(person),
                 initialPerson = person,
-                accounts = uiState.accounts,
-                categories = uiState.categories,
-                attachmentService = viewModel.attachmentService,
+                accounts = uiState.accounts.values.toList(),
+                attachmentStore = viewModel.attachmentStore,
                 showPersonSelection = false,
                 transactionToEdit = uiState.transactionToEdit,
                 onDismiss = { viewModel.hideEditTransactionSheet() },
-                onAddPerson = { name, phone, notes, color, avatar, category ->
-                    viewModel.addPerson(name, phone, notes, color, avatar, category)
-                },
-                onSave = { _, type, amount, title, dueDate, accountId, category, merchant, attachments ->
-                    viewModel.addTransaction(type, amount, title, dueDate, accountId, category, merchant, attachments)
-                },
-                onUpdate = { transactionId, type, amount, title, dueDate, date, accountId, category, merchant, attachments ->
-                    viewModel.updateTransaction(
-                        transactionId, type, amount, title, dueDate, date,
-                        accountId, category, merchant, attachments
-                    )
-                }
+                onAddPerson = viewModel::createPerson,
+                mainCurrency = uiState.baseCurrency,
+                saving = uiState.saving, error = uiState.error,
+                onSave = viewModel::addTransaction,
+                onUpdate = viewModel::updateTransaction
             )
         }
     }
@@ -573,7 +569,8 @@ fun SharedTransitionScope.PersonDetailScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun SharedTransitionScope.PersonHeaderCard(
-    person: LendBorrowPerson,
+    person: Person,
+    attachmentStore: CoreAttachmentStore,
     onSettleClick: () -> Unit,
     onCallClick: () -> Unit,
     onWhatsAppClick: () -> Unit,
@@ -588,11 +585,11 @@ private fun SharedTransitionScope.PersonHeaderCard(
         "#4CAF50".toColorInt()
     }
 
-    val isGet = person.netBalance > BigDecimal.ZERO
-    val isOwe = person.netBalance < BigDecimal.ZERO
+    val isGet = person.totals.net > BigDecimal.ZERO
+    val isOwe = person.totals.net < BigDecimal.ZERO
     val statusText = when {
-        isGet -> stringResource(R.string.gets_amount, CurrencyFormatter.formatCurrency(person.netBalance, currency))
-        isOwe -> stringResource(R.string.owes_amount, CurrencyFormatter.formatCurrency(person.netBalance.abs(), currency))
+        isGet -> stringResource(R.string.gets_amount, CurrencyFormatter.formatCurrency(person.totals.net, currency))
+        isOwe -> stringResource(R.string.owes_amount, CurrencyFormatter.formatCurrency(person.totals.net.abs(), currency))
         else -> stringResource(R.string.settled_tag)
     }
 
@@ -635,7 +632,7 @@ private fun SharedTransitionScope.PersonHeaderCard(
         ) {
             if (person.avatar != null) {
                 AsyncImage(
-                    model = person.avatar,
+                    model = person.avatar?.let(attachmentStore::resolve),
                     contentDescription = null,
                     modifier = Modifier.size(84.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
@@ -658,9 +655,10 @@ private fun SharedTransitionScope.PersonHeaderCard(
             fontWeight = FontWeight.Bold
         )
 
-        if (!person.phoneNumber.isNullOrBlank()) {
+        if (!person.totals.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+        if (!person.phone.isNullOrBlank()) {
             Text(
-                text = person.phoneNumber,
+                text = person.phone.orEmpty(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
             )
@@ -676,7 +674,7 @@ private fun SharedTransitionScope.PersonHeaderCard(
         ) {
             Button(
                 onClick = onSettleClick,
-                enabled = person.netBalance.compareTo(BigDecimal.ZERO) != 0,
+                enabled = person.totals.net.compareTo(BigDecimal.ZERO) != 0,
                 modifier = Modifier.weight(1f),
                 shapes = ButtonDefaults.shapes()
             ) {
@@ -710,7 +708,7 @@ private fun SharedTransitionScope.PersonHeaderCard(
             }
         }
 
-        if (!person.phoneNumber.isNullOrBlank()) {
+        if (!person.phone.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(12.dp))
         }
 
@@ -719,7 +717,7 @@ private fun SharedTransitionScope.PersonHeaderCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (!person.phoneNumber.isNullOrBlank()) {
+            if (!person.phone.isNullOrBlank()) {
                 Button(
                     shapes = ButtonDefaults.shapes(),
                     onClick = onCallClick,
@@ -780,7 +778,7 @@ private fun SharedTransitionScope.PersonHeaderCard(
                 )
             ) {
                 Text(
-                    text = person.notes,
+                    text = person.notes.orEmpty(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     modifier = Modifier.padding(12.dp)
@@ -793,8 +791,9 @@ private fun SharedTransitionScope.PersonHeaderCard(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.LendBorrowTransactionListItem(
-    item: LendBorrowTransactionItem,
-    categoryEntity: CategoryEntity? = null,
+    item: DebtEntry,
+    categoryEntity: Category? = null,
+    transaction: Transaction? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     isSelectionMode: Boolean = false,
@@ -805,13 +804,14 @@ fun SharedTransitionScope.LendBorrowTransactionListItem(
     animatedContentScope: AnimatedContentScope? = null,
     sharedElementKey: String? = null
 ) {
-    val isIncomeLike = item.type == LendBorrowType.SETTLEMENT_LENT || item.type == LendBorrowType.BORROWED
+    val isIncomeLike = item.kind == DebtKind.REPAID_TO_ME || item.kind == DebtKind.BORROWED
     val amountColor = if (isIncomeLike) Color(0xFF4CAF50) else Color(0xFFE57373)
-    val typeLabel = when (item.type) {
-        LendBorrowType.LENT -> stringResource(R.string.i_lent)
-        LendBorrowType.BORROWED -> stringResource(R.string.i_borrowed)
-        LendBorrowType.SETTLEMENT_LENT -> stringResource(R.string.settlement_received)
-        LendBorrowType.SETTLEMENT_BORROWED -> stringResource(R.string.settlement_paid)
+    val typeLabel = when (item.kind) {
+        DebtKind.LENT -> stringResource(R.string.i_lent)
+        DebtKind.BORROWED -> stringResource(R.string.i_borrowed)
+        DebtKind.REPAID_TO_ME -> stringResource(R.string.settlement_received)
+        DebtKind.REPAID_BY_ME -> stringResource(R.string.settlement_paid)
+        DebtKind.UNKNOWN -> ""
     }
 
     val currentYear = remember { java.time.Year.now().value }
@@ -860,7 +860,7 @@ fun SharedTransitionScope.LendBorrowTransactionListItem(
                 )
                 if (item.dueDate != null) {
                     Text(
-                        text = stringResource(R.string.due_on_format, item.dueDate.format(dueDateFormatter)),
+                        text = stringResource(R.string.due_on_format, item.dueDate!!.coreDateText(dueDateFormatter)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                         fontWeight = FontWeight.Bold
@@ -878,9 +878,9 @@ fun SharedTransitionScope.LendBorrowTransactionListItem(
             }
             BlurredAnimatedVisibility(!isSelectionMode) {
                 BrandIcon(
-                    merchantName = item.merchant ?: "",
+                    merchantName = transaction?.merchant.orEmpty(),
                     categoryEntity = categoryEntity,
-                    category = item.category,
+                    category = categoryEntity?.displayName,
                     size = 40.dp,
                     showBackground = true,
                     modifier = if (animatedContentScope != null && item.transactionId != null) {
@@ -894,7 +894,7 @@ fun SharedTransitionScope.LendBorrowTransactionListItem(
         },
         trailing = {
             Text(
-                text = CurrencyFormatter.formatCurrency(item.amount, currency),
+                text = CurrencyFormatter.formatCurrency(item.amount.amount, item.amount.currency),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = amountColor

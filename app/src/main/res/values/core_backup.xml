@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_backup_export">Create backup</string>
+  <string name="core_backup_password">Password (empty means unencrypted)</string>
+  <string name="core_backup_save">Save file</string>
+  <string name="core_backup_share">Share file</string>
+  <string name="core_backup_restore">Restore backup</string>
+  <string name="core_backup_legacy">Use legacy backup format (empty ledger only)</string>
+  <string name="core_backup_select">Choose file</string>
+  <string name="core_backup_inspect">Inspect file</string>
+  <string name="core_backup_merge">Merge</string>
+  <string name="core_backup_replace">Replace all</string>
+  <string name="core_backup_replace_confirm">I confirm replacing the ledger. Core creates a safety backup; records absent from the backup may be deleted from other synced devices.</string>
+  <string name="core_backup_sensitive_confirm">I confirm this restore may include credentials. The original is kept and Core decides how existing settings are restored.</string>
+  <string name="core_backup_import">Confirm import</string>
+  <string name="core_backup_pending">Recovery status</string>
+  <string name="core_backup_uncertain">The previous import was interrupted before confirmation and may have committed. Core has no durable receipt API. Repeat import is blocked. Keep or save the source copy, inspect the ledger and export its current state; this app does not guess or replay the operation.</string>
+  <string name="core_backup_platform_retry">Retry platform restore only (do not reimport ledger)</string>
+  <string name="core_backup_result">Restore result</string>
+</resources>

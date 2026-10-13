@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_analytics_this_month">本月</string>
+  <string name="core_analytics_all_time">全部时间</string>
+  <string name="core_analytics_query_failed">分析加载失败，请检查日期后重试。</string>
+  <string name="core_analytics_count">%1$s 笔交易</string>
+</resources>

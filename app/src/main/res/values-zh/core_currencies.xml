@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_currencies_title">货币与汇率</string>
+    <string name="core_currencies_convert">换算</string>
+    <string name="core_currencies_amount">金额</string>
+    <string name="core_currencies_from">原币种</string>
+    <string name="core_currencies_to">目标币种</string>
+    <string name="core_currencies_add">新增</string>
+    <string name="core_currencies_code">货币代码</string>
+    <string name="core_currencies_name">货币名称</string>
+    <string name="core_currencies_symbol">符号（最多 3 个字符）</string>
+    <string name="core_currencies_save">保存</string>
+</resources>

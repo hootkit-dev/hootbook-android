@@ -31,14 +31,14 @@ BOOTSTRAP = 2000
 # Test -> label, in report order. Unknown tests are listed after these under their name.
 SCENARIOS = {
     "startupWithProfile": "冷启动到首页（按 profile 编译）",
-    "transactionsDataReady": "点交易 tab → 列表",
-    "transactionsDataReadyWithProfile": "点交易 tab → 列表（按 profile 编译）",
+    "transactionsLoadFrames": "Core交易载入帧时间（非点击延迟）",
+    "transactionsLoadFramesWithProfile": "Core交易载入帧时间（profile编译，非点击延迟）",
     "transactionsScroll": "交易列表 · 正常速度滑动",
     "transactionsFling": "交易列表 · 最快速度甩动",
     "homeScroll": "首页 · 最快速度甩动",
     "analyticsOpenAndScroll": "分析页 · 打开并甩动",
     "tabSwitching": "底部 tab 来回切换",
-    "settingsOpenAndScroll": "设置页 · 打开并甩动",
+    "profileOpenAndScroll": "Core个人资料页 · 打开并甩动",
 }
 
 # Metric -> (label, kind). Kinds:

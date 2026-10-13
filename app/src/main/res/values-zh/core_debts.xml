@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_debts_incomplete">汇率不完整，合计未包含部分币种</string>
+</resources>

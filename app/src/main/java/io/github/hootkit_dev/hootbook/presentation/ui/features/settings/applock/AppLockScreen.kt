@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.hootkit_dev.hootbook.domain.security.BiometricCapability
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
@@ -36,7 +35,7 @@ fun AppLockScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
 ) {
     val uiState by appLockViewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val context = io.github.hootkit_dev.hootbook.presentation.app.fragmentActivity(LocalContext.current)
 
     // Prevent back navigation when app is locked
     BackHandler(enabled = true) {
@@ -45,16 +44,15 @@ fun AppLockScreen(
     }
 
     // Auto-trigger authentication when screen is shown
-    LaunchedEffect(Unit) {
-        if (uiState.canUseBiometric && context is FragmentActivity) {
+    LaunchedEffect(uiState.isLoaded, uiState.canUseBiometric) {
+        if (uiState.canUseBiometric && context != null) {
             triggerAuthentication(context, appLockViewModel)
         }
     }
 
     // Navigate away only on explicit authentication success
-    LaunchedEffect(uiState.authenticationSucceeded) {
-        if (uiState.authenticationSucceeded) {
-            appLockViewModel.resetAuthenticationSucceeded()
+    LaunchedEffect(uiState.isLoaded, uiState.isLocked) {
+        if (uiState.isLoaded && !uiState.isLocked) {
             onUnlocked()
         }
     }
@@ -143,7 +141,7 @@ fun AppLockScreen(
                         Button(
                             shapes = ButtonDefaults.shapes(),
                             onClick = {
-                                if (context is FragmentActivity) {
+                                if (context != null) {
                                     appLockViewModel.clearAuthError()
                                     triggerAuthentication(context, appLockViewModel)
                                 }

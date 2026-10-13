@@ -1,5 +1,6 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.add
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
@@ -33,12 +34,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import dev.hootkit.core.CategoryKind
+import dev.hootkit.core.PersonRelation
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.GenericTypeSwitcher
-import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
+import dev.hootkit.core.TransactionKind
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
@@ -50,11 +54,12 @@ fun SharedTransitionScope.AddScreen(
     onNavigateBack: () -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope,
     initialTab: Int = 0,
-    subscriptionId: Long? = null,
+    subscriptionId: String? = null,
     transactionType: String? = null,
-    templateId: Long? = null,
+    templateId: String? = null,
     blurEffects: Boolean,
 ) {
+    BackHandler { addViewModel.cancel(onNavigateBack) }
     val hazeState = remember { HazeState() }
     val pagerState = rememberPagerState(
         initialPage = initialTab,
@@ -62,33 +67,13 @@ fun SharedTransitionScope.AddScreen(
     )
     val coroutineScope = rememberCoroutineScope()
 
-    // Reset state when screen is opened to avoid stale data from previous entries
-    LaunchedEffect(subscriptionId, transactionType, templateId) {
-        if (subscriptionId == null && transactionType == null) {
-            addViewModel.resetAllStates()
-        }
-
-        if (templateId != null) {
-            addViewModel.applyQuickTemplateById(templateId)
-        }
-        
-        if (subscriptionId != null) {
-            addViewModel.loadSubscriptionForEdit(subscriptionId)
-        }
-        
-        if (transactionType != null) {
-            try {
-                val type = TransactionType.valueOf(transactionType)
-                addViewModel.updateTransactionType(type)
-            } catch (e: Exception) {
-                // Ignore invalid types
-            }
-        }
+    LaunchedEffect(Unit) {
+        addViewModel.initialize(initialTab, subscriptionId, transactionType, templateId)
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
-    
+
     // Track if a transition is currently running to prevent race conditions in UI interaction
     val isTransitioning = animatedVisibilityScope.transition.let {
         it.currentState != it.targetState
@@ -124,7 +109,7 @@ fun SharedTransitionScope.AddScreen(
                     title = stringResource(R.string.add_new),
                     hazeState = hazeState,
                     hasBackButton = true,
-                    navigationContent = { NavigationContent { if (!isTransitioning) onNavigateBack() } }
+                    navigationContent = { NavigationContent { if (!isTransitioning) addViewModel.cancel(onNavigateBack) } }
                 )
             },
             containerColor = MaterialTheme.colorScheme.background

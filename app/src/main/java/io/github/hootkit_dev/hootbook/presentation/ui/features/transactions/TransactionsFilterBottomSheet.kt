@@ -2,8 +2,6 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
-import io.github.hootkit_dev.hootbook.presentation.ui.components.mainAccountKey
-import io.github.hootkit_dev.hootbook.presentation.ui.components.sortedForDisplay
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 
 import androidx.compose.animation.animateContentSize
@@ -40,12 +38,11 @@ import androidx.core.graphics.toColorInt
 import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountFilterChip
-import io.github.hootkit_dev.hootbook.presentation.ui.components.CurrencyCard
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPad
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TypeFilterIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
@@ -62,46 +59,16 @@ fun TransactionsFilterBottomSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
-    val categoryFilter by viewModel.categoryFilter.collectAsState()
-    val subcategoryFilter by viewModel.subcategoryFilter.collectAsState()
-    val amountRangeFilter by viewModel.amountRangeFilter.collectAsState()
-    val accountsFilter by viewModel.accountsFilter.collectAsState()
-    val currenciesFilter by viewModel.currenciesFilter.collectAsState()
-    val typeFilter by viewModel.transactionTypeFilter.collectAsState()
-    
-    val categoriesMap by viewModel.categories.collectAsState()
-    val subcategoriesMap by viewModel.subcategories.collectAsState()
-    val accountsMap by viewModel.accountsMap.collectAsState()
-    val availableCurrencies by viewModel.availableCurrencies.collectAsState()
-    val maxTransactionAmount by viewModel.maxTransactionAmount.collectAsState()
 
-    // Derived lists
-    val categoryList = remember(categoriesMap) { categoriesMap.values.toList() }
-    val currentSubcategoriesList = remember(categoryFilter, subcategoriesMap, categoriesMap) {
-        if (categoryFilter.isNotEmpty()) {
-            val selectedCategoryIds = categoryFilter.mapNotNull { categoriesMap[it]?.id }.toSet()
-            subcategoriesMap.values.filter { it.categoryId in selectedCategoryIds }.toList()
-        } else {
-            emptyList()
-        }
-    }
-
-    // Amount Range State
-    val maxBound = remember(maxTransactionAmount, amountRangeFilter) {
-        val filterMax = amountRangeFilter?.second?.toFloat() ?: 0f
-        maxOf(maxTransactionAmount, filterMax).takeIf { it > 0f } ?: 1000000f
-    }
-    
-    var sliderPosition by remember(amountRangeFilter, maxBound) {
-        val start = amountRangeFilter?.first?.toFloat() ?: 0f
-        val end = amountRangeFilter?.second?.toFloat() ?: maxBound
-        mutableStateOf(start..end)
-    }
-
-    var showNumberPadForMin by remember { mutableStateOf(false) }
-    var showNumberPadForMax by remember { mutableStateOf(false) }
-    var tempAmountInput by remember { mutableStateOf("") }
+    val state by viewModel.uiState.collectAsState()
+    val categoryFilter = state.filter.categoryIds
+    val accountsFilter = state.filter.accountIds
+    val currenciesFilter = listOfNotNull(state.filter.currency)
+    val typeFilter = state.filter.kinds.mapNotNull { it.typeFilter() }
+    val categoriesMap = state.categories
+    val accountsMap = state.accounts
+    val availableCurrencies = state.currencies
+    val categoryList = categoriesMap.values.toList()
 
     HootbookModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -173,7 +140,6 @@ fun TransactionsFilterBottomSheet(
                                     isSelected = categoryFilter.isEmpty(),
                                     onClick = {
                                         viewModel.clearCategoryFilter()
-                                        viewModel.setSubcategoryFilter(null)
                                     }
                                 )
                             }
@@ -184,14 +150,14 @@ fun TransactionsFilterBottomSheet(
                                     MaterialTheme.colorScheme.primary
                                 }
                                 FilterCategoryItem(
-                                    name = category.name,
+                                    name = category.displayName,
                                     color = color.copy(alpha = 0.2f),
-                                    iconResId = category.iconResId,
-                                    iconName = category.iconName,
+                                    iconResId = 0,
+                                    iconName = category.icon,
                                     iconVector = Iconax.Category2,
-                                    isSelected = categoryFilter.contains(category.name),
+                                    isSelected = categoryFilter.contains(category.id),
                                     onClick = {
-                                        viewModel.setCategoryFilter(category.name)
+                                        viewModel.setCategoryFilter(category.id)
                                         // Optional: Clear subcategories that don't belong to any selected category anymore
                                         //  keep the subcategories selected until explicitly cleared
                                     }
@@ -200,197 +166,11 @@ fun TransactionsFilterBottomSheet(
                         }
                     }
 
-                    // Subcategories
-                    BlurredAnimatedVisibility(
-                        visible = currentSubcategoriesList.isNotEmpty(),
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Column {
-                            Text(
-                                text = if (categoryFilter.size == 1) io.github.hootkit_dev.hootbook.presentation.common.categoryName(categoryFilter.first()) else stringResource(R.string.subcategories),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(
-                                    start = Dimensions.Padding.content,
-                                    end = Dimensions.Padding.content,
-                                    top = Spacing.md,
-                                    bottom = Spacing.sm
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                            ) {
-                                item {
-                                    FilterCategoryItem(
-                                        name = stringResource(R.string.all),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        iconVector = Iconax.Category2,
-                                        isSelected = subcategoryFilter.isEmpty(),
-                                        onClick = { viewModel.setSubcategoryFilter(null) },
-                                        isSmall = true
-                                    )
-                                }
-                                items(currentSubcategoriesList, key = { it.id }) { subcat ->
-                                    val color = try {
-                                        Color(subcat.color.toColorInt())
-                                    } catch (e: Exception) {
-                                        MaterialTheme.colorScheme.primary
-                                    }
-                                    FilterCategoryItem(
-                                        name = subcat.name,
-                                        color = color.copy(alpha = 0.2f),
-                                        iconResId = subcat.iconResId,
-                                        iconName = subcat.iconName,
-                                        iconVector = Iconax.Category2,
-                                        isSelected = subcategoryFilter.contains(subcat.name),
-                                        onClick = { viewModel.setSubcategoryFilter(subcat.name) },
-                                        isSmall = true
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(Spacing.lg))
-
-                    // Amount Range
-                    Text(
-                        text = stringResource(R.string.amount_range),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Column(
-                        modifier = Modifier
-                            .padding(Dimensions.Padding.content)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                shape = RoundedCornerShape(Dimensions.Padding.content)
-                            )
-                            .padding(horizontal = Dimensions.Padding.content, vertical = Spacing.sm)
-
-                    ) {
-
-                        val baseCurrencySymbol =
-                            CurrencyFormatter.getCurrencySymbol(viewModel.baseCurrency.collectAsState().value)
-
-                        RangeSlider(
-                            value = sliderPosition,
-                            onValueChange = { sliderPosition = it },
-                            valueRange = 0f..maxBound,
-                            onValueChangeFinished = {
-                                viewModel.setAmountRangeFilter(
-                                    BigDecimal(sliderPosition.start.toDouble()).setScale(
-                                        2,
-                                        RoundingMode.HALF_UP
-                                    ),
-                                    BigDecimal(sliderPosition.endInclusive.toDouble()).setScale(
-                                        2,
-                                        RoundingMode.HALF_UP
-                                    )
-                                )
-                            },
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(Spacing.md),
-                                color = MaterialTheme.colorScheme.surface,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(Spacing.md))
-                                    .clickable {
-                                        tempAmountInput = sliderPosition.start.toLong()
-                                            .toString(); showNumberPadForMin = true
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(Spacing.sm),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "$baseCurrencySymbol ${
-                                            CurrencyFormatter.formatAmount(
-                                                BigDecimal(sliderPosition.start.toDouble()).setScale(
-                                                    0,
-                                                    RoundingMode.HALF_UP
-                                                ),
-                                                viewModel.baseCurrency.collectAsState().value
-                                            )
-                                        }",
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Iconax.ReceiptEdit,
-                                        contentDescription = "Edit min",
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-
-                            Text(
-                                stringResource(R.string.min_max),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-
-                            Surface(
-                                shape = RoundedCornerShape(Spacing.md),
-                                color = MaterialTheme.colorScheme.surface,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(Spacing.md))
-                                    .clickable {
-                                        tempAmountInput = sliderPosition.endInclusive.toLong()
-                                            .toString(); showNumberPadForMax = true
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(Spacing.sm),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "$baseCurrencySymbol ${
-                                            CurrencyFormatter.formatAmount(
-                                                BigDecimal(sliderPosition.endInclusive.toDouble()).setScale(
-                                                    0,
-                                                    RoundingMode.HALF_UP
-                                                ),
-                                                viewModel.baseCurrency.collectAsState().value
-                                            )
-                                        }",
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Iconax.ReceiptEdit,
-                                        contentDescription = "Edit max",
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(Spacing.lg))
-
                     // Accounts
                     if (accountsMap.isNotEmpty()) {
                         val context = LocalContext.current
                         val sortedFilterAccounts = remember(accountsMap) {
-                            accountsMap.values.toList().sortedForDisplay(context.mainAccountKey())
+                            accountsMap.values.sortedWith(compareBy({ !it.isDefault }, { it.name }))
                         }
                         Text(
                             text = stringResource(R.string.accounts),
@@ -408,15 +188,14 @@ fun TransactionsFilterBottomSheet(
                         ) {
                             items(
                                 sortedFilterAccounts,
-                                key = { "${it.bankName}_${it.accountLast4}" }) { account ->
-                                val accountKey = "${account.bankName}_${account.accountLast4}"
+                                key = { it.id }) { account ->
+                                val accountKey = account.id
                                 Box(modifier = Modifier.width(220.dp)) {
                                     AccountFilterChip(
                                         account = account,
                                         isSelected = accountsFilter.contains(accountKey),
                                         onClick = { viewModel.toggleAccountFilter(accountKey) }
                                     )
-                                }
                             }
                         }
                     }
@@ -439,27 +218,12 @@ fun TransactionsFilterBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                         ) {
                             items(availableCurrencies) { currencyCode ->
-                                val currency =
-                                    io.github.hootkit_dev.hootbook.data.model.Currency.getByCode(currencyCode)
-                                if (currency != null) {
-                                    CurrencyCard(
-                                        currency = currency,
+                                    val currency = remember(currencyCode) { runCatching { java.util.Currency.getInstance(currencyCode) }.getOrNull() }
+                                    io.github.hootkit_dev.hootbook.presentation.ui.components.CurrencyCard(
+                                        code = currencyCode, symbol = currency?.symbol ?: currencyCode,
+                                        name = currency?.displayName ?: currencyCode,
                                         isSelected = currenciesFilter.contains(currencyCode),
-                                        onCurrencyCardClick = {
-                                            viewModel.toggleCurrencyFilter(
-                                                currencyCode
-                                            )
-                                        }
-                                    )
-                                } else {
-                                    FilterChip(
-                                        selected = currenciesFilter.contains(currencyCode),
-                                        onClick = { viewModel.toggleCurrencyFilter(currencyCode) },
-                                        label = { Text(currencyCode) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
+                                        onCurrencyCardClick = { viewModel.toggleCurrencyFilter(currencyCode) },
                                     )
                                 }
                             }
@@ -556,51 +320,6 @@ fun TransactionsFilterBottomSheet(
         }
     }
 
-    // NumberPad Bottom Sheets for Min/Max
-    if (showNumberPadForMin || showNumberPadForMax) {
-        val isMin = showNumberPadForMin
-        HootbookModalBottomSheet(
-            onDismissRequest = { 
-                showNumberPadForMin = false
-                showNumberPadForMax = false 
-            },
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            NumberPad(
-                initialValue = tempAmountInput.ifEmpty { "0" },
-                title = if (isMin) stringResource(R.string.set_minimum_amount) else stringResource(R.string.set_maximum_amount),
-                doneButtonLabel = stringResource(R.string.confirm),
-                onDone = { resultString ->
-                    // Remove any trailing periods or whitespace and parse safely
-                    val cleanString = resultString.trim().replace(Regex("\\.+\$"), "")
-                    val value = cleanString.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    
-                    if (isMin) {
-                        val max = amountRangeFilter?.second ?: BigDecimal(sliderPosition.endInclusive.toDouble())
-                        if (value <= max) {
-                            viewModel.setAmountRangeFilter(value, max)
-                            sliderPosition = value.toFloat()..max.toFloat()
-                        } else {
-                            viewModel.setAmountRangeFilter(value, value)
-                            sliderPosition = value.toFloat()..value.toFloat()
-                        }
-                    } else {
-                        val min = amountRangeFilter?.first ?: BigDecimal(sliderPosition.start.toDouble())
-                        if (value >= min) {
-                            viewModel.setAmountRangeFilter(min, value)
-                            sliderPosition = min.toFloat()..value.toFloat()
-                        } else {
-                            viewModel.setAmountRangeFilter(value, value)
-                            sliderPosition = value.toFloat()..value.toFloat()
-                        }
-                    }
-                    showNumberPadForMin = false
-                    showNumberPadForMax = false
-                }
-            )
-            Spacer(modifier = Modifier.navigationBarsPadding())
-        }
-    }
 }
 
 @Composable
@@ -627,7 +346,7 @@ private fun FilterCategoryItem(
         }
     }
 
-    
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -644,19 +363,19 @@ private fun FilterCategoryItem(
             if (resolvedResId != 0) {
                 Icon(
                     painter = painterResource(id = resolvedResId),
-                    contentDescription = io.github.hootkit_dev.hootbook.presentation.common.categoryName(name),
+                    contentDescription = name,
                     modifier = Modifier.size(iconSize).padding(4.dp),
                     tint =  Color.Unspecified
                 )
             } else {
                 Icon(
                     imageVector = iconVector ?: Iconax.Category2,
-                    contentDescription = io.github.hootkit_dev.hootbook.presentation.common.categoryName(name),
+                    contentDescription = name,
                     modifier = Modifier.size(iconSize).padding(4.dp),
                     tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             // Selection indicator badge
             if (isSelected) {
                 Box(
@@ -675,9 +394,9 @@ private fun FilterCategoryItem(
                 }
             }
         }
-        
+
         Text(
-            text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(name),
+            text = name,
             style = if (isSmall) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,

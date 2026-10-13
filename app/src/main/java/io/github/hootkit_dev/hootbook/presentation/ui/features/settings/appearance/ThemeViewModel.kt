@@ -1,104 +1,61 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.appearance
 
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.preferences.AppFont
-import io.github.hootkit_dev.hootbook.data.preferences.ThemeStyle
-import io.github.hootkit_dev.hootbook.data.preferences.AccentColor
-import io.github.hootkit_dev.hootbook.data.preferences.AppIcon
-import io.github.hootkit_dev.hootbook.data.preferences.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
+import io.github.hootkit_dev.hootbook.core.ui.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.hootkit_dev.hootbook.data.preferences.*
+import io.github.hootkit_dev.hootbook.utils.IconSwitchingUtils
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository
+    val preferences: CoreUiPreferencesStore,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
-
-    val themeUiState: StateFlow<ThemeUiState> = userPreferencesRepository.userPreferences
-        .map { preferences ->
-            ThemeUiState(
-                isDarkTheme = preferences.isDarkThemeEnabled,
-                isDynamicColorEnabled = preferences.isDynamicColorEnabled,
-                isAmoledMode = preferences.isAmoledMode,
-                appFont = preferences.appFont,
-                themeStyle = preferences.themeStyle,
-                accentColor = preferences.accentColor,
-                blurEffects = preferences.blurEffects,
-                isOnboardingFinished = preferences.hasShownScanTutorial,
-                currentAppIcon = preferences.appIcon,
-                isLoaded = true
-            )
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ThemeUiState(isLoaded = false)
-        )
-
-    fun updateDarkTheme(enabled: Boolean?) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateDarkThemeEnabled(enabled)
+    val themeUiState = preferences.state
+    private val mutableBusy = MutableStateFlow(false)
+    val busy = mutableBusy.asStateFlow()
+    private val mutableError = MutableStateFlow<Int?>(null)
+    val error = mutableError.asStateFlow()
+    init { command { preferences.ready() } }
+    fun updateDarkTheme(value: Boolean?) = update { it.copy(darkTheme = value) }
+    fun updateDynamicColor(value: Boolean) = update { it.copy(dynamicColor = value) }
+    fun updateAmoledMode(value: Boolean) = update { it.copy(amoled = value) }
+    fun updateAppFont(value: AppFont) = update { it.copy(font = value) }
+    fun updateThemeStyle(value: ThemeStyle) = update { it.copy(themeStyle = value, dynamicColor = value == ThemeStyle.DYNAMIC) }
+    fun updateAccentColor(value: AccentColor) = update { it.copy(accent = value) }
+    fun updateBlurEffects(value: Boolean) = update { it.copy(blur = value) }
+    fun updateAppIcon(value: AppIcon) = command {
+        val previous = preferences.ready().appIcon
+        withContext(NonCancellable) {
+            try {
+                withContext(Dispatchers.Main.immediate) { IconSwitchingUtils.switchAppIcon(context, value) }
+                preferences.update { it.copy(appIcon = value) }
+            } catch (failure: Exception) {
+                withContext(Dispatchers.Main.immediate) { IconSwitchingUtils.switchAppIcon(context, previous) }
+                throw failure
+            }
         }
     }
-
-    fun updateDynamicColor(enabled: Boolean) {
+    private fun update(transform: (CoreUiPreferences) -> CoreUiPreferences) = command { preferences.update(transform) }
+    private fun command(block: suspend () -> Unit) {
+        if (mutableBusy.value) return
+        mutableBusy.value = true
+        mutableError.value = null
         viewModelScope.launch {
-            userPreferencesRepository.updateDynamicColorEnabled(enabled)
+            try { block() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutableError.value = coreFailureText(failure) }
+            finally { mutableBusy.value = false }
         }
-    }
-
-    fun updateAmoledMode(enabled: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateAmoledMode(enabled)
-        }
-    }
-
-
-    fun updateAppFont(font: AppFont) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateAppFont(font)
-        }
-    }
-
-    fun updateThemeStyle(style: ThemeStyle) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateThemeStyle(style)
-        }
-    }
-
-    fun updateAccentColor(color: AccentColor) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateAccentColor(color)
-        }
-    }
-
-    fun updateBlurEffects(enabled: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateBlurEffects(enabled)
-        }
-    }
-
-    fun updateAppIcon(icon: AppIcon) = viewModelScope.launch {
-        userPreferencesRepository.updateAppIcon(icon)
     }
 }
-
-data class ThemeUiState(
-    val isDarkTheme: Boolean? = null, // null = follow system
-    val isDynamicColorEnabled: Boolean = false, // Default to custom theme colors
-    val isAmoledMode: Boolean = false,
-    val appFont: AppFont = AppFont.SYSTEM,
-    val themeStyle: ThemeStyle = ThemeStyle.DYNAMIC,
-    val accentColor: AccentColor = AccentColor.BLUE,
-    val blurEffects: Boolean = false,
-    val isOnboardingFinished: Boolean = false,
-    val currentAppIcon: AppIcon = AppIcon.ORIGINAL,
-    val isLoaded: Boolean = false
-)

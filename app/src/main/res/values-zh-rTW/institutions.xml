@@ -12,7 +12,6 @@
     <string name="institution_choose_broker">選擇券商</string>
     <string name="type_broker">券商</string>
     <string name="broker_name_label">券商名稱</string>
-    <string name="broker_name_required">請從清單中選擇券商，或在名稱中包含券商名，這樣帳戶才會計入投資。</string>
     <string name="broker_auto_sync_title">連接券商自動同步</string>
     <string name="broker_auto_sync_body">從券商唯讀同步持倉快照，不改動記帳餘額。</string>
     <string name="broker_auto_sync_connected">已連接 · %1$s</string>

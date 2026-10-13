@@ -2,6 +2,7 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.categories
 
+import io.github.hootkit_dev.hootbook.presentation.ui.components.IconSelector
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -35,7 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.CategoryKind
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import io.github.hootkit_dev.hootbook.presentation.ui.components.GenericTypeSwitcher
 import androidx.compose.material3.PlainTooltip
@@ -57,23 +59,23 @@ import androidx.compose.ui.platform.LocalContext
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditCategorySheet(
-    category: CategoryEntity?,
+    category: Category?,
     onDismiss: () -> Unit,
-    onSave: (name: String, description: String, color: String, iconResId: Int, iconName: String, isIncome: Boolean) -> Unit,
-    onReset: ((Long) -> Unit)? = null,
+    saving: Boolean = false,
+    onSave: (name: String, color: String, iconName: String, isIncome: Boolean) -> Unit,
+    onReset: ((String) -> Unit)? = null,
     onDelete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     // A built-in name is edited as shown; left as shown, it is saved under its stored name
-    val shownName = io.github.hootkit_dev.hootbook.presentation.common.categoryName(category?.name)
+    val shownName = (category?.displayName ?: "")
     var name by remember { mutableStateOf(shownName) }
-    val savedName = { if (category != null && name.trim() == shownName) category.name else name }
-    var description by remember { mutableStateOf(category?.description ?: "") }
+    val savedName = { if (category != null && name.trim() == shownName) category.displayName else name }
     var colorHex by remember { mutableStateOf(category?.color ?: "#33B5E5") }
     var iconName by remember(category) {
         mutableStateOf(
-            category?.iconName?.takeIf { it.isNotEmpty() }
-                ?: IconResolutionUtils.resIdToName(context, category?.iconResId ?: R.drawable.type_food_dining)
+            category?.icon?.takeIf { it.isNotEmpty() }
+                ?: IconResolutionUtils.resIdToName(context, R.drawable.type_food_dining)
                     .takeIf { it.isNotEmpty() } ?: "type_food_dining"
         )
     }
@@ -84,7 +86,7 @@ fun EditCategorySheet(
         )
     }
 
-    var isIncome by remember { mutableStateOf(category?.isIncome ?: false) }
+    var isIncome by remember { mutableStateOf(category?.kind == CategoryKind.INCOME) }
 
     var showIconSelector by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -194,12 +196,6 @@ fun EditCategorySheet(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
-                            Text(
-                                text = description.ifEmpty { stringResource(R.string.category_description_placeholder) },
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onBackground.copy(0.6f)
-                            )
                         }
 
                         IconButton(
@@ -234,7 +230,7 @@ fun EditCategorySheet(
 
 
             // Type Switcher
-            GenericTypeSwitcher(
+            if (category == null) GenericTypeSwitcher(
                 selectedIndex = if (isIncome) 1 else 0,
                 onIndexChange = { index -> isIncome = index == 1 },
                 options = listOf(stringResource(R.string.expense), stringResource(R.string.income)),
@@ -265,37 +261,6 @@ fun EditCategorySheet(
                         bottomEnd = 4.dp
                     ),
                     singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            0.7f
-                        )
-                    )
-                )
-                TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text(
-                        text= stringResource(R.string.description_label),
-                        fontWeight = FontWeight.SemiBold
-                    ) },
-                    placeholder = { Text(stringResource(R.string.description_hint)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        lineHeight = 18.sp,
-                        fontSize = 16.sp
-                    ),
-                    shape = RoundedCornerShape(
-                        topStart = 4.dp,
-                        topEnd = 4.dp,
-                        bottomStart = 16.dp,
-                        bottomEnd = 16.dp
-                    ),
-                    maxLines = 2,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -344,7 +309,7 @@ fun EditCategorySheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Delete button (only for non-system categories)
-                if (onDelete != null && category != null && !category.isSystem) {
+                if (onDelete != null && category != null && category.builtinKey == null) {
                     OutlinedButton(
                         onClick = { onDelete() },
                         modifier = Modifier.height(56.dp),
@@ -371,8 +336,8 @@ fun EditCategorySheet(
 
                 // Create/Update button
                 Button(
-                    onClick = { onSave(savedName(), description, colorHex, iconResId, iconName, isIncome) },
-                    enabled = name.isNotBlank(),
+                    onClick = { onSave(savedName(), colorHex, iconName, isIncome) },
+                    enabled = !saving && name.isNotBlank(),
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
@@ -386,15 +351,10 @@ fun EditCategorySheet(
                 }
 
                 // Reset button (only for system categories)
-                if (category?.isSystem == true && onReset != null) {
+                if (category?.builtinKey != null && onReset != null) {
                     IconButton(
                         shapes = IconButtonDefaults.shapes(),
                         onClick = {
-                            name = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(category.defaultName ?: category.name)
-                            description = category.defaultDescription ?: ""
-                            colorHex = category.defaultColor ?: category.color
-                            iconName = category.defaultIconName ?: category.iconName
-                            iconResId = IconResolutionUtils.nameToResId(context, iconName)
                             onReset(category.id)
                         },
                         modifier = Modifier
@@ -415,4 +375,3 @@ fun EditCategorySheet(
         }
     }
 }
-

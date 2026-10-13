@@ -66,8 +66,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import dev.hootkit.core.CategoryKind
+import dev.hootkit.core.PersonRelation
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -90,7 +94,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoPlay
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 import dev.chrisbanes.haze.HazeState
 import java.time.ZoneId
 import java.time.Instant
@@ -116,10 +120,16 @@ fun SubscriptionTabContent(
     hazeState: HazeState
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.subscriptionUiState.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val accounts by viewModel.accounts.collectAsState()
-
+    val state by viewModel.uiState.collectAsState()
+    val draft = state.subscription
+    val categories = state.categories.values.toList()
+    val accounts = state.accounts.values.toList()
+    val selectedAccount = state.accounts[draft.accountId]
+    val allSubcategories = state.categories.mapValues { it.value.subcategories }
+    val selectedCategoryObj = state.categories[draft.categoryId]
+    val selectedSubcategoryObj2 = selectedCategoryObj?.subcategories?.find { it.id == draft.subcategoryId }
+    val nextDate = draft.nextDue?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }
+    val endDate = draft.endDate?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showBillingCycleMenu by remember { mutableStateOf(false) }
@@ -128,25 +138,10 @@ fun SubscriptionTabContent(
     var showCustomUnitMenu by remember { mutableStateOf(false) }
     var showCustomCountPad by remember { mutableStateOf(false) }
     var showCustomEndDatePicker by remember { mutableStateOf(false) }
-    val allSubcategories by viewModel.allSubcategories.collectAsState(initial = emptyMap())
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val subscriptionAttachments by viewModel.subscriptionAttachments.collectAsState()
-
-    val selectedCategoryObj = remember(uiState.category, categories) {
-        categories.find { it.name == uiState.category }
-    }
-    val selectedSubcategoryObj = remember(uiState.subcategory, allSubcategories) { 
-        null // Placeholder,
-    }
-    val subcategories by viewModel.subscriptionSubcategories.collectAsState()
-
-    val selectedSubcategoryObj2 = remember(uiState.subcategory, subcategories) {
-        subcategories.find { it.name == uiState.subcategory }
-    }
-
     // Stored as keys, shown translated: a saved label would not be understood when computing dates
-    val billingCycles = io.github.hootkit_dev.hootbook.utils.SubscriptionUtils.CYCLE_KEYS
+    val billingCycles = entryCycleKeys
     val scrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -161,7 +156,7 @@ fun SubscriptionTabContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Error Card
-            uiState.error?.let { errorMessage ->
+            state.error?.let { errorMessage ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -179,7 +174,7 @@ fun SubscriptionTabContent(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = errorMessage,
+                            text = stringResource(errorMessage),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -214,9 +209,9 @@ fun SubscriptionTabContent(
 
             // Amount Input
             AmountInput(
-                amount = uiState.amount.ifEmpty { "0" },
-                currencySymbol = CurrencyFormatter.getCurrencySymbol(
-                    uiState.selectedAccount?.currency ?: "CNY"
+                amount = state.subscriptionAmount.ifEmpty { "0" },
+                currencySymbol = CoreMoneyPresentation.getCurrencySymbol(
+                    draft.amount.currency
                 ),
                 onClick = {
                     showNumberPad = true
@@ -242,7 +237,7 @@ fun SubscriptionTabContent(
                         modifier = Modifier.weight(1f)
                     ) {
                         TextField(
-                            value = if (uiState.billingCycle.isBlank()) "" else io.github.hootkit_dev.hootbook.presentation.ui.components.billingCycleLabel(uiState.billingCycle),
+                            value = if (entryCycleKey(draft.cycle).isBlank()) "" else entryCycleLabel(entryCycleKey(draft.cycle)),
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.billing_cycle_label)) },
@@ -256,9 +251,9 @@ fun SubscriptionTabContent(
                             modifier =
                                 Modifier.weight(1f)
                                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                            isError = uiState.billingCycleError != null,
+                            isError = false,
                             singleLine = true,
-                            supportingText = uiState.billingCycleError?.let { { Text(it) } },
+                            supportingText = null,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -280,7 +275,7 @@ fun SubscriptionTabContent(
                                 val isLastItem = index == billingCycles.lastIndex
                                 val isMiddleItem = !isFirstItem && !isLastItem
                                 DropdownMenuItem(
-                                    text = { Text(io.github.hootkit_dev.hootbook.presentation.ui.components.billingCycleLabel(cycle)) },
+                                    text = { Text(entryCycleLabel(cycle)) },
                                     onClick = {
                                         viewModel.updateSubscriptionBillingCycle(cycle)
                                         showBillingCycleMenu = false
@@ -300,16 +295,14 @@ fun SubscriptionTabContent(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                shape = RoundedCornerShape(Dimensions.Radius.md)
-                            )
-                            .padding(8.dp)
+                            .clip(RoundedCornerShape(Dimensions.Radius.md))
+                            .background(color = MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(
                                 onClick = { showDatePicker = true },
                                 indication = ripple(),
                                 interactionSource = remember { MutableInteractionSource() }
-                            ),
+                            )
+                            .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -326,22 +319,22 @@ fun SubscriptionTabContent(
                             Spacer(Modifier.size(8.dp))
 
                             val dateLabel =
-                                uiState.nextPaymentDate.format(DateFormats.monthDayFormatter())
+                                nextDate?.format(DateFormats.monthDayFormatter())
                             val yearLabel =
-                                uiState.nextPaymentDate.format(DateTimeFormatter.ofPattern("yyyy"))
+                                nextDate?.format(DateTimeFormatter.ofPattern("yyyy"))
                             Column(
                                 verticalArrangement = Arrangement.Center,
                             ) {
                                 Text(
-                                    text = yearLabel,
-                                    
+                                    text = yearLabel.orEmpty(),
+
                                     textAlign = TextAlign.Start,
                                     color = themeColors.primary,
                                     style = MaterialTheme.typography.bodyLarge,
                                 )
                                 Text(
-                                    text = dateLabel,
-                                    
+                                    text = dateLabel ?: "—",
+
                                     textAlign = TextAlign.Start,
                                     color = themeColors.onSurface,
                                     style = MaterialTheme.typography.bodyLarge,
@@ -357,13 +350,13 @@ fun SubscriptionTabContent(
 
                 // Custom Billing Cycle Card
                 BlurredAnimatedVisibility(
-                    visible = uiState.isCustomCycle,
+                    visible = state.customCycle,
                     enter = fadeIn() + slideInVertically { it },
                     exit = fadeOut() + slideOutVertically { it }) {
                     CustomBillingCycleCard(
-                        count = uiState.customCycleCount,
-                        unit = uiState.customCycleUnit,
-                        endDate = uiState.customCycleEndDate,
+                        count = draft.cycle.every.toInt(),
+                        unit = draft.cycle.unit.name.lowercase(),
+                        endDate = endDate,
                         onCountClick = { showCustomCountPad = true },
                         onUnitSelected = { viewModel.updateSubscriptionCustomCycleUnit(it) },
                         onEndDateClick = { showCustomEndDatePicker = true },
@@ -379,7 +372,7 @@ fun SubscriptionTabContent(
                 verticalArrangement = Arrangement.spacedBy(1.5.dp)
             ) {
                 AccountField(
-                    account = uiState.selectedAccount,
+                    account = selectedAccount,
                     onClick = { showAccountSheet = true },
                     placeholder = stringResource(R.string.select_account),
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
@@ -388,7 +381,7 @@ fun SubscriptionTabContent(
                 // Category Selection
                 val categoryInteractionSource = remember { MutableInteractionSource() }
                 TextField(
-                    value = io.github.hootkit_dev.hootbook.presentation.common.categoryName(uiState.category),
+                    value = selectedCategoryObj?.displayName.orEmpty(),
                     onValueChange = {},
                     label = { Text(stringResource(R.string.category_label), fontWeight = FontWeight.SemiBold) },
                     readOnly = true,
@@ -412,10 +405,10 @@ fun SubscriptionTabContent(
                         val context = LocalContext.current
                         val resolvedResId = remember(selectedCategoryObj) {
                             selectedCategoryObj?.let { cat ->
-                                if (!cat.iconName.isNullOrEmpty()) {
-                                    val res = IconResolutionUtils.nameToResId(context, cat.iconName)
-                                    if (res != 0) res else cat.iconResId
-                                } else cat.iconResId
+                                if (!cat.icon.isNullOrEmpty()) {
+                                    val res = IconResolutionUtils.nameToResId(context, cat.icon)
+                                    if (res != 0) res else 0
+                                } else 0
                             } ?: 0
                         }
 
@@ -433,8 +426,8 @@ fun SubscriptionTabContent(
                     trailingIcon = {
                         Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
                     },
-                    isError = uiState.categoryError != null,
-                    supportingText = uiState.categoryError?.let { { Text(it) } },
+                    isError = false,
+                    supportingText = null,
                     enabled = false,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -453,10 +446,10 @@ fun SubscriptionTabContent(
                 )
 
                 // Subcategory Display
-                if (uiState.subcategory != null) {
+                if (draft.subcategoryId != null) {
                     Spacer(modifier = Modifier.height(Spacing.md))
                     TextField(
-                        value = uiState.subcategory?.let { io.github.hootkit_dev.hootbook.presentation.common.categoryName(it) } ?: stringResource(R.string.none_label),
+                        value = state.categories[draft.categoryId]?.subcategories?.find { it.id == draft.subcategoryId }?.displayName ?: stringResource(R.string.none_label),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.subcategory_label)) },
@@ -464,10 +457,10 @@ fun SubscriptionTabContent(
                                 val context = LocalContext.current
                                 val resolvedResId = remember(selectedSubcategoryObj2) {
                                     selectedSubcategoryObj2?.let { sub ->
-                                        if (!sub.iconName.isNullOrEmpty()) {
-                                            val res = IconResolutionUtils.nameToResId(context, sub.iconName)
-                                            if (res != 0) res else sub.iconResId
-                                        } else sub.iconResId
+                                        if (!sub.icon.isNullOrEmpty()) {
+                                            val res = IconResolutionUtils.nameToResId(context, sub.icon)
+                                            if (res != 0) res else 0
+                                        } else 0
                                     } ?: 0
                                 }
 
@@ -536,7 +529,7 @@ fun SubscriptionTabContent(
                 ) {
                     AccountSelectionSheet(
                         accounts = accounts,
-                        selectedAccount = uiState.selectedAccount,
+                        selectedAccount = selectedAccount,
                         onAccountSelected = { account ->
                             viewModel.updateSubscriptionAccount(account)
                             showAccountSheet = false
@@ -556,7 +549,7 @@ fun SubscriptionTabContent(
                     dragHandle = { BottomSheetDefaults.DragHandle() }
                 ) {
                     NumberPad(
-                        initialValue = uiState.amount.ifEmpty { "0" },
+                        initialValue = state.subscriptionAmount.ifEmpty { "0" },
                         onDone = { newAmount ->
                             viewModel.updateSubscriptionAmount(newAmount)
                             showNumberPad = false
@@ -575,7 +568,7 @@ fun SubscriptionTabContent(
                     dragHandle = { BottomSheetDefaults.DragHandle() }
                 ) {
                     NumberPad(
-                        initialValue = uiState.customCycleCount.toString(),
+                        initialValue = draft.cycle.every.toInt().toString(),
                         onDone = { newCount ->
                             viewModel.updateSubscriptionCustomCycleCount(newCount.toIntOrNull() ?: 1)
                             showCustomCountPad = false
@@ -593,11 +586,11 @@ fun SubscriptionTabContent(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     CategorySelectionSheet(
-                        categories = categories,
+                        categories = categories.filter { !it.hidden && it.kind == CategoryKind.EXPENSE },
                         subcategoriesMap = allSubcategories,
                         onSelectionComplete = { category, subcategory ->
-                            viewModel.updateSubscriptionCategory(category.name)
-                            viewModel.updateSubscriptionSubcategory(subcategory?.name)
+                            viewModel.updateSubscriptionCategory(category.id)
+                            viewModel.updateSubscriptionSubcategory(subcategory?.id)
                             showCategoryMenu = false
                         },
                         onDismiss = { showCategoryMenu = false }
@@ -612,7 +605,7 @@ fun SubscriptionTabContent(
             ) {
                 // Service Name Input
                 TextField(
-                    value = uiState.serviceName,
+                    value = draft.name,
                     onValueChange = viewModel::updateSubscriptionService,
                     label = { Text(stringResource(R.string.service_name_required)) },
                     placeholder = { Text(stringResource(R.string.service_name_placeholder)) },
@@ -626,7 +619,7 @@ fun SubscriptionTabContent(
                             bottomEnd = 4.dp
                         ),
                     leadingIcon = { Icon(Iconax.VideoPlay, contentDescription = null) },
-                    isError = uiState.serviceError != null,
+                    isError = false,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -636,12 +629,12 @@ fun SubscriptionTabContent(
                         unfocusedLabelColor =
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f)
                     ),
-                    supportingText = uiState.serviceError?.let { { Text(it) } },
+                    supportingText = null,
                 )
 
                 // Notes/Description (Optional)
                 TextField(
-                    value = uiState.notes,
+                    value = draft.notes.orEmpty(),
                     onValueChange = viewModel::updateSubscriptionNotes,
                     label = { Text(stringResource(R.string.notes_optional)) },
                     leadingIcon = { Icon(Iconax.DocumentText2, contentDescription = null) },
@@ -666,36 +659,7 @@ fun SubscriptionTabContent(
             }
 
             // Attachments Section
-            AttachmentSection(
-                attachments = subscriptionAttachments,
-                attachmentService = viewModel.attachmentService,
-                onAddAttachment = viewModel::addSubscriptionAttachment,
-                onRemoveAttachment = viewModel::removeSubscriptionAttachment,
-                onAttachmentClick = { path ->
-                    if (viewModel.attachmentService.isUrl(path)) {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(path))
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            // Handle error
-                        }
-                    } else {
-                        val uri = viewModel.attachmentService.getAttachmentUri(path)
-                        if (uri != null) {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(uri, viewModel.attachmentService.getAttachmentMimeType(path))
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                // Handle error
-                            }
-                        }
-                    }
-                },
-                isEditable = true
-            )
+
 
             // Bottom padding for keyboard
             Spacer(modifier = Modifier.height(80.dp))
@@ -725,9 +689,9 @@ fun SubscriptionTabContent(
                     .align(Alignment.BottomCenter)
                     .height(56.dp),
                 shapes = ButtonDefaults.shapes(),
-                enabled = uiState.isValid && !uiState.isLoading,
+                enabled = state.subscriptionAmount.toBigDecimalOrNull() != null && !(state.writing || state.loadingSource),
             ) {
-                if (uiState.isLoading) {
+                if ((state.writing || state.loadingSource)) {
                     LoadingCircle(modifier = Modifier.size(16.dp))
                 } else {
                     Icon(Icons.Default.Done, contentDescription = null)
@@ -743,7 +707,7 @@ fun SubscriptionTabContent(
         val datePickerState =
             rememberDatePickerState(
                 initialSelectedDateMillis =
-                    uiState.nextPaymentDate
+                    (nextDate ?: java.time.LocalDate.now())
                         .atStartOfDay()
                         .toInstant(ZoneOffset.UTC)
                         .toEpochMilli()
@@ -768,7 +732,7 @@ fun SubscriptionTabContent(
         val datePickerState =
             rememberDatePickerState(
                 initialSelectedDateMillis =
-                    (uiState.customCycleEndDate ?: LocalDate.now())
+                    (endDate ?: LocalDate.now())
                         .atStartOfDay()
                         .toInstant(ZoneOffset.UTC)
                         .toEpochMilli()
@@ -787,7 +751,7 @@ fun SubscriptionTabContent(
             blurEffects = blurEffects,
             hazeState = hazeState,
             // Add a "Forever" option if the DatePicker supports it, or just use a button elsewhere.
-            // For now, let's assume confirm sets the date. 
+            // For now, let's assume confirm sets the date.
             // I'll add a way to clear it later if needed.
         )
     }

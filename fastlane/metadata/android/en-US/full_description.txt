@@ -46,6 +46,5 @@ Perfect for:
 Technical Notes:
 • Core SMS parsing uses regex patterns, not AI
 • Optional Qwen 2.5 model (Apache 2.0) for chat feature only
-• F-Droid flavor excludes all proprietary dependencies
 
 Hootbook respects your privacy while helping you take control of your finances. Join thousands of users who trust Hootbook for secure, automatic expense tracking without compromising their data.

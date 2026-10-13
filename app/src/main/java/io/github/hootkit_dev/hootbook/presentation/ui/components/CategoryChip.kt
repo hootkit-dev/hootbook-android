@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
+import dev.hootkit.core.Category
 import io.github.hootkit_dev.hootbook.R
 import androidx.core.graphics.toColorInt
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
@@ -26,7 +26,7 @@ import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 
 @Composable
 fun CategoryChip(
-    category: CategoryEntity,
+    category: Category,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     showText: Boolean = true
@@ -37,13 +37,13 @@ fun CategoryChip(
         horizontalArrangement = Arrangement.Start
     ) {
         val context = androidx.compose.ui.platform.LocalContext.current
-        val iconResId = if (category.iconName.isNotEmpty()) {
-            IconResolutionUtils.nameToResId(context, category.iconName)
+        val iconResId = if (category.icon.isNotEmpty()) {
+            IconResolutionUtils.nameToResId(context, category.icon)
                 .takeIf { it != 0 } ?: R.drawable.type_food_dining
         } else {
             io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.getSafeResId(
-                context, 
-                category.iconResId, 
+                context,
+                0,
                 R.drawable.type_food_dining
             )
         }
@@ -70,31 +70,21 @@ fun CategoryChip(
             }
         }
 
-        
+
         Spacer(modifier = Modifier.width(16.dp))
-        
+
         // Category name
         if (showText) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(category.name),
+                    text = category.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                BlurredAnimatedVisibility(visible = category.description.isNotEmpty()) {
-                    Text(
-                        text = category.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
 
         }

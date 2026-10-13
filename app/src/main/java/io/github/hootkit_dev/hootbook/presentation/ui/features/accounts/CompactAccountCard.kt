@@ -14,14 +14,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.AccountSurfaceElevation
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountRowContent
 
 /** Compact account list treatment; detailed actions and supplementary content stay available. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun CompactAccountCard(
-    account: AccountBalanceEntity,
+    account: Account,
     isMain: Boolean,
     onClick: () -> Unit,
     content: @Composable () -> Unit = {}

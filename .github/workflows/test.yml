@@ -7,7 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  app-tests:
+  core-platform-tests:
+    # Fork pull requests have no private Core credential; do not run their code with it.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -18,18 +20,89 @@ jobs:
           distribution: temurin
       - uses: android-actions/setup-android@v3
         with:
-          # The default also installs the removed "tools" package, which now fails.
           packages: platform-tools
+      - name: Set up Core release
+        uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
       - uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-app-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-core-gradle-${{ hashFiles('core-bindings/core.lock.json', '**/*.gradle.kts', 'gradle/libs.versions.toml') }}
+      - name: Core platform tests, Android test APK and native packaging
+        run: |
+          ./gradlew :core-platform:testDebugUnitTest :core-platform:lintDebug \
+            :core-bindings:assembleDebug :core-platform:assembleDebugAndroidTest \
+            --no-configuration-cache
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/core/verify.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-platform-validation
+          path: |
+            core-platform/build/test-results/testDebugUnitTest/
+            core-platform/build/reports/lint-results-debug.html
+            core-platform/build/outputs/apk/androidTest/debug/
+            core-bindings/build/outputs/aar/
+          retention-days: 7
+  app-tests:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GRADLE_OPTS: -Dorg.gradle.workers.max=2 -Dorg.gradle.jvmargs="-Xmx3072m -XX:+UseG1GC"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: android-actions/setup-android@v3
+        with:
+          # The default also installs the removed "tools" package, which now fails.
+          packages: platform-tools
+      - name: Set up pinned Core source and toolchain
+        uses: ./.github/actions/setup-core
+        with:
+          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-app-gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-app-gradle-
-      - name: Unit tests and lint
-        run: ./gradlew :app:testStandardDebugUnitTest :app:lintStandardDebug :app:compileFdroidDebugKotlin --continue --no-configuration-cache
+            ${{ runner.os }}-app-gradle-v2-
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: App unit tests
+        run: ./gradlew :app:testStandardDebugUnitTest --no-configuration-cache --stacktrace
+      - name: Diagnostic test failure report
+        if: failure()
+        run: |
+          find app/build/test-results/testStandardDebugUnitTest/ -name "*.xml" -exec grep -l "<failure" {} + | while read -r f; do
+            echo "::error file=$f::Failed test in $(basename "$f")"
+            cat "$f"
+          done
+      - name: App Android Lint
+        run: ./gradlew :app:lintStandardDebug --no-configuration-cache --stacktrace
+      # The package wildcard includes accounts/categories/transactions/home and
+      # budgets/plans/debts/settings/currencies/backup and navigation; no brittle hard-coded case count or obsolete class list.
+      - name: Isolated Core UI and business regression tests
+        run: |
+          ./gradlew :app:compileStandardDebugKotlin \
+            :app:testStandardDebugUnitTest --no-configuration-cache --stacktrace \
+            --tests 'io.github.hootkit_dev.hootbook.core.*' \
+            --tests 'io.github.hootkit_dev.hootbook.presentation.*'
+      - name: Compile and package modern App device tests (standard)
+        run: |
+          ./gradlew :app:compileStandardDebugAndroidTestKotlin \
+            :app:assembleStandardDebugAndroidTest \
+            --no-configuration-cache --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -37,4 +110,5 @@ jobs:
           path: |
             app/build/test-results/testStandardDebugUnitTest/
             app/build/reports/lint-results-standardDebug.html
+            app/build/outputs/apk/androidTest/standard/debug/
           retention-days: 7

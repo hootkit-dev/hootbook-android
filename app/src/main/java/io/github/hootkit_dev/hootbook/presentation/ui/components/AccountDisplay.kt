@@ -1,6 +1,5 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
-import io.github.hootkit_dev.hootbook.data.repository.LocalAccountHoldings
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -33,100 +32,44 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.domain.usecase.accountKey
-import io.github.hootkit_dev.hootbook.presentation.common.icons.InstitutionCatalog
-import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountCategory
-import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.category
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 
 // One way to show an account everywhere: icon, name, "<type> · •••• 1234", balance.
 
-/** "•••• 1234", or null for wallets and accounts without a number. */
-fun AccountBalanceEntity.maskedNumber(): String? = if (isWallet) null else maskAccountNumber(accountLast4)
-
-/** "•••• 1234" for the last digits of an account or card; null for none or a wallet's "wallet". */
-fun maskAccountNumber(last4: String?): String? =
-    if (last4.isNullOrBlank() || last4.equals("wallet", ignoreCase = true)) null else "•••• $last4"
-
+/** Display helpers only; all balances come from Core. */
+fun Account.maskedNumber(): String? = maskAccountNumber(last4)
+fun maskAccountNumber(last4: String?): String? = last4?.takeIf { it.isNotBlank() }?.let { "•••• $it" }
 @StringRes
-fun AccountBalanceEntity.typeLabelRes(): Int = when (category()) {
-    AccountCategory.WALLETS -> R.string.type_wallet
-    AccountCategory.BANKS -> R.string.type_bank_account
-    AccountCategory.CREDIT_CARDS -> R.string.type_credit_card
-    AccountCategory.INVESTMENTS -> R.string.type_investment_account
+fun AccountKind.typeLabelRes(): Int = when (this) {
+    AccountKind.WALLET -> R.string.type_wallet
+    AccountKind.CREDIT_CARD -> R.string.type_credit_card
+    AccountKind.INVESTMENT -> R.string.type_investment_account
+    else -> R.string.type_bank_account
 }
-
-/** "Bank account · •••• 1234", or just the type for wallets. */
 @Composable
-fun accountSubtitle(account: AccountBalanceEntity): String =
-    listOfNotNull(stringResource(account.typeLabelRes()), account.maskedNumber()).joinToString(" · ")
-
-/**
- * The institution an account belongs to, so several accounts of one bank sort together:
- * "BofA (Checking)" and "BofA (Savings)" both resolve to Bank of America. Names outside the
- * catalog fall back to the part before a parenthesised suffix.
- */
-fun AccountBalanceEntity.institutionKey(): String = institutionKeyOf(bankName)
-
-/** [AccountBalanceEntity.institutionKey] for a bank name from elsewhere, e.g. a card. */
-fun institutionKeyOf(bankName: String): String =
-    InstitutionCatalog.find(bankName)?.id ?: bankName.substringBefore(" (").trim().lowercase()
-
-/** The main account's key ("bankName_last4"), as the Accounts screen stores it. */
-fun Context.mainAccountKey(): String? =
-    getSharedPreferences("account_prefs", Context.MODE_PRIVATE).getString("main_account", null)
-
-/**
- * Accounts by type, in the Accounts screen's order (wallets, banks, credit cards,
- * investments). Within a type, accounts of the same bank are adjacent; the main account and
- * its bank come first, then banks and names alphabetically.
- */
-fun List<AccountBalanceEntity>.groupedForDisplay(mainKey: String?): List<Pair<AccountCategory, List<AccountBalanceEntity>>> {
-    val sorted = sortedForDisplay(mainKey)
-    return AccountCategory.entries.mapNotNull { category ->
-        sorted.filter { it.category() == category }.takeIf { it.isNotEmpty() }?.let { category to it }
-    }
-}
-
-/** Accounts of the same bank adjacent; the main account and its bank first, then by name. */
-fun List<AccountBalanceEntity>.sortedForDisplay(mainKey: String?): List<AccountBalanceEntity> {
-    val mainInstitution = firstOrNull { it.accountKey() == mainKey }?.institutionKey()
-    return sortedWith(
-        compareBy<AccountBalanceEntity>(
-            { it.institutionKey() != mainInstitution },
-            { it.institutionKey() },
-            { it.accountKey() != mainKey },
-            { it.bankName.lowercase() },
-            { it.accountLast4 }
-        )
-    )
-}
-
-/**
- * The balance an account shows: for one holding several currencies, their sum in the app's main
- * currency; otherwise its own balance.
- */
+fun accountSubtitle(account: Account): String = listOfNotNull(stringResource(account.kind.typeLabelRes()), account.maskedNumber()).joinToString(" · ")
+fun List<Account>.groupedForDisplay(): List<Pair<AccountKind, List<Account>>> =
+    sortedWith(compareBy<Account>({ !it.isDefault }, { it.institutionKey ?: it.name }, { it.name }))
+        .groupBy { it.kind }.toList()
 @Composable
-fun accountBalanceText(account: AccountBalanceEntity): String {
-    val holdings = account.accountId?.let { LocalAccountHoldings.current[it] }
-    return if (holdings != null && holdings.isMultiCurrency) {
-        CurrencyFormatter.formatCurrency(holdings.total, holdings.totalCurrency)
-    } else {
-        CurrencyFormatter.formatCurrency(account.balance, account.currency)
-    }
+fun accountBalanceText(account: Account): String {
+    val pocket = account.pockets.firstOrNull { it.currency == account.mainCurrency }
+    return if (account.pockets.size > 1 || account.securities != null) CoreMoneyPresentation.formatCurrency(account.total.amount, account.total.currency)
+        else CoreMoneyPresentation.format(pocket?.balance, account.mainCurrency)
 }
 
-/** Which currencies an account holds, e.g. "含 HKD、USD"; null when it holds one. */
 @Composable
-fun accountCurrenciesText(account: AccountBalanceEntity): String? {
-    val holdings = account.accountId?.let { LocalAccountHoldings.current[it] }?.takeIf { it.isMultiCurrency } ?: return null
-    return stringResource(
-        R.string.account_holds_currencies,
-        holdings.pockets.joinToString(stringResource(R.string.list_separator)) { it.currency }
-    )
+fun AccountIncompleteIndicator(account: Account) {
+    if (!account.totalComplete) Text(stringResource(R.string.core_complete_incomplete),
+        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp))
 }
+@Composable
+fun accountCurrenciesText(account: Account): String? = if (account.pockets.size > 1)
+    stringResource(R.string.account_holds_currencies, account.pockets.joinToString(stringResource(R.string.list_separator)) { it.currency }) else null
 
 /**
  * Each currency an account holds with its own balance, one small pill each ("USD $890.00");
@@ -134,14 +77,14 @@ fun accountCurrenciesText(account: AccountBalanceEntity): String? {
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun AccountCurrencyPills(account: AccountBalanceEntity, modifier: Modifier = Modifier) {
-    val holdings = account.accountId?.let { LocalAccountHoldings.current[it] }?.takeIf { it.isMultiCurrency } ?: return
+fun AccountCurrencyPills(account: Account, modifier: Modifier = Modifier) {
+    if (account.pockets.size < 2) return
     androidx.compose.foundation.layout.FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
-        holdings.pockets.forEach { pocket ->
+        account.pockets.forEach { pocket ->
             androidx.compose.material3.Surface(
                 shape = RoundedCornerShape(50),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -157,7 +100,7 @@ fun AccountCurrencyPills(account: AccountBalanceEntity, modifier: Modifier = Mod
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        CurrencyFormatter.formatCurrency(pocket.balance, pocket.currency),
+                        CoreMoneyPresentation.formatCurrency(pocket.balance, pocket.currency),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -173,19 +116,19 @@ fun AccountCurrencyPills(account: AccountBalanceEntity, modifier: Modifier = Mod
  * [note] is appended to the subtitle, e.g. "Main".
  */
 @Composable
-fun RowScope.AccountRowContent(account: AccountBalanceEntity, showBalance: Boolean = true, note: String? = null) {
+fun RowScope.AccountRowContent(account: Account, showBalance: Boolean = true, note: String? = null) {
     BrandIcon(
-        merchantName = account.bankName,
+        merchantName = account.name,
         size = 40.dp,
         showBackground = true,
-        accountIconResId = account.iconResId,
-        accountIconName = account.iconName,
+        accountIconResId = 0,
+        accountIconName = account.icon,
         accountColorHex = account.color
     )
     Spacer(Modifier.width(12.dp))
     Column(modifier = Modifier.weight(1f)) {
         Text(
-            text = account.bankName,
+            text = account.name,
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -197,6 +140,7 @@ fun RowScope.AccountRowContent(account: AccountBalanceEntity, showBalance: Boole
             maxLines = if (note != null) 2 else 1,
             overflow = TextOverflow.Ellipsis
         )
+        if (showBalance && !account.totalComplete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.labelSmall)
     }
     if (showBalance) {
         Spacer(Modifier.width(Spacing.sm))
@@ -216,7 +160,7 @@ fun RowScope.AccountRowContent(account: AccountBalanceEntity, showBalance: Boole
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            } else if (account.isCreditCard) {
+            } else if (account.kind == AccountKind.CREDIT_CARD) {
                 Text(
                     text = stringResource(R.string.outstanding_label),
                     style = MaterialTheme.typography.bodySmall,
@@ -233,7 +177,7 @@ fun RowScope.AccountRowContent(account: AccountBalanceEntity, showBalance: Boole
  */
 @Composable
 fun AccountRow(
-    account: AccountBalanceEntity,
+    account: Account,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     showBalance: Boolean = true,
@@ -279,9 +223,9 @@ fun AccountRow(
 
 /** Header above a group of account rows, e.g. "Credit Cards". */
 @Composable
-fun AccountGroupHeader(category: AccountCategory, modifier: Modifier = Modifier) {
+fun AccountGroupHeader(category: AccountKind, modifier: Modifier = Modifier) {
     Text(
-        text = stringResource(category.titleRes),
+        text = stringResource(category.typeLabelRes()),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(start = Spacing.sm, top = Spacing.sm, bottom = Spacing.xs)
@@ -294,7 +238,7 @@ fun AccountGroupHeader(category: AccountCategory, modifier: Modifier = Modifier)
  */
 @Composable
 fun AccountField(
-    account: AccountBalanceEntity?,
+    account: Account?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = stringResource(R.string.select_account),
@@ -319,16 +263,16 @@ fun AccountField(
         ) {
             if (account != null) {
                 BrandIcon(
-                    merchantName = account.bankName,
+                    merchantName = account.name,
                     size = 40.dp,
                     showBackground = true,
-                    accountIconResId = account.iconResId,
-                    accountIconName = account.iconName,
+                    accountIconResId = 0,
+                    accountIconName = account.icon,
                     accountColorHex = account.color
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = account.bankName,
+                        text = account.name,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,

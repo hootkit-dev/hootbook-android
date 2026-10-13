@@ -1,5 +1,12 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.MotionDurations
@@ -54,12 +61,10 @@ import androidx.compose.ui.zIndex
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowSummary
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.HootbookTheme
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeEffectScope
@@ -76,7 +81,8 @@ import java.math.BigDecimal
 @OptIn(ExperimentalHazeApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.LoanBalanceCard(
-    summary: LendBorrowSummary,
+    summary: DebtSummary,
+    people: List<Person> = emptyList(),
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     currency: String = "CNY",
@@ -113,7 +119,8 @@ fun SharedTransitionScope.LoanBalanceCard(
         ),
         contentPadding = Dimensions.Padding.content
     ) {
-        LoanBalanceContent(summary = summary, currency = currency, animatedContentScope = animatedContentScope)
+        LoanBalanceContent(summary = summary,
+                people = people, currency = currency, animatedContentScope = animatedContentScope)
         footer()
     }
 }
@@ -125,20 +132,21 @@ fun SharedTransitionScope.LoanBalanceCard(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.LoanBalanceContent(
-    summary: LendBorrowSummary,
+    summary: DebtSummary,
+    people: List<Person> = emptyList(),
     currency: String,
     modifier: Modifier = Modifier,
     animatedContentScope: AnimatedContentScope? = null
 ) {
     val netColor = when {
-        summary.netBalance > BigDecimal.ZERO -> MaterialTheme.colorScheme.tertiary
-        summary.netBalance < BigDecimal.ZERO -> MaterialTheme.colorScheme.error
+        summary.net > BigDecimal.ZERO -> MaterialTheme.colorScheme.tertiary
+        summary.net < BigDecimal.ZERO -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.tertiary
     }
 
     val statusText = when {
-        summary.netBalance > BigDecimal.ZERO -> stringResource(R.string.lend_borrow_you_get)
-        summary.netBalance < BigDecimal.ZERO -> stringResource(R.string.lend_borrow_you_owe)
+        summary.net > BigDecimal.ZERO -> stringResource(R.string.lend_borrow_you_get)
+        summary.net < BigDecimal.ZERO -> stringResource(R.string.lend_borrow_you_owe)
         else -> stringResource(R.string.lend_borrow_settled)
     }
 
@@ -165,10 +173,12 @@ fun SharedTransitionScope.LoanBalanceContent(
             LoanStatusPill(text = statusText, color = netColor)
         }
 
-        val (whole, decimal) = remember(summary.netBalance, currency) {
-            splitCurrencyParts(summary.netBalance.abs(), currency)
+        if (!summary.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error)
+
+        val (whole, decimal) = remember(summary.net, currency) {
+            splitCurrencyParts(summary.net.abs(), currency)
         }
-        val amountIsZero = summary.netBalance.abs() == BigDecimal.ZERO
+        val amountIsZero = summary.net.abs() == BigDecimal.ZERO
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = whole,
@@ -196,8 +206,8 @@ fun SharedTransitionScope.LoanBalanceContent(
         ) {
             LoanSummaryItem(
                 title = stringResource(R.string.total_lent),
-                amount = summary.totalLentRemaining,
-                persons = summary.lentPersons,
+                amount = summary.receivable,
+                persons = people.filter { it.totals.net.signum() > 0 },
                 currency = currency,
                 color = MaterialTheme.colorScheme.primary,
                 icon = Icons.Default.ArrowUpward,
@@ -207,8 +217,8 @@ fun SharedTransitionScope.LoanBalanceContent(
             )
             LoanSummaryItem(
                 title = stringResource(R.string.total_borrowed),
-                amount = summary.totalBorrowedRemaining,
-                persons = summary.borrowedPersons,
+                amount = summary.payable,
+                persons = people.filter { it.totals.net.signum() < 0 },
                 currency = currency,
                 color = MaterialTheme.colorScheme.secondary,
                 icon = Icons.Default.ArrowDownward,
@@ -225,7 +235,8 @@ fun SharedTransitionScope.LoanBalanceContent(
 fun SharedTransitionScope.LoanSummaryItem(
     title: String,
     amount: BigDecimal,
-    persons: List<LendBorrowPerson>,
+    persons: List<Person>,
+    attachmentStore: CoreAttachmentStore? = null,
     currency: String,
     color: Color,
     icon: ImageVector,
@@ -309,13 +320,16 @@ fun SharedTransitionScope.LoanSummaryItem(
 
 @Composable
 fun PersonIconsStack(
-    persons: List<LendBorrowPerson>,
+    persons: List<Person>,
+    attachmentStore: CoreAttachmentStore? = null,
     modifier: Modifier = Modifier,
     iconSize: Dp = 24.dp,
     maxIcons: Int = 4
 ) {
     if (persons.isEmpty()) return
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val store = attachmentStore ?: remember(context) { CoreAttachmentStore(context.applicationContext) }
     val displayCount = if (persons.size > maxIcons) maxIcons else persons.size
     val remainingCount = persons.size - maxIcons
 
@@ -352,7 +366,7 @@ fun PersonIconsStack(
             ) {
                 if (person.avatar != null) {
                     AsyncImage(
-                        model = person.avatar,
+                        model = person.avatar?.let { store.resolve(it) },
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -451,69 +465,21 @@ object LoanSharedElementKeys {
 @Preview(showBackground = true)
 @Composable
 private fun LoanBalanceCardPreview() {
-    SharedTransitionLayout {
-        HootbookTheme {
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(Spacing.md)
-            ) {
-                LoanBalanceCard(
-                    summary = LendBorrowSummary(
-                        totalLentRemaining = BigDecimal("135.00"),
-                        totalBorrowedRemaining = BigDecimal("5.00"),
-                        netBalance = BigDecimal("130.00"),
-                        lentPersonsCount = 2,
-                        borrowedPersonsCount = 1,
-                        lentPersons = listOf(
-                            LendBorrowPerson(name = "John Doe", color = "#FF5722"),
-                            LendBorrowPerson(name = "Jane Smith", color = "#2196F3"),
-                            LendBorrowPerson(name = "Alice", color = "#4CAF50"),
-                            LendBorrowPerson(name = "Bob", color = "#FFC107"),
-                            LendBorrowPerson(name = "Charlie", color = "#9C27B0")
-                        ),
-                        borrowedPersons = listOf(
-                            LendBorrowPerson(name = "David", color = "#795548")
-                        )
-                    ),
-                    onClick = {}
-                )
-            }
+    HootbookTheme {
+        SharedTransitionLayout {
+            LoanBalanceCard(summary = DebtSummary("CNY", BigDecimal("135"), BigDecimal("5"), BigDecimal("130"), 2u, 1u, 1u, 0u, true),
+                people = emptyList(), currency = "CNY", onClick = {})
         }
     }
 }
 
-@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true)
 @Composable
 private fun LoanBalanceCardDarkPreview() {
-    SharedTransitionLayout {
-        HootbookTheme(darkTheme = true) {
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(Spacing.md)
-            ) {
-                LoanBalanceCard(
-                    summary = LendBorrowSummary(
-                        totalLentRemaining = BigDecimal("135.00"),
-                        totalBorrowedRemaining = BigDecimal("5.00"),
-                        netBalance = BigDecimal("130.00"),
-                        lentPersonsCount = 2,
-                        borrowedPersonsCount = 1,
-                        lentPersons = listOf(
-                            LendBorrowPerson(name = "John Doe", color = "#FF5722"),
-                        LendBorrowPerson(name = "Jane Smith", color = "#2196F3"),
-                        LendBorrowPerson(name = "Alice", color = "#4CAF50"),
-                        LendBorrowPerson(name = "Bob", color = "#FFC107"),
-                        LendBorrowPerson(name = "Charlie", color = "#9C27B0")
-                    ),
-                    borrowedPersons = listOf(
-                        LendBorrowPerson(name = "David", color = "#795548")
-                    )
-                ),
-                onClick = {}
-            )
+    HootbookTheme(darkTheme = true) {
+        SharedTransitionLayout {
+            LoanBalanceCard(summary = DebtSummary("CNY", BigDecimal("135"), BigDecimal("5"), BigDecimal("130"), 2u, 1u, 1u, 0u, true),
+                people = emptyList(), currency = "CNY", onClick = {})
         }
-    }
     }
 }

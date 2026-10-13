@@ -1,493 +1,107 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
-import io.github.hootkit_dev.hootbook.domain.model.BudgetPeriods
-import io.github.hootkit_dev.hootbook.R
-
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetEntity
-import io.github.hootkit_dev.hootbook.data.repository.BudgetRepository
-import io.github.hootkit_dev.hootbook.data.repository.CategoryLimitWithSpending
-import io.github.hootkit_dev.hootbook.data.database.dao.AccountBalanceDao
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetPeriod
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetType
-import io.github.hootkit_dev.hootbook.data.repository.CurrencyRepository
-import io.github.hootkit_dev.hootbook.data.repository.LendBorrowRepository
-import io.github.hootkit_dev.hootbook.domain.model.PersonInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import dev.hootkit.core.*
+import dev.hootkit.platform.ChangeBus
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.presentation.data.*
+import javax.inject.Inject
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import javax.inject.Inject
-import io.github.hootkit_dev.hootbook.data.currency.CurrencyConversionService
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 
-
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class BudgetViewModel @Inject constructor(
-    private val budgetRepository: BudgetRepository,
-    private val accountBalanceDao: AccountBalanceDao,
-    private val currencyRepository: CurrencyRepository,
-    private val currencyConversionService: CurrencyConversionService,
-    transactionLookupsSource: io.github.hootkit_dev.hootbook.presentation.common.TransactionLookupsSource,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
-) : ViewModel() {
-    // Category, account and lend/borrow person lookups for the transaction rows
-    val lookups = transactionLookupsSource.lookups
-
-
-    private val _uiState = MutableStateFlow(BudgetUiState())
-    val uiState: StateFlow<BudgetUiState> = _uiState.asStateFlow()
-
-    private val _editBudgetState = MutableStateFlow(EditBudgetState())
-    val editBudgetState: StateFlow<EditBudgetState> = _editBudgetState.asStateFlow()
-
-    private var transactionCollectionJob: kotlinx.coroutines.Job? = null
-    private var selectedBudgetCollectionJob: kotlinx.coroutines.Job? = null
-
+class BudgetViewModel @Inject constructor(private val session: CoreSession, private val changes: ChangeBus) : ViewModel() {
+    private val mutable = MutableStateFlow(BudgetUiState())
+    val uiState = mutable.asStateFlow()
+    private val edit = MutableStateFlow(EditBudgetState())
+    val editBudgetState = edit.asStateFlow()
+    private val selection = MutableStateFlow<Triple<String, LocalDate?, LocalDate?>?>(null)
     init {
-        loadBudgets()
-        loadAccounts()
-        observeBaseCurrency()
-    }
-
-    private fun observeBaseCurrency() {
         viewModelScope.launch {
-            currencyRepository.effectiveBaseCurrencyCode.collect { currency ->
-                _uiState.update { it.copy(baseCurrency = currency) }
-            }
+            selection.flatMapLatest { selected ->
+                session.observe(changes, budgetTables) { core -> coreQuery {
+                    val currency = core.settings().use { it.mainCurrency() }
+                    val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
+                    val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
+                    core.budgets().use { api ->
+                        val rows = api.list(budgetToday(), false, currency)
+                        val detail = selected?.let { api.get(it.first, it.second ?: budgetToday(), currency) }
+                        if (selected?.second != null) require(detail?.current?.start == selected.second)
+                        if (selected?.third != null) require(detail?.current?.end == selected.third)
+                        BudgetUiState(false, rows, detail, accounts, categories, currency)
+                    }
+                } }
+            }.collect { result -> result.fold(
+                onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
-
-    private fun loadAccounts() {
+    fun selectBudget(id: String, start: String? = null, end: String? = null) {
+        val next = runCatching { Triple(id,
+            start?.let { java.time.LocalDate.parse(it).coreBudgetDate() },
+            end?.let { java.time.LocalDate.parse(it).coreBudgetDate() }) }.getOrElse { failure ->
+            mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) }; return
+        }
+        if (selection.value == next) return
+        mutable.update { it.copy(isLoading = true, selectedBudget = null, error = null) }
+        selection.value = next
+    }
+    fun clearSelectedBudget() { selection.value = null }
+    fun initNewBudget() { if (!uiState.value.saving) edit.value = EditBudgetState(currency = uiState.value.baseCurrency) }
+    fun initEditBudget(row: Budget) { if (!uiState.value.saving) edit.value = EditBudgetState(row.id, row.name,
+        row.amount.amount, row.anchor.javaBudgetDate().atStartOfDay(), (row.end ?: row.current.end).javaBudgetDate().atStartOfDay(),
+        row.anchor, row.period, row.kind, row.accountIds, row.color, row.amount.currency,
+        row.current.limits.map { NewBudgetLimit(it.categoryId, it.amount) }) }
+    fun clearEditState() { if (!uiState.value.saving) initNewBudget() }
+    private fun draft(block: (EditBudgetState) -> EditBudgetState) { if (!uiState.value.saving) edit.update(block) }
+    fun updateBudgetAmount(amount: BigDecimal) = draft { it.copy(amount = amount) }
+    fun updateBudgetName(name: String) = draft { it.copy(name = name) }
+    fun updateStartDate(date: LocalDateTime) = draft { it.copy(startDate = date) }
+    fun updateEndDate(date: LocalDateTime) = draft { it.copy(endDate = date) }
+    fun updatePeriodType(period: BudgetPeriod) = draft { it.copy(periodType = period) }
+    fun updateBudgetType(kind: BudgetKind) = draft { it.copy(budgetType = kind) }
+    fun updateAccountIds(ids: List<String>?) = draft { it.copy(accountIds = ids) }
+    fun updateColor(color: String) = draft { it.copy(color = color) }
+    fun addCategoryLimit(id: String, amount: BigDecimal) {
+        val row = edit.value
+        if (row.budgetId == null) draft { it.copy(categoryLimits = it.categoryLimits.filterNot { l -> l.categoryId == id } + NewBudgetLimit(id, amount)) }
+        else command { core -> core.budgets().use { it.setLimit(row.budgetId, id, amount) }; edit.update { it.copy(categoryLimits = it.categoryLimits.filterNot { l -> l.categoryId == id } + NewBudgetLimit(id, amount)) } }
+    }
+    fun removeCategoryLimit(id: String) {
+        val row = edit.value
+        if (row.budgetId == null) draft { it.copy(categoryLimits = it.categoryLimits.filterNot { l -> l.categoryId == id }) }
+        else command { core -> core.budgets().use { it.setLimit(row.budgetId, id, null) }; edit.update { it.copy(categoryLimits = it.categoryLimits.filterNot { l -> l.categoryId == id }) } }
+    }
+    fun saveBudget(onSuccess: () -> Unit = {}, onError: () -> Unit = {}) {
+        val row = edit.value
+        command(onSuccess, onError) { core -> core.budgets().use { api ->
+            val start = row.startDate.toLocalDate().coreBudgetDate()
+            val end = row.endDate.toLocalDate().coreBudgetDate().takeIf { row.periodType == BudgetPeriod.CUSTOM }
+            val money = Money(row.amount, row.currency)
+            val name = row.name.ifBlank { row.getDefaultName() }
+            if (row.budgetId == null) api.create(NewBudget(name, row.budgetType, row.periodType, money, start, end,
+                row.accountIds, row.color, row.categoryLimits))
+            else api.update(row.budgetId, BudgetPatch(name, row.budgetType, row.periodType, money,
+                start.takeUnless { it == row.originalStart }, end, row.accountIds, row.accountIds == null, color = row.color))
+        } }
+    }
+    fun deleteBudget(budgetId: String, onSuccess: () -> Unit = {}, onError: () -> Unit = {}) = command(onSuccess, onError) {
+        it.budgets().use { api -> api.delete(budgetId) }
+    }
+    private fun command(onSuccess: () -> Unit = {}, onError: () -> Unit = {}, block: suspend (HootKitCoreInterface) -> Unit) {
+        if (uiState.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            accountBalanceDao.getAllLatestBalances().collect { accounts ->
-                _uiState.update { it.copy(allAccounts = accounts) }
-            }
+            try { session.withCore(block); onSuccess() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) }; onError() }
+            finally { mutable.update { it.copy(saving = false) } }
         }
-    }
-
-    // One collector: reloading after a save replaces it instead of adding another full-table one
-    private var budgetsJob: kotlinx.coroutines.Job? = null
-
-    fun loadBudgets() {
-        budgetsJob?.cancel()
-        budgetsJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                combine(
-                    budgetRepository.getAllBudgetsWithSpending(),
-                    currencyRepository.effectiveBaseCurrencyCode,
-                    currencyConversionService.rateChangeTrigger
-                ) { budgets, targetCurrency, _ ->
-                    // Convert budgets to match the selected main currency for display
-                    budgets.map { budgetWithSpending ->
-                        if (budgetWithSpending.budget.currency != targetCurrency) {
-                            val convertedAmount = currencyConversionService.convertAmount(
-                                budgetWithSpending.budget.amount,
-                                budgetWithSpending.budget.currency,
-                                targetCurrency
-                            ) ?: budgetWithSpending.budget.amount
-
-                            val convertedSpending = currencyConversionService.convertAmount(
-                                budgetWithSpending.currentSpending,
-                                budgetWithSpending.budget.currency,
-                                targetCurrency
-                            ) ?: budgetWithSpending.currentSpending
-
-                            budgetWithSpending.copy(
-                                budget = budgetWithSpending.budget.copy(
-                                    amount = convertedAmount,
-                                    currency = targetCurrency
-                                ),
-                                currentSpending = convertedSpending
-                            )
-                        } else {
-                            budgetWithSpending
-                        }
-                    }
-                }.collect { convertedBudgets ->
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            budgets = convertedBudgets,
-                            error = null
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        error = context.getString(R.string.msg_budgets_load_failed)
-                    )
-                }
-            }
-        }
-    }
-
-    fun selectBudget(budgetId: Long, startDate: String? = null, endDate: String? = null) {
-        selectedBudgetCollectionJob?.cancel()
-        selectedBudgetCollectionJob = viewModelScope.launch {
-            val effectiveCurrency = currencyRepository.effectiveBaseCurrencyCode.first()
-            combine(
-                budgetRepository.getAllBudgetsWithSpending(),
-                currencyConversionService.rateChangeTrigger
-            ) { allBudgets, _ -> allBudgets }.collect { allBudgets ->
-                val found = allBudgets.find { it.budget.id == budgetId }
-                if (found != null) {
-                    var budgetWithSpending = found
-                    
-                    // If custom dates provided, recalculate spending for that period
-                    if (startDate != null && endDate != null) {
-                        try {
-                            val start = LocalDateTime.parse(startDate)
-                            val end = LocalDateTime.parse(endDate)
-                            val customBudget = budgetWithSpending.budget.copy(
-                                startDate = start,
-                                endDate = end
-                            )
-                            budgetWithSpending = budgetRepository.getBudgetWithSpending(customBudget)
-                        } catch (e: Exception) {
-                            // Fallback to normal if parsing fails
-                        }
-                    }
-
-                    // Convert budget data to effective currency
-                    if (effectiveCurrency != budgetWithSpending.budget.currency) {
-                        val convertedAmount = currencyConversionService.convertAmount(
-                            budgetWithSpending.budget.amount,
-                            budgetWithSpending.budget.currency,
-                            effectiveCurrency
-                        ) ?: budgetWithSpending.budget.amount
-                        val convertedSpending = currencyConversionService.convertAmount(
-                            budgetWithSpending.currentSpending,
-                            budgetWithSpending.budget.currency,
-                            effectiveCurrency
-                        ) ?: budgetWithSpending.currentSpending
-                        val convertedCategorySpending = budgetWithSpending.categorySpending.mapValues { (_, amount) ->
-                            currencyConversionService.convertAmount(amount, budgetWithSpending.budget.currency, effectiveCurrency) ?: amount
-                        }
-                        budgetWithSpending = budgetWithSpending.copy(
-                            budget = budgetWithSpending.budget.copy(
-                                amount = convertedAmount,
-                                currency = effectiveCurrency
-                            ),
-                            currentSpending = convertedSpending,
-                            categorySpending = convertedCategorySpending
-                        )
-                    }
-
-                    val categoryLimitsWithSpending = budgetWithSpending.categoryLimits.map { limit ->
-                        CategoryLimitWithSpending(
-                            limit = limit,
-                            currentSpending = budgetWithSpending.categorySpending[limit.categoryName] ?: BigDecimal.ZERO
-                        )
-                    }
-                    _uiState.update { 
-                        it.copy(
-                            selectedBudget = budgetWithSpending,
-                            categoryLimitsWithSpending = categoryLimitsWithSpending
-                        )
-                    }
-                }
-            }
-        }
-
-        // Collect transactions for the selected budget
-        transactionCollectionJob?.cancel()
-        viewModelScope.launch {
-            val budget = budgetRepository.getBudgetById(budgetId) ?: return@launch
-            
-            // Override dates if provided
-            val collectionBudget = if (startDate != null && endDate != null) {
-                try {
-                    budget.copy(
-                        startDate = LocalDateTime.parse(startDate),
-                        endDate = LocalDateTime.parse(endDate)
-                    )
-                } catch (e: Exception) { budget }
-            } else budget
-
-            transactionCollectionJob = viewModelScope.launch {
-                combine(
-                    budgetRepository.getTransactionsForBudget(collectionBudget),
-                    currencyRepository.effectiveBaseCurrencyCode,
-                    currencyConversionService.rateChangeTrigger
-                ) { transactions, mainCurrency, _ ->
-                    // Rates known now; missing ones arrive through rateChangeTrigger
-                    val conversions = currencyConversionService.convert(transactions, mainCurrency)
-                    _uiState.update { it.copy(
-                        selectedBudgetTransactions = transactions,
-                        conversions = conversions
-                    ) }
-                }.collectLatest { }
-            }
-        }
-    }
-
-    fun clearSelectedBudget() {
-        transactionCollectionJob?.cancel()
-        transactionCollectionJob = null
-        selectedBudgetCollectionJob?.cancel()
-        selectedBudgetCollectionJob = null
-        _uiState.update { 
-            it.copy(
-                selectedBudget = null,
-                categoryLimitsWithSpending = emptyList(),
-                selectedBudgetTransactions = emptyList()
-            )
-        }
-    }
-
-    // Edit budget state management
-    fun initNewBudget() {
-        val now = LocalDateTime.now()
-        viewModelScope.launch {
-            val currency = currencyRepository.baseCurrencyCode.first()
-            _editBudgetState.value = EditBudgetState(
-                year = now.year,
-                month = now.monthValue,
-                startDate = now,
-                endDate = now.plusMonths(1).minusDays(1),
-                currency = currency
-            )
-        }
-    }
-
-    fun initEditBudget(budget: BudgetEntity) {
-        viewModelScope.launch {
-            val limits = budgetRepository.getCategoryLimitsForBudgetSync(budget.id)
-            // A repeating budget has rolled on: show (and keep, on save) the period it is in now
-            val window = if (budget.periodType == BudgetPeriod.CUSTOM) null else BudgetPeriods.current(budget)
-            _editBudgetState.value = EditBudgetState(
-                budgetId = budget.id,
-                name = budgetDisplayName(budget.name, budget.periodType),
-                amount = budget.amount,
-                year = window?.start?.year ?: budget.year,
-                month = window?.start?.monthValue ?: budget.month,
-                startDate = window?.start?.atStartOfDay() ?: budget.startDate,
-                endDate = window?.end?.atTime(java.time.LocalTime.of(23, 59, 59)) ?: budget.endDate,
-                periodType = budget.periodType,
-                trackType = budget.trackType,
-                budgetType = budget.budgetType,
-                accountIds = budget.accountIds,
-                color = budget.color,
-                currency = budget.currency,
-                categoryLimits = limits.map { limit ->
-                    EditCategoryLimit(
-                        id = limit.id,
-                        categoryName = limit.categoryName,
-                        limitAmount = limit.limitAmount
-                    )
-                }
-            )
-        }
-    }
-
-    fun updateBudgetAmount(amount: BigDecimal) {
-        _editBudgetState.update { it.copy(amount = amount) }
-    }
-
-    fun updateBudgetName(name: String) {
-        _editBudgetState.update { it.copy(name = name) }
-    }
-
-    fun updateBudgetMonth(year: Int, month: Int) {
-        val startDate = LocalDateTime.of(year, month, 1, 0, 0)
-        val endDate = startDate.plusMonths(1).minusDays(1)
-        
-        _editBudgetState.update { 
-            it.copy(
-                year = year, 
-                month = month,
-                startDate = startDate,
-                endDate = endDate
-            ) 
-        }
-    }
-    
-    fun updateStartDate(date: LocalDateTime) {
-        _editBudgetState.update { state -> 
-            val newEndDate = calculateEndDate(date, state.periodType)
-            state.copy(
-                startDate = date,
-                endDate = newEndDate,
-                year = date.year,
-                month = date.monthValue
-            )
-        }
-    }
-
-    fun updateEndDate(date: LocalDateTime) {
-         _editBudgetState.update { it.copy(endDate = date) }
-    }
-
-    fun updatePeriodType(periodType: BudgetPeriod) {
-        _editBudgetState.update { state ->
-            val newEndDate = calculateEndDate(state.startDate, periodType)
-            state.copy(
-                periodType = periodType,
-                endDate = newEndDate
-            )
-        }
-    }
-
-    fun updateBudgetType(budgetType: BudgetType) {
-        _editBudgetState.update { it.copy(budgetType = budgetType) }
-    }
-
-    fun updateAccountIds(accountIds: List<String>) {
-        viewModelScope.launch {
-            val currency = if (accountIds.isEmpty()) {
-                currencyRepository.baseCurrencyCode.first()
-            } else {
-                val accountKey = accountIds.first()
-                val matchedAccount = _uiState.value.allAccounts.find { 
-                    accountKey.contains(it.bankName) && accountKey.contains(it.accountLast4) 
-                }
-                matchedAccount?.currency ?: currencyRepository.baseCurrencyCode.first()
-            }
-            _editBudgetState.update { it.copy(accountIds = accountIds, currency = currency) }
-        }
-    }
-    
-    fun updateColor(color: String) {
-        _editBudgetState.update { it.copy(color = color) }
-    }
-
-    private fun calculateEndDate(startDate: LocalDateTime, periodType: BudgetPeriod): LocalDateTime {
-        return when (periodType) {
-            BudgetPeriod.DAILY -> startDate
-            BudgetPeriod.WEEKLY -> startDate.plusDays(6)
-            BudgetPeriod.MONTHLY -> startDate.plusMonths(1).minusDays(1)
-            BudgetPeriod.YEARLY -> startDate.plusYears(1).minusDays(1)
-            BudgetPeriod.CUSTOM -> startDate // User selects end date manually
-        }
-    }
-
-    fun addCategoryLimit(categoryName: String, limitAmount: BigDecimal) {
-        _editBudgetState.update { state ->
-            val existingIndex = state.categoryLimits.indexOfFirst { it.categoryName == categoryName }
-            if (existingIndex >= 0) {
-                // Update existing
-                val updatedLimits = state.categoryLimits.toMutableList()
-                updatedLimits[existingIndex] = updatedLimits[existingIndex].copy(limitAmount = limitAmount)
-                state.copy(categoryLimits = updatedLimits)
-            } else {
-                // Add new
-                state.copy(
-                    categoryLimits = state.categoryLimits + EditCategoryLimit(
-                        categoryName = categoryName,
-                        limitAmount = limitAmount
-                    )
-                )
-            }
-        }
-    }
-
-    fun removeCategoryLimit(categoryName: String) {
-        _editBudgetState.update { state ->
-            state.copy(
-                categoryLimits = state.categoryLimits.filter { it.categoryName != categoryName }
-            )
-        }
-    }
-
-    fun saveBudget(onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
-            try {
-                val state = _editBudgetState.value
-                val name = state.name.ifBlank { state.getDefaultName() }
-                
-                if (state.budgetId != null) {
-                    // Update existing budget
-                    val existingBudget = budgetRepository.getBudgetById(state.budgetId)
-                    if (existingBudget != null) {
-                        budgetRepository.updateBudget(
-                            existingBudget.copy(
-                                name = name,
-                                amount = state.amount,
-                                year = state.startDate.year,
-                                month = state.startDate.monthValue,
-                                startDate = state.startDate,
-                                endDate = state.endDate,
-                                periodType = state.periodType,
-                                trackType = state.trackType,
-                                budgetType = state.budgetType,
-                                accountIds = state.accountIds,
-                                color = state.color,
-                                currency = state.currency,
-                                updatedAt = LocalDateTime.now()
-                            )
-                        )
-                        // Update category limits
-                        budgetRepository.deleteCategoryLimitsForBudget(state.budgetId)
-                        state.categoryLimits.forEach { limit ->
-                            budgetRepository.addCategoryLimit(
-                                budgetId = state.budgetId,
-                                categoryName = limit.categoryName,
-                                limitAmount = limit.limitAmount
-                            )
-                        }
-                    }
-                } else {
-                    // Create new budget
-                    val budget = BudgetEntity(
-                        name = name,
-                        amount = state.amount,
-                        year = state.startDate.year,
-                        month = state.startDate.monthValue,
-                        startDate = state.startDate,
-                        endDate = state.endDate,
-                        periodType = state.periodType,
-                        trackType = state.trackType,
-                        budgetType = state.budgetType,
-                        accountIds = state.accountIds,
-                        color = state.color,
-                        currency = state.currency
-                    )
-                    
-                    val budgetId = budgetRepository.insertBudget(budget)
-                    
-                    // Add category limits
-                    state.categoryLimits.forEach { limit ->
-                        budgetRepository.addCategoryLimit(
-                            budgetId = budgetId,
-                            categoryName = limit.categoryName,
-                            limitAmount = limit.limitAmount
-                        )
-                    }
-                }
-                
-                loadBudgets()
-                onSuccess()
-            } catch (e: Exception) {
-                onError(context.getString(R.string.msg_budget_save_failed))
-            }
-        }
-    }
-
-    fun deleteBudget(budgetId: Long, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
-            try {
-                budgetRepository.deleteBudget(budgetId)
-                loadBudgets()
-                onSuccess()
-            } catch (e: Exception) {
-                onError(context.getString(R.string.msg_budget_delete_failed))
-            }
-        }
-    }
-
-    fun clearEditState() {
-        _editBudgetState.value = EditBudgetState()
     }
 }

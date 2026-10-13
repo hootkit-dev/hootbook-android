@@ -43,8 +43,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,7 +64,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.BalanceAnchor
+import dev.hootkit.core.AnchorSource
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
@@ -73,7 +78,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Information
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Messages
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Path
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 
@@ -82,18 +87,19 @@ import java.time.format.DateTimeFormatter
 fun HistorySheet(
     bankName: String,
     accountLast4: String,
-    balanceHistory: List<AccountBalanceEntity>,
-    onDeleteBalance: (Long) -> Unit,
-    onUpdateBalance: (Long, BigDecimal) -> Unit
+    currency: String,
+    saving: Boolean = false,
+    commandRevision: Long = 0,
+    balanceHistory: List<BalanceAnchor>,
+    onDeleteBalance: (String) -> Unit,
+    onUpdateBalance: (String, BigDecimal) -> Unit
 ) {
-    // Get the primary currency for this account
-    val accountPrimaryCurrency = remember(balanceHistory, bankName) {
-        balanceHistory.firstOrNull()?.currency ?: CurrencyFormatter.getBankBaseCurrency(bankName)
-    }
-    var editingId by remember { mutableStateOf<Long?>(null) }
+    val accountPrimaryCurrency = currency
+    var editingId by remember { mutableStateOf<String?>(null) }
     var editingValue by remember { mutableStateOf("") }
-    var showDeleteConfirmation by remember { mutableStateOf<Long?>(null) }
-    var expandedSources by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var showDeleteConfirmation by remember { mutableStateOf<String?>(null) }
+    var expandedSources by remember { mutableStateOf<Set<String>>(emptySet()) }
+    androidx.compose.runtime.LaunchedEffect(commandRevision) { editingId = null; editingValue = ""; showDeleteConfirmation = null }
     val clipboard = LocalClipboardManager.current
 
     Column(
@@ -138,7 +144,7 @@ fun HistorySheet(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = stringResource(R.string.records_count_latest_balance_note, balanceHistory.size),
+                    text = stringResource(R.string.account_history_record_count, balanceHistory.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -174,6 +180,7 @@ fun HistorySheet(
 
                     HistoryRecordItem(
                         balance = balance,
+                        saving = saving,
                         isLatest = isLatest,
                         isOnlyRecord = isOnlyRecord,
                         isExpanded = isExpanded,
@@ -195,8 +202,6 @@ fun HistorySheet(
                         onSaveEdit = {
                             editingValue.toBigDecimalOrNull()?.let { newBalance ->
                                 onUpdateBalance(balance.id, newBalance)
-                                editingId = null
-                                editingValue = ""
                             }
                         },
                         onCancelEdit = {
@@ -228,7 +233,6 @@ fun HistorySheet(
                     shapes = ButtonDefaults.shapes(),
                     onClick = {
                         onDeleteBalance(balanceId)
-                        showDeleteConfirmation = null
                     }
                 ) {
                     Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
@@ -246,11 +250,12 @@ fun HistorySheet(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HistoryRecordItem(
-    balance: AccountBalanceEntity,
+    balance: BalanceAnchor,
+    saving: Boolean,
     isLatest: Boolean,
     isOnlyRecord: Boolean,
     isExpanded: Boolean,
-    editingId: Long?,
+    editingId: String?,
     editingValue: String,
     accountPrimaryCurrency: String,
     onEditClick: () -> Unit,
@@ -297,7 +302,7 @@ private fun HistoryRecordItem(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = balance.timestamp.format(
+                        text = balance.at.coreDateText(
                             DateTimeFormatter.ofPattern(
                                 if (java.util.Locale.getDefault().language == "zh") "yyyy年M月d日 HH:mm" else "MMM d, yyyy HH:mm"
                             )
@@ -308,7 +313,7 @@ private fun HistoryRecordItem(
                 }
 
                 // Rows a transaction wrote are its effect: they change with the transaction
-                if (editingId != balance.id && !isOnlyRecord && balance.transactionId == null) {
+                if (editingId != balance.id && !isOnlyRecord && !saving) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -345,7 +350,7 @@ private fun HistoryRecordItem(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = editingValue,
                         onValueChange = onEditValueChange,
                         keyboardOptions = KeyboardOptions(
@@ -353,10 +358,12 @@ private fun HistoryRecordItem(
                         ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = hootbookTextFieldColors(),
                         label = { Text(stringResource(R.string.new_balance_label)) },
                         prefix = {
                             Text(
-                                text = CurrencyFormatter.getCurrencySymbol(accountPrimaryCurrency) + " ",
+                                text = CoreMoneyPresentation.getCurrencySymbol(accountPrimaryCurrency) + " ",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -369,7 +376,7 @@ private fun HistoryRecordItem(
                         Button(
                             shapes = ButtonDefaults.shapes(),
                             onClick = onSaveEdit,
-                            enabled = editingValue.toBigDecimalOrNull() != null,
+                            enabled = !saving && editingValue.toBigDecimalOrNull() != null,
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -393,7 +400,7 @@ private fun HistoryRecordItem(
                 ) {
                     Text(
                         // Each row in its own currency: an account may hold several
-                        text = CurrencyFormatter.formatCurrency(balance.balance, balance.currency),
+                        text = CoreMoneyPresentation.formatCurrency(balance.balance, accountPrimaryCurrency),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = if (isLatest) {
@@ -404,18 +411,19 @@ private fun HistoryRecordItem(
                     )
 
                     // Source Badge
-                    val (sourceIcon, sourceText, sourceColor) = when (balance.sourceType) {
-                        "TRANSACTION", "TRANSACTION_CALCULATED", "TRANSACTION_SMS_BALANCE" -> Triple(Icons.Rounded.SwapHoriz, stringResource(R.string.source_transaction), MaterialTheme.colorScheme.tertiary)
-                        // A balance reported with an old SMS import
-                        "SMS_BALANCE" -> Triple(Iconax.Edit2, stringResource(R.string.balance_calibration), MaterialTheme.colorScheme.primary)
-                        "CARD_LINK" -> Triple(Iconax.Card, stringResource(R.string.source_card_link), MaterialTheme.colorScheme.primary)
-                        "BALANCE_CALIBRATION" -> Triple(Iconax.Edit2, stringResource(R.string.balance_calibration), MaterialTheme.colorScheme.primary)
-                        "MANUAL", "MANUAL_EDIT" -> Triple(Iconax.Edit2, stringResource(R.string.source_manual), MaterialTheme.colorScheme.onSurfaceVariant)
-                        "OPENING_BALANCE" -> Triple(Iconax.Edit2, stringResource(R.string.source_opening), MaterialTheme.colorScheme.primary)
-                        "DELETE_REVERSAL" -> Triple(Icons.Rounded.SwapHoriz, stringResource(R.string.source_deleted), MaterialTheme.colorScheme.tertiary)
-                        "CASHEW_IMPORT" -> Triple(Iconax.Information, stringResource(R.string.source_import), MaterialTheme.colorScheme.onSurfaceVariant)
-                        else -> Triple(Iconax.Information, stringResource(R.string.source_system), MaterialTheme.colorScheme.onSurfaceVariant)
+                    val sourceIcon = when (balance.source) {
+                        AnchorSource.OPENING, AnchorSource.MANUAL -> Iconax.Edit2
+                        else -> Iconax.Information
                     }
+                    val sourceColor = if (balance.source == AnchorSource.OPENING) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    val sourceText = stringResource(when (balance.source) {
+                        AnchorSource.OPENING -> R.string.source_opening
+                        AnchorSource.MANUAL -> R.string.source_manual
+                        AnchorSource.IMPORT -> R.string.source_import
+                        AnchorSource.BROKER -> R.string.overview_investments
+                        AnchorSource.UNKNOWN -> R.string.source_system
+                    })
 
                     Surface(
                         color = sourceColor.copy(alpha = 0.1f),

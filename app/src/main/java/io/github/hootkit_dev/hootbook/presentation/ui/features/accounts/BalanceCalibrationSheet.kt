@@ -16,8 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.repository.LocalAccountHoldings
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountCurrencyChoice
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
@@ -29,7 +29,7 @@ import java.math.BigDecimal
  */
 @Composable
 fun BalanceCalibrationSheet(
-    account: AccountBalanceEntity,
+    account: Account,
     onDismiss: () -> Unit,
     onSave: (balance: BigDecimal, currency: String) -> Unit
 ) {
@@ -39,14 +39,14 @@ fun BalanceCalibrationSheet(
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        val pockets = account.accountId?.let { LocalAccountHoldings.current[it] }?.pockets.orEmpty()
-        var currency by remember(account.id) { mutableStateOf(account.currency) }
-        val current = pockets.firstOrNull { it.currency == currency }?.balance ?: account.balance
-        val title = stringResource(if (account.isCreditCard) R.string.update_outstanding_title else R.string.balance_calibration)
+        val pockets = account.pockets
+        var currency by remember(account.id) { mutableStateOf(account.mainCurrency) }
+        val current = pockets.firstOrNull { it.currency == currency }?.balance ?: account.pockets.first { it.currency == account.mainCurrency }.balance
+        val title = stringResource(if ((account.kind == AccountKind.CREDIT_CARD)) R.string.update_outstanding_title else R.string.balance_calibration)
         Column {
             if (pockets.size > 1) {
                 AccountCurrencyChoice(
-                    currencies = listOf(account.currency) + pockets.map { it.currency }.filter { it != account.currency },
+                    currencies = listOf(account.mainCurrency) + pockets.map { it.currency }.filter { it != account.mainCurrency },
                     selected = currency,
                     onSelect = { currency = it },
                     modifier = Modifier.padding(horizontal = Spacing.md)
@@ -56,12 +56,11 @@ fun BalanceCalibrationSheet(
                 NumberPad(
                     initialValue = current.toPlainString(),
                     title = title,
-                    bankName = account.bankName,
-                    accountLast4 = account.accountLast4,
+                    bankName = account.name,
+                    accountLast4 = account.last4.orEmpty(),
                     doneButtonLabel = title,
                     onDone = { value ->
                         value.toBigDecimalOrNull()?.let { onSave(it, currency) }
-                        onDismiss()
                     }
                 )
             }

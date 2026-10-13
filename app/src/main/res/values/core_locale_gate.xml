@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_locale_syncing">正在同步界面语言与 Core…</string>
+    <string name="core_locale_failed">语言同步失败，账本暂未开放。请重试。</string>
+</resources>

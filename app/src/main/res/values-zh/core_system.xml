@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_system_shortcut_unavailable">旧模板或已失效模板快捷方式已停用。请打开新增入口选择当前模板。</string>
+    <string name="core_system_private_reminder">打开应用查看提醒。</string>
+    <string name="core_system_allow_notifications">允许通知</string>
+    <string name="core_system_hour">小时（0–23）</string>
+    <string name="core_system_minute">分钟（0–59）</string>
+</resources>

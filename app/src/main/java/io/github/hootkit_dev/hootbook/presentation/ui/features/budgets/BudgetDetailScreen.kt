@@ -1,5 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 
 import androidx.compose.animation.AnimatedContentScope
@@ -57,8 +61,6 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.LoadingCircle
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
-import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.CategoryData
-import io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.CategoryPieChart
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.CategoriesViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Edit2
@@ -75,24 +77,21 @@ import io.github.hootkit_dev.hootbook.R
 )
 @Composable
 fun SharedTransitionScope.BudgetDetailScreen(
-    budgetId: Long,
+    budgetId: String,
     startDate: String? = null,
     endDate: String? = null,
     onNavigateBack: () -> Unit,
-    onNavigateToHistory: (Long) -> Unit = {},
-    onTransactionClick: (Long, String?) -> Unit,
+    onNavigateToHistory: (String) -> Unit = {},
     budgetViewModel: BudgetViewModel = hiltViewModel(),
-    categoriesViewModel: CategoriesViewModel = hiltViewModel(),
     animatedContentScope: AnimatedContentScope? = null,
     sharedElementKey: String? = null,
     blurEffects: Boolean
 ) {
     val uiState by budgetViewModel.uiState.collectAsStateWithLifecycle()
     val editBudgetState by budgetViewModel.editBudgetState.collectAsStateWithLifecycle()
-    val categories by categoriesViewModel.categories.collectAsStateWithLifecycle()
-    val subcategories by categoriesViewModel.subcategories.collectAsStateWithLifecycle()
-    
-    val lookups by budgetViewModel.lookups.collectAsStateWithLifecycle()
+    val categories = uiState.categories.values.toList()
+    val subcategories = emptyMap<String, List<Subcategory>>()
+
 
     var showEditSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -110,11 +109,10 @@ fun SharedTransitionScope.BudgetDetailScreen(
     }
 
     val budgetWithSpending = uiState.selectedBudget
-    val transactions = uiState.selectedBudgetTransactions
 
     if (showEditSheet) {
         HootbookModalBottomSheet(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showEditSheet = false
                 budgetViewModel.clearEditState()
             },
@@ -124,15 +122,16 @@ fun SharedTransitionScope.BudgetDetailScreen(
         ) {
             EditBudgetSheet(
                 budgetState = editBudgetState,
+                saving = uiState.saving, error = uiState.error,
                 categories = categories,
                 subcategoriesMap = subcategories,
-                allAccounts = uiState.allAccounts,
+                allAccounts = uiState.accounts.values.toList(),
                 onAmountChange = budgetViewModel::updateBudgetAmount,
                 onNameChange = budgetViewModel::updateBudgetName,
                 onStartDateChange = budgetViewModel::updateStartDate,
                 onEndDateChange = budgetViewModel::updateEndDate,
                 onPeriodTypeChange = budgetViewModel::updatePeriodType,
-                onBudgetTypeChange = budgetViewModel::updateBudgetType,
+                onBudgetKindChange = budgetViewModel::updateBudgetType,
                 onAccountIdsChange = budgetViewModel::updateAccountIds,
                 onColorChange = budgetViewModel::updateColor,
                 onAddCategoryLimit = budgetViewModel::addCategoryLimit,
@@ -147,7 +146,7 @@ fun SharedTransitionScope.BudgetDetailScreen(
                     )
                 },
                 onDelete = {
-                    val currentId = budgetWithSpending?.budget?.id
+                    val currentId = budgetWithSpending?.id
                     if (currentId != null) {
                         budgetViewModel.deleteBudget(
                             budgetId = currentId,
@@ -178,7 +177,7 @@ fun SharedTransitionScope.BudgetDetailScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CustomTitleTopAppBar(
-                title = budgetWithSpending?.budget?.let { budgetDisplayName(it.name, it.periodType) } ?: stringResource(R.string.budget_details),
+                title = budgetWithSpending?.let { budgetDisplayName(it.name, it.period) } ?: stringResource(R.string.budget_details),
                 hazeState = hazeState,
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehavior,
@@ -194,7 +193,7 @@ fun SharedTransitionScope.BudgetDetailScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                budgetWithSpending?.budget?.let {
+                                budgetWithSpending?.let {
                                     budgetViewModel.initEditBudget(it)
                                     showEditSheet = true
                                 }
@@ -242,15 +241,15 @@ fun SharedTransitionScope.BudgetDetailScreen(
                         }
 
                         // Budget Period Text
-                        val startDate = budgetWithSpending.budget.startDate
-                        val endDate = budgetWithSpending.budget.endDate
+                        val startDate = budgetWithSpending.current.start
+                        val endDate = budgetWithSpending.current.end
                         val periodText = remember(startDate, endDate) {
                             val periodFormatter = DateFormats.monthDayFormatter()
                             if (startDate.year == endDate.year) {
-                                "${startDate.format(periodFormatter)} - ${endDate.format(periodFormatter)}, ${startDate.year}"
+                                "${startDate.coreDateText(periodFormatter)} - ${endDate.coreDateText(periodFormatter)}, ${startDate.year}"
                             } else {
                                 val fullFormatter = DateFormats.fullDateFormatter()
-                                "${startDate.format(fullFormatter)} - ${endDate.format(fullFormatter)}"
+                                "${startDate.coreDateText(fullFormatter)} - ${endDate.coreDateText(fullFormatter)}"
                             }
                         }
 
@@ -280,100 +279,17 @@ fun SharedTransitionScope.BudgetDetailScreen(
                         Spacer(modifier = Modifier.height(Spacing.md))
                     }
 
-                    // Category Breakdown (Pie Chart)
-                    if (budgetWithSpending.categorySpending.isNotEmpty()) {
+                    if (budgetWithSpending.current.byCategory.isNotEmpty()) {
                         item {
-                            Spacer(modifier = Modifier.height(Spacing.sm))
-                            
-                            val pieChartData = budgetWithSpending.categorySpending.map { (category, amount) ->
-                                val percentage = if (budgetWithSpending.currentSpending > java.math.BigDecimal.ZERO) {
-                                    (amount.toFloat() / budgetWithSpending.currentSpending.toFloat()) * 100f
-                                } else 0f
-                                
-                                val count = transactions.count { it.category == category }
-                                
-                                CategoryData(
-                                    name = category,
-                                    amount = amount,
-                                    percentage = percentage,
-                                    transactionCount = count
-                                )
-                            }.sortedByDescending { it.amount }
-
-                            CategoryPieChart(
-                                categories = pieChartData,
-                                currency = budgetWithSpending.budget.currency,
-                                modifier = Modifier.padding(end = Spacing.sm)
-                            )
+                            BudgetCategoryPieChart(budgetWithSpending.current.byCategory,
+                                uiState.categories, budgetWithSpending.amount.currency, budgetWithSpending.current.spent,
+                                modifier = Modifier.padding(end = Spacing.sm))
                             Spacer(modifier = Modifier.height(Spacing.xl))
-                        }
-                    }
-
-                    // Transactions List
-                    item {
-                        SectionHeader(
-                            title = stringResource(R.string.transactions),
-                            modifier = Modifier.padding(horizontal = Spacing.lg)
-                        )
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                    }
-
-                    if (transactions.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(Spacing.md)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                        shape = MaterialTheme.shapes.large
-                                    )
-                                    .padding(vertical = Spacing.lg),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-
-                                    ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(56.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(Spacing.md))
-                                    Text(
-                                        text = stringResource(R.string.no_transactions_yet),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f)
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        itemsIndexed(
-                            items = transactions,
-                            key = { _, it -> it.id }
-                        ) { index, transaction ->
-                            val position = ListItemPosition.from(index, transactions.size)
-                            val decoration = remember(transaction, lookups, uiState.conversions) {
-                                lookups.decorate(transaction, uiState.conversions)
-                            }
-                            TransactionItem(
-                                transaction = transaction,
-                                decoration = decoration,
-                                onClick = { onTransactionClick(transaction.id, "budget_txn_${transaction.id}") },
-                                modifier = Modifier.padding(horizontal = Spacing.md),
-                                animatedContentScope = animatedContentScope,
-                                shape = position.toShape(),
-                                sharedElementKey = "budget_txn_${transaction.id}",
-                                mainCurrency = uiState.baseCurrency
-                            )
                         }
                     }
                 }
             }
+            uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         }
     }
 }

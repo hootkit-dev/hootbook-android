@@ -17,7 +17,6 @@ enum class TransactionTypeFilter(@StringRes val labelRes: Int) {
     ALL(R.string.type_all),
     INCOME(R.string.type_income),
     EXPENSE(R.string.type_expense),
-    CREDIT(R.string.type_credit),
     TRANSFER(R.string.type_transfer),
     INVESTMENT(R.string.type_investment),
     LENT(R.string.type_lent),

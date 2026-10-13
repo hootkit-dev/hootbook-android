@@ -1,6 +1,7 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.notifications
 
 import io.github.hootkit_dev.hootbook.utils.DateFormats
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -58,8 +59,13 @@ fun NotificationScreen(
     notificationViewModel: NotificationViewModel = hiltViewModel(),
     blurEffects: Boolean,
 ) {
-    val upcomingEnabled by notificationViewModel.upcomingNotificationsEnabled.collectAsStateWithLifecycle()
-    val subscriptions by notificationViewModel.subscriptions.collectAsStateWithLifecycle()
+    val uiState by notificationViewModel.uiState.collectAsStateWithLifecycle()
+    val preferences by notificationViewModel.preferences.state.collectAsStateWithLifecycle()
+    val upcomingEnabled = preferences.notificationsEnabled
+    val subscriptions = uiState.subscriptions
+    val permission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { notificationViewModel.refreshPlatform() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
@@ -94,6 +100,7 @@ fun NotificationScreen(
                     ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
+                uiState.error?.let { androidx.compose.material3.Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 // Upcoming Settings
                 SectionHeader(title = stringResource(R.string.upcoming_transactions_section), modifier = Modifier.padding(start = Spacing.md))
                 Column(
@@ -106,7 +113,12 @@ fun NotificationScreen(
                         title = stringResource(R.string.upcoming_transactions_section),
                         subtitle = stringResource(R.string.upcoming_transactions_desc),
                         checked = upcomingEnabled,
-                        onCheckedChange = notificationViewModel::setUpcomingNotificationsEnabled,
+                        onCheckedChange = { enabled ->
+                            notificationViewModel.setUpcomingNotificationsEnabled(enabled)
+                            if (enabled && android.os.Build.VERSION.SDK_INT >= 33 &&
+                                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                                permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        },
                         leadingIcon = {
                             Box(
                                 modifier = Modifier
@@ -136,17 +148,17 @@ fun NotificationScreen(
                             subscriptions.forEachIndexed { index, item ->
                                 val isLastItem = index == subscriptions.lastIndex
                                 PreferenceSwitch(
-                                    title = item.subscription.merchantName,
-                                    subtitle = item.subscription.nextPaymentDate?.format(DateFormats.monthDayFormatter()) ?: stringResource(R.string.no_date),
-                                    checked = item.isNotificationEnabled,
+                                    title = item.name,
+                                    subtitle = item.nextDue?.coreDateText(DateFormats.monthDayFormatter()) ?: stringResource(R.string.no_date),
+                                    checked = item.id !in preferences.mutedSubscriptionIds,
                                     onCheckedChange = { 
-                                        notificationViewModel.toggleSubscriptionNotification(item.subscription.id, it)
+                                        notificationViewModel.toggleSubscriptionNotification(item.id, it)
                                     },
                                     leadingIcon = {
                                         BrandIcon(
-                                            merchantName = item.subscription.merchantName,
-                                            category = item.subscription.category,
-                                            subcategory = item.subscription.subcategory,
+                                            merchantName = item.name,
+                                            categoryEntity = uiState.categories[item.categoryId],
+                                            subcategoryEntity = uiState.subcategories[item.subcategoryId],
                                             size = 48.dp
                                         )
                                     },

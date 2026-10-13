@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.CloseCircle
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
@@ -38,42 +38,37 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 
 @Composable
 fun CategorySelectionSheet(
-    categories: List<CategoryEntity>,
-    subcategoriesMap: Map<Long, List<SubcategoryEntity>>,
-    onSelectionComplete: (CategoryEntity, SubcategoryEntity?) -> Unit,
-    onDismiss: () -> Unit,
-    recentCategories: List<String> = emptyList()
+    categories: List<Category>,
+    subcategoriesMap: Map<String, List<Subcategory>>,
+    onSelectionComplete: (Category, Subcategory?) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val searchLabel = stringResource(R.string.search_categories)
-    val recent = remember(categories, recentCategories) {
-        val byName = categories.associateBy { it.name }
-        recentCategories.mapNotNull { byName[it] }
-    }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
-    
+
     // Filter categories based on search
     val filteredCategories = remember(categories, subcategoriesMap, searchQuery.text) {
         if (searchQuery.text.isBlank()) {
             categories
         } else {
             categories.filter { category ->
-                val categoryMatches = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(category.name, searchQuery.text)
-                val subcategoriesMatch = subcategoriesMap[category.id]?.any {
-                    io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery.text)
+                val categoryMatches = category.displayName.contains(searchQuery.text, ignoreCase = true)
+                val subcategoriesMatch = subcategoriesMap[category.id]?.filter { !it.hidden }?.any {
+                    it.displayName.contains(searchQuery.text, ignoreCase = true)
                 } == true
                 categoryMatches || subcategoriesMatch
             }
         }
     }
 
-    val expandedStates = remember { mutableStateMapOf<Long, Boolean>() }
+    val expandedStates = remember { mutableStateMapOf<String, Boolean>() }
 
     // Auto-expand categories that have matching subcategories when searching
     LaunchedEffect(searchQuery.text) {
         if (searchQuery.text.isNotBlank()) {
             filteredCategories.forEach { category ->
-                val hasMatchingSubcategory = subcategoriesMap[category.id]?.any {
-                    io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery.text)
+                val hasMatchingSubcategory = subcategoriesMap[category.id]?.filter { !it.hidden }?.any {
+                    it.displayName.contains(searchQuery.text, ignoreCase = true)
                 } == true
                 if (hasMatchingSubcategory) {
                     expandedStates[category.id] = true
@@ -132,42 +127,12 @@ fun CategorySelectionSheet(
             )
         }
 
-        // Recently used categories pick in one tap, without opening their subcategories
-        if (searchQuery.text.isBlank() && recent.isNotEmpty()) {
-            Column(modifier = Modifier.padding(horizontal = Dimensions.Padding.content, vertical = Spacing.xs)) {
-                Text(
-                    text = stringResource(R.string.recently_used),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = Spacing.xs)
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                ) {
-                    recent.forEach { category ->
-                        AssistChip(
-                            onClick = { onSelectionComplete(category, null) },
-                            label = { Text(io.github.hootkit_dev.hootbook.presentation.common.categoryName(category.name), maxLines = 1) },
-                            leadingIcon = { CategoryIcon(category, 18.dp) }
-                        )
-                    }
-                }
-            }
-        }
-
         if (filteredCategories.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.no_categories_found),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.no_categories_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(
+        LazyColumn(
                 modifier = Modifier
                     .padding(
                         start = Dimensions.Padding.content,
@@ -182,17 +147,17 @@ fun CategorySelectionSheet(
                     items = filteredCategories,
                     key = { it.id }
                 ) { category ->
-                    val subs = subcategoriesMap[category.id] ?: emptyList()
-                    
+                    val subs = subcategoriesMap[category.id]?.filter { !it.hidden } ?: emptyList()
+
                     val isExpanded = expandedStates[category.id] == true
-                    
+
                     val displayedSubcategories = if (searchQuery.text.isNotBlank()) {
                         // When searching, show only matching subcategories OR all if category matches
-                        val categoryMatches = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(category.name, searchQuery.text)
+                        val categoryMatches = category.displayName.contains(searchQuery.text, ignoreCase = true)
                         if (categoryMatches) {
                             subs
                         } else {
-                            subs.filter { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery.text) }
+                            subs.filter { it.displayName.contains(searchQuery.text, ignoreCase = true) }
                         }
                     } else if (isExpanded) {
                         subs

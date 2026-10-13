@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_full_cash_history">现金余额历史</string>
+    <string name="core_full_history_from">起始日 YYYY-MM-DD</string>
+    <string name="core_full_history_to">截至日 YYYY-MM-DD</string>
+    <string name="core_full_history_query">查询 Core 历史</string>
+    <string name="core_full_attachment_view">查看附件</string>
+    <string name="core_full_attachment_add">选择附件</string>
+    <string name="core_full_bulk_edit">批量修改所选交易</string>
+    <string name="core_full_select_all">选择全部匹配的 Core 结果</string>
+    <string name="core_full_export_all_pages">导出全部匹配页面到 CSV</string>
+    <string name="core_full_export_count">完整 CSV 已生成：%1$s 条交易</string>
+    <string name="core_full_confirm">确认</string>
+    <string name="core_full_bulk_amount">替换金额</string>
+    <string name="core_full_label_3">撤销最近一次删除</string>
+    <string name="core_full_label_5">编辑</string>
+    <string name="core_full_label_6">删除</string>
+    <string name="core_full_label_14">下一页</string>
+    <string name="core_full_label_17">确认删除</string>
+    <string name="core_full_label_33">展开筛选</string>
+    <string name="core_full_label_34">搜索商户／备注／分类</string>
+    <string name="core_full_label_40">分类</string>
+    <string name="core_full_label_49">正常交易</string>
+    <string name="core_full_label_50">回收站</string>
+    <string name="core_full_label_51">含已删除</string>
+    <string name="core_full_label_52">应用筛选</string>
+    <string name="core_full_label_55">金额（十进制）</string>
+    <string name="core_full_label_67">商户</string>
+    <string name="core_full_label_68">备注</string>
+    <string name="core_full_label_71">保存到 Core</string>
+    <string name="core_full_securities">持仓市值：%1$s</string>
+    <string name="core_kind_expense">支出</string>
+    <string name="core_kind_income">收入</string>
+    <string name="core_kind_transfer">转账</string>
+    <string name="core_kind_investment">投资</string>
+    <string name="core_kind_loan_out">借出／还出</string>
+    <string name="core_kind_loan_in">借入／还入</string>
+    <string name="core_kind_unknown">未知类型</string>
+</resources>

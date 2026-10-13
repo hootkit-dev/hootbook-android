@@ -1,112 +1,80 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.sync.SignInCancelledException
-import io.github.hootkit_dev.hootbook.data.sync.SyncManager
-import io.github.hootkit_dev.hootbook.data.sync.WrongPassphraseException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
+import io.github.hootkit_dev.hootbook.core.ui.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import android.content.Context
+import io.github.hootkit_dev.hootbook.core.sync.*
 
-/** What the Sync screen reports once, as a snackbar. */
-sealed class SyncMessage {
-    data object Synced : SyncMessage()
-    data object Failed : SyncMessage()
-    /** Sign-in did not finish; [detail] is the error's type and message */
-    data class SignInFailed(val detail: String) : SyncMessage()
-    /** The account sheet was closed without choosing an account */
-    data object SignInCancelled : SyncMessage()
-    data object Merged : SyncMessage()
-    data class Replaced(val backupName: String) : SyncMessage()
-}
-
+data class SyncUiState(
+    val status: SyncStatus? = null,
+    val control: CoreSyncControlState? = null,
+    val loading: Boolean = true,
+    val busy: Boolean = false,
+    val error: String? = null,
+    val outcome: SyncOutcome? = null,
+)
 @HiltViewModel
-class SyncViewModel @Inject constructor(private val manager: SyncManager) : ViewModel() {
-    val state: StateFlow<SyncManager.State> = manager.state
-
-    /** False in a build without sync (F-Droid). */
-    val available: Boolean = manager.available
-
-    private val _messages = MutableSharedFlow<SyncMessage>(extraBufferCapacity = 4)
-    val messages: SharedFlow<SyncMessage> = _messages.asSharedFlow()
-
-    private val _wrongPassphrase = MutableStateFlow(false)
-    val wrongPassphrase: StateFlow<Boolean> = _wrongPassphrase.asStateFlow()
-
+class SyncViewModel @Inject constructor(
+    private val session: CoreSession,
+    private val changes: ChangeBus,
+    private val coordinator: CoreSyncCoordinator,
+) : ViewModel() {
+    private val mutable = MutableStateFlow(SyncUiState())
+    val state = mutable.asStateFlow()
+    val available get() = coordinator.state.value.available
+    private val wrong = MutableStateFlow(false)
+    val wrongPassphrase = wrong.asStateFlow()
+    private var query: Job? = null
+    private var generation = 0L
     init {
+        coordinator.start()
         refresh()
+        viewModelScope.launch { coordinator.state.collect { control ->
+            mutable.update { it.copy(control = control) }; refresh()
+        } }
     }
-
-    /** Looks up again whether the account has a passphrase (after a failure, e.g. offline). */
-    fun refresh() = viewModelScope.launch { manager.refreshPassphraseState() }
-
-    fun signIn(activityContext: Context) = viewModelScope.launch {
-        try {
-            manager.signIn(activityContext)
-        } catch (e: SignInCancelledException) {
-            // Said too: a misconfigured client can also end as "cancelled", so it is never silent
-            Log.i(TAG, "Sign-in cancelled", e)
-            _messages.tryEmit(SyncMessage.SignInCancelled)
-        } catch (e: Exception) {
-            Log.w(TAG, "Sign-in failed", e)
-            _messages.tryEmit(SyncMessage.SignInFailed(SyncManager.describe(e)))
+    fun refresh() {
+        val mine = ++generation
+        query?.cancel()
+        query = viewModelScope.launch { session.observe(changes, setOf(Table.SYNC_STATE, Table.SETTINGS)) { core ->
+            coreQuery { core.sync().use { it.status() } }
+        }.collect { result ->
+            if (mine != generation) return@collect
+            result.fold(onSuccess = { status -> mutable.update { it.copy(status = status, loading = false) } },
+                onFailure = { failure -> mutable.update { it.copy(loading = false, error = syncFailureText(failure)) } })
+        } }
+    }
+    fun signIn(activity: Context) = command { coordinator.signIn(activity) }
+    fun signOut() = command { coordinator.signOut() }
+    fun submitPassphrase(value: String) = command {
+        wrong.value = false
+        coordinator.command { it.setPassphrase(value) }
+        mutable.update { it.copy(outcome = coordinator.runManual()) }
+    }
+    fun clearWrongPassphrase() { wrong.value = false }
+    fun setEnabled(value: Boolean) = command { coordinator.command { it.setPaused(!value) } }
+    fun syncNow() = command { mutable.update { it.copy(outcome = coordinator.runManual()) } }
+    fun clearError() { mutable.update { it.copy(error = null) }; coordinator.clearError() }
+    private fun command(block: suspend () -> Unit) {
+        if (state.value.busy || state.value.loading || !available) return
+        mutable.update { it.copy(busy = true, error = null, outcome = null) }
+        viewModelScope.launch {
+            try { withContext(NonCancellable) { block() } }
+            catch (_: CoreSignInCancelled) { }
+            catch (failure: Exception) {
+                if (failure is CoreException.Sync && failure.kind == SyncErrorKind.WRONG_PASSPHRASE) wrong.value = true
+                mutable.update { it.copy(error = syncFailureText(failure)) }
+            }
+            finally { mutable.update { it.copy(busy = false) }; refresh() }
         }
-    }
-
-    fun submitPassphrase(passphrase: String) = viewModelScope.launch {
-        _wrongPassphrase.value = false
-        try {
-            manager.submitPassphrase(passphrase)
-        } catch (e: WrongPassphraseException) {
-            _wrongPassphrase.value = true
-        } catch (e: Exception) {
-            Log.w(TAG, "Setting up sync failed", e)
-            _messages.tryEmit(SyncMessage.Failed)
-        }
-    }
-
-    fun clearWrongPassphrase() { _wrongPassphrase.value = false }
-
-    fun merge() = run(SyncMessage.Merged) { manager.merge() }
-
-    fun replaceLocal() = viewModelScope.launch {
-        try {
-            _messages.tryEmit(SyncMessage.Replaced(manager.replaceLocalWithCloud()))
-        } catch (e: Exception) {
-            Log.w(TAG, "Replacing failed", e)
-            _messages.tryEmit(SyncMessage.Failed)
-        }
-    }
-
-    fun syncNow() = viewModelScope.launch {
-        _messages.tryEmit(if (manager.syncNow()) SyncMessage.Synced else SyncMessage.Failed)
-    }
-
-    fun signOut() = viewModelScope.launch { manager.signOut() }
-
-    /** The on/off switch: off pauses sync and keeps the account and key. */
-    fun setEnabled(enabled: Boolean) = manager.setPaused(!enabled)
-
-    private fun run(success: SyncMessage, block: suspend () -> Unit) = viewModelScope.launch {
-        try {
-            block()
-            _messages.tryEmit(success)
-        } catch (e: Exception) {
-            Log.w(TAG, "Sync step failed", e)
-            _messages.tryEmit(SyncMessage.Failed)
-        }
-    }
-
-    private companion object {
-        const val TAG = "SyncViewModel"
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_currencies_title">Currencies and exchange rates</string>
+    <string name="core_currencies_convert">Convert</string>
+    <string name="core_currencies_amount">Amount</string>
+    <string name="core_currencies_from">From currency</string>
+    <string name="core_currencies_to">To currency</string>
+    <string name="core_currencies_add">Add</string>
+    <string name="core_currencies_code">Currency code</string>
+    <string name="core_currencies_name">Currency name</string>
+    <string name="core_currencies_symbol">Symbol (up to 3 characters)</string>
+    <string name="core_currencies_save">Save</string>
+</resources>

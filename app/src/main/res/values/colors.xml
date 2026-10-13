@@ -8,13 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="ic_launcher_background">#1A1A1F</color>
-    <!-- Logo Backgrounds -->
-    <color name="logo_original_bg">#FF1F1F1F</color>
-    <color name="logo_anarchy_bg">#FFF5EEE5</color>
-    <color name="logo_zenith_bg">#FFE6E6E6</color>
-    <color name="logo_monochrome_bg">#F0F0FF</color>
-    <color name="logo_monochrome_accent">#222276</color>
-    <color name="logo_monochrome_grad_start">#F0F0FF</color>
-    <color name="logo_monochrome_grad_end">#D1D1F1</color>
+    <color name="brand_white">#FFFFFF</color>
+    <color name="brand_cream">#F2EDE3</color>
+    <color name="brand_navy">#1C2A39</color>
 </resources>

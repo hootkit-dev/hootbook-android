@@ -21,12 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Subcategory
 
 @Composable
 fun SubcategoryRow(
-        subcategories: List<SubcategoryEntity>,
-        onSubcategoryClick: (SubcategoryEntity) -> Unit,
+        subcategories: List<Subcategory>,
+        onSubcategoryClick: (Subcategory) -> Unit,
         onAddClick: () -> Unit,
         modifier: Modifier = Modifier,
         showAddButton: Boolean = true
@@ -42,7 +42,7 @@ fun SubcategoryRow(
                     onClick = { onSubcategoryClick(subcategory) }
             )
         }
-        
+
         // Add button at the end
         if (showAddButton) {
             item {
@@ -54,7 +54,7 @@ fun SubcategoryRow(
 
 @Composable
 private fun SubcategoryChip(
-        subcategory: SubcategoryEntity,
+        subcategory: Subcategory,
         onClick: () -> Unit
 ) {
     val backgroundColor = try {
@@ -74,13 +74,13 @@ private fun SubcategoryChip(
     ) {
         // Icon
         val context = androidx.compose.ui.platform.LocalContext.current
-        val iconResId = if (subcategory.iconName.isNotEmpty()) {
-            io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.nameToResId(context, subcategory.iconName)
+        val iconResId = if (subcategory.icon.isNotEmpty()) {
+            io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.nameToResId(context, subcategory.icon)
                 .takeIf { it != 0 } ?: 0
         } else {
             io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.getSafeResId(
                 context,
-                subcategory.iconResId,
+                0,
                 0
             )
         }
@@ -96,7 +96,7 @@ private fun SubcategoryChip(
 
         // Name
         Text(
-                text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(subcategory.name),
+                text = subcategory.displayName,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

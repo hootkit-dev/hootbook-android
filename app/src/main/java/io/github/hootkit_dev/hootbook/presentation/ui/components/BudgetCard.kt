@@ -1,6 +1,11 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import io.github.hootkit_dev.hootbook.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.ripple
 import androidx.compose.animation.core.tween
@@ -48,39 +53,38 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import io.github.hootkit_dev.hootbook.data.repository.BudgetWithSpending
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.History
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import java.math.BigDecimal
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.BudgetCard(
     modifier: Modifier = Modifier,
-    budgetWithSpending: BudgetWithSpending,
+    budgetWithSpending: Budget,
     onClick: () -> Unit = {},
-    onHistoryClick: (Long) -> Unit = {},
+    onHistoryClick: (String) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedElementKey: String? = null
 ) {
-    val budget = budgetWithSpending.budget
-    val isSavings = budget.budgetType == io.github.hootkit_dev.hootbook.data.database.entity.BudgetType.SAVINGS
-    
+    val budget = budgetWithSpending
+    val isSavings = budget.kind == BudgetKind.SAVINGS
+
     // Animate the progress
     var animatedProgress by remember { mutableFloatStateOf(0f) }
-    val targetProgress = budgetWithSpending.percentUsed
+    val targetProgress = budgetProgressFraction(budget.current.spent, budget.amount.amount)
     val animatedProgressState by animateFloatAsState(
         targetValue = animatedProgress,
         animationSpec = tween(durationMillis = 800),
         label = "progressAnimation"
     )
-    
+
     LaunchedEffect(targetProgress) {
         animatedProgress = targetProgress
     }
-    
+
     // Determine colors based on spending status
     val budgetColor = try {
         Color(budget.color.toColorInt())
@@ -90,15 +94,15 @@ fun SharedTransitionScope.BudgetCard(
 
     val progressColor = when {
         isSavings -> {
-            if (budgetWithSpending.isOverBudget) budgetColor else budgetColor.copy(alpha = 0.8f)
+            if (budget.current.over) budgetColor else budgetColor.copy(alpha = 0.8f)
         }
-        budgetWithSpending.isOverBudget -> MaterialTheme.colorScheme.error
-        budgetWithSpending.percentUsed > 0.8f -> MaterialTheme.colorScheme.tertiary
+        budget.current.over -> MaterialTheme.colorScheme.error
+        budgetProgressFraction(budget.current.spent, budget.amount.amount) > 0.8f -> MaterialTheme.colorScheme.tertiary
         else -> budgetColor
     }
-    
+
     val progressBackgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-    
+
     val sharedModifier = if (animatedVisibilityScope != null && sharedElementKey != null) {
         Modifier.sharedBounds(
             rememberSharedContentState(key = sharedElementKey),
@@ -143,17 +147,17 @@ fun SharedTransitionScope.BudgetCard(
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 // Budget Name
                 Text(
-                    text = io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetDisplayName(budget.name, budget.periodType),
+                    text = io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetDisplayName(budget.name, budget.period),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 // History Icon
                 IconButton(
                     onClick = { onHistoryClick(budget.id) },
@@ -171,9 +175,9 @@ fun SharedTransitionScope.BudgetCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(Spacing.sm))
-            
+
             // Main Content Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -192,17 +196,13 @@ fun SharedTransitionScope.BudgetCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.basicMarquee()
                     )
-                    
-                    val dailyBudgetLeft = if (budgetWithSpending.isOverBudget || budgetWithSpending.daysRemaining <= 0) {
-                         BigDecimal.ZERO 
-                    } else {
-                        budgetWithSpending.recommendedDailySpending
-                    }
-                    
+
+                    val dailyBudgetLeft = budget.current.dailyAllowance
+
                     Text(
                         text = CurrencyFormatter.formatCurrency(
                             dailyBudgetLeft,
-                            budget.currency
+                            budget.amount.currency
                         ),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
@@ -226,12 +226,12 @@ fun SharedTransitionScope.BudgetCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.basicMarquee()
                     )
-                    
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                          Text(
                             text = CurrencyFormatter.formatCurrency(
-                                budgetWithSpending.currentSpending,
-                                budget.currency
+                                budget.current.spent,
+                                budget.amount.currency
                             ).replace(".00", ""), // Simplified display
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
@@ -241,17 +241,17 @@ fun SharedTransitionScope.BudgetCard(
                              overflow = TextOverflow.Ellipsis,
                              modifier = Modifier.basicMarquee()
                         )
-                        
+
                         Text(
                             text = " / ",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
-                        
+
                         Text(
                             text = CurrencyFormatter.formatCurrency(
-                                budget.amount,
-                                budget.currency
+                                budget.amount.amount,
+                                budget.amount.currency
                             ).replace(".00", ""), // Simplified display
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
@@ -264,9 +264,9 @@ fun SharedTransitionScope.BudgetCard(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Progress Bar
             Box(
                 modifier = Modifier
@@ -283,11 +283,13 @@ fun SharedTransitionScope.BudgetCard(
                         .background(progressColor)
                 )
             }
-            
+
+            if (!budget.current.complete) Text(stringResource(R.string.core_budgets_history_incomplete), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
-                text = stringResource(R.string.days_remaining_format, budgetWithSpending.daysRemaining),
+                text = pluralStringResource(R.plurals.days_remaining, budget.current.daysLeft.toInt(), budget.current.daysLeft.toInt()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -334,21 +336,21 @@ internal fun BudgetAnimatedGradientMeshCard(
                 val scale3 = 0.5f
                 val canvasWidth = size.width
                 val canvasHeight = size.height
-                
+
                 // Blob 1
                 drawCircle(
                     color = animatedColor,
                     center = Offset(x = canvasWidth * offsetX1, y = canvasHeight * offsetY1),
                     radius = canvasWidth * 0.5f
                 )
-                
+
                 // Blob 2
                 drawCircle(
                     color = animatedSecondaryColor,
                     center = Offset(x = canvasWidth * offsetX2, y = canvasHeight * offsetY2),
                     radius = canvasWidth * 0.5f
                 )
-                
+
                  // Blob 3
                 drawCircle(
                     color = animatedColor.copy(alpha = animatedColor.alpha * 0.8f),
@@ -365,9 +367,9 @@ internal fun BudgetAnimatedGradientMeshCard(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.BudgetCardCompact(
-    budgetWithSpending: BudgetWithSpending,
+    budgetWithSpending: Budget,
     onClick: () -> Unit,
-    onHistoryClick: (Long) -> Unit = {},
+    onHistoryClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedElementKey: String? = null

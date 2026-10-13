@@ -12,6 +12,7 @@
     <application
         android:name=".HootbookApplication"
         android:allowBackup="false"
+        android:usesCleartextTraffic="${coreAcceptanceCleartext}"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:enableOnBackInvokedCallback="true"
@@ -25,7 +26,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Hootbook.SplashScreen"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop">
             <!-- Screenshots, statements and exports shared to Hootbook open AI bookkeeping -->
             <intent-filter android:label="@string/ai_share_label">
                 <action android:name="android.intent.action.SEND" />
@@ -39,15 +41,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Existing alias names are retained so upgrades preserve launcher shortcuts. -->
         <activity-alias
             android:name=".MainActivityOriginal"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_original"
+            android:icon="@mipmap/ic_launcher_hootbook_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_original_round"
+            android:roundIcon="@mipmap/ic_launcher_hootbook_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Original">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hootbook.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -61,11 +64,11 @@
             android:name=".MainActivityAnarchy"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_anarchy"
+            android:icon="@mipmap/ic_launcher_hootbook_cream"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_anarchy_round"
+            android:roundIcon="@mipmap/ic_launcher_hootbook_cream_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Anarchy">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hootbook.cream">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -77,11 +80,11 @@
             android:name=".MainActivityZenith"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_zenith"
+            android:icon="@mipmap/ic_launcher_hoot_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_zenith_round"
+            android:roundIcon="@mipmap/ic_launcher_hoot_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Zenith">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hoot.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -93,11 +96,11 @@
             android:name=".MainActivityMonochrome"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_monochrome"
+            android:icon="@mipmap/ic_launcher_book_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_monochrome_round"
+            android:roundIcon="@mipmap/ic_launcher_book_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Monochrome">
+            android:theme="@style/Theme.Hootbook.SplashScreen.book.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -109,11 +112,27 @@
             android:name=".MainActivityComic"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_comic"
+            android:icon="@mipmap/ic_launcher_hoot_cream"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_comic_round"
+            android:roundIcon="@mipmap/ic_launcher_hoot_cream_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Comic">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hoot.cream">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBookCream"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_book_cream"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_book_cream_round"
+            android:targetActivity=".MainActivity"
+            android:theme="@style/Theme.Hootbook.SplashScreen.book.cream">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -150,19 +169,25 @@
 
         <receiver
             android:name=".receiver.ReminderReceiver"
+            android:enabled="true"
             android:exported="false" />
 
         <receiver
             android:name=".receiver.BootReceiver"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
         <!-- Home-screen widget: add button and quick templates -->
         <receiver
             android:name=".widget.QuickAddWidgetReceiver"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_quick_add_title">
             <intent-filter>
@@ -175,6 +200,7 @@
 
         <service
             android:name=".service.AddTransactionTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_transaction"
             android:icon="@drawable/ic_add_transaction"
@@ -186,6 +212,7 @@
 
         <service
             android:name=".service.AddSubscriptionTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_subscription"
             android:icon="@drawable/ic_add_subscription"
@@ -197,6 +224,7 @@
 
         <service
             android:name=".service.AddTransferTileService"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/add_transfer"
             android:icon="@drawable/ic_transfer"

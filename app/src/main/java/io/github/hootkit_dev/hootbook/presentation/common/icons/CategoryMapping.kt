@@ -8,8 +8,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
 import java.util.Locale
 
 /**
@@ -1138,8 +1138,8 @@ object IconProvider {
     fun getIconForTransaction(
         context: Context? = null,
         merchantName: String,
-        categoryEntity: CategoryEntity? = null,
-        subcategoryEntity: SubcategoryEntity? = null,
+        categoryEntity: Category? = null,
+        subcategoryEntity: Subcategory? = null,
         category: String? = null,
         subcategory: String? = null,
         accountIconResId: Int = 0,
@@ -1152,10 +1152,10 @@ object IconProvider {
 
         // subcategory icon
         subcategoryEntity?.let { subcat ->
-            val resId = if (!subcat.iconName.isNullOrEmpty()) {
-                IconResolutionUtils.nameToResId(context, subcat.iconName)
+            val resId = if (!subcat.icon.isNullOrEmpty()) {
+                IconResolutionUtils.nameToResId(context, subcat.icon)
             } else {
-                IconResolutionUtils.getSafeResId(context ?: return@let null, subcat.iconResId, 0)
+                IconResolutionUtils.getSafeResId(context ?: return@let null, 0, 0)
             }
 
             if (resId != 0) {
@@ -1178,10 +1178,10 @@ object IconProvider {
 
         // category icon from entity
         categoryEntity?.let { cat ->
-            val resId = if (!cat.iconName.isNullOrEmpty()) {
-                IconResolutionUtils.nameToResId(context, cat.iconName)
+            val resId = if (!cat.icon.isNullOrEmpty()) {
+                IconResolutionUtils.nameToResId(context, cat.icon)
             } else {
-                IconResolutionUtils.getSafeResId(context ?: return@let null, cat.iconResId, 0)
+                IconResolutionUtils.getSafeResId(context ?: return@let null, 0, 0)
             }
 
             if (resId != 0) {
@@ -1205,7 +1205,7 @@ object IconProvider {
         // CategoryMapping using the transaction's category name (if available)
         // This handles built-in categories that don't have iconResId set in the entity
         categoryEntity?.let { cat ->
-            CategoryMapping.categories[cat.name]?.let { categoryInfo ->
+            CategoryMapping.categories[cat.displayName]?.let { categoryInfo ->
                 return IconResource.TintedResIcon(
                     resId = categoryInfo.iconResId,
                     tint = categoryInfo.color
@@ -1232,7 +1232,7 @@ object IconProvider {
                 resId = CategoryMapping.categories["Miscellaneous"]!!.iconResId,
                 tint = CategoryMapping.categories["Miscellaneous"]!!.color
             ), accountIconResId, 0)
-            
+
             if (safeResId != 0) {
                 return IconResource.TintedResIcon(
                     resId = safeResId,
@@ -1258,8 +1258,8 @@ object IconProvider {
      */
     fun getColorForTransaction(
         merchantName: String,
-        categoryEntity: CategoryEntity? = null,
-        subcategoryEntity: SubcategoryEntity? = null,
+        categoryEntity: Category? = null,
+        subcategoryEntity: Subcategory? = null,
         category: String? = null,
         subcategory: String? = null,
         accountColorHex: String? = null
@@ -1302,13 +1302,4 @@ object IconProvider {
         return CategoryMapping.categories[category]
             ?: CategoryMapping.categories["Miscellaneous"]!!
     }
-}
-
-/**
- * Sealed class for different icon types
- */
-sealed class IconResource {
-    data class DrawableResource(val resId: Int) : IconResource()
-    data class VectorIcon(val icon: ImageVector, val tint: Color) : IconResource()
-    data class TintedResIcon(val resId: Int, val tint: Color) : IconResource()
 }

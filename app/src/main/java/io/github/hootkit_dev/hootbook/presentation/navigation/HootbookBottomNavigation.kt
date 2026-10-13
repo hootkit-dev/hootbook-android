@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.toRoute
 
@@ -105,11 +104,10 @@ fun HootbookNavigationRail(
     }
 }
 
-private fun NavHostController.selectMainTab(item: BottomNavItem) {
+internal fun NavHostController.selectMainTab(item: BottomNavItem) {
     // Keep an already selected root page; contextual routes still reset below.
     if (isCurrentMainTabRoot(item)) return
     MainTabTiming.request(item.route)
-    val startDestId = graph.findStartDestination().id
     if (item.destination == Home) {
         popBackStack(Home, inclusive = false, saveState = true)
     } else if (isCurrentMainTab(item)) {
@@ -119,7 +117,7 @@ private fun NavHostController.selectMainTab(item: BottomNavItem) {
         }
     } else {
         safeNavigate(item.destination) {
-            popUpTo(startDestId) { saveState = true }
+            popUpTo<Home>() { saveState = true }
             launchSingleTop = true
             restoreState = true
         }

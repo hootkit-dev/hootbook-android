@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -30,19 +31,21 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.presentation.common.icons.Institution
-import io.github.hootkit_dev.hootbook.presentation.common.icons.InstitutionCatalog
+import dev.hootkit.core.Institution
+import dev.hootkit.core.InstitutionKind
+import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
+import androidx.compose.ui.platform.LocalContext
 
 /** A dedicated account picker; custom names and the general icon picker remain available. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstitutionPickerButton(
+    institutions: List<Institution>,
     // Only brokers, for the Broker account type
     brokersOnly: Boolean = false,
     onSelected: (Institution, String) -> Unit
 ) {
     var visible by rememberSaveable { mutableStateOf(false) }
-    val language = LocalConfiguration.current.locales[0].language
     val title = if (brokersOnly) R.string.institution_choose_broker else R.string.institution_choose
     OutlinedButton(shapes = ButtonDefaults.shapes(), onClick = { visible = true }, modifier = Modifier.fillMaxWidth()) {
         Icon(
@@ -53,25 +56,50 @@ fun InstitutionPickerButton(
         Text(stringResource(title))
     }
     if (visible) {
-        var query by rememberSaveable { mutableStateOf("") }
-        var region by rememberSaveable { mutableStateOf<String?>(null) }
-        val results = remember(query, region, brokersOnly) { InstitutionCatalog.search(query, region, brokersOnly) }
-        HootbookModalBottomSheet(
-            onDismissRequest = { visible = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
-                Text(
-                    stringResource(title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 24.dp).semantics { heading() }
-                )
-                OutlinedTextField(
+        InstitutionPickerSheet(
+            institutions = institutions,
+            brokersOnly = brokersOnly,
+            onDismiss = { visible = false },
+            onSelected = onSelected
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InstitutionPickerSheet(
+    institutions: List<Institution>,
+    brokersOnly: Boolean = false,
+    onDismiss: () -> Unit,
+    onSelected: (Institution, String) -> Unit
+) {
+    val context = LocalContext.current
+    val language = LocalConfiguration.current.locales[0].language
+    val title = if (brokersOnly) R.string.institution_choose_broker else R.string.institution_choose
+    var query by rememberSaveable { mutableStateOf("") }
+    var region by rememberSaveable { mutableStateOf<String?>(null) }
+    val results = remember(institutions, query, region, brokersOnly) { institutions.filter { row ->
+        (!brokersOnly || row.kind == InstitutionKind.BROKER) && (region == null || row.region == region) &&
+            (query.isBlank() || (listOf(row.chineseName, row.englishName) + row.aliases).any { it.contains(query, true) })
+    } }
+    HootbookModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.9f)) {
+            Text(
+                stringResource(title),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp).semantics { heading() }
+            )
+                TextField(
                     value = query,
                     onValueChange = { query = it },
                     label = { Text(stringResource(R.string.institution_search)) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
                 )
                 Row(
@@ -94,14 +122,14 @@ fun InstitutionPickerButton(
                         modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(bottom = 24.dp)) {
-                    items(results, key = { it.id }) { institution ->
+                    items(results, key = { it.key }) { institution ->
                         ListItem(
-                            headlineContent = { Text(institution.displayName(language)) },
+                            headlineContent = { Text(if (language == "zh") institution.chineseName else institution.englishName) },
                             supportingContent = {
                                 Text(if (language == "zh") institution.englishName else institution.chineseName)
                             },
                             leadingContent = {
-                                Image(painterResource(institution.iconResId), contentDescription = null,
+                                Image(painterResource(IconResolutionUtils.nameToResId(context, institution.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_bank), contentDescription = null,
                                     modifier = Modifier.size(40.dp)
                                         .background(Color.White, RoundedCornerShape(8.dp))
                                         .padding(4.dp))
@@ -109,13 +137,12 @@ fun InstitutionPickerButton(
                             trailingContent = { Text("${institution.region} · ${institution.currency}",
                                 style = MaterialTheme.typography.labelMedium) },
                             modifier = Modifier.clickable(role = Role.Button) {
-                                onSelected(institution, institution.displayName(language))
-                                visible = false
+                                onSelected(institution, if (language == "zh") institution.chineseName else institution.englishName)
+                                onDismiss()
                             }
                         )
                     }
                 }
-            }
         }
     }
 }

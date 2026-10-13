@@ -2,6 +2,7 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.categories
 
+import io.github.hootkit_dev.hootbook.presentation.ui.components.IconSelector
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,7 +46,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
@@ -54,24 +55,25 @@ import androidx.compose.ui.platform.LocalContext
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditSubcategorySheet(
-    subcategory: SubcategoryEntity?,
+    subcategory: Subcategory?,
     categoryColor: String,
     categoryIconResId: Int,
     onDismiss: () -> Unit,
+    saving: Boolean = false,
     onSave: (name: String, iconResId: Int, iconName: String, color: String) -> Unit,
-    onReset: ((Long) -> Unit)? = null,
-    onDelete: ((Long) -> Unit)? = null
+    onReset: ((String) -> Unit)? = null,
+    onDelete: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     // A built-in name is edited as shown; left as shown, it is saved under its stored name
-    val shownName = io.github.hootkit_dev.hootbook.presentation.common.categoryName(subcategory?.name)
+    val shownName = (subcategory?.displayName ?: "")
     var name by remember { mutableStateOf(shownName) }
-    val savedName = { if (subcategory != null && name.trim() == shownName) subcategory.name else name }
+    val savedName = { if (subcategory != null && name.trim() == shownName) subcategory.displayName else name }
     var colorHex by remember { mutableStateOf(subcategory?.color ?: categoryColor) }
     var iconName by remember(subcategory) {
         mutableStateOf(
-            subcategory?.iconName?.takeIf { it.isNotEmpty() }
-                ?: IconResolutionUtils.resIdToName(context, subcategory?.iconResId ?: categoryIconResId)
+            subcategory?.icon?.takeIf { it.isNotEmpty() }
+                ?: IconResolutionUtils.resIdToName(context, categoryIconResId)
                     .takeIf { it.isNotEmpty() } ?: "type_food_dining"
         )
     }
@@ -108,7 +110,7 @@ fun EditSubcategorySheet(
 
     if (showDeleteConfirmation && subcategory != null) {
         DeleteSubcategoryDialog(
-            subcategoryName = subcategory.name,
+            subcategoryName = subcategory.displayName,
             onDismiss = { showDeleteConfirmation = false },
             onDelete = {
                 onDelete?.invoke(subcategory.id)
@@ -247,7 +249,7 @@ fun EditSubcategorySheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Delete button (only for non-system subcategories)
-                if (onDelete != null && subcategory != null && !subcategory.isSystem) {
+                if (onDelete != null && subcategory != null && subcategory.builtinKey == null) {
                     OutlinedButton(
                         onClick = { showDeleteConfirmation = true },
                         modifier = Modifier.height(56.dp),
@@ -275,7 +277,7 @@ fun EditSubcategorySheet(
                 // Create/Update button
                 Button(
                     onClick = { onSave(savedName(), iconResId, iconName, colorHex) },
-                    enabled = name.isNotBlank(),
+                    enabled = !saving && name.isNotBlank(),
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
@@ -289,14 +291,10 @@ fun EditSubcategorySheet(
                 }
 
                 // Reset button (only for system subcategories)
-                if (subcategory?.isSystem == true && onReset != null) {
+                if (subcategory?.builtinKey != null && onReset != null) {
                     IconButton(
                         shapes = IconButtonDefaults.shapes(),
                         onClick = {
-                            name = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(subcategory.defaultName ?: subcategory.name)
-                            colorHex = subcategory.defaultColor ?: categoryColor
-                            iconName = subcategory.defaultIconName ?: subcategory.iconName
-                            iconResId = IconResolutionUtils.nameToResId(context, iconName)
                             onReset(subcategory.id)
                         },
                         modifier = Modifier

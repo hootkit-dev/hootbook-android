@@ -60,7 +60,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.hootkit_dev.hootbook.data.backup.BackupConfiguration
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
@@ -92,8 +91,11 @@ fun DataPrivacyScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAccounts: () -> Unit = {},
     appLockViewModel: AppLockViewModel = hiltViewModel(),
+    onNavigateToSync: () -> Unit = {},
+    securityOnly: Boolean = false,
     blurEffects: Boolean
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val appLockUiState by appLockViewModel.uiState.collectAsStateWithLifecycle()
     
     val snackbarHostState = remember { SnackbarHostState() }
@@ -108,7 +110,7 @@ fun DataPrivacyScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CustomTitleTopAppBar(
-                title = stringResource(R.string.data_privacy_title),
+                title = stringResource(if (securityOnly) R.string.app_lock else R.string.data_privacy_title),
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehavior,
                 hazeState = hazeState,
@@ -155,7 +157,7 @@ fun DataPrivacyScreen(
                         },
                         checked = appLockUiState.isLockEnabled,
                         onCheckedChange = { enabled ->
-                            appLockViewModel.setAppLockEnabled(enabled)
+                            appLockViewModel.setAppLockEnabled(enabled, io.github.hootkit_dev.hootbook.presentation.app.fragmentActivity(context))
                         },
                         leadingIcon = {
                             Box(
@@ -206,6 +208,13 @@ fun DataPrivacyScreen(
                     }
                 }
 
+                appLockUiState.authenticationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (!securityOnly) {
+                    ListItem(headline = { Text(stringResource(R.string.sync_firebase_title)) },
+                        trailing = { Icon(Icons.Default.ChevronRight, null) }, onClick = onNavigateToSync,
+                        shape = ListItemPosition.Single.toShape(), padding = PaddingValues(0.dp))
+                    BackupActions(blurEffects = blurEffects, hazeState = hazeState)
+                }
                 // Add bottom spacing
                 Spacer(modifier = Modifier.size(Spacing.xl))
             }

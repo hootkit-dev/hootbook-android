@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ai_title">AI assistant</string>
+    <string name="core_ai_configuration">Provider configuration</string>
+    <string name="core_ai_request">What should AI do?</string>
+    <string name="core_ai_analyze">Send and analyze</string>
+    <string name="core_ai_cancel">Cancel</string>
+    <string name="core_ai_limit">The model reached the turn limit; review carefully for incomplete proposals.</string>
+    <string name="core_ai_apply">Save reviewed changes</string>
+    <string name="core_ai_undo">Undo whole save</string>
+    <string name="core_ai_base_url">HTTPS base URL</string>
+    <string name="core_ai_model">Model ID</string>
+    <string name="core_ai_key_replace">Replace key (blank keeps existing)</string>
+    <string name="core_ai_key">API key</string>
+    <string name="core_ai_save_configuration">Save configuration</string>
+</resources>

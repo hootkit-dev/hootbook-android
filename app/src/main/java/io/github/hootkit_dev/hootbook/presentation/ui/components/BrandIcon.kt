@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.layout.ContentScale
-import io.github.hootkit_dev.hootbook.data.icons.MerchantIconEntryPoint
-import io.github.hootkit_dev.hootbook.data.icons.MerchantIconStore
+import io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.EntryPointAccessors
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +28,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.common.icons.CategoryMapping
 import io.github.hootkit_dev.hootbook.presentation.common.icons.IconProvider
 import io.github.hootkit_dev.hootbook.presentation.common.icons.IconResource
@@ -42,8 +44,8 @@ fun BrandIcon(
     modifier: Modifier = Modifier,
     size: Dp = 40.dp,
     showBackground: Boolean = true,
-    categoryEntity: CategoryEntity? = null,
-    subcategoryEntity: SubcategoryEntity? = null,
+    categoryEntity: Category? = null,
+    subcategoryEntity: Subcategory? = null,
     category: String? = null,
     subcategory: String? = null,
     accountIconResId: Int = 0,
@@ -54,12 +56,12 @@ fun BrandIcon(
     // An icon the user picked for this merchant comes before everything else
     val iconStore = remember(context) {
         runCatching {
-            EntryPointAccessors.fromApplication(context.applicationContext, MerchantIconEntryPoint::class.java)
-                .merchantIconStore()
+            EntryPointAccessors.fromApplication(context.applicationContext, PlatformAssetsEntryPoint::class.java)
+                .assets()
         }.getOrNull()
     }
-    val customIcons = iconStore?.icons?.collectAsState()?.value
-    val customIcon = customIcons?.get(MerchantIconStore.key(merchantName))
+    val revision = iconStore?.revision?.collectAsState()?.value
+    val customIcon = remember(iconStore, revision, merchantName) { iconStore?.merchantIcon(merchantName) }
     if (customIcon != null) {
         AsyncImage(
             model = customIcon,
@@ -91,7 +93,7 @@ fun BrandIcon(
             accountColorHex = accountColorHex
         )
     }
-    
+
     val internalPadding = remember(iconResource, showBackground) {
         // Only pad inward when there is a background circle to inset from.
         // Without a background, padding just shrinks the visible icon.
@@ -106,7 +108,7 @@ fun BrandIcon(
                     Modifier
                         .clip(CircleShape)
                         .background(
-                            brandColor?.let { (colorHex, alpha) -> 
+                            brandColor?.let { (colorHex, alpha) ->
                                 Color(colorHex.toColorInt()).copy(alpha = alpha)
                             } ?: generateColorFromString(merchantName)
                         )
@@ -188,10 +190,10 @@ fun CategoryIcon(
         painterResource(id = categoryInfo.iconResId)
     }
 
-    
+
     Icon(
         painter = painter,
-        contentDescription = io.github.hootkit_dev.hootbook.presentation.common.categoryName(category),
+        contentDescription = category,
         tint = tint ?: Color.Unspecified,
         modifier = modifier.size(size)
     )
@@ -213,7 +215,7 @@ private fun generateColorFromString(str: String): Color {
         Color(0xFF43A047), // Green
         Color(0xFFE53935), // Red
     )
-    
+
     val hash = str.hashCode()
     return colors[Math.abs(hash) % colors.size]
 }
@@ -226,3 +228,6 @@ private fun String.toColorInt(): Int {
     val hex = this.removePrefix("#")
     return android.graphics.Color.parseColor("#$hex")
 }
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PlatformAssetsEntryPoint { fun assets(): CorePlatformAssets }

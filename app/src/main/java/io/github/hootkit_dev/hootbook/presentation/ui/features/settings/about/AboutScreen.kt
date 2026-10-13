@@ -47,8 +47,7 @@ import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.BuildConfig
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.ui.components.*
-import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.SettingsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.common.icons.IconResource
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.*
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.*
@@ -67,15 +66,14 @@ import dev.chrisbanes.haze.HazeEffectScope
 fun AboutScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLicenses: () -> Unit,
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
     updateViewModel: GitHubUpdateViewModel = hiltViewModel(),
-    blurEffects: Boolean
+    blurEffects: Boolean,
+    coreSchemaVersion: UInt? = null
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
     val context = LocalContext.current
-    var showDeleteDialog by remember { mutableStateOf(false) }
     var showChannelDialog by remember { mutableStateOf(false) }
     val updateState by updateViewModel.uiState.collectAsState()
 
@@ -149,10 +147,9 @@ fun AboutScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.hootbook),
+                            painter = painterResource(id = R.drawable.hootbook_icon_white),
                             contentDescription = stringResource(R.string.hootbook_logo_cd),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                            modifier = Modifier.size(64.dp)
+                            modifier = Modifier.size(90.dp).clip(CircleShape)
                         )
                     }
 
@@ -166,7 +163,7 @@ fun AboutScreen(
                     )
 
                     Text(
-                        text = stringResource(R.string.version_format, BuildConfig.VERSION_NAME, settingsViewModel.databaseVersion),
+                        text = coreSchemaVersion?.let { stringResource(R.string.version_format, BuildConfig.VERSION_NAME, it.toInt()) } ?: BuildConfig.VERSION_NAME,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
                     )
@@ -364,16 +361,7 @@ fun AboutScreen(
                         position = ListItemPosition.Middle
                     )
 
-                    AboutListItem(
-                        title = stringResource(R.string.delete_all_data),
-                        subtitle = stringResource(R.string.delete_all_data_desc),
-                        icon = Icons.Rounded.Delete,
-                        iconColor = red_dark,
-                        iconBackground = red_light,
-                        onClick = { showDeleteDialog = true },
-                        position = ListItemPosition.Bottom,
-                        textColor = MaterialTheme.colorScheme.error
-                    )
+
                 }
 
                 Spacer(modifier = Modifier.height(Dimensions.Padding.card))
@@ -417,43 +405,7 @@ fun AboutScreen(
         )
     }
 
-    if (showDeleteDialog) {
-        val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Iconax.Danger,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            },
-            title = { Text(stringResource(R.string.delete_all_data_confirm_title)) },
-            text = {
-                Text(
-                    text = stringResource(R.string.delete_all_data_confirm_desc),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                DialogConfirmButton(
-                    text = stringResource(R.string.delete_all),
-                    onClick = {
-                        settingsViewModel.deleteAllData()
-                        showDeleteDialog = false
-                    },
-                    destructive = true
-                )
-            },
-            dismissButton = {
-                DialogDismissButton(
-                    text = stringResource(R.string.cancel),
-                    onClick = { showDeleteDialog = false }
-                )
-            },
-            containerColor = HootbookDialogDefaults.containerColor
-        )
-    }
+
 }
 
 @Composable

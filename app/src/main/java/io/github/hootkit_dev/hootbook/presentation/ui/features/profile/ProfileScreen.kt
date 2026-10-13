@@ -52,6 +52,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -80,12 +83,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.PersonCategory
+import dev.hootkit.core.Person
+import dev.hootkit.core.PersonRelation
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.AddEditPersonSheet
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.categoryLabel
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Calendar
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Edit2
@@ -100,7 +103,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.orange_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.orange_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.red_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.red_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import dev.chrisbanes.haze.HazeState
 import java.math.BigDecimal
 
@@ -109,7 +112,7 @@ import java.math.BigDecimal
 fun SharedTransitionScope.ProfileScreen(
     onNavigateBack: () -> Unit,
     onNavigateToContacts: () -> Unit,
-    onNavigateToPerson: (Long) -> Unit = {},
+    onNavigateToPerson: (String) -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null,
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -119,7 +122,11 @@ fun SharedTransitionScope.ProfileScreen(
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
 
+    val errorSnackbar = remember { SnackbarHostState() }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    LaunchedEffect(state.error) { state.error?.let { errorSnackbar.showSnackbar(operationFailed) } }
     Scaffold(
+        snackbarHost = { SnackbarHost(errorSnackbar) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
@@ -177,7 +184,8 @@ fun SharedTransitionScope.ProfileScreen(
                 onBackgroundColorChange = profileViewModel::updateEditProfileBackgroundColor,
                 onBannerImageChange = profileViewModel::updateEditBannerImage,
                 onSave = profileViewModel::saveProfileChanges,
-                onCancel = profileViewModel::dismissEditSheet
+                onCancel = profileViewModel::dismissEditSheet,
+                saving = state.saving, error = state.error
             )
         }
     }
@@ -191,7 +199,8 @@ fun SharedTransitionScope.ProfileScreen(
             dragHandle = { BottomSheetDefaults.DragHandle() },
         ) {
             AddEditPersonSheet(
-                attachmentService = profileViewModel.attachmentService,
+                attachmentStore = profileViewModel.attachmentStore,
+                saving = state.saving, error = state.error,
                 onDismiss = { profileViewModel.showAddPersonSheet(false) },
                 onSave = { name, phone, notes, color, avatar, category ->
                     profileViewModel.addPerson(name, phone, notes, color, avatar, category)
@@ -209,7 +218,7 @@ fun SharedTransitionScope.ProfileContent(
     listState: LazyListState,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onNavigateToContacts: () -> Unit,
-    onNavigateToPerson: (Long) -> Unit = {},
+    onNavigateToPerson: (String) -> Unit = {},
     onAddPerson: () -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null
 ) {
@@ -264,11 +273,13 @@ fun SharedTransitionScope.ProfileContent(
 
             item {
                 FinancialOverviewCard(
-                    netWorth = state.netWorth,
-                    income = state.totalIncome,
-                    expense = state.totalExpense,
-                    activeSubscriptions = state.activeSubscriptions,
-                    baseCurrency = state.baseCurrency,
+                    netWorth = state.overview?.netWorth?.amount,
+                    income = state.monthly?.income,
+                    expense = state.monthly?.expense,
+                    customSymbols = state.customCurrencies.associate { it.code to it.symbol },
+                    complete = state.overview?.netWorthComplete != false && state.monthly?.complete != false,
+                    activeSubscriptions = state.subscriptions?.count?.toInt() ?: 0,
+                    baseCurrency = state.monthly?.currency ?: state.overview?.netWorth?.currency.orEmpty(),
                     modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
                 )
             }
@@ -391,7 +402,7 @@ fun DisplayProfileImagesCard(
             Spacer(modifier = Modifier.height(Spacing.sm))
             DisplayUserNameAndSubtitles(
                 userName = state.userName,
-                totalTransactions = state.totalTransactions
+                totalTransactions = state.totalTransactions.toInt()
             )
         }
 
@@ -447,9 +458,11 @@ fun DisplayUserNameAndSubtitles(userName: String, totalTransactions: Int) {
 
 @Composable
 fun FinancialOverviewCard(
-    netWorth: BigDecimal,
-    income: BigDecimal,
-    expense: BigDecimal,
+    netWorth: BigDecimal?,
+    income: BigDecimal?,
+    expense: BigDecimal?,
+    customSymbols: Map<String, String> = emptyMap(),
+    complete: Boolean = true,
     activeSubscriptions: Int,
     baseCurrency: String,
     modifier: Modifier = Modifier,
@@ -471,6 +484,7 @@ fun FinancialOverviewCard(
                 fontWeight = FontWeight.Bold
             )
 
+            if (!complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
@@ -479,7 +493,7 @@ fun FinancialOverviewCard(
             ) {
                 FinancialItem(
                     label = stringResource(R.string.net_worth),
-                    value = CurrencyFormatter.formatCurrency(netWorth, baseCurrency),
+                    value = CoreMoneyPresentation.format(netWorth, baseCurrency, customSymbols),
                     icon = Icons.Rounded.AccountBalance,
                     color = green_light,
                     iconColor = green_dark,
@@ -504,7 +518,7 @@ fun FinancialOverviewCard(
             ) {
                 FinancialItem(
                     label = stringResource(R.string.expense),
-                    value = CurrencyFormatter.formatCurrency(expense, baseCurrency),
+                    value = CoreMoneyPresentation.format(expense, baseCurrency, customSymbols),
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
                     color = red_light,
                     iconColor = red_dark,
@@ -512,7 +526,7 @@ fun FinancialOverviewCard(
                 )
                 FinancialItem(
                     label = stringResource(R.string.income),
-                    value = CurrencyFormatter.formatCurrency(income, baseCurrency),
+                    value = CoreMoneyPresentation.format(income, baseCurrency, customSymbols),
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
                     color = blue_light,
                     iconColor = blue_dark,
@@ -573,12 +587,15 @@ fun FinancialItem(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun SharedTransitionScope.ContactCarouselCard(
-    person: LendBorrowPerson,
+    person: Person,
     index: Int,
     onClick: () -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null,
     sharedElementKey: String? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val attachmentStore = remember(context) { io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore(context) }
+    val avatarFile = person.avatar?.let(attachmentStore::resolve)
     val colorInt = try {
         android.graphics.Color.parseColor(person.color)
     } catch (e: Exception) {
@@ -615,9 +632,9 @@ private fun SharedTransitionScope.ContactCarouselCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background: Avatar or Placeholder
-            if (person.avatar != null) {
+            if (avatarFile != null) {
                 AsyncImage(
-                    model = person.avatar,
+                    model = avatarFile,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -666,7 +683,7 @@ private fun SharedTransitionScope.ContactCarouselCard(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = categoryLabel(person.category ?: PersonCategory.OTHER),
+                    text = categoryLabel(person.relation ?: PersonRelation.OTHER),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.7f),
                     maxLines = 1,

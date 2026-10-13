@@ -1,140 +1,67 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions
 
-import io.github.hootkit_dev.hootbook.utils.SubscriptionUtils
-
-import android.content.Context
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.currency.CurrencyConversionService
-import io.github.hootkit_dev.hootbook.data.database.entity.SubscriptionEntity
-import io.github.hootkit_dev.hootbook.data.repository.AccountBalanceRepository
-import io.github.hootkit_dev.hootbook.data.repository.CategoryRepository
-import io.github.hootkit_dev.hootbook.data.repository.SubcategoryRepository
-import io.github.hootkit_dev.hootbook.data.repository.SubscriptionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
 import javax.inject.Inject
-import io.github.hootkit_dev.hootbook.data.repository.CurrencyRepository
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 @HiltViewModel
-class SubscriptionsViewModel @Inject constructor(
-    private val subscriptionRepository: SubscriptionRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
-    private val categoryRepository: CategoryRepository,
-    private val subcategoryRepository: SubcategoryRepository,
-    private val currencyConversionService: CurrencyConversionService,
-    private val currencyRepository: CurrencyRepository,
-    @ApplicationContext private val context: Context
-) : ViewModel() {
-    
-    private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
-    
-    private val _uiState = MutableStateFlow(SubscriptionsUiState())
-    val uiState: StateFlow<SubscriptionsUiState> = _uiState.asStateFlow()
-
-    val categoriesMap = categoryRepository.getAllCategories()
-        .map { cats -> cats.associateBy { it.name } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-
-    val subcategoriesMap = subcategoryRepository.getAllSubcategories()
-        .map { subcats -> subcats.associateBy { it.name } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-    
+class SubscriptionsViewModel @Inject constructor(private val session: CoreSession, private val changes: ChangeBus) : ViewModel() {
+    private val mutable = MutableStateFlow(SubscriptionsUiState())
+    val uiState = mutable.asStateFlow()
+    private var selectedId: String? = null
     init {
-        loadSubscriptions()
-    }
-    
-    private fun loadSubscriptions() {
         viewModelScope.launch {
-            combine(
-                subscriptionRepository.getActiveSubscriptions(),
-                currencyRepository.effectiveBaseCurrencyCode,
-                currencyConversionService.rateChangeTrigger
-            ) { subscriptions, targetCurrency, _ ->
-                val subscriptionCurrencies = subscriptions.map { it.currency }.distinct()
-                if (subscriptionCurrencies.any { it != targetCurrency }) {
-                    currencyConversionService.refreshExchangeRatesForAccount(subscriptionCurrencies + targetCurrency)
-                }
-
-                var totalMonthlyAmount = BigDecimal.ZERO
-                var conversionFailures = 0
-                val convertedAmounts = buildMap(subscriptions.size) {
-                    subscriptions.forEach { sub ->
-                        val converted = if (sub.currency == targetCurrency) {
-                            sub.amount
-                        } else {
-                            currencyConversionService.convertAmount(
-                                amount = sub.amount,
-                                fromCurrency = sub.currency,
-                                toCurrency = targetCurrency
-                            )
-                        }
-                        if (converted == null) {
-                            conversionFailures++
-                            return@forEach
-                        }
-                        put(sub.id, converted)
-                        totalMonthlyAmount = totalMonthlyAmount.add(
-                            SubscriptionUtils.monthlyEquivalent(converted, sub.billingCycle)
-                        )
-                    }
-                }
-
-                _uiState.update {
-                    it.copy(
-                        activeSubscriptions = subscriptions,
-                        totalMonthlyAmount = totalMonthlyAmount,
-                        totalYearlyAmount = totalMonthlyAmount.multiply(BigDecimal(12)),
-                        targetCurrency = targetCurrency,
-                        convertedAmounts = convertedAmounts,
-                        conversionFailureCount = conversionFailures,
-                        isLoading = false
-                    )
-                }
-            }.collectLatest { }
+            session.observe(changes, setOf(Table.SUBSCRIPTIONS, Table.CATEGORIES, Table.SUBCATEGORIES,
+                Table.EXCHANGE_RATES, Table.SETTINGS, Table.TRANSACTIONS)) { core -> coreQuery {
+                val today = java.time.LocalDate.now().let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) }
+                val (rows, summary) = core.plans().use { it.subscriptions(today, false) to it.subscriptionSummary(today) }
+                val categories = core.categories().use { it.list(null, true) }
+                val subcategories = core.categories().use { api -> categories.flatMap { it.subcategories } }
+                val converted = core.currency().use { api -> rows.mapNotNull { row ->
+                    api.convert(row.amount.amount, row.amount.currency, summary.currency)?.let { row.id to it }
+                }.toMap() }
+                val convertedMonthly = core.currency().use { api -> rows.mapNotNull { row ->
+                    row.monthlyEquivalent?.let { monthly -> api.convert(monthly, row.amount.currency, summary.currency) }
+                        ?.let { row.id to it }
+                }.toMap() }
+                SubscriptionsUiState(rows, summary, categories.associateBy(Category::id), subcategories.associateBy(Subcategory::id),
+                    isLoading = false, convertedAmounts = converted, convertedMonthlyAmounts = convertedMonthly)
+            } }.collect { result -> result.fold(
+                onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving, lastHiddenSubscription = it.lastHiddenSubscription,
+                    selectedSubscription = snapshot.activeSubscriptions.find { row -> row.id == selectedId }) } },
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
-    
-    fun hideSubscription(subscriptionId: Long) {
-        viewModelScope.launch {
-            subscriptionRepository.hideSubscription(subscriptionId)
-            _uiState.value = _uiState.value.copy(
-                lastHiddenSubscription = _uiState.value.activeSubscriptions.find { it.id == subscriptionId }
-            )
-        }
+    fun selectId(id: String?) { selectedId = id; mutable.update { it.copy(selectedSubscription = it.activeSubscriptions.find { row -> row.id == id }) } }
+    fun selectSubscription(row: Subscription?) = selectId(row?.id)
+    fun hideSubscription(id: String) {
+        val row = uiState.value.activeSubscriptions.find { it.id == id } ?: return
+        command { it.setSubscriptionHidden(id, true); mutable.update { state -> state.copy(lastHiddenSubscription = row) } }
     }
-    
     fun undoHide() {
-        _uiState.value.lastHiddenSubscription?.let { subscription ->
-            viewModelScope.launch {
-                subscriptionRepository.unhideSubscription(subscription.id)
-                _uiState.value = _uiState.value.copy(lastHiddenSubscription = null)
-            }
-        }
+        val row = uiState.value.lastHiddenSubscription ?: return
+        command { it.setSubscriptionHidden(row.id, false); mutable.update { state -> state.copy(lastHiddenSubscription = null) } }
     }
-
-    fun selectSubscription(subscription: SubscriptionEntity?) {
-        _uiState.value = _uiState.value.copy(selectedSubscription = subscription)
+    fun markAsPaid(row: Subscription) = command {
+        val date = java.time.LocalDate.now()
+        it.markSubscriptionPaid(row.id, LocalDate(date.year, date.monthValue.toUByte(), date.dayOfMonth.toUByte()))
+        selectSubscription(null)
     }
-
-    fun markAsPaid(subscription: SubscriptionEntity) {
+    private fun command(block: suspend (PlansInterface) -> Unit) {
+        if (uiState.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            val today = java.time.LocalDate.now()
-            val nextDate = SubscriptionUtils.calculateNextPaymentDate(subscription.nextPaymentDate ?: today, subscription.billingCycle)
-            subscriptionRepository.updatePaymentStatus(subscription.id, nextDate, today)
-            selectSubscription(null)
+            try { session.withCore { core -> core.plans().use { block(it) } } }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
+            finally { mutable.update { it.copy(saving = false) } }
         }
     }
-
 }

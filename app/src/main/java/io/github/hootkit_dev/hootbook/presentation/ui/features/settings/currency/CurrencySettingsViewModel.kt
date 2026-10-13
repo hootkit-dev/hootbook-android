@@ -2,68 +2,48 @@ package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.currenc
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.preferences.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
+import io.github.hootkit_dev.hootbook.core.ui.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
 class CurrencySettingsViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val session: CoreSession,
+    private val changes: ChangeBus,
+    private val preferences: CoreUiPreferencesStore,
 ) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(CurrencySettingsUiState())
-    val uiState: StateFlow<CurrencySettingsUiState> = _uiState.asStateFlow()
-
+    private val mutable = MutableStateFlow(CurrencySettingsUiState())
+    val uiState = mutable.asStateFlow()
     init {
-        viewModelScope.launch {
-            combine(
-                userPreferencesRepository.unifiedCurrencyEnabled,
-                userPreferencesRepository.unifiedCurrencyCode,
-                userPreferencesRepository.defaultCurrencyEnabled,
-                userPreferencesRepository.defaultCurrencyCode
-            ) { unifiedEnabled, unifiedCode, defaultEnabled, defaultCode ->
-                CurrencySettingsUiState(
-                    unifiedCurrencyEnabled = unifiedEnabled,
-                    unifiedCurrencyCode = unifiedCode,
-                    defaultCurrencyEnabled = defaultEnabled,
-                    defaultCurrencyCode = defaultCode
-                )
-            }.collect { state ->
-                _uiState.value = state
-            }
-        }
+        viewModelScope.launch { preferences.state.collect { p -> mutable.update { it.copy(
+            unifiedCurrencyEnabled = p.unifiedDisplayEnabled, unifiedCurrencyCode = p.unifiedDisplayCurrency,
+            defaultCurrencyEnabled = p.defaultEntryEnabled, defaultCurrencyCode = p.defaultEntryCurrency) } } }
+        viewModelScope.launch { session.observe(changes, setOf(Table.SETTINGS)) { core ->
+            coreQuery { core.settings().use { it.mainCurrency() } }
+        }.collect { result -> result.fold(
+            onSuccess = { code -> mutable.update { it.copy(mainCurrency = code, loading = false) } },
+            onFailure = { error -> mutable.update { it.copy(loading = false, error = coreFailureText(error)) } }) } }
+        command { preferences.ready() }
     }
-
-    fun toggleUnifiedCurrency() {
+    fun setMainCurrency(code: String) = command { session.withCore { core -> core.settings().use { it.setMainCurrency(code) } } }
+    fun toggleUnifiedCurrency() = command { preferences.update { it.copy(unifiedDisplayEnabled = !it.unifiedDisplayEnabled) } }
+    fun setUnifiedCurrency(code: String) = command { preferences.update { it.copy(unifiedDisplayCurrency = code) } }
+    fun toggleDefaultCurrency() = command { preferences.update { it.copy(defaultEntryEnabled = !it.defaultEntryEnabled) } }
+    fun setDefaultCurrency(code: String) = command { preferences.update { it.copy(defaultEntryCurrency = code) } }
+    private fun command(block: suspend () -> Unit) {
+        if (mutable.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            val newState = !_uiState.value.unifiedCurrencyEnabled
-            userPreferencesRepository.setUnifiedCurrencyEnabled(newState)
-        }
-    }
-
-    fun setUnifiedCurrency(code: String) {
-        viewModelScope.launch {
-            userPreferencesRepository.setUnifiedCurrencyCode(code)
-        }
-    }
-
-    fun toggleDefaultCurrency() {
-        viewModelScope.launch {
-            val newState = !_uiState.value.defaultCurrencyEnabled
-            userPreferencesRepository.setDefaultCurrencyEnabled(newState)
-        }
-    }
-
-    fun setDefaultCurrency(code: String) {
-        viewModelScope.launch {
-            userPreferencesRepository.setDefaultCurrencyCode(code)
+            try { block() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
+            finally { mutable.update { it.copy(saving = false) } }
         }
     }
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="logo_hootbook_white">双鹰 · 白色</string>
+    <string name="logo_hootbook_cream">双鹰 · 米色</string>
+    <string name="logo_hoot_white">hoot · 白色</string>
+    <string name="logo_hoot_cream">hoot · 米色</string>
+    <string name="logo_book_white">book · 白色</string>
+    <string name="logo_book_cream">book · 米色</string>
+</resources>

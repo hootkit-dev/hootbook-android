@@ -36,11 +36,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.QuickTemplateEntity
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import dev.hootkit.core.CategoryKind
+import dev.hootkit.core.PersonRelation
+import dev.hootkit.core.Category
+import dev.hootkit.core.QuickTemplate
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryIcon
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CoreMoneyPresentation
 
 /**
  * Saved templates, then templates suggested from history (marked with a sparkle). A tap
@@ -48,12 +51,13 @@ import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
  */
 @Composable
 fun TemplateRow(
-    templates: List<QuickTemplateEntity>,
-    suggested: List<SuggestedTemplate>,
-    categories: List<CategoryEntity>,
-    onSelect: (QuickTemplateEntity) -> Unit,
-    onPin: (SuggestedTemplate) -> Unit,
-    onDismiss: (SuggestedTemplate) -> Unit
+    templates: List<QuickTemplate>,
+    suggested: List<dev.hootkit.core.TemplateSuggestion>,
+    categories: List<Category>,
+    onSelect: (QuickTemplate) -> Unit,
+    onSuggestedSelect: (dev.hootkit.core.TemplateSuggestion) -> Unit,
+    onPin: (dev.hootkit.core.TemplateSuggestion) -> Unit,
+    onDismiss: (dev.hootkit.core.TemplateSuggestion) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -64,23 +68,23 @@ fun TemplateRow(
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(templates, key = { "saved:${it.id}" }) { template ->
-                TemplateChip(template = template, categories = categories, suggestedUses = null,
+                TemplateChip(name = template.name, merchant = template.merchant, categoryId = template.categoryId, amount = template.amount.takeIf { template.prefillAmount }, currency = template.currency, categories = categories, suggestedUses = null,
                     onClick = { onSelect(template) })
             }
             items(suggested, key = { "suggested:${it.key}" }) { suggestion ->
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
-                    val template = remember(suggestion) { suggestion.toTemplate() }
                     TemplateChip(
-                        template = template,
+                        name = suggestion.name, merchant = suggestion.merchant, categoryId = suggestion.categoryId,
+                        amount = suggestion.amount, currency = suggestion.currency,
                         categories = categories,
-                        suggestedUses = suggestion.uses,
-                        onClick = { onSelect(template) },
+                        suggestedUses = suggestion.count.toInt(),
+                        onClick = { onSuggestedSelect(suggestion) },
                         onLongClick = { menuOpen = true }
                     )
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         Text(
-                            text = stringResource(R.string.template_suggested_desc, suggestion.uses),
+                            text = stringResource(R.string.template_suggested_desc, suggestion.count.toInt()),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -103,8 +107,8 @@ fun TemplateRow(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TemplateChip(
-    template: QuickTemplateEntity,
-    categories: List<CategoryEntity>,
+    name: String, merchant: String, categoryId: String?, amount: java.math.BigDecimal?, currency: String?,
+    categories: List<Category>,
     suggestedUses: Int?,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null
@@ -122,19 +126,16 @@ private fun TemplateChip(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             BrandIcon(
-                merchantName = template.merchantName,
+                merchantName = merchant,
                 size = 22.dp,
                 showBackground = false,
-                categoryEntity = categories.find { it.name == template.category },
-                category = template.category,
-                subcategory = template.subcategory
+                categoryEntity = categories.find { it.id == categoryId },
             )
-            val amountText = template.amount
-                ?.takeIf { template.prefillAmount }
-                ?.let { " · " + CurrencyFormatter.formatCurrency(it, template.currency ?: "CNY") }
+            val amountText = amount
+                ?.let { " · " + CoreMoneyPresentation.formatCurrency(it, currency ?: "CNY") }
                 ?: ""
             Text(
-                text = template.name + amountText,
+                text = name + amountText,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1
             )
@@ -150,71 +151,16 @@ private fun TemplateChip(
     }
 }
 
-/**
- * The categories used most for the current type as one-tap chips, then "All" for the full
- * sheet. Falls back to the type's own categories in display order while there is no history.
- */
-@Composable
-fun CommonCategoryRow(
-    common: List<String>,
-    categories: List<CategoryEntity>,
-    isIncome: Boolean,
-    selected: String,
-    onSelect: (String) -> Unit,
-    onShowAll: () -> Unit,
-    limit: Int = 8
-) {
-    val shown = remember(common, categories, isIncome) {
-        val known = categories.associateBy { it.name }
-        val fromHistory = common.mapNotNull { known[it] }
-        val fillers = categories.filter { it.isIncome == isIncome && it !in fromHistory }
-            .sortedBy { it.displayOrder }
-        (fromHistory + fillers).take(limit)
-    }
-    if (shown.isEmpty()) return
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.common_categories),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(shown, key = { it.id }) { category ->
-                FilterChip(
-                    selected = category.name == selected,
-                    onClick = { onSelect(category.name) },
-                    label = { Text(io.github.hootkit_dev.hootbook.presentation.common.categoryName(category.name), maxLines = 1) },
-                    leadingIcon = { CategoryIcon(category, 18.dp) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
-            }
-            item(key = "all") {
-                FilterChip(
-                    selected = false,
-                    onClick = onShowAll,
-                    label = { Text(stringResource(R.string.all_categories)) }
-                )
-            }
-        }
-    }
-}
-
-/** Merchants from history matching what is typed; a tap fills merchant, category and account. */
 @Composable
 fun MerchantSuggestionRow(
-    suggestions: List<MerchantSuggestion>,
-    categories: List<CategoryEntity>,
-    onSelect: (MerchantSuggestion) -> Unit
+    suggestions: List<String>,
+    onSelect: (String) -> Unit
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
     ) {
-        items(suggestions, key = { it.merchant }) { suggestion ->
+        items(suggestions, key = { it }) { suggestion ->
             Surface(
                 onClick = { onSelect(suggestion) },
                 shape = RoundedCornerShape(8.dp),
@@ -226,21 +172,13 @@ fun MerchantSuggestionRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     BrandIcon(
-                        merchantName = suggestion.merchant,
+                        merchantName = suggestion,
                         size = 20.dp,
                         showBackground = false,
-                        categoryEntity = categories.find { it.name == suggestion.category },
-                        category = suggestion.category,
-                        subcategory = suggestion.subcategory
                     )
-                    Text(suggestion.merchant, style = MaterialTheme.typography.labelLarge, maxLines = 1,
+                    Text(suggestion, style = MaterialTheme.typography.labelLarge, maxLines = 1,
                         overflow = TextOverflow.Ellipsis)
-                    Text(
-                        text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(suggestion.subcategory ?: suggestion.category),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
+
                 }
             }
         }

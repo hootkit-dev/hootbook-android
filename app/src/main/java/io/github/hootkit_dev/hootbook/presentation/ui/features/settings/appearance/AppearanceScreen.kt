@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,6 +85,7 @@ fun AppearanceScreen(
     onNavigateBack: () -> Unit,
     themeViewModel: ThemeViewModel = hiltViewModel()
 ) {
+    val operationError by themeViewModel.error.collectAsStateWithLifecycle()
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -90,7 +93,11 @@ fun AppearanceScreen(
     val hazeState = remember { HazeState() }
     val context = LocalContext.current
 
+    val errorSnackbar = remember { androidx.compose.material3.SnackbarHostState() }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    androidx.compose.runtime.LaunchedEffect(operationError) { operationError?.let { errorSnackbar.showSnackbar(operationFailed) } }
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(errorSnackbar) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CustomTitleTopAppBar(
@@ -140,7 +147,7 @@ fun AppearanceScreen(
                                     )
                                 )
                                 .background(
-                                    color = if(themeUiState.isDarkTheme == null) {
+                                    color = if(themeUiState.darkTheme == null) {
                                         MaterialTheme.colorScheme.secondary
                                     } else MaterialTheme.colorScheme.surfaceContainerLow,
                                     shape = RoundedCornerShape(
@@ -165,7 +172,7 @@ fun AppearanceScreen(
                                 Icon(
                                     Icons.Default.AutoAwesome,
                                     contentDescription = null,
-                                    tint = if(themeUiState.isDarkTheme == null)
+                                    tint = if(themeUiState.darkTheme == null)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(20.dp)
@@ -174,7 +181,7 @@ fun AppearanceScreen(
                                     text = stringResource(R.string.theme_system),
                                     style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
-                                    color = if(themeUiState.isDarkTheme == null)
+                                    color = if(themeUiState.darkTheme == null)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                 )
@@ -194,7 +201,7 @@ fun AppearanceScreen(
                                     )
                                 )
                                 .background(
-                                    color = if(themeUiState.isDarkTheme == false) {
+                                    color = if(themeUiState.darkTheme == false) {
                                         MaterialTheme.colorScheme.secondary
                                     } else MaterialTheme.colorScheme.surfaceContainerLow,
                                     shape = RoundedCornerShape(
@@ -219,7 +226,7 @@ fun AppearanceScreen(
                                 Icon(
                                     Icons.Default.LightMode,
                                     contentDescription = null,
-                                    tint = if(themeUiState.isDarkTheme == false)
+                                    tint = if(themeUiState.darkTheme == false)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(20.dp)
@@ -228,7 +235,7 @@ fun AppearanceScreen(
                                     text = stringResource(R.string.theme_light),
                                     style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
-                                    color = if(themeUiState.isDarkTheme == false)
+                                    color = if(themeUiState.darkTheme == false)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                 )
@@ -247,7 +254,7 @@ fun AppearanceScreen(
                                     )
                                 )
                                 .background(
-                                    color = if(themeUiState.isDarkTheme == true) {
+                                    color = if(themeUiState.darkTheme == true) {
                                         MaterialTheme.colorScheme.secondary
                                     } else MaterialTheme.colorScheme.surfaceContainerLow,
                                     shape = RoundedCornerShape(
@@ -272,7 +279,7 @@ fun AppearanceScreen(
                                 Icon(
                                     Icons.Default.DarkMode,
                                     contentDescription = null,
-                                    tint = if(themeUiState.isDarkTheme == true)
+                                    tint = if(themeUiState.darkTheme == true)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(20.dp)
@@ -281,7 +288,7 @@ fun AppearanceScreen(
                                     text = stringResource(R.string.theme_dark),
                                     style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
-                                    color = if(themeUiState.isDarkTheme == true)
+                                    color = if(themeUiState.darkTheme == true)
                                         MaterialTheme.colorScheme.onSecondary
                                     else MaterialTheme.colorScheme.onSurface,
                                 )
@@ -379,7 +386,7 @@ fun AppearanceScreen(
                             )
                             .zIndex(-1f)
                     ) {
-                        val isDark = themeUiState.isDarkTheme ?: isSystemInDarkTheme()
+                        val isDark = themeUiState.darkTheme ?: isSystemInDarkTheme()
 
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = Spacing.md),
@@ -389,7 +396,7 @@ fun AppearanceScreen(
                                 val color = getAccentColorForDisplay(accent, isDark)
                                 val secondary = getSecondaryColorForDisplay(accent, isDark)
                                 val tertiary = getTertiaryColorForDisplay(accent, isDark)
-                                val isSelected = themeUiState.accentColor == accent
+                                val isSelected = themeUiState.accent == accent
 
                                 ColorSchemeBox(
                                     accent = color,
@@ -404,18 +411,18 @@ fun AppearanceScreen(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(1.5.dp)
                     ) {
-                        if (themeUiState.isDarkTheme != false) {
+                        if (themeUiState.darkTheme != false) {
                             PreferenceSwitch(
                                 title = stringResource(R.string.amoled_black),
                                 subtitle = stringResource(R.string.amoled_black_desc),
-                                checked = themeUiState.isAmoledMode,
+                                checked = themeUiState.amoled,
                                 onCheckedChange = { themeViewModel.updateAmoledMode(it) },
                                 leadingIcon = {
                                     Box(
                                         modifier = Modifier
                                             .size(48.dp)
                                             .background(
-                                                color = if (themeUiState.isAmoledMode) {
+                                                color = if (themeUiState.amoled) {
                                                     MaterialTheme.colorScheme.primaryContainer
                                                 } else MaterialTheme.colorScheme.surfaceContainerHigh,
                                                 shape = CircleShape
@@ -425,14 +432,14 @@ fun AppearanceScreen(
                                         Icon(
                                             Icons.Default.DarkMode,
                                             contentDescription = null,
-                                            tint = if (themeUiState.isAmoledMode) {
+                                            tint = if (themeUiState.amoled) {
                                                 MaterialTheme.colorScheme.onPrimaryContainer
                                             } else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 },
                                 padding = PaddingValues(horizontal = Spacing.md),
-                                isFirst = themeUiState.isDarkTheme != false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+                                isFirst = themeUiState.darkTheme != false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
                                 isSingle = Build.VERSION.SDK_INT <= Build.VERSION_CODES.S
                             )
                         }
@@ -441,11 +448,11 @@ fun AppearanceScreen(
                             PreferenceSwitch(
                                 title = stringResource(R.string.blur_effects),
                                 subtitle = stringResource(R.string.blur_effects_desc),
-                                checked = themeUiState.blurEffects,
+                                checked = themeUiState.blur,
                                 onCheckedChange = { themeViewModel.updateBlurEffects(it) },
                                 padding = PaddingValues(horizontal = Spacing.md),
-                                isLast = themeUiState.isDarkTheme != false,
-                                isSingle = themeUiState.isDarkTheme == false
+                                isLast = themeUiState.darkTheme != false,
+                                isSingle = themeUiState.darkTheme == false
                             )
                         }
                     }
@@ -462,71 +469,12 @@ fun AppearanceScreen(
                     contentPadding = PaddingValues(horizontal = Spacing.md),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    item {
+                    items(AppIcon.entries, key = { it.name }) { icon ->
                         AppLogoOption(
-                            name = stringResource(R.string.logo_original),
-                            icon = AppIcon.ORIGINAL,
-                            backgroundColor = Color(0xFF1F1F1F),
-                            drawableResId = R.drawable.hootbook_original,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ORIGINAL,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ORIGINAL)
-                                themeViewModel.updateAppIcon(AppIcon.ORIGINAL)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_anarchy),
-                            icon = AppIcon.ANARCHY,
-                            backgroundColor = Color(0xFFF5EEE5),
-                            drawableResId = R.drawable.hootbook_anarchy,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ANARCHY,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ANARCHY)
-                                themeViewModel.updateAppIcon(AppIcon.ANARCHY)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_comic),
-                            icon = AppIcon.COMIC,
-                            backgroundColor = Color.Transparent,
-                            drawableResId = R.drawable.hootbook_comic,
-                            backgroundDrawableResId = R.drawable.ic_logo_comic_bg,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.COMIC,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.COMIC)
-                                themeViewModel.updateAppIcon(AppIcon.COMIC)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_zenith),
-                            icon = AppIcon.ZENITH,
-                            backgroundColor = Color(0xFFE6E6E6),
-                            drawableResId = R.drawable.hootbook_zenith,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ZENITH,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ZENITH)
-                                themeViewModel.updateAppIcon(AppIcon.ZENITH)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_monochrome),
-                            icon = AppIcon.MONOCHROME,
-                            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                            drawableResId = R.drawable.hootbook_monochrome,
-                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.MONOCHROME,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.MONOCHROME)
-                                themeViewModel.updateAppIcon(AppIcon.MONOCHROME)
-                            }
+                            name = stringResource(icon.labelRes),
+                            drawableResId = icon.previewRes,
+                            isSelected = themeUiState.appIcon == icon,
+                            onClick = { themeViewModel.updateAppIcon(icon) }
                         )
                     }
 
@@ -558,7 +506,7 @@ fun AppearanceScreen(
                                     bottomEnd = Dimensions.Radius.xs
                                 ))
                                 .background(
-                                    color = if (themeUiState.appFont == AppFont.SYSTEM)
+                                    color = if (themeUiState.font == AppFont.SYSTEM)
                                         MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.surfaceContainerLow
                                 )
@@ -573,7 +521,7 @@ fun AppearanceScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Default,
-                                    color = if (themeUiState.appFont == AppFont.SYSTEM)
+                                    color = if (themeUiState.font == AppFont.SYSTEM)
                                         MaterialTheme.colorScheme.onPrimaryContainer
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -581,7 +529,7 @@ fun AppearanceScreen(
                                     text = stringResource(R.string.font_default_sub),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontFamily = FontFamily.Default,
-                                    color = if (themeUiState.appFont == AppFont.SYSTEM)
+                                    color = if (themeUiState.font == AppFont.SYSTEM)
                                         MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -601,7 +549,7 @@ fun AppearanceScreen(
                                     bottomEnd = Dimensions.Radius.md
                                 ))
                                 .background(
-                                    color = if (themeUiState.appFont == AppFont.SN_PRO)
+                                    color = if (themeUiState.font == AppFont.SN_PRO)
                                         MaterialTheme.colorScheme.tertiaryContainer
                                     else MaterialTheme.colorScheme.surfaceContainerLow
                                 )
@@ -616,7 +564,7 @@ fun AppearanceScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = SNProFontFamily,
-                                    color = if (themeUiState.appFont == AppFont.SN_PRO)
+                                    color = if (themeUiState.font == AppFont.SN_PRO)
                                         MaterialTheme.colorScheme.onTertiaryContainer
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -624,7 +572,7 @@ fun AppearanceScreen(
                                     text = stringResource(R.string.font_snpro_sub),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontFamily = SNProFontFamily,
-                                    color = if (themeUiState.appFont == AppFont.SN_PRO)
+                                    color = if (themeUiState.font == AppFont.SN_PRO)
                                         MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
@@ -892,19 +840,17 @@ fun ColorSchemeBox(
 @Composable
 fun AppLogoOption(
     name: String,
-    icon: AppIcon,
-    backgroundColor: Color,
     drawableResId: Int,
     isSelected: Boolean,
-    iconTint: Color? = null,
-    backgroundDrawableResId: Int? = null,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         modifier = Modifier
-            .clickable(
+            .selectable(
+                selected = isSelected,
+                role = Role.RadioButton,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
                 onClick = onClick
@@ -917,27 +863,12 @@ fun AppLogoOption(
                 .clip(RoundedCornerShape(Dimensions.Radius.lg)),
             contentAlignment = Alignment.Center
         ) {
-            if (backgroundDrawableResId != null) {
-                Image(
-                    painter = painterResource(id = backgroundDrawableResId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                )
-            }
-            
             Image(
                 painter = painterResource(id = drawableResId),
                 contentDescription = null,
-                modifier = Modifier.size(84.dp),
-                colorFilter = iconTint?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) }
+                modifier = Modifier.fillMaxSize()
             )
-            
+
             if (isSelected) {
                 Box(
                     modifier = Modifier

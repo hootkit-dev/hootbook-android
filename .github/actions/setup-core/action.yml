@@ -1,0 +1,71 @@
+name: Set up HootKit Core
+description: Resolve the prebuilt Core AAR release (or fallback to source toolchain).
+inputs:
+  core-token:
+    description: Read-only token for the private hootkit-core repository (CORE_REPO_READ_TOKEN).
+    required: false
+  from-source:
+    description: Build Core from source instead of fetching prebuilt AAR
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Fetch Core AAR Release
+      if: inputs.from-source != 'true'
+      shell: bash
+      env:
+        CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/core-bindings/libs"
+        python3 scripts/core/fetch_release.py --dest "$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar"
+        echo "ORG_GRADLE_PROJECT_hootkitCoreAar=$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar" >> "$GITHUB_ENV"
+
+    - name: Source checkout and native toolchain setup (fallback)
+      if: inputs.from-source == 'true'
+      shell: bash
+      env:
+        CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
+      run: |
+        if [ -z "$CORE_REPO_READ_TOKEN" ]; then
+          echo "::error::Missing CORE_REPO_READ_TOKEN repository secret. See docs/ci-secrets.md."
+          exit 1
+        fi
+
+    - name: Read Core build lock
+      if: inputs.from-source == 'true'
+      id: lock
+      shell: bash
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json
+        pin = json.load(open("core-bindings/core.lock.json"))
+        print("commit=" + pin["coreCommit"])
+        print("rust=" + pin["rustVersion"])
+        print("ndk=" + pin["ndkVersion"])
+        PY
+
+    - uses: actions/checkout@v4
+      if: inputs.from-source == 'true'
+      with:
+        repository: hootkit-dev/hootkit-core
+        ref: ${{ steps.lock.outputs.commit }}
+        path: .core-source
+        token: ${{ inputs.core-token }}
+        persist-credentials: false
+
+    - uses: dtolnay/rust-toolchain@stable
+      if: inputs.from-source == 'true'
+      with:
+        toolchain: ${{ steps.lock.outputs.rust }}
+        targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+    - name: Install locked Android NDK and expose source path
+      if: inputs.from-source == 'true'
+      shell: bash
+      env:
+        CORE_NDK: ${{ steps.lock.outputs.ndk }}
+      run: |
+        sdkmanager "ndk;$CORE_NDK"
+        echo "ORG_GRADLE_PROJECT_hootkitCoreDir=$GITHUB_WORKSPACE/.core-source" >> "$GITHUB_ENV"
+        python3 scripts/core/build.py --source "$GITHUB_WORKSPACE/.core-source" --verify-only

@@ -2,6 +2,10 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.quicktemplates
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.semantics.Role
@@ -13,7 +17,6 @@ import sh.calvin.reorderable.ReorderableItem
 
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
 
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -55,8 +58,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.unit.dp
+import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -77,12 +82,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.QuickTemplateEntity
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
@@ -98,12 +102,13 @@ fun QuickTemplatesScreen(
     onNavigateBack: () -> Unit,
     viewModel: QuickTemplatesViewModel = hiltViewModel()
 ) {
-    val templates by viewModel.templates.collectAsStateWithLifecycle()
-    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val templates = uiState.templates
+    val categories = uiState.categories
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
-    var editing by remember { mutableStateOf<QuickTemplateEntity?>(null) }
+    var editing by remember { mutableStateOf<QuickTemplate?>(null) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -118,6 +123,7 @@ fun QuickTemplatesScreen(
             )
         }
     ) { paddingValues ->
+        uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         if (templates.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -168,7 +174,8 @@ fun QuickTemplatesScreen(
                         val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "drag")
                         QuickTemplateRow(
                             template = template,
-                            categoryEntity = categories.find { it.name == template.category },
+                            categoryEntity = categories[template.categoryId],
+                            subcategoryEntity = uiState.subcategories[template.subcategoryId],
                             onEdit = { editing = template },
                             onDelete = { viewModel.delete(template.id) },
                             dragModifier = Modifier.draggableHandle(),
@@ -185,8 +192,7 @@ fun QuickTemplatesScreen(
             template = template,
             onDismiss = { editing = null },
             onSave = { name, amount, prefill ->
-                viewModel.update(template, name, amount, prefill)
-                editing = null
+                viewModel.update(template, name, amount, prefill) { editing = null }
             }
         )
     }
@@ -195,8 +201,9 @@ fun QuickTemplatesScreen(
 /** One template, laid out like a transaction row: category icon, name, details, actions, drag handle. */
 @Composable
 private fun QuickTemplateRow(
-    template: QuickTemplateEntity,
-    categoryEntity: CategoryEntity?,
+    template: QuickTemplate,
+    categoryEntity: Category?,
+    subcategoryEntity: Subcategory?,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     dragModifier: Modifier,
@@ -211,12 +218,12 @@ private fun QuickTemplateRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         BrandIcon(
-            merchantName = template.merchantName,
+            merchantName = template.merchant,
             size = 40.dp,
             showBackground = true,
             categoryEntity = categoryEntity,
-            category = template.category,
-            subcategory = template.subcategory
+            category = categoryEntity?.displayName,
+            subcategoryEntity = subcategoryEntity
         )
         Spacer(Modifier.width(Spacing.md))
         Column(modifier = Modifier.weight(1f)) {
@@ -229,11 +236,11 @@ private fun QuickTemplateRow(
             )
             val notPrefilled = stringResource(R.string.quick_template_amount_not_prefilled)
             val amountText = template.amount?.let {
-                CurrencyFormatter.formatCurrency(it, template.currency ?: "CNY") +
+                (template.currency?.let { currency -> CurrencyFormatter.formatCurrency(it, currency) } ?: CurrencyFormatter.formatAmount(it)) +
                     if (template.prefillAmount) "" else " ($notPrefilled)"
             }
             Text(
-                text = listOfNotNull(template.category?.let { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(it) }, template.subcategory?.let { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(it) }, amountText).joinToString(" • "),
+                text = listOfNotNull(categoryEntity?.displayName, subcategoryEntity?.displayName, amountText).joinToString(" • "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -257,7 +264,7 @@ private fun QuickTemplateRow(
 
 @Composable
 private fun QuickTemplateEditDialog(
-    template: QuickTemplateEntity,
+    template: QuickTemplate,
     onDismiss: () -> Unit,
     onSave: (name: String, amount: BigDecimal?, prefillAmount: Boolean) -> Unit
 ) {
@@ -272,20 +279,24 @@ private fun QuickTemplateEditDialog(
         title = { Text(stringResource(R.string.quick_template_edit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                OutlinedTextField(
+                TextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.quick_template_name)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                TextField(
                     value = amountText,
                     onValueChange = { amountText = it },
                     label = { Text(stringResource(R.string.quick_template_amount)) },
                     isError = amountInvalid,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(

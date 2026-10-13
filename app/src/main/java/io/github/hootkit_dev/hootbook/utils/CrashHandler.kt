@@ -56,7 +56,8 @@ class CrashHandler private constructor(
     private fun writeCrashLogToDisk(crashLog: String): File? {
         return try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val file = File(applicationContext.cacheDir, "hootbook_crash_$timestamp.txt")
+            val root = File(applicationContext.cacheDir, "core-crash-share").also { check(it.mkdirs() || it.isDirectory) }
+            val file = File(root, "hootbook_crash_$timestamp.txt")
             file.writeText(crashLog)
             Log.d("HootbookCrash", "Crash log written to: ${file.absolutePath}")
             file

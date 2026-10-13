@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_complete_profile">Profile</string>
+  <string name="core_complete_display_missing">Display conversion unavailable for %1$s; original currency is retained.</string>
+  <string name="core_complete_incomplete">Partial total: some currencies could not be converted.</string>
+  <string name="core_complete_missing">Missing exchange rates: %1$s</string>
+  <string name="core_complete_analytics">Analytics</string>
+  <string name="core_complete_accounts">Accounts</string>
+  <string name="core_complete_debts">People and debts</string>
+  <string name="core_complete_budgets">Budgets</string>
+  <string name="core_complete_subscriptions">Manage subscriptions</string>
+  <string name="core_complete_transactions">Transactions</string>
+  <string name="core_complete_templates">Quick templates</string>
+  <string name="core_complete_categories">Categories</string>
+  <string name="core_complete_settings">Business settings</string>
+  <string name="core_complete_currencies">Currencies and exchange rates</string>
+  <string name="core_complete_backup">File backup and restore</string>
+  <string name="core_complete_layout">Appearance and home layout</string>
+</resources>

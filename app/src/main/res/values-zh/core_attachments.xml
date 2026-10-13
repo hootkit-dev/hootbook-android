@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="core_attachment_title">附件</string>
+  <string name="core_attachment_document">文档</string>
+  <string name="core_attachment_missing">附件文件缺失</string>
+  <string name="core_attachment_action_failed">文档预览或分享失败</string>
+  <string name="core_attachment_share">分享</string>
+  <string name="core_attachment_open">打开</string>
+  <string name="core_attachment_close">关闭</string>
+</resources>

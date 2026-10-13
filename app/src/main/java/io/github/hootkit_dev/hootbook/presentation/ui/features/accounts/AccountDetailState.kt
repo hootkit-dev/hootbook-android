@@ -1,52 +1,31 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
-import io.github.hootkit_dev.hootbook.data.currency.Conversions
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.domain.model.PersonInfo
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
+import dev.hootkit.core.*
 import java.math.BigDecimal
 
 data class AccountDetailUiState(
-    val bankName: String = "",
-    val accountLast4: String = "",
-    val currentBalance: AccountBalanceEntity? = null,
-    val balanceHistory: List<AccountBalanceEntity> = emptyList(),
-    val balanceChartData: List<BalancePoint> = emptyList(),
-    val transactions: List<TransactionEntity> = emptyList(),
-    val totalIncome: BigDecimal = BigDecimal.ZERO,
-    val totalExpenses: BigDecimal = BigDecimal.ZERO,
-    val netBalance: BigDecimal = BigDecimal.ZERO,
-    val primaryCurrency: String = "CNY",
-    val baseCurrency: String = "CNY",
-    val hasMultipleCurrencies: Boolean = false,
-    // Transactions in the main currency, where a rate is known
-    val conversions: Conversions = Conversions(),
-    // A credit card's billing dates and where the current statement stands
-    val cardDates: io.github.hootkit_dev.hootbook.domain.model.CardDates = io.github.hootkit_dev.hootbook.domain.model.CardDates(),
+    val account: Account? = null,
+    val currency: String? = null,
+    val anchors: List<BalanceAnchor> = emptyList(),
+    val balanceSeries: List<BalanceDay> = emptyList(),
     val cardStatus: CardStatus? = null,
-    val isLoading: Boolean = true
+    val transactions: List<Transaction> = emptyList(),
+    val total: UInt = 0u,
+    val accountTransactionCount: UInt = 0u,
+    val summary: LedgerSummary? = null,
+    val categories: Map<String, Category> = emptyMap(),
+    val accounts: Map<String, Account> = emptyMap(),
+    val people: Map<String, Person> = emptyMap(),
+    val debts: Map<String, DebtEntry> = emptyMap(),
+    val convertedAmounts: Map<String, BigDecimal?> = emptyMap(),
+    val selectedDateRange: DateRange = DateRange.LAST_30_DAYS,
+    val isLoading: Boolean = true,
+    val loadingMore: Boolean = false,
+    val saving: Boolean = false,
+    val error: Int? = null,
+    val commandRevision: Long = 0,
 )
 
-/**
- * Where a credit card's bill stands. While a statement is open for payment ([due] not passed),
- * [statementAmount] is what it closed at and [remaining] what of it is still owed; after that,
- * only the next closing and due dates are known.
- */
-data class CardStatus(
-    val due: java.time.LocalDate,
-    val closing: java.time.LocalDate?,
-    val statementAmount: BigDecimal?,
-    val remaining: BigDecimal?,
-    // Past its due date and not paid off
-    val overdue: Boolean = false
-)
-
-enum class DateRange(val label: String) {
-    LAST_7_DAYS("Last 7 Days"),
-    LAST_30_DAYS("Last 30 Days"),
-    LAST_3_MONTHS("Last 3 Months"),
-    LAST_6_MONTHS("Last 6 Months"),
-    LAST_YEAR("Last Year"),
-    ALL_TIME("All Time")
+enum class DateRange {
+    LAST_7_DAYS, LAST_30_DAYS, LAST_3_MONTHS, LAST_6_MONTHS, LAST_YEAR, ALL_TIME
 }

@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/hootkit-dev/hootbook-brand",
+  "files": [
+    {
+      "path": "icon/book-icon-cream.svg",
+      "git_blob_sha": "438939c0adc8452b832e907fad65b20f133b1cd7"
+    },
+    {
+      "path": "icon/book-icon-white.svg",
+      "git_blob_sha": "97f7950f99bfe552dad238d52584eb31b7103bd1"
+    },
+    {
+      "path": "icon/hoot-icon-cream.svg",
+      "git_blob_sha": "c2b0fe9d68c731e4541674994b701aad104f8051"
+    },
+    {
+      "path": "icon/hoot-icon-white.svg",
+      "git_blob_sha": "9c5ac7a4d535bb52baa8c529c873ee10c6d59e69"
+    },
+    {
+      "path": "icon/hootbook-icon-cream.svg",
+      "git_blob_sha": "603c0f40ccd3dc157d62c66cc3a0367bba057734"
+    },
+    {
+      "path": "icon/hootbook-icon-white.svg",
+      "git_blob_sha": "9f8c6bcc39ab3b92895cf9b6dcde6ce7284ae607"
+    }
+  ]
+}

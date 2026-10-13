@@ -1,132 +1,68 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
-import io.github.hootkit_dev.hootbook.R
-
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetPeriod
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetType
-import io.github.hootkit_dev.hootbook.data.repository.BudgetRepository
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.time.LocalDateTime
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
 import javax.inject.Inject
-
-data class BudgetPeriodHistory(
-    val name: String,
-    val startDate: LocalDateTime,
-    val endDate: LocalDateTime,
-    val amount: BigDecimal,
-    val spent: BigDecimal,
-    val currency: String
-) {
-    val percentUsed: Float get() = if (amount > BigDecimal.ZERO) {
-        (spent.toFloat() / amount.toFloat()).coerceIn(0f, 1.1f)
-    } else 0f
-    
-    val isOverBudget: Boolean get() = spent > amount
-}
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 data class BudgetHistoryUiState(
-    val isLoading: Boolean = false,
-    val budget: BudgetEntity? = null,
-    val periods: List<BudgetPeriodHistory> = emptyList(),
-    val chartPoints: List<BalancePoint> = emptyList(),
-    val error: String? = null
+    val isLoading: Boolean = true,
+    val budget: Budget? = null,
+    val periods: List<BudgetPeriodSummary> = emptyList(),
+    val cursor: LocalDate? = null,
+    val loadingMore: Boolean = false,
+    val error: Int? = null,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class BudgetHistoryViewModel @Inject constructor(
-    private val budgetRepository: BudgetRepository,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
-) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(BudgetHistoryUiState())
-    val uiState: StateFlow<BudgetHistoryUiState> = _uiState.asStateFlow()
-
-    fun loadBudgetHistory(budgetId: Long) {
+class BudgetHistoryViewModel @Inject constructor(private val session: CoreSession, private val changes: ChangeBus) : ViewModel() {
+    private val mutable = MutableStateFlow(BudgetHistoryUiState())
+    val uiState = mutable.asStateFlow()
+    private val selected = MutableStateFlow<String?>(null)
+    private val generation = java.util.concurrent.atomic.AtomicLong()
+    private var page: Job? = null
+    init {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val budget = budgetRepository.getBudgetById(budgetId)
-                if (budget != null) {
-                    val periods = calculateHistoricalPeriods(budget)
-                    val historyWithSpending = periods.map { period ->
-                        val spending = calculateSpendingForPeriod(budget, period.first, period.second)
-                        BudgetPeriodHistory(
-                            name = formatPeriodName(period.first, period.second, budget.periodType),
-                            startDate = period.first,
-                            endDate = period.second,
-                            amount = budget.amount,
-                            spent = spending,
-                            currency = budget.currency
-                        )
-                    }
-
-                    val chartPoints = historyWithSpending.reversed().map {
-                        BalancePoint(
-                            timestamp = it.startDate,
-                            balance = it.spent,
-                            currency = it.currency
-                        )
-                    }
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            budget = budget,
-                            periods = historyWithSpending,
-                            chartPoints = chartPoints
-                        )
-                    }
-                } else {
-                    _uiState.update { it.copy(isLoading = false, error = context.getString(R.string.msg_budget_not_found)) }
+            selected.filterNotNull().flatMapLatest { id ->
+                session.observe(changes, budgetTables) { core ->
+                    generation.incrementAndGet(); page?.cancel()
+                    coreQuery { core.budgets().use { api ->
+                        val today = budgetToday()
+                        val budget = api.get(id, today, null)
+                        val periods = api.history(id, today, 24u)
+                        appendBudgetHistory(emptyList(), periods, budget.anchor, today).let { window -> BudgetHistoryUiState(false, budget, window.rows, window.nextCursor) }
+                    } }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = context.getString(R.string.msg_history_load_failed)) }
-            }
+            }.collect { result -> result.fold(
+                onSuccess = { mutable.value = it },
+                onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = coreFailureText(failure)) } }) }
         }
     }
-
-    /** The budget's periods, newest first, back to its first (see [BudgetPeriods]). */
-    private fun calculateHistoricalPeriods(budget: BudgetEntity): List<Pair<LocalDateTime, LocalDateTime>> =
-        io.github.hootkit_dev.hootbook.domain.model.BudgetPeriods.history(budget).map { it.from to it.to }
-
-    private suspend fun calculateSpendingForPeriod(
-        budget: BudgetEntity,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): BigDecimal {
-        // Create a temporary budget entity for calculation
-        // That period alone, as a one-off budget
-        val tempBudget = budget.copy(
-            startDate = startDate,
-            endDate = endDate,
-            periodType = BudgetPeriod.CUSTOM
-        )
-        val spending = budgetRepository.getBudgetWithSpending(tempBudget)
-        return spending.currentSpending
+    fun loadBudgetHistory(id: String) {
+        if (selected.value == id) return
+        generation.incrementAndGet(); page?.cancel(); mutable.value = BudgetHistoryUiState(); selected.value = id
     }
-
-    private fun formatPeriodName(start: LocalDateTime, end: LocalDateTime, periodType: BudgetPeriod): String {
-        val now = LocalDateTime.now()
-        if (!now.isBefore(start) && !now.isAfter(end)) return context.getString(io.github.hootkit_dev.hootbook.R.string.budget_current_period)
-        val formats = io.github.hootkit_dev.hootbook.utils.DateFormats
-        return when (periodType) {
-            BudgetPeriod.DAILY -> formats.shortDate(start.toLocalDate())
-            BudgetPeriod.YEARLY -> start.year.toString()
-            BudgetPeriod.MONTHLY -> if (start.dayOfMonth == 1) formats.yearMonth(start)
-                else "${formats.shortDate(start.toLocalDate())} – ${formats.shortDate(end.toLocalDate())}"
-            else -> "${formats.shortDate(start.toLocalDate())} – ${formats.shortDate(end.toLocalDate())}"
+    fun loadMore() {
+        val before = uiState.value
+        val budget = before.budget ?: return
+        val cursor = before.cursor ?: return
+        if (before.loadingMore || before.isLoading) return
+        val mine = generation.get()
+        mutable.update { it.copy(loadingMore = true, error = null) }
+        page = viewModelScope.launch {
+            try {
+                val rows = session.withCore { core -> core.budgets().use { it.history(budget.id, cursor, 24u) } }
+                val window = appendBudgetHistory(before.periods, rows, budget.anchor, cursor)
+                if (mine == generation.get()) mutable.update { it.copy(loadingMore = false, periods = window.rows, cursor = window.nextCursor) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { if (mine == generation.get()) mutable.update { it.copy(loadingMore = false, error = coreFailureText(failure)) } }
         }
     }
 }

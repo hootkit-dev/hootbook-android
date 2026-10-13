@@ -33,9 +33,6 @@ import io.github.hootkit_dev.hootbook.R
 /** The accounts list shows the chosen account beside it from this window width. */
 const val ACCOUNT_LIST_DETAIL_MIN_WIDTH_DP = 720
 
-/** An account picked in the list, shown in the detail pane. */
-data class PaneAccount(val bankName: String, val accountLast4: String)
-
 /**
  * The detail half of an account list on wide windows: [account]'s detail screen, or a hint to
  * pick one. Each account gets its own view model, created with the route arguments the
@@ -43,13 +40,13 @@ data class PaneAccount(val bankName: String, val accountLast4: String)
  */
 @Composable
 fun AccountDetailPane(
-    account: PaneAccount?,
-    navController: NavController,
+    accountId: String?,
+    onTransaction: (String) -> Unit,
+    onBrokerage: (Long, String) -> Unit,
     animatedContentScope: AnimatedVisibilityScope?,
     onClose: () -> Unit,
-    onRenamed: (PaneAccount) -> Unit = {}
 ) {
-    if (account == null) {
+    if (accountId == null) {
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),
             verticalArrangement = Arrangement.Center,
@@ -71,26 +68,25 @@ fun AccountDetailPane(
         }
         return
     }
-    key(account) {
+    key(accountId) {
         val owner = checkNotNull(LocalViewModelStoreOwner.current)
         val defaults = owner as HasDefaultViewModelProviderFactory
         val viewModel: AccountDetailViewModel = viewModel(
             viewModelStoreOwner = owner,
-            key = "account_pane_${account.bankName}_${account.accountLast4}",
+            key = "account_pane_${accountId}",
             factory = HiltViewModelFactory(LocalContext.current, defaults.defaultViewModelProviderFactory),
             extras = MutableCreationExtras(defaults.defaultViewModelCreationExtras).apply {
-                set(DEFAULT_ARGS_KEY, bundleOf("bankName" to account.bankName, "accountLast4" to account.accountLast4))
+                set(DEFAULT_ARGS_KEY, bundleOf("accountId" to accountId))
             }
         )
         SharedTransitionLayout {
             AccountDetailScreen(
-                navController = navController,
-                bankName = account.bankName,
-                accountLast4 = account.accountLast4,
+                accountId = accountId,
+                onTransaction = onTransaction,
+                onBrokerage = onBrokerage,
                 accountDetailViewModel = viewModel,
                 animatedContentScope = animatedContentScope,
                 onNavigateBack = onClose,
-                onRenamed = { newName -> onRenamed(account.copy(bankName = newName)) }
             )
         }
     }

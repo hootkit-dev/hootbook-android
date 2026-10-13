@@ -33,7 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.AccountSurfaceElevation
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeInputScale
@@ -44,15 +45,15 @@ import dev.chrisbanes.haze.hazeEffect
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.AccountBalanceList(
-    bankAccounts: List<AccountBalanceEntity>,
-    creditCards: List<AccountBalanceEntity>,
+    bankAccounts: List<Account>,
+    creditCards: List<Account>,
     blurEffects: Boolean,
     modifier: Modifier = Modifier,
-    onAccountClick: (bankName: String, accountLast4: String) -> Unit = { _, _ -> },
+    onAccountClick: (accountId: String) -> Unit = {},
     animatedContentScope: AnimatedVisibilityScope? = null,
     hazeState: HazeState = remember { HazeState() }
 ) {
-    val accounts = bankAccounts + creditCards.map { if (it.isCreditCard) it else it.copy(isCreditCard = true) }
+    val accounts = bankAccounts + creditCards
     if (accounts.isEmpty()) return
 
     Column(
@@ -67,7 +68,7 @@ fun SharedTransitionScope.AccountBalanceList(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         accounts.forEachIndexed { index, account ->
-            key(account.bankName, account.accountLast4) {
+            key(account.id) {
                 AccountBalanceRow(account, index, accounts.size, blurEffects, onAccountClick, animatedContentScope, hazeState)
             }
         }
@@ -78,15 +79,15 @@ fun SharedTransitionScope.AccountBalanceList(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun SharedTransitionScope.AccountBalanceRow(
-    account: AccountBalanceEntity,
+    account: Account,
     index: Int,
     count: Int,
     blurEffects: Boolean,
-    onAccountClick: (String, String) -> Unit,
+    onAccountClick: (String) -> Unit,
     animatedContentScope: AnimatedVisibilityScope?,
     hazeState: HazeState
 ) {
-    val isCreditCard = account.isCreditCard
+    val isCreditCard = (account.kind == AccountKind.CREDIT_CARD)
     val subtitle = accountSubtitle(account)
     val shape = ListItemPosition.from(index, count).toShape()
     val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -97,16 +98,16 @@ internal fun SharedTransitionScope.AccountBalanceRow(
         val balanceWidth = maxWidth * 0.45f
         val accountIcon: @Composable () -> Unit = {
             BrandIcon(
-                merchantName = account.bankName,
+                merchantName = account.name,
                 size = 40.dp,
-                accountIconResId = account.iconResId,
-                accountIconName = account.iconName,
+                accountIconResId = 0,
+                accountIconName = account.icon,
                 accountColorHex = account.color
             )
         }
         val accountName: @Composable () -> Unit = {
             Text(
-                text = account.bankName,
+                text = account.name,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -173,17 +174,17 @@ internal fun SharedTransitionScope.AccountBalanceRow(
             },
             leading = if (stackBalance) null else accountIcon,
             trailing = if (stackBalance) null else balanceContent,
-            onClick = { onAccountClick(account.bankName, account.accountLast4) },
+            onClick = { onAccountClick(account.id) },
             padding = PaddingValues(0.dp),
             shape = shape,
             listColor = if (blurEffects) containerColor.copy(alpha = 0.5f) else containerColor,
             modifier = Modifier
-                .testTag("account_balance_${account.bankName}_${account.accountLast4}")
+                .testTag("account_balance_${account.id}")
                 .then(
                     if (animatedContentScope != null) {
                         Modifier.sharedBounds(
                             rememberSharedContentState(
-                                key = "account_${account.bankName}_${account.accountLast4}"
+                                key = "account_${account.id}"
                             ),
                             animatedVisibilityScope = animatedContentScope
                         )

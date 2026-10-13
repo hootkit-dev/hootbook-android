@@ -1,0 +1,16 @@
+{
+  "coreVersion": "0.1.0",
+  "coreReleaseTag": "v0.1.0",
+  "coreCommit": "9ca2916045e5d5145776ec75f2ea723e022f0a61",
+  "specCommit": "e662bb9c876c52d4672e80da5977bc7e32c664f9",
+  "uniffiVersion": "0.29.5",
+  "rustVersion": "1.97.0",
+  "ndkVersion": "28.2.13676358",
+  "minSdk": 26,
+  "abis": ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"],
+  "sha256": {
+    "Cargo.lock": "3169a9013b5156f6c329d7fb65e175c75768fa2c155c44415288668c218ca059",
+    "uniffi.toml": "46abf7fab7ad6edc1b8465ea27373138d4e0243d4d81aa677a7039e1f5f97317",
+    "src/hootkit_core.udl": "4f0619089dcfc9ef9061733c84c3f9dbda4232be5d77eabd84c15235658e0000"
+  }
+}

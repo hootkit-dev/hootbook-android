@@ -6,11 +6,9 @@
     <string name="investments_empty_body">点右下角加号添加券商账户：可连接券商自动同步持仓，也可手动记账。仅查看报表，不下单、不转账。</string>
     <string name="investments_connect_ibkr">连接 IBKR</string>
     <string name="investments_add">添加</string>
-    <string name="investments_net_worth">投资净资产</string>
     <string name="investments_accounts">账户</string>
     <string name="investments_synced">上次同步：%1$s</string>
     <string name="investments_as_of">报表日期：%1$s · 非实时</string>
-    <string name="investments_market_total">持仓 %1$s %2$s</string>
     <string name="investments_cash">现金 %1$s %2$s</string>
     <string name="investments_margin_debit">融资欠款 %1$s %2$s</string>
     <string name="investments_snapshot_total">快照 %1$s %2$s</string>
@@ -28,15 +26,4 @@
     <string name="investments_help">查看 IBKR 官方配置说明</string>
     <string name="investments_label">连接名称</string>
     <string name="investments_connect_sync">连接并同步</string>
-    <string name="investments_error_credentials">请检查 Flex Token 和 Query ID，确认 Flex Web Service 已启用。</string>
-    <string name="investments_error_expired">Token 已过期。请在 IBKR 生成新 Token，断开此连接后重新添加。</string>
-    <string name="investments_error_ip">IBKR 限制了访问 IP，请检查 Token 的 IP 限制设置。</string>
-    <string name="investments_error_query">请使用 XML Activity Flex Query，加入 Open Positions（Summary）及全部字段。加入 Cash Report 可包含现金和融资欠款。</string>
-    <string name="investments_error_pending">报表尚未就绪，请稍后刷新。已有持仓保留。</string>
-    <string name="investments_error_rate">请求过于频繁，请至少等一分钟再刷新。</string>
-    <string name="investments_error_network">连接未成功，请检查网络后重试。已有持仓保留。</string>
-    <string name="investments_error_report">报表格式或字段与配置不符，请检查 XML、日期格式和持仓汇总字段。已有持仓保留。</string>
-    <string name="investments_error_provider">此版本尚未支持该券商连接。</string>
-    <string name="investments_error_storage">本机加密存储读写失败，本次操作未保存。请重试，现有记账数据不受影响。</string>
-    <string name="investments_error_duplicate">该连接或券商账户已添加，请刷新已有连接。</string>
 </resources>

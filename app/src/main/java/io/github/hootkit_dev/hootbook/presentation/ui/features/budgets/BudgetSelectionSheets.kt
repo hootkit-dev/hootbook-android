@@ -1,5 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +24,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetType
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Box2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Folder2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
@@ -31,7 +34,7 @@ import io.github.hootkit_dev.hootbook.R
 
 @Composable
 fun BudgetTypeSelectionSheet(
-    onTypeSelected: (BudgetType) -> Unit,
+    onTypeSelected: (BudgetKind) -> Unit,
     onDismiss: () -> Unit
 ) {
     Column(
@@ -52,7 +55,7 @@ fun BudgetTypeSelectionSheet(
             title = stringResource(R.string.savings_budget),
             description = stringResource(R.string.savings_budget_desc),
             icon = Icons.Rounded.Savings,
-            onClick = { onTypeSelected(BudgetType.SAVINGS) }
+            onClick = { onTypeSelected(BudgetKind.SAVINGS) }
         )
 
         Spacer(modifier = Modifier.height(Spacing.md))
@@ -61,7 +64,7 @@ fun BudgetTypeSelectionSheet(
             title = stringResource(R.string.expense_budget),
             description = stringResource(R.string.expense_budget_desc),
             icon = Iconax.ReceiptItem,
-            onClick = { onTypeSelected(BudgetType.EXPENSE) }
+            onClick = { onTypeSelected(BudgetKind.EXPENSE) }
         )
     }
 }
@@ -112,15 +115,15 @@ private fun SelectionCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 if (example != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

@@ -1,0 +1,104 @@
+{
+  "project_info": {
+    "project_number": "382165299926",
+    "project_id": "cashiro-7a585",
+    "storage_bucket": "cashiro-7a585.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382165299926:android:a690f59212d7d4bd08cf77",
+        "android_client_info": {
+          "package_name": "com.ritesh.cashiro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "382165299926-ikf4srj37nkjh2crr92b31s7hg6ugp68.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ritesh.cashiro",
+            "certificate_hash": "5f1ba3fdb9f51ec011b1649cc9774b3f5c74e533"
+          }
+        },
+        {
+          "client_id": "382165299926-0gs2f6jivkmeu0ktn0r6iuj2d4qscq8b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLFf93nyyuJ2XVfIayDYOD8KEFwbOEwmk"
+        },
+        {
+          "current_key": "AIzaSyBpAi_hyT4Cy8z8m6aQ9RnxRmh__r9bqTA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "382165299926-0gs2f6jivkmeu0ktn0r6iuj2d4qscq8b.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "382165299926-99cn69d4c3p6fdcllo0d41gdcar25sq3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bbntk.cashiro"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382165299926:android:c49a2e0c68990b9908cf77",
+        "android_client_info": {
+          "package_name": "io.github.hootkit_dev.hootbook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "382165299926-mu7lkfbu49qe1kqg82ajn95dhlcjlesq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.github.hootkit_dev.hootbook",
+            "certificate_hash": "3c6b6062eac2156f0550d5c142eccedef73fe047"
+          }
+        },
+        {
+          "client_id": "382165299926-0gs2f6jivkmeu0ktn0r6iuj2d4qscq8b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLFf93nyyuJ2XVfIayDYOD8KEFwbOEwmk"
+        },
+        {
+          "current_key": "AIzaSyBpAi_hyT4Cy8z8m6aQ9RnxRmh__r9bqTA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "382165299926-0gs2f6jivkmeu0ktn0r6iuj2d4qscq8b.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "382165299926-99cn69d4c3p6fdcllo0d41gdcar25sq3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bbntk.cashiro"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

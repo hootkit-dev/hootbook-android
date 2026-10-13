@@ -2,6 +2,13 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.contacts
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.isAppInDarkTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
@@ -82,15 +89,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.PersonCategory
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookCheckbox
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.DeleteMultiplePersonsDialog
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SearchBarBox
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.AddEditPersonSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBorrowViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.categoryLabel
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.CloseCircle
@@ -102,7 +106,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.expense_light
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_dark
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.income_light
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import java.math.BigDecimal
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeDefaults
@@ -117,9 +121,9 @@ import androidx.core.graphics.toColorInt
 @Composable
 fun SharedTransitionScope.ContactsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToPersonDetail: (Long) -> Unit,
+    onNavigateToPersonDetail: (String) -> Unit,
     viewModel: LendBorrowViewModel = hiltViewModel(),
-    selectedPersonId: Long? = null,
+    selectedPersonId: String? = null,
     sharedElementKey: String? = null,
     animatedContentScope: AnimatedContentScope? = null,
     blurEffects: Boolean = LocalBlurEffects.current
@@ -248,6 +252,7 @@ fun SharedTransitionScope.ContactsScreen(
             }
         }
     ) { paddingValues ->
+        uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
         if (uiState.isLoading) {
             Box(
                 modifier = Modifier
@@ -317,6 +322,7 @@ fun SharedTransitionScope.ContactsScreen(
                 itemsIndexed(uiState.filteredPersons, key = { _, it -> it.id }) { index, person ->
                     DisplayProfileImageCard(
                         person = person,
+                        attachmentStore = viewModel.attachmentStore,
                         isSelectionMode = isSelectionMode,
                         isSelected = selectedPersonIds.contains(person.id),
                         onClick = {
@@ -363,7 +369,8 @@ fun SharedTransitionScope.ContactsScreen(
 
     if (uiState.showAddPersonSheet) {
         AddEditPersonSheet(
-            attachmentService = viewModel.attachmentService,
+            attachmentStore = viewModel.attachmentStore,
+            saving = uiState.saving, error = uiState.error,
             onDismiss = { viewModel.showAddPersonSheet(false) },
             onSave = { name, phone, notes, color, avatar, category ->
                 viewModel.addPerson(name, phone, notes, color, avatar, category)
@@ -375,7 +382,8 @@ fun SharedTransitionScope.ContactsScreen(
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SharedTransitionScope.DisplayProfileImageCard(
-    person: LendBorrowPerson,
+    person: Person,
+    attachmentStore: CoreAttachmentStore,
     onClick: () -> Unit,
     onSelectionToggle: () -> Unit = {},
     onLongClick: () -> Unit = {},
@@ -392,8 +400,8 @@ fun SharedTransitionScope.DisplayProfileImageCard(
     }
     val backgroundColor = Color(colorInt)
 
-    val isGet = person.netBalance > BigDecimal.ZERO
-    val isOwe = person.netBalance < BigDecimal.ZERO
+    val isGet = person.totals.net > BigDecimal.ZERO
+    val isOwe = person.totals.net < BigDecimal.ZERO
 
     val sharedModifier = if (animatedContentScope != null && sharedElementKey != null) {
         Modifier.sharedBounds(
@@ -430,7 +438,7 @@ fun SharedTransitionScope.DisplayProfileImageCard(
         Box(modifier = Modifier.fillMaxSize()) {
             if (person.avatar != null) {
                 AsyncImage(
-                    model = person.avatar,
+                    model = person.avatar?.let(attachmentStore::resolve),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -497,7 +505,7 @@ fun SharedTransitionScope.DisplayProfileImageCard(
                 )
 
                 Text(
-                    text = categoryLabel(person.category ?: PersonCategory.OTHER),
+                    text = categoryLabel(person.relation ?: PersonRelation.OTHER),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.7f),
                     maxLines = 1,

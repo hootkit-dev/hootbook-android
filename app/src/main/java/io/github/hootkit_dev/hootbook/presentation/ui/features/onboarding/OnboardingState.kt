@@ -15,6 +15,8 @@ enum class OnboardingStep(val number: Int) {
 }
 
 data class OnBoardingUiState(
+    val institutions: List<dev.hootkit.core.Institution> = emptyList(),
+    val institutionKey: String? = null,
     val step: OnboardingStep = OnboardingStep.WELCOME,
     val profileState: EditProfileState = EditProfileState(),
     val isLoading: Boolean = false,

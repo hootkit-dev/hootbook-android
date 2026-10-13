@@ -75,6 +75,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.NotificationBing
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.SecuritySafe
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Status
+import io.github.hootkit_dev.hootbook.presentation.ui.icons.VideoTime
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.orange_dark
@@ -94,6 +95,7 @@ fun SettingsScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToBudgets: () -> Unit = {},
+    onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToLendBorrow: () -> Unit = {},
     onNavigateToDataPrivacy: () -> Unit = {},
     onNavigateToCloudBackup: () -> Unit = {},
@@ -102,9 +104,9 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     blurEffects: Boolean
 ) {
+    val operationError by settingsViewModel.error.collectAsStateWithLifecycle()
     val totalTransactionsCount by settingsViewModel.totalTransactions.collectAsStateWithLifecycle()
-    val googleDriveEmail by settingsViewModel.googleDriveEmail.collectAsStateWithLifecycle()
-    val userPreferences by settingsViewModel.userPreferences.collectAsStateWithLifecycle(initialValue = null)
+    val userPreferences by settingsViewModel.userPreferences.collectAsStateWithLifecycle()
     var showLanguageBottomSheet by remember { mutableStateOf(false) }
     val currentLanguageCode = remember(androidx.compose.ui.platform.LocalConfiguration.current) {
         val locales = AppCompatDelegate.getApplicationLocales()
@@ -186,7 +188,11 @@ fun SettingsScreen(
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
 
+    val errorSnackbar = remember { androidx.compose.material3.SnackbarHostState() }
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    androidx.compose.runtime.LaunchedEffect(operationError) { operationError?.let { errorSnackbar.showSnackbar(operationFailed) } }
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(errorSnackbar) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CustomTitleTopAppBar(
@@ -219,13 +225,13 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(1.5.dp)
             ) {
                 SettingsGroupLabel(stringResource(R.string.settings_group_personal))
-                val profileImageUri = userPreferences?.profileImageUri?.toUri()
-                val profileBackgroundColor = Color(userPreferences?.profileBackgroundColor ?: Color.Transparent.toArgb())
+                val profileImageUri = settingsViewModel.assets.resolve(userPreferences.avatar)?.let { android.net.Uri.fromFile(it) }
+                val profileBackgroundColor = Color(userPreferences.profileBackground)
 
                 ListItem(
                     headline = {
                         Text(
-                            text = userPreferences?.userName ?: stringResource(R.string.default_user_name),
+                            text = userPreferences.userName.ifBlank { stringResource(R.string.default_user_name) },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -233,8 +239,7 @@ fun SettingsScreen(
                     },
                     supporting = {
                         Text(
-                            text = googleDriveEmail?.takeIf { it.isNotBlank() }
-                                ?: stringResource(R.string.transactions_count_short, totalTransactionsCount),
+                            text = stringResource(R.string.transactions_count_short, totalTransactionsCount.toInt()),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             maxLines = 2,
@@ -501,6 +506,51 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { onNavigateToBudgets() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Subscriptions
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.subscriptions),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.subscriptions_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.VideoTime,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToSubscriptions() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
                     )
@@ -855,10 +905,9 @@ fun SettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.hootbook),
+                                painter = painterResource(id = R.drawable.hootbook_icon_white),
                                 contentDescription = stringResource(R.string.hootbook_logo_cd),
-                                colorFilter = ColorFilter.tint(orange_dark),
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape)
                             )
                         }
                     },
@@ -881,8 +930,7 @@ fun SettingsScreen(
             LanguageSelectionBottomSheet(
                 selectedLanguageCode = currentLanguageCode,
                 onLanguageSelected = { code ->
-                    val localeList = androidx.core.os.LocaleListCompat.forLanguageTags(code)
-                    androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
+                    settingsViewModel.language(code)
                 },
                 onDismiss = { showLanguageBottomSheet = false }
             )

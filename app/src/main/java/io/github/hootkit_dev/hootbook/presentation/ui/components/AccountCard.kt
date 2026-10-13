@@ -42,7 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
 import io.github.hootkit_dev.hootbook.presentation.common.icons.IconProvider
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Balance
@@ -53,12 +54,12 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.HierarchySquare3
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.History
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AccountCard(
-    account: AccountBalanceEntity,
+    account: Account,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit = {}
@@ -75,12 +76,12 @@ fun AccountCard(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             val context = LocalContext.current
-            val iconResource = remember(account.bankName, account.iconResId, account.iconName) {
+            val iconResource = remember(account.name, 0, account.icon) {
                 IconProvider.getIconForTransaction(
                     context = context,
-                    merchantName = account.bankName,
-                    accountIconResId = account.iconResId,
-                    accountIconName = account.iconName
+                    merchantName = account.name,
+                    accountIconResId = 0,
+                    accountIconName = account.icon
                 )
             }
 
@@ -98,7 +99,7 @@ fun AccountCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(if (account.isCreditCard) R.string.outstanding_label else R.string.balance_label),
+                        text = stringResource(if ((account.kind == AccountKind.CREDIT_CARD)) R.string.outstanding_label else R.string.balance_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -114,6 +115,7 @@ fun AccountCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
+                AccountIncompleteIndicator(account)
                 AccountCurrencyPills(account, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
 
                 // Bottom Section (Bank Info)
@@ -139,7 +141,7 @@ fun AccountCard(
                         ) {
                             Column {
                                 Text(
-                                    text = account.bankName,
+                                    text = account.name,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -156,11 +158,11 @@ fun AccountCard(
                             ) {
 
                                 BrandIcon(
-                                    merchantName = account.bankName,
+                                    merchantName = account.name,
                                     size = 48.dp,
                                     showBackground = true,
-                                    accountIconResId = account.iconResId,
-                                    accountIconName = account.iconName,
+                                    accountIconResId = 0,
+                                    accountIconName = account.icon,
                                     accountColorHex = account.color
                                 )
                             }

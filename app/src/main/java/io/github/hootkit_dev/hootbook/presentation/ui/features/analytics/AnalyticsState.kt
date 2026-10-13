@@ -1,52 +1,47 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.analytics
 
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
+import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
 import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
-import java.math.BigDecimal
-import java.time.LocalDate
-
-/**
- * Internal state for combining all filter parameters.
- * Used in reactive Flow to trigger data reload when any filter changes.
- */
-data class FilterState(
-    val period: TimePeriod,
-    val customRange: Pair<LocalDate, LocalDate>?,
-    val typeFilter: Set<TransactionTypeFilter>,
-    val currency: String?
-)
+import java.time.LocalDate as JavaDate
 
 data class AnalyticsUiState(
-    val totalSpending: BigDecimal = BigDecimal.ZERO,
-    // Income in the period when several types are shown: kept apart from the spending total
-    val totalIncome: BigDecimal? = null,
-    val categoryBreakdown: List<CategoryData> = emptyList(),
-    val topMerchants: List<MerchantData> = emptyList(),
-    val transactionCount: Int = 0,
-    val averageAmount: BigDecimal = BigDecimal.ZERO,
-    val topCategory: String? = null,
-    val topCategoryPercentage: Float = 0f,
-    val currency: String = "CNY",
-    val baseCurrency: String = "CNY",
+    val filter: TransactionFilter = emptyAnalyticsFilter(),
+    val period: TimePeriod = TimePeriod.THIS_MONTH,
+    val customRange: Pair<JavaDate, JavaDate>? = null,
+    val types: Set<TransactionTypeFilter> = setOf(TransactionTypeFilter.EXPENSE),
+    val selectedCurrency: String? = null,
+    val availableCurrencies: List<String> = emptyList(),
+    val summary: LedgerSummary? = null,
+    val transactionCount: UInt = 0u,
+    val categories: Map<String, Category> = emptyMap(),
+    val categoryAmounts: Map<String, Money?> = emptyMap(),
+    val accounts: Map<String, Account> = emptyMap(),
+    val trend: Map<JavaDate, LedgerSummary> = emptyMap(),
+    val trendFilters: Map<JavaDate, TransactionFilter> = emptyMap(),
     val isLoading: Boolean = true,
-    val spendingTrend: List<BalancePoint> = emptyList(),
-    val convertedMerchantAmounts: Map<String, BigDecimal> = emptyMap()
-)
+    val error: Exception? = null,
+) {
+    val incomeOnly: Boolean
+        get() = types == setOf(TransactionTypeFilter.INCOME)
 
-data class CategoryData(
-    val name: String,
-    val amount: BigDecimal,
-    val percentage: Float,
-    val transactionCount: Int
-)
+    val categoryBreakdown: List<CategoryTotal>
+        get() =
+            (if (incomeOnly) summary?.incomeByCategory else summary?.expenseByCategory).orEmpty()
 
-data class MerchantData(
-    val name: String,
-    val amount: BigDecimal,
-    val transactionCount: Int,
-    val isSubscription: Boolean,
-    val categoryName: String? = null,
-    val subcategoryName: String? = null,
-    val accountIconName: String? = null
-)
+    val currency: String
+        get() = selectedCurrency ?: summary?.currency.orEmpty()
+}
+
+internal fun emptyAnalyticsFilter() =
+    TransactionFilter(
+        null,
+        null,
+        emptyList(),
+        emptyList(),
+        emptyList(),
+        null,
+        null,
+        DeletedFilter.EXCLUDE,
+        SortOrder.NEWEST_FIRST,
+    )

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_budgets_history_incomplete">本期统计不完整（缺少汇率）</string>
+</resources>

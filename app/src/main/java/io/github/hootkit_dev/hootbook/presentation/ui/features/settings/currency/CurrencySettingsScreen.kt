@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,12 +62,15 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun CurrencySettingsScreen(
     onNavigateBack: () -> Unit,
+    initialCurrency: String? = null,
     currencySettingsViewModel: CurrencySettingsViewModel = hiltViewModel(),
     currencyViewModel: CurrencyViewModel = hiltViewModel()
 ) {
     val uiState by currencySettingsViewModel.uiState.collectAsStateWithLifecycle()
     val ratesUiState by currencyViewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(uiState.mainCurrency, initialCurrency) { currencyViewModel.selectCurrency(initialCurrency ?: uiState.mainCurrency.takeIf { it.isNotEmpty() } ?: "CNY") }
+    var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showExchangeRateSheet by remember { mutableStateOf(false) }
     var showUnifiedCurrencyPicker by remember { mutableStateOf(false) }
     var showDefaultCurrencyPicker by remember { mutableStateOf(false) }
@@ -107,9 +111,9 @@ fun CurrencySettingsScreen(
             ) {
                 SettingsGridCard(
                     title = stringResource(R.string.currency),
-                    subtitle = uiState.unifiedCurrencyCode ?: stringResource(R.string.select_currency),
+                    subtitle = uiState.mainCurrency,
                     icon = Icons.Rounded.AttachMoney,
-                    onClick = { showUnifiedCurrencyPicker = true },
+                    onClick = { showMainCurrencyPicker = true },
                     modifier = Modifier.weight(1f)
                 )
                 SettingsGridCard(
@@ -117,9 +121,7 @@ fun CurrencySettingsScreen(
                     subtitle = stringResource(R.string.rates_info_subtitle),
                     icon = Icons.AutoMirrored.Filled.ShowChart,
                     onClick = {
-                        currencyViewModel.loadConversions(
-                            ratesUiState.selectedCurrency?.code ?: "CNY"
-                        )
+                        currencyViewModel.selectCurrency(initialCurrency ?: uiState.mainCurrency)
                         showExchangeRateSheet = true
                     },
                     modifier = Modifier.weight(1f)
@@ -220,27 +222,18 @@ fun CurrencySettingsScreen(
                 }
             }
 
+            uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             Spacer(modifier = Modifier.height(Spacing.xl))
         }
     }
 
     if (showExchangeRateSheet) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ExchangeRatesBottomSheet(
-            uiState = ratesUiState,
-            onDismiss = { showExchangeRateSheet = false },
-            sheetState = sheetState,
-            onSaveCustomRate = { fromCurrency, toCurrency, rate ->
-                currencyViewModel.saveCustomRate(fromCurrency, toCurrency, rate)
-            },
-            onResetCustomRate = { fromCurrency, toCurrency ->
-                currencyViewModel.resetCustomRate(fromCurrency, toCurrency)
-            },
-            serverChoice = currencyViewModel.serverChoice.collectAsState().value,
-            lastSync = currencyViewModel.lastSync.collectAsState().value,
-            onSelectServer = currencyViewModel::selectServer,
-            onSyncNow = currencyViewModel::syncNow
-        )
+        ExchangeRatesBottomSheet(viewModel = currencyViewModel, onDismiss = { showExchangeRateSheet = false })
+    }
+    if (showMainCurrencyPicker) {
+        CurrencyBottomSheet(selectedCurrency = uiState.mainCurrency, onCurrencySelected = {
+            currencySettingsViewModel.setMainCurrency(it); showMainCurrencyPicker = false
+        }, onDismiss = { showMainCurrencyPicker = false })
     }
 
     if (showUnifiedCurrencyPicker) {

@@ -13,7 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -22,7 +22,7 @@ import io.github.hootkit_dev.hootbook.presentation.common.icons.IconProvider
 
 @Composable
 fun AccountFilterChip(
-    account: AccountBalanceEntity,
+    account: Account,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -41,12 +41,12 @@ fun AccountFilterChip(
 
         Box(modifier = Modifier.fillMaxWidth()) {
             val context = LocalContext.current
-            val iconResource = remember(account.bankName, account.iconResId, account.iconName) {
+            val iconResource = remember(account.name, 0, account.icon) {
                 IconProvider.getIconForTransaction(
                     context = context,
-                    merchantName = account.bankName,
-                    accountIconResId = account.iconResId,
-                    accountIconName = account.iconName
+                    merchantName = account.name,
+                    accountIconResId = 0,
+                    accountIconName = account.icon
                 )
             }
 
@@ -64,16 +64,16 @@ fun AccountFilterChip(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BrandIcon(
-                    merchantName = account.bankName,
+                    merchantName = account.name,
                     size = 48.dp,
                     showBackground = true,
-                    accountIconResId = account.iconResId,
-                    accountIconName = account.iconName,
+                    accountIconResId = 0,
+                    accountIconName = account.icon,
                     accountColorHex = account.color
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = account.bankName,
+                        text = account.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,

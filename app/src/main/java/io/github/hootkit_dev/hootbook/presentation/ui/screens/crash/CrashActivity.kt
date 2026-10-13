@@ -102,7 +102,8 @@ class CrashActivity : ComponentActivity() {
             // Create crash log file in cache
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val fileName = "hootbook_crash_$timestamp.txt"
-            val crashFile = File(cacheDir, fileName)
+            val root = File(cacheDir, "core-crash-share").also { check(it.mkdirs() || it.isDirectory) }
+            val crashFile = File(root, fileName)
             crashFile.writeText(crashLog)
 
             // Get URI using the existing FileProvider

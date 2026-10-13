@@ -47,6 +47,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.CardDefaults
@@ -122,7 +123,10 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionTotalsCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
-import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
+import dev.hootkit.core.*
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.CloseCircle
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Edit2
@@ -144,8 +148,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun TransactionsScreen(
     // Export is the list's own action, in the top bar
-    onExport: () -> Unit = {},
+    initialFilter: dev.hootkit.core.TransactionFilter? = null,
     initialCategory: String? = null,
+    initialAccount: String? = null,
     initialMerchant: String? = null,
     initialPeriod: String? = null,
     initialCurrency: String? = null,
@@ -153,57 +158,50 @@ fun TransactionsScreen(
     focusSearch: Boolean = false,
     transactionsViewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onTransactionClick: (Long, String) -> Unit = { _, _ -> },
+    onTransactionClick: (String, String) -> Unit = { _, _ -> },
     onNavigateToSettings: () -> Unit = {},
     animatedContentScope: AnimatedVisibilityScope? = null,
     blurEffects: Boolean,
     // Set on wide windows: a tap shows the transaction in the detail pane beside the list
     // instead of the summary sheet
-    onTransactionSelected: ((Long) -> Unit)? = null
+    onTransactionSelected: ((String) -> Unit)? = null
 ) {
-    var detailTransactionId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showExport by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val view = LocalView.current
     val uiState by transactionsViewModel.uiState.collectAsStateWithLifecycle()
-    detailTransactionId?.let { id ->
-        val transaction = uiState.transactions.firstOrNull { it.id == id }
-        if (transaction != null) {
-            TransactionSummarySheet(
-                transaction = transaction,
-                onDismiss = { detailTransactionId = null },
-                onOpenDetails = {
-                    detailTransactionId = null
-                    onTransactionClick(id, "transaction_$id")
-                }
-            )
+    if (showExport) ExportTransactionsDialog(filter = uiState.filter, total = uiState.total, onDismiss = { showExport = false })
+    val searchQuery = uiState.filter.text.orEmpty()
+    val selectedPeriod = uiState.period
+    val categoryFilter = uiState.filter.categoryIds
+    val transactionTypeFilter = uiState.filter.kinds
+    val categoriesMap = uiState.categories
+    val allSubcategoriesByCategoryId = remember(categoriesMap) { categoriesMap.mapValues { it.value.subcategories } }
+    val availableCurrencies = uiState.currencies
+    val selectedCurrency = uiState.filter.currency.orEmpty()
+    val baseCurrency = uiState.summary?.currency.orEmpty()
+    val sortOption = SortOption.entries.first { it.core == uiState.filter.sort }
+    val customDateRange = uiState.customDateRange
+    val selectionMode = uiState.selectionMode
+    val selectedTransactionIds = uiState.selectedIds
+    val groupedTransactions = remember(uiState.transactions) { groupTransactionsByDate(uiState.transactions) }
+    val subcategoriesById = remember(uiState.categories) {
+        val map = HashMap<String, dev.hootkit.core.Subcategory>()
+        uiState.categories.values.forEach { cat ->
+            cat.subcategories.forEach { sub -> map[sub.id] = sub }
         }
+        map
     }
-    val searchQuery by transactionsViewModel.searchQuery.collectAsStateWithLifecycle()
-    val selectedPeriod by transactionsViewModel.selectedPeriod.collectAsStateWithLifecycle()
-    val categoryFilter by transactionsViewModel.categoryFilter.collectAsStateWithLifecycle()
-    val transactionTypeFilter by transactionsViewModel.transactionTypeFilter.collectAsStateWithLifecycle()
-    val deletedTransaction by transactionsViewModel.deletedTransaction.collectAsStateWithLifecycle()
-    val categoriesMap by transactionsViewModel.categories.collectAsStateWithLifecycle()
-    val subcategoriesMap by transactionsViewModel.subcategories.collectAsStateWithLifecycle()
-    val allSubcategoriesByCategoryId by transactionsViewModel.allSubcategoriesByCategoryId.collectAsStateWithLifecycle()
-    val lookups by transactionsViewModel.lookups.collectAsStateWithLifecycle()
-    val filteredTotals by transactionsViewModel.filteredTotals.collectAsStateWithLifecycle()
-    val currencyGroupedTotals by transactionsViewModel.currencyGroupedTotals.collectAsStateWithLifecycle()
-    val availableCurrencies by transactionsViewModel.availableCurrencies.collectAsStateWithLifecycle()
-    val selectedCurrency by transactionsViewModel.selectedCurrency.collectAsStateWithLifecycle()
-    val baseCurrency by transactionsViewModel.baseCurrency.collectAsStateWithLifecycle()
-    val sortOption by transactionsViewModel.sortOption.collectAsStateWithLifecycle()
-    val customDateRange by transactionsViewModel.customDateRange.collectAsStateWithLifecycle()
-    val selectionMode by transactionsViewModel.selectionMode.collectAsStateWithLifecycle()
-    val selectedTransactionIds by transactionsViewModel.selectedTransactionIds.collectAsStateWithLifecycle()
-    val deletedTransactions by transactionsViewModel.deletedTransactions.collectAsStateWithLifecycle()
-
     val snackbarHostState = remember { SnackbarHostState() }
-    val balanceOperationError by transactionsViewModel.balanceOperationError.collectAsStateWithLifecycle()
-    LaunchedEffect(balanceOperationError) {
-        balanceOperationError?.let { message ->
-            snackbarHostState.showSnackbar(message)
-            transactionsViewModel.clearBalanceOperationError()
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { snackbarHostState.showSnackbar(operationFailed); transactionsViewModel.clearError() }
+    }
+    LaunchedEffect(uiState.undoToken) {
+        uiState.undoToken?.let { token ->
+            val result = snackbarHostState.showSnackbar(context.getString(R.string.transaction_deleted), context.getString(R.string.undo), duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) transactionsViewModel.undoDelete(token)
+            else transactionsViewModel.clearUndo()
         }
     }
     val scope = rememberCoroutineScope()
@@ -217,7 +215,7 @@ fun TransactionsScreen(
 
     val hazeState = remember { HazeState() }
 
-    
+
     // Focus management for search field
     val searchFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -242,7 +240,7 @@ fun TransactionsScreen(
             )
         }
     }
-    
+
     // Calculate active filter count for filters
     val activeFilterCount = listOf(
         transactionTypeFilter.isNotEmpty(),
@@ -254,6 +252,12 @@ fun TransactionsScreen(
         LazyListState()
     }
 
+    LaunchedEffect(listState, uiState.transactions.size, uiState.total, uiState.loadingMore) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
+            .distinctUntilChanged().collect { index ->
+                if (index >= listState.layoutInfo.totalItemsCount - 6) transactionsViewModel.loadMore()
+            }
+    }
     val density = LocalDensity.current
     val collapseThresholdPx = with(density) { 48.dp.roundToPx() }
     val isCollapsed by remember(collapseThresholdPx) {
@@ -268,72 +272,21 @@ fun TransactionsScreen(
     val customRangeLabel = remember(customDateRange) {
         DateRangeUtils.formatDateRange(customDateRange)
     }
-    
+
     // Apply initial filters only once when screen is first created
     LaunchedEffect(Unit) {
-        transactionsViewModel.applyInitialFilters(
+        if (initialFilter != null) transactionsViewModel.initialize(initialFilter)
+        else transactionsViewModel.applyInitialFilters(
             initialCategory,
             initialMerchant,
             initialPeriod,
             initialCurrency,
-            initialType
+            initialType, initialAccount
         )
         // Data preparation is dispatched off-main; do not add an artificial half-second wait.
-        transactionsViewModel.startLoading()
+
     }
 
-    // Apply navigation filters when navigation parameters change (for deep links)
-    LaunchedEffect(initialCategory, initialMerchant, initialPeriod, initialCurrency, initialType) {
-        if (initialCategory != null || initialMerchant != null || initialPeriod != null || initialCurrency != null || initialType != null) {
-            transactionsViewModel.applyNavigationFilters(
-                initialCategory,
-                initialMerchant,
-                initialPeriod,
-                initialCurrency,
-                initialType
-            )
-        }
-    }
-    
-    // Handle delete undo snackbar
-    LaunchedEffect(deletedTransaction) {
-        deletedTransaction?.let { transaction ->
-            // Clear the state immediately to prevent re-triggering
-            transactionsViewModel.clearDeletedTransaction()
-            
-            scope.launch {
-                val result = snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.transaction_deleted),
-                    actionLabel = context.getString(R.string.undo),
-                    duration = SnackbarDuration.Short
-                )
-                if (result == SnackbarResult.ActionPerformed) {
-                    // Pass the transaction directly since state is already cleared
-                    transactionsViewModel.undoDeleteTransaction(transaction)
-                }
-            }
-        }
-    }
-    
-    // Handle bulk delete undo snackbar
-    LaunchedEffect(deletedTransactions) {
-        deletedTransactions?.let { transactions ->
-            // Clear the state immediately to prevent re-triggering
-            transactionsViewModel.clearDeletedTransactions()
-            
-            scope.launch {
-                val result = snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.transactions_deleted_format, transactions.size),
-                    actionLabel = context.getString(R.string.undo),
-                    duration = SnackbarDuration.Short
-                )
-                if (result == SnackbarResult.ActionPerformed) {
-                    transactionsViewModel.undoDeleteTransactions(transactions)
-                }
-            }
-        }
-    }
-    
     // Focus search field if requested
     LaunchedEffect(focusSearch) {
         if (focusSearch) {
@@ -341,19 +294,19 @@ fun TransactionsScreen(
             keyboardController?.show()
         }
     }
-    
+
     // Clear snackbar when navigating away
     DisposableEffect(Unit) {
         onDispose {
             snackbarHostState.currentSnackbarData?.dismiss()
         }
     }
-    
+
     // Handle back button in selection mode
     BackHandler(enabled = selectionMode) {
         transactionsViewModel.toggleSelectionMode()
     }
-    
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -378,7 +331,7 @@ fun TransactionsScreen(
                         TooltipIconButton(
                             icon = Iconax.ImportArrow01,
                             label = stringResource(R.string.export_transactions),
-                            onClick = onExport
+                            onClick = { showExport = true }
                         )
                     }
                     BlurredAnimatedVisibility(selectionMode) {
@@ -388,7 +341,7 @@ fun TransactionsScreen(
                         ) {
                             // Select All/Deselect All toggle button
                             val allSelected =
-                                selectedTransactionIds.size == uiState.transactions.size && uiState.transactions.isNotEmpty()
+                                selectedTransactionIds.size.toUInt() == uiState.total && uiState.transactions.isNotEmpty()
                             IconButton(
                                 onClick = {
                                     if (allSelected) {
@@ -553,7 +506,7 @@ fun TransactionsScreen(
                                                 }
                                             },
                                             onClick = {
-                                                transactionsViewModel.setSortOption(option)
+                                                transactionsViewModel.selectSortOption(option)
                                                 showSortMenu = false
                                             }
                                         )
@@ -572,7 +525,7 @@ fun TransactionsScreen(
                     label = {
                         Text(
                             text = if (categoryFilter.isNotEmpty()) {
-                                stringResource(R.string.search_in_categories_format, categoryFilter.map { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(it) }.joinToString("、"))
+                                stringResource(R.string.search_in_categories_format, categoryFilter.map { uiState.categories[it]?.displayName.orEmpty() }.joinToString("、"))
                             } else stringResource(R.string.search_transactions),
                             maxLines = 1,
                             textAlign = TextAlign.Center,
@@ -597,6 +550,40 @@ fun TransactionsScreen(
                         contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                     ) {
+                        // Advanced filter button with active count
+                        item {
+                            FilterChip(
+                                selected = activeFilterCount > 0,
+                                onClick = { showFilterSheet = true },
+                                label = {
+                                    Text(
+                                        if (activeFilterCount > 0) stringResource(R.string.txn_filter_count, activeFilterCount)
+                                        else stringResource(R.string.txn_filter)
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.FilterList,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(0.7f),
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    borderWidth = 0.dp,
+                                    selected = activeFilterCount > 0,
+                                    enabled = true
+                                ),
+                            )
+                        }
+
                         // Period filter chips
                         items(timePeriods) { period ->
                             FilterChip(
@@ -648,7 +635,7 @@ fun TransactionsScreen(
 
             // Transaction List
             when {
-                uiState.isLoading -> {
+                uiState.isLoading && uiState.transactions.isEmpty() -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -692,29 +679,28 @@ fun TransactionsScreen(
                                 color = MaterialTheme.colorScheme.surface,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                TransactionTotalsCard(
-                                    income = filteredTotals.income,
-                                    expenses = filteredTotals.expenses,
-                                    netBalance = filteredTotals.netBalance,
+                                Column {
+                                uiState.summary?.let { summary -> TransactionTotalsCard(
+                                    income = summary.income,
+                                    expenses = summary.expense,
+                                    netBalance = summary.net,
                                     currency = baseCurrency,
                                     isLoading = uiState.isLoading,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = Spacing.sm)
                                 )
+                                if (!summary.complete) Text(stringResource(R.string.core_complete_incomplete))
+                                }
+                                }
                             }
                         }
 
                         // Iterate through date groups in order
-                        listOf(
-                            DateGroup.TODAY,
-                            DateGroup.YESTERDAY,
-                            DateGroup.THIS_WEEK,
-                            DateGroup.EARLIER
-                        ).forEach { dateGroup ->
-                            uiState.groupedTransactions[dateGroup]?.let { transactions ->
+                        groupedTransactions.forEachIndexed { sectionIndex, (dateGroup, transactions) ->
+                            run {
                                 // Date group header
-                                stickyItemHeader(key = "date_${dateGroup.name}", contentType = "date_header") {
+                                stickyItemHeader(key = "date_${dateGroup.name}_$sectionIndex", contentType = "date_header") {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -758,17 +744,22 @@ fun TransactionsScreen(
                                     contentType = { _, _ -> "transaction" }
                                 ) { index, transaction ->
                                     val position = ListItemPosition.from(index, transactions.size)
-                                    val decoration = remember(transaction, lookups, uiState.conversions) {
-                                        lookups.decorate(transaction, uiState.conversions)
-                                    }
+                                    val person = uiState.people[uiState.debts[transaction.debtId]?.personId]
                                     TransactionItem(
+                                        linkedLoanPersonName = person?.name,
+                                        linkedLoanPersonColor = person?.color,
+                                        linkedLoanPersonAvatar = person?.avatar,
+                                        convertedAmount = uiState.convertedAmounts[transaction.id],
                                         transaction = transaction,
-                                        decoration = decoration,
+                                        categoryEntity = uiState.categories[transaction.categoryId],
+                                        subcategoryEntity = transaction.subcategoryId?.let { subcategoriesById[it] },
+                                        accountIconName = uiState.accounts[transaction.accountId]?.icon,
+                                        accountColorHex = uiState.accounts[transaction.accountId]?.color,
                                         showDate = dateGroup == DateGroup.EARLIER,
                                         shape = position.toShape(),
                                         onClick = {
                                             onTransactionSelected?.invoke(transaction.id)
-                                                ?: run { detailTransactionId = transaction.id }
+                                                ?: onTransactionClick(transaction.id, "transaction_${transaction.id}")
                                         },
                                         isSelectionMode = selectionMode,
                                         isSelected = selectedTransactionIds.contains(transaction.id),
@@ -782,7 +773,7 @@ fun TransactionsScreen(
                                                 transactionsViewModel.toggleTransactionSelection(transaction.id)
                                             }
                                         },
-                                        mainCurrency = baseCurrency
+                                        mainCurrency = uiState.displayCurrency
                                     )
                                 }
                             }
@@ -838,7 +829,7 @@ fun TransactionsScreen(
             }
         }
     }
-    
+
     // Export Dialog
 
     if (showDateRangePicker) {
@@ -866,10 +857,11 @@ fun TransactionsScreen(
             onDismiss = { showCurrencySheet = false }
         )
     }
-    
+
     // Delete confirmation dialog
     if (showDeleteConfirmation) {
         DeleteMultipleTransactionsDialog(
+            busy = uiState.writing,
             onDelete = {
                 transactionsViewModel.deleteSelectedTransactions()
                 showDeleteConfirmation = false
@@ -904,7 +896,6 @@ fun TransactionsScreen(
                     newAmount = newAmount,
                     newNote = newNote
                 )
-                transactionsViewModel.toggleSelectionMode()
             },
             blurEffects = blurEffects,
             hazeState = hazeState

@@ -1,0 +1,6 @@
+<resources>
+    <plurals name="restore_transaction_delete_confirm">
+        <item quantity="one">Delete this transaction? You can undo this immediately after deleting.</item>
+        <item quantity="other">Delete these transactions? You can undo this immediately after deleting.</item>
+    </plurals>
+</resources>

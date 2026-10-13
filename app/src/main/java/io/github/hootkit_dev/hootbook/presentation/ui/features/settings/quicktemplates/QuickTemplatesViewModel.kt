@@ -1,49 +1,68 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.quicktemplates
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.database.entity.QuickTemplateEntity
-import io.github.hootkit_dev.hootbook.data.repository.QuickTemplateRepository
-import io.github.hootkit_dev.hootbook.data.repository.CategoryRepository
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
+import dev.hootkit.core.*
+import dev.hootkit.platform.*
+import io.github.hootkit_dev.hootbook.presentation.data.*
 import javax.inject.Inject
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import java.math.BigDecimal
+
+data class QuickTemplatesUiState(
+    val templates: List<QuickTemplate> = emptyList(),
+    val categories: Map<String, Category> = emptyMap(),
+    val subcategories: Map<String, Subcategory> = emptyMap(),
+    val loading: Boolean = true,
+    val saving: Boolean = false,
+    val error: Int? = null,
+)
 
 @HiltViewModel
-class QuickTemplatesViewModel @Inject constructor(
-    private val repository: QuickTemplateRepository,
-    categoryRepository: CategoryRepository
-) : ViewModel() {
-
-    /** For the category icon and colour on each row. */
-    val categories: StateFlow<List<CategoryEntity>> = categoryRepository.categories
-
-    val templates: StateFlow<List<QuickTemplateEntity>> = repository.templates
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    fun delete(id: Long) {
-        viewModelScope.launch { repository.delete(id) }
-    }
-
-    fun update(template: QuickTemplateEntity, name: String, amount: BigDecimal?, prefillAmount: Boolean) {
+class QuickTemplatesViewModel @Inject constructor(private val session: CoreSession, private val changes: ChangeBus) : ViewModel() {
+    private val mutable = MutableStateFlow(QuickTemplatesUiState())
+    val uiState = mutable.asStateFlow()
+    private val order = MutableStateFlow<List<String>?>(null)
+    init {
         viewModelScope.launch {
-            repository.update(
-                template.copy(
-                    name = name.trim().ifBlank { template.merchantName },
-                    amount = amount,
-                    prefillAmount = prefillAmount && amount != null
-                )
-            )
+            session.observe(changes, setOf(Table.QUICK_TEMPLATES, Table.CATEGORIES, Table.SUBCATEGORIES)) { core -> coreQuery {
+                val templates = core.plans().use { it.templates() }
+                core.categories().use { api ->
+                    val categories = api.list(null, true)
+                    QuickTemplatesUiState(templates, categories.associateBy(Category::id),
+                        categories.flatMap { it.subcategories }.associateBy(Subcategory::id), loading = false)
+                }
+            } }.collect { result -> result.fold(
+                onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
+                onFailure = { failure -> mutable.update { it.copy(loading = false, error = coreFailureText(failure)) } }) }
+        }
+        // Drag events coalesce, then the newest order is persisted after the current command.
+        viewModelScope.launch {
+            order.filterNotNull().collect { ids ->
+                uiState.first { !it.saving }
+                if (ids != order.value) return@collect
+                command { it.reorderTemplates(ids) }
+                uiState.first { !it.saving }
+            }
         }
     }
-
-    /** Persist a new order after a drag; [ordered] is the full list in its new order. */
-    fun reorder(ordered: List<QuickTemplateEntity>) {
-        viewModelScope.launch { repository.reorder(ordered) }
+    fun update(row: QuickTemplate, name: String, amount: BigDecimal?, prefill: Boolean, onSaved: () -> Unit = {}) = command(onSaved) {
+        it.updateTemplate(row.id, QuickTemplateDraft(name, row.kind, row.merchant, row.categoryId, row.subcategoryId,
+            amount, prefill && amount != null, row.accountId, row.currency, row.notes))
+    }
+    fun delete(id: String) = command { it.deleteTemplate(id) }
+    fun reorder(rows: List<QuickTemplate>) { order.value = rows.map(QuickTemplate::id) }
+    private fun command(onSuccess: () -> Unit = {}, block: suspend (PlansInterface) -> Unit) {
+        if (uiState.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
+        viewModelScope.launch {
+            try { session.withCore { core -> core.plans().use { block(it) } }; onSuccess() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
+            finally { mutable.update { it.copy(saving = false) } }
+        }
     }
 }

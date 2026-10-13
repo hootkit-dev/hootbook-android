@@ -2,7 +2,8 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.home
 
-import androidx.compose.foundation.Canvas
+import io.github.hootkit_dev.hootbook.presentation.data.ConvertedMoney
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,13 +24,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -39,22 +37,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionDecoration
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountCategory
-import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.AccountOverviewItem
-import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.OverviewStatus
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.moneyColors
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
-import io.github.hootkit_dev.hootbook.utils.displayTitle
-import io.github.hootkit_dev.hootbook.utils.formatAmount
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.category
+import io.github.hootkit_dev.hootbook.presentation.ui.components.TransactionItem
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 // Tabular figures, so amounts in a column line up
@@ -72,14 +64,14 @@ private fun shortDate(date: LocalDate, locale: Locale): String {
         date.year == LocalDate.now().year -> if (zh) "M月d日" else "MMM d"
         else -> if (zh) "yyyy年M月d日" else "MMM d, yyyy"
     }
-    return date.format(DateTimeFormatter.ofPattern(pattern, locale))
+    return dev.hootkit.core.LocalDate(date.year, date.monthValue.toUByte(), date.dayOfMonth.toUByte()).coreDateText(DateTimeFormatter.ofPattern(pattern, locale))
 }
 
 /** An amount with its currency symbol a size smaller than the figure. */
 @Composable
-private fun amountWithSmallSymbol(amount: BigDecimal, currency: String, symbolStyle: TextStyle) = buildAnnotatedString {
-    val formatted = CurrencyFormatter.formatCurrency(amount, currency)
-    val symbol = CurrencyFormatter.getCurrencySymbol(currency)
+private fun amountWithSmallSymbol(amount: BigDecimal?, currency: String, symbolStyle: TextStyle, customSymbols: Map<String, String>) = buildAnnotatedString {
+    val formatted = CurrencyFormatter.format(amount, currency, customSymbols)
+    val symbol = customSymbols[currency] ?: CurrencyFormatter.getCurrencySymbol(currency)
     val at = formatted.indexOf(symbol)
     if (symbol.isEmpty() || at < 0) {
         append(formatted)
@@ -90,15 +82,13 @@ private fun amountWithSmallSymbol(amount: BigDecimal, currency: String, symbolSt
     }
 }
 
-/**
- * Net worth, straight on the page: the figure (opens every account), how it changed over the
- * trend's span, and the trend. [breakdownShown] reveals the account categories under it.
- */
+/** Net worth opens every account; [breakdownShown] reveals account categories beneath it. */
 @Composable
 internal fun NetWorthSection(
-    netWorth: BigDecimal,
+    netWorth: BigDecimal?,
     currency: String,
-    history: List<BalancePoint>,
+    complete: Boolean,
+    customSymbols: Map<String, String>,
     canChangeCurrency: Boolean,
     onCurrencyClick: () -> Unit,
     onOpenAccounts: () -> Unit,
@@ -133,84 +123,14 @@ internal fun NetWorthSection(
             }
         }
         Text(
-            text = amountWithSmallSymbol(netWorth, currency, MaterialTheme.typography.headlineSmall),
+            text = amountWithSmallSymbol(netWorth, currency, MaterialTheme.typography.headlineSmall, customSymbols),
             style = MaterialTheme.typography.displaySmall.tabular(),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 4.dp).clickable(onClick = onOpenAccounts)
         )
-        if (history.size >= 2) {
-            val first = history.first()
-            val last = history.last()
-            val days = ChronoUnit.DAYS.between(first.timestamp.toLocalDate(), last.timestamp.toLocalDate())
-            val delta = last.balance - first.balance
-            val amount = CurrencyFormatter.formatCurrency(delta.abs(), currency)
-            Row(Modifier.padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.home_last_days, days.toInt()) + " ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    when (delta.signum()) {
-                        1 -> stringResource(R.string.home_change_up, amount)
-                        -1 -> stringResource(R.string.home_change_down, amount)
-                        else -> stringResource(R.string.home_change_none)
-                    },
-                    style = MaterialTheme.typography.labelLarge.tabular(),
-                    color = when (delta.signum()) {
-                        1 -> colors.income
-                        -1 -> colors.expense
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Sparkline(history.map { it.balance }, Modifier.fillMaxWidth().height(72.dp))
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                Text(
-                    shortDate(first.timestamp.toLocalDate(), locale),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(stringResource(R.string.today_lbl), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-/** The trend as a line with a soft fill and a dot at today; no grid, no axis. */
-@Composable
-private fun Sparkline(values: List<BigDecimal>, modifier: Modifier) {
-    val line = MaterialTheme.colorScheme.primary
-    val surface = MaterialTheme.colorScheme.surface
-    Canvas(modifier) {
-        val max = values.maxOf { it }.toFloat()
-        val min = values.minOf { it }.toFloat()
-        val range = (max - min).takeIf { it > 0f } ?: 1f
-        val inset = 6.dp.toPx()
-        val w = size.width - inset
-        val h = size.height - inset * 2
-        fun point(i: Int) = Offset(
-            x = i.toFloat() / (values.size - 1) * w,
-            y = inset + h - (values[i].toFloat() - min) / range * h
-        )
-        val path = Path().apply {
-            values.indices.forEach { i -> point(i).let { if (i == 0) moveTo(it.x, it.y) else lineTo(it.x, it.y) } }
-        }
-        val fill = Path().apply {
-            addPath(path)
-            lineTo(point(values.lastIndex).x, size.height)
-            lineTo(0f, size.height)
-            close()
-        }
-        drawPath(fill, Brush.verticalGradient(listOf(line.copy(alpha = 0.18f), Color.Transparent)))
-        drawPath(path, line, style = Stroke(width = 2.dp.toPx()))
-        val end = point(values.lastIndex)
-        drawCircle(surface, radius = 5.dp.toPx(), center = end)
-        drawCircle(line, radius = 4.dp.toPx(), center = end)
+        if (!complete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -220,11 +140,10 @@ private fun Sparkline(values: List<BigDecimal>, modifier: Modifier) {
  */
 @Composable
 internal fun MonthCard(
-    income: BigDecimal,
-    expenses: BigDecimal,
-    lastIncome: BigDecimal,
-    lastExpenses: BigDecimal,
-    currency: String,
+    summary: LedgerSummary,
+    lastSummary: LedgerSummary?,
+    display: Map<String, ConvertedMoney>,
+    customSymbols: Map<String, String>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -232,19 +151,22 @@ internal fun MonthCard(
     val colors = moneyColors
     val today = LocalDate.now()
     val monthName = today.format(DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月" else "MMMM", locale))
-    val daysLeft = today.lengthOfMonth() - today.dayOfMonth
-    val inc = income.abs()
-    val exp = expenses.abs()
-    val net = inc - exp
+    val converted = display.filterKeys { it != "monthly" }
+    val showConverted = converted.isNotEmpty() && converted.values.all { it.complete }
+    val currency = if (showConverted) converted.values.first().currency else summary.currency
+    val lastIncome = (if (showConverted) display["lastIncome"]?.amount else null) ?: lastSummary?.income ?: BigDecimal.ZERO
+    val lastExpenses = (if (showConverted) display["lastExpense"]?.amount else null) ?: lastSummary?.expense ?: BigDecimal.ZERO
+    val inc = ((if (showConverted) display["income"]?.amount else null) ?: summary.income).abs()
+    val exp = ((if (showConverted) display["expense"]?.amount else null) ?: summary.expense).abs()
+    val net = (if (showConverted) display["net"]?.amount else null) ?: summary.net
     val scale = listOf(inc, exp, lastIncome.abs(), lastExpenses.abs()).maxOf { it }.takeIf { it.signum() > 0 }
     val empty = inc.signum() == 0 && exp.signum() == 0
-    fun money(v: BigDecimal) = CurrencyFormatter.formatCurrency(v, currency)
+    fun money(v: BigDecimal) = CurrencyFormatter.format(v, currency, customSymbols)
 
     Surface(onClick = onClick, shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.home_month_title, monthName), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.home_days_left, daysLeft), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(12.dp))
@@ -261,7 +183,7 @@ internal fun MonthCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                amountWithSmallSymbol(net.abs(), currency, MaterialTheme.typography.titleLarge),
+                amountWithSmallSymbol(net.abs(), currency, MaterialTheme.typography.titleLarge, customSymbols),
                 style = MaterialTheme.typography.headlineMedium.tabular(),
                 color = when {
                     empty || net.signum() == 0 -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -269,6 +191,7 @@ internal fun MonthCard(
                     else -> colors.expense
                 }
             )
+            if (!summary.complete || lastSummary?.complete == false || converted.values.any { !it.complete }) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall)
             if (!empty) {
                 Spacer(Modifier.height(12.dp))
                 MoneyBar(
@@ -287,10 +210,15 @@ internal fun MonthCard(
             }
             if (lastIncome.signum() != 0 || lastExpenses.signum() != 0) {
                 HorizontalDivider(Modifier.padding(top = 14.dp, bottom = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                val lastNet = lastIncome.abs() - lastExpenses.abs()
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                val lastNet = (if (showConverted) display["lastNet"]?.amount else null) ?: lastSummary!!.net
+                Row(verticalAlignment = Alignment.Top) {
                     // The same tick as on the bars, as the note's legend
-                    Box(Modifier.size(width = 2.dp, height = 12.dp).background(MaterialTheme.colorScheme.onSurfaceVariant))
+                    Box(
+                        Modifier
+                            .padding(top = 3.dp)
+                            .size(width = 3.dp, height = 12.dp)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(1.5.dp))
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         stringResource(
@@ -353,27 +281,31 @@ private fun AccountCategory.icon(): ImageVector = when (this) {
 }
 
 /**
- * Account categories as a segmented list, one figure each in the main currency; empty
- * categories are left out, and investments not yet connected offer to connect.
+ * Original segmented account categories; Core provides counts, available credit and the
+ * nearest payment due. Empty investment accounts offer to connect.
  */
 @Composable
 internal fun AccountCategoryList(
-    items: List<AccountOverviewItem>,
+    overview: AccountsOverview?,
     onOpen: (AccountCategory) -> Unit,
+    connections: List<BrokerageConnection> = emptyList(),
     // The nearest card payment due, said on the credit card row
-    nextCardDue: LocalDate?,
     modifier: Modifier = Modifier
 ) {
     val locale = locale()
-    val shown = items.filter { it.count > 0 || it.status == OverviewStatus.CONNECT }
+    val grouped = overview?.accounts.orEmpty().groupBy { it.category() }
+    val shown = if (overview == null) emptyList() else
+        (grouped + (AccountCategory.INVESTMENTS to grouped[AccountCategory.INVESTMENTS].orEmpty())).entries.sortedBy { it.key.ordinal }
+    val nextCardDue = overview?.nearestDue?.dueDate
     val colors = moneyColors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         shown.forEachIndexed { index, item ->
             val top = if (index == 0) 24.dp else 6.dp
             val bottom = if (index == shown.lastIndex) 24.dp else 6.dp
-            val investments = item.category == AccountCategory.INVESTMENTS
+            val investments = item.key == AccountCategory.INVESTMENTS
+            val empty = item.value.isEmpty() && (!investments || connections.isEmpty())
             Surface(
-                onClick = { onOpen(item.category) },
+                onClick = { onOpen(item.key) },
                 shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom),
                 color = MaterialTheme.colorScheme.surfaceContainerLow
             ) {
@@ -388,55 +320,37 @@ internal fun AccountCategoryList(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            item.category.icon(), null, Modifier.size(20.dp),
+                            item.key.icon(), null, Modifier.size(20.dp),
                             tint = if (investments) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(stringResource(item.category.titleRes), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(item.key.titleRes), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             when {
-                                item.status == OverviewStatus.CONNECT -> stringResource(R.string.home_connect_hint)
-                                item.category == AccountCategory.CREDIT_CARDS && nextCardDue != null ->
-                                    stringResource(R.string.home_cards_due, item.count, shortDate(nextCardDue, locale))
-                                else -> stringResource(R.string.overview_count, item.count)
+                                empty -> stringResource(R.string.home_connect_hint)
+                                investments && connections.isNotEmpty() -> pluralStringResource(R.plurals.broker_connections, connections.size, connections.size)
+                                item.key == AccountCategory.CREDIT_CARDS && nextCardDue != null ->
+                                    stringResource(R.string.home_cards_due, item.value.size, nextCardDue.coreDateText(DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)))
+                                else -> stringResource(R.string.overview_count, item.value.size)
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                    when (item.status) {
-                        OverviewStatus.CONNECT -> OutlinedButton(
-                            onClick = { onOpen(item.category) },
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) { Text(stringResource(R.string.home_connect)) }
-                        OverviewStatus.READY -> {
-                            val amount = item.amount!!
-                            val card = item.category == AccountCategory.CREDIT_CARDS
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    CurrencyFormatter.formatCurrency(if (card) amount.abs() else amount, item.currency),
-                                    style = MaterialTheme.typography.titleMedium.tabular(),
-                                    color = if (card && amount.signum() < 0) colors.income else MaterialTheme.colorScheme.onSurface
-                                )
-                                if (card && amount.signum() != 0) {
-                                    Text(
-                                        stringResource(if (amount.signum() > 0) R.string.home_owed else R.string.home_overpaid),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (item.key == AccountCategory.CREDIT_CARDS) overview?.creditAvailable?.let { available ->
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(CurrencyFormatter.formatCurrency(available.amount, available.currency),
+                                style = MaterialTheme.typography.titleMedium.tabular(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.label_available), style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        OverviewStatus.LOADING -> Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        else -> Text(
-                            stringResource(if (item.status == OverviewStatus.UNAVAILABLE) R.string.overview_unavailable else R.string.overview_sources),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
+                    if (empty) OutlinedButton(onClick = { onOpen(item.key) }, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(32.dp)) {
+                        Text(stringResource(R.string.home_connect))
+                    } else Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -450,12 +364,15 @@ internal fun AccountCategoryList(
  */
 @Composable
 internal fun RecentTransactionsCard(
-    transactions: List<TransactionEntity>,
-    decorate: (TransactionEntity) -> TransactionDecoration,
-    targetName: (TransactionEntity) -> String?,
+    transactions: List<Transaction>,
+    categories: Map<String, Category>,
+    subcategories: Map<String, Subcategory>,
+    accounts: Map<String, Account>,
+    conversions: Map<String, ConvertedMoney>,
+    customSymbols: Map<String, String>,
     mainCurrency: String,
     isLoading: Boolean,
-    onTransactionClick: (TransactionEntity) -> Unit,
+    onTransactionClick: (Transaction) -> Unit,
     onViewAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -485,7 +402,7 @@ internal fun RecentTransactionsCard(
                 )
                 else -> Column(Modifier.padding(bottom = 8.dp)) {
                     val now = LocalDate.now()
-                    transactions.groupBy { it.dateTime.toLocalDate() }.forEach { (day, rows) ->
+                    transactions.groupBy { java.time.LocalDate.of(it.dateTime.year, it.dateTime.month.toInt(), it.dateTime.day.toInt()) }.forEach { (day, rows) ->
                         Text(
                             when (day) {
                                 now -> today
@@ -497,90 +414,31 @@ internal fun RecentTransactionsCard(
                             modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp)
                         )
                         rows.forEach { transaction ->
-                            val decoration = remember(transaction, decorate) { decorate(transaction) }
-                            RecentTransactionRow(transaction, decoration, targetName(transaction), mainCurrency) {
-                                onTransactionClick(transaction)
-                            }
+                            val account = accounts[transaction.accountId]
+                            val category = categories[transaction.categoryId]
+                            val subcategory = subcategories[transaction.subcategoryId]
+                            val subtitle = if (transaction.kind == TransactionKind.TRANSFER) listOfNotNull(account?.name, accounts[transaction.toAccountId]?.name).joinToString(" → ")
+                                else listOfNotNull(subcategory?.displayName ?: category?.displayName, account?.name).joinToString("　")
+                            TransactionItem(
+                                transaction = transaction, categoryEntity = category, subcategoryEntity = subcategory,
+                                accountIconName = account?.icon, accountColorHex = account?.color,
+                                showDate = false, subtitleOverride = subtitle, useHomeStyle = true, customSymbols = customSymbols,
+                                amountColorOverride = when (transaction.kind) {
+                                    TransactionKind.INCOME, TransactionKind.LOAN_IN -> moneyColors.income
+                                    TransactionKind.TRANSFER -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                                amountOverride = (when (transaction.kind) {
+                                    TransactionKind.INCOME, TransactionKind.LOAN_IN -> "+"
+                                    TransactionKind.TRANSFER -> ""
+                                    else -> "-"
+                                }) + CurrencyFormatter.format(transaction.amount, transaction.currency, customSymbols),
+                                convertedAmount = conversions[transaction.id]?.amount, mainCurrency = mainCurrency,
+                                onClick = { onTransactionClick(transaction) },
+                            )
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentTransactionRow(
-    transaction: TransactionEntity,
-    decoration: TransactionDecoration,
-    targetName: String?,
-    mainCurrency: String,
-    onClick: () -> Unit
-) {
-    val colors = moneyColors
-    val type = transaction.transactionType
-    val incoming = type == TransactionType.INCOME || type == TransactionType.BORROWED
-    val transfer = type == TransactionType.TRANSFER
-    val accountName = decoration.account?.bankName
-    val category = io.github.hootkit_dev.hootbook.presentation.common.categoryName(decoration.subcategory?.name ?: decoration.category?.name ?: transaction.category)
-    val subtitle = if (transfer && accountName != null && targetName != null) "$accountName → $targetName"
-        else listOfNotNull(category.takeIf { it.isNotBlank() }, accountName).joinToString("　")
-    val sign = when {
-        incoming -> "+"
-        transfer || type == TransactionType.BALANCE_UPDATE -> ""
-        else -> "−"
-    }
-    val amountColor = when {
-        incoming -> colors.income
-        transfer -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-    // Under the amount: what reached the other currency, or the amount in the main currency
-    val received = transaction.toAmount
-    val secondLine = when {
-        transfer && received != null ->
-            stringResource(R.string.home_received, CurrencyFormatter.formatCurrency(received, transaction.toCurrency ?: transaction.currency))
-        !transaction.currency.equals(mainCurrency, ignoreCase = true) && decoration.convertedAmount != null ->
-            CurrencyFormatter.formatCurrency(decoration.convertedAmount, mainCurrency)
-        else -> null
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        BrandIcon(
-            merchantName = transaction.displayTitle(),
-            size = 40.dp,
-            categoryEntity = decoration.category,
-            subcategoryEntity = decoration.subcategory,
-            category = transaction.category,
-            subcategory = transaction.subcategory,
-            accountIconResId = decoration.account?.iconResId ?: 0,
-            accountIconName = decoration.account?.iconName,
-            accountColorHex = decoration.account?.color
-        )
-        Column(Modifier.weight(1f)) {
-            Text(transaction.displayTitle(), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (subtitle.isNotEmpty()) {
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(sign + transaction.formatAmount(), style = MaterialTheme.typography.titleSmall.tabular(), color = amountColor, maxLines = 1)
-            if (secondLine != null) {
-                Text(secondLine, style = MaterialTheme.typography.bodySmall.tabular(), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
         }
     }

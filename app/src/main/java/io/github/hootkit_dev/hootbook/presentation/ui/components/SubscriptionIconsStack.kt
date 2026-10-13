@@ -1,5 +1,9 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -18,23 +22,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubscriptionEntity
 
 @Composable
 fun SubscriptionIconsStack(
-    subscriptions: List<SubscriptionEntity>,
+    subscriptions: List<Subscription>,
     modifier: Modifier = Modifier,
     iconSize: Dp = 32.dp,
     maxIcons: Int = 4,
     borderColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
-    categoriesMap: Map<String, CategoryEntity> = emptyMap(),
-    subcategoriesMap: Map<String, SubcategoryEntity> = emptyMap()
+    categoriesMap: Map<String, Category> = emptyMap(),
+    subcategoriesMap: Map<String, Subcategory> = emptyMap()
 ) {
     val displaySubscriptions = subscriptions.take(maxIcons)
     val outerIconSize = iconSize + 4.dp
-    
+
     if (displaySubscriptions.isEmpty()) return
 
     val totalWidth = if (displaySubscriptions.size > 1) {
@@ -42,11 +43,11 @@ fun SubscriptionIconsStack(
     } else {
         outerIconSize
     }
-    
+
     Box(modifier = modifier.width(totalWidth)) {
         displaySubscriptions.forEachIndexed { index, subscription ->
             val overlapOffset = (iconSize * index.toFloat() * 0.55f)
-            
+
             Box(
                 modifier = Modifier
                     .offset(x = overlapOffset)
@@ -56,13 +57,13 @@ fun SubscriptionIconsStack(
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                val categoryEntity = categoriesMap[subscription.category]
-                val subcategoryEntity = if (categoryEntity != null && subscription.subcategory != null) {
-                    subcategoriesMap[subscription.subcategory]
+                val categoryEntity = categoriesMap[subscription.categoryId]
+                val subcategoryEntity = if (categoryEntity != null && subscription.subcategoryId != null) {
+                    subcategoriesMap[subscription.subcategoryId]
                 } else null
 
                 BrandIcon(
-                    merchantName = subscription.merchantName,
+                    merchantName = subscription.name,
                     size = iconSize,
                     showBackground = true,
                     categoryEntity = categoryEntity,

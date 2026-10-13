@@ -1,16 +1,18 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.subscriptions
 
-import io.github.hootkit_dev.hootbook.data.database.entity.SubscriptionEntity
+import dev.hootkit.core.*
 import java.math.BigDecimal
 
 data class SubscriptionsUiState(
-    val activeSubscriptions: List<SubscriptionEntity> = emptyList(),
-    val totalMonthlyAmount: BigDecimal = BigDecimal.ZERO,
-    val totalYearlyAmount: BigDecimal = BigDecimal.ZERO,
-    val targetCurrency: String = "CNY",
+    val activeSubscriptions: List<Subscription> = emptyList(),
+    val summary: SubscriptionSummary? = null,
+    val categories: Map<String, Category> = emptyMap(),
+    val subcategories: Map<String, Subcategory> = emptyMap(),
     val isLoading: Boolean = true,
-    val lastHiddenSubscription: SubscriptionEntity? = null,
-    val selectedSubscription: SubscriptionEntity? = null,
-    val convertedAmounts: Map<Long, BigDecimal> = emptyMap(),
-    val conversionFailureCount: Int = 0
+    val saving: Boolean = false,
+    val lastHiddenSubscription: Subscription? = null,
+    val selectedSubscription: Subscription? = null,
+    val convertedMonthlyAmounts: Map<String, BigDecimal> = emptyMap(),
+    val convertedAmounts: Map<String, BigDecimal> = emptyMap(),
+    val error: Int? = null,
 )

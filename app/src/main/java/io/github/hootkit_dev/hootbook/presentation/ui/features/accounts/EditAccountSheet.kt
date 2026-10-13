@@ -2,7 +2,6 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
-import io.github.hootkit_dev.hootbook.data.repository.LocalAccountHoldings
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.TextButton
@@ -12,15 +11,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.ripple
 import io.github.hootkit_dev.hootbook.presentation.ui.components.maskAccountNumber
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.ui.res.painterResource
+import dev.hootkit.core.InstitutionKind
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerProviderRegistry
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,8 +46,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Pin
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,6 +68,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -78,13 +96,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
+import dev.hootkit.core.AccountKind
+import dev.hootkit.core.NewAccount
+import dev.hootkit.core.NewCurrency
+import dev.hootkit.core.Institution
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ColorPickerContent
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CurrencyBottomSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.DeleteAccountDialog
-import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.IconSelector
+import io.github.hootkit_dev.hootbook.presentation.ui.components.IconSelector
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Bag
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Card
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DollarCircle
@@ -93,70 +115,58 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Information
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Wallet3
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
 import java.math.BigDecimal
-import io.github.hootkit_dev.hootbook.domain.model.CardDates
-import io.github.hootkit_dev.hootbook.presentation.common.icons.InstitutionCatalog
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 
+enum class BrokerAddMode {
+    AUTO_SYNC,
+    MANUAL
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun EditAccountSheet(
-    account: AccountBalanceEntity? = null,
-    allAccounts: List<AccountBalanceEntity> = emptyList(),
+    account: Account? = null,
+    allAccounts: List<Account> = emptyList(),
     defaultCurrency: String = "CNY",
     initialCategory: AccountCategory? = null,
     isSaving: Boolean = false,
-    saveError: String? = null,
+    saveError: Int? = null,
     onClearSaveError: () -> Unit = {},
     showHeading: Boolean = true,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
-    // A credit card's statement and due days, as saved
-    initialCardDates: CardDates = CardDates(),
-    // Shown above the manual form when the Broker type is chosen: "Broker auto-sync"
+    institutions: List<Institution> = emptyList(),
     brokerAutoSync: (@Composable () -> Unit)? = null,
-    onSave: (bankName: String,
-        balance: BigDecimal,
-        accountLast4: String,
-        iconResId: Int,
-        iconName: String,
-        colorHex: String,
-        isCreditCard: Boolean,
-        isWallet: Boolean,
-        creditLimit: BigDecimal?,
-        currency: String,
-        // Currencies added in this sheet with their starting balances
-        addedCurrencies: Map<String, BigDecimal>,
-        cardDates: CardDates
-    ) -> Unit
+    onSave: (NewAccount) -> Unit
 ) {
     val context = LocalContext.current
-    var bankName by remember { mutableStateOf(account?.bankName ?: "") }
-    var balance by remember { mutableStateOf(account?.balance ?: BigDecimal.ZERO) }
+    var bankName by remember { mutableStateOf(account?.name ?: "") }
+    var balance by remember { mutableStateOf(account?.pockets?.firstOrNull { it.currency == account.mainCurrency }?.balance ?: BigDecimal.ZERO) }
     var creditLimit by remember { mutableStateOf(account?.creditLimit ?: BigDecimal.ZERO) }
-    var isCreditCard by remember { mutableStateOf(account?.isCreditCard ?: (initialCategory == AccountCategory.CREDIT_CARDS)) }
-    var cardDates by remember(initialCardDates) { mutableStateOf(initialCardDates) }
+    var isCreditCard by remember { mutableStateOf((account?.kind == AccountKind.CREDIT_CARD).takeIf { account != null } ?: (initialCategory == AccountCategory.CREDIT_CARDS)) }
+    var statementDay by remember(account) { mutableStateOf(account?.statementDay?.toInt()) }
+    var dueDay by remember(account) { mutableStateOf(account?.dueDay?.toInt()) }
     // Which day is being picked: true the statement day, false the due day
     var pickingStatementDay by remember { mutableStateOf<Boolean?>(null) }
-    var isWallet by remember { mutableStateOf(account?.isWallet ?: (initialCategory == AccountCategory.WALLETS)) }
-    // Broker type: a bank-like account whose name is a catalog broker, which is what makes it an
-    // investment account (AccountBalanceEntity.category()); no stored flag, so no migration.
-    var isBroker by remember { mutableStateOf(account == null && initialCategory == AccountCategory.INVESTMENTS) }
-    var accountLast4 by remember { mutableStateOf(account?.accountLast4 ?: "") }
-    var selectedCurrency by remember { mutableStateOf(account?.currency ?: defaultCurrency) }
+    var isWallet by remember { mutableStateOf((account?.kind == AccountKind.WALLET).takeIf { account != null } ?: (initialCategory == AccountCategory.WALLETS)) }
+    // Core stores the selected account kind directly.
+    var isBroker by remember { mutableStateOf(account?.kind == AccountKind.INVESTMENT || (account == null && initialCategory == AccountCategory.INVESTMENTS)) }
+    var accountLast4 by remember { mutableStateOf(account?.last4 ?: "") }
+    var selectedCurrency by remember { mutableStateOf(account?.mainCurrency ?: defaultCurrency) }
     var iconResId by remember {
         mutableStateOf(
-            if (account?.iconResId != 0 && account?.iconResId != null) account.iconResId
+            if (account != null) IconResolutionUtils.nameToResId(context, account.icon).takeIf { it != 0 } ?: R.drawable.type_finance_bank
             else if (isBroker) R.drawable.type_finance_chart_increasing
             else R.drawable.type_finance_bank
         )
     }
     var iconName by remember {
-        mutableStateOf(account?.iconName ?: IconResolutionUtils.resIdToName(context, iconResId))
+        mutableStateOf(account?.icon ?: IconResolutionUtils.resIdToName(context, iconResId))
     }
     var colorHex by remember { mutableStateOf(account?.color ?: "#33B5E5") }
 
@@ -167,9 +177,9 @@ fun EditAccountSheet(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     // Currencies the account already holds besides the selected one, with their balances
-    val holdings = account?.accountId?.let { LocalAccountHoldings.current[it] }
-    val heldBalances = remember(holdings) { holdings?.pockets?.associate { it.currency to it.balance }.orEmpty() }
-    // Currencies added here: the account will hold them once saved, and they can't be removed
+    val heldBalances = remember(account) { account?.pockets?.associate { it.currency to it.balance }.orEmpty() }
+    var institutionKey by remember(account) { mutableStateOf(account?.institutionKey) }
+    // Currencies added here become Core pockets on save.
     val addedCurrencies = remember { mutableStateMapOf<String, BigDecimal>() }
     // A currency waiting for the "can't be removed" confirmation; true when it becomes the main one
     var pendingCurrency by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
@@ -177,11 +187,59 @@ fun EditAccountSheet(
     var editingAddedCurrency by remember { mutableStateOf<String?>(null) }
 
 
-    val duplicateAccount = account == null && bankName.isNotBlank() && allAccounts.any {
-        it.bankName.trim() == bankName.trim() && it.accountLast4 == accountLast4
+    val chinese = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "zh"
+    val defaultBroker = remember(institutions) {
+        institutions.find { it.key == "ibkr" } ?: institutions.firstOrNull { it.kind == InstitutionKind.BROKER }
     }
-    // Under the Broker type the name must name a broker, or the account would land in Banks
-    val brokerNameInvalid = isBroker && bankName.isNotBlank() && !InstitutionCatalog.isBrokerName(bankName)
+    val currentBroker = remember(institutions, institutionKey) {
+        institutions.find { it.key == institutionKey && it.kind == InstitutionKind.BROKER } ?: defaultBroker
+    }
+    var showBrokerPickerSheet by remember { mutableStateOf(false) }
+
+    val supportsAutoSync = remember(currentBroker, brokerAutoSync) {
+        (currentBroker?.key == "ibkr" ||
+            BrokerProviderRegistry.findByInstitution(currentBroker?.key) != null) && brokerAutoSync != null
+    }
+    var brokerAddMode by remember { mutableStateOf(BrokerAddMode.AUTO_SYNC) }
+
+    LaunchedEffect(currentBroker?.key, supportsAutoSync) {
+        if (!supportsAutoSync) {
+            brokerAddMode = BrokerAddMode.MANUAL
+        } else {
+            brokerAddMode = BrokerAddMode.AUTO_SYNC
+        }
+    }
+
+    val showManualForm = !isBroker || account != null || !supportsAutoSync || brokerAddMode == BrokerAddMode.MANUAL
+
+    LaunchedEffect(isBroker) {
+        if (isBroker && account == null && (institutionKey == null || institutions.none { it.key == institutionKey && it.kind == InstitutionKind.BROKER })) {
+            defaultBroker?.let { broker ->
+                institutionKey = broker.key
+                bankName = if (chinese) broker.chineseName else broker.englishName
+                iconName = broker.iconName
+                iconResId = IconResolutionUtils.nameToResId(context, broker.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                colorHex = broker.color
+            }
+        }
+    }
+
+    if (showBrokerPickerSheet) {
+        InstitutionPickerSheet(
+            institutions = institutions,
+            brokersOnly = true,
+            onDismiss = { showBrokerPickerSheet = false },
+            onSelected = { institution, name ->
+                institutionKey = institution.key
+                bankName = name
+                iconName = institution.iconName
+                iconResId = IconResolutionUtils.nameToResId(context, institution.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                colorHex = institution.color
+                showBrokerPickerSheet = false
+            }
+        )
+    }
+
     LaunchedEffect(bankName, accountLast4) {
         onClearSaveError()
     }
@@ -252,7 +310,7 @@ fun EditAccountSheet(
                     }
                     currency in addedCurrencies -> {
                         selectedCurrency = currency
-                        balance = addedCurrencies.remove(currency) ?: BigDecimal.ZERO
+                        balance = addedCurrencies.getValue(currency)
                     }
                     else -> pendingCurrency = currency to true
                 }
@@ -286,6 +344,7 @@ fun EditAccountSheet(
                         // The current main currency stays held; the new one starts at zero
                         selectedCurrency = currency
                         balance = BigDecimal.ZERO
+                        addedCurrencies[currency] = BigDecimal.ZERO
                     } else {
                         addedCurrencies[currency] = BigDecimal.ZERO
                     }
@@ -335,14 +394,15 @@ fun EditAccountSheet(
 
             // Account Type Selection
             if (account == null) {
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    SegmentedButton(
-                        selected = !isCreditCard && !isWallet && !isBroker,
+                    val isBankSelected = !isCreditCard && !isWallet && !isBroker
+                    // 1. Bank
+                    Surface(
                         onClick = {
-                            if (isWallet || (isBroker && InstitutionCatalog.isBrokerName(bankName))) {
-                                // Clear fields if coming from Wallet, or a broker's name
+                            if (isWallet || isBroker) {
                                 bankName = ""
                                 accountLast4 = ""
                                 iconResId = R.drawable.type_finance_bank
@@ -353,46 +413,91 @@ fun EditAccountSheet(
                             isWallet = false
                             isBroker = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isBankSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isBankSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isBankSelected
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.AccountBalance, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_bank))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.AccountBalance, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_bank),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isBankSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isBankSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isCreditCard,
+
+                    // 2. Card
+                    Surface(
                         onClick = {
                             isCreditCard = true
                             isWallet = false
                             isBroker = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isCreditCard) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isCreditCard) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isCreditCard
+                            }
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Iconax.Card, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_card))
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Iconax.Card, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_card),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isCreditCard) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isCreditCard) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isWallet,
+
+                    // 3. Wallet
+                    Surface(
                         onClick = {
                             isWallet = true
                             isCreditCard = false
@@ -403,77 +508,375 @@ fun EditAccountSheet(
                             iconResId = R.drawable.type_finance_dollar_banknote
                             colorHex = "#8BC34A"
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 2, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isWallet) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isWallet) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isWallet
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Iconax.Wallet3, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_wallet))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Iconax.Wallet3, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_wallet),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isWallet) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isWallet) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
-                    SegmentedButton(
-                        selected = isBroker,
+
+                    // 4. Broker
+                    Surface(
                         onClick = {
-                            if (isWallet || !InstitutionCatalog.isBrokerName(bankName)) {
-                                // Start from an empty broker, not a wallet's or bank's name
-                                bankName = ""
-                                accountLast4 = ""
-                                iconResId = R.drawable.type_finance_chart_increasing
-                                iconName = IconResolutionUtils.resIdToName(context, iconResId)
-                                colorHex = "#33B5E5"
+                            if (isWallet || !isBroker) {
+                                val broker = currentBroker ?: defaultBroker
+                                if (broker != null) {
+                                    institutionKey = broker.key
+                                    bankName = if (chinese) broker.chineseName else broker.englishName
+                                    iconName = broker.iconName
+                                    iconResId = IconResolutionUtils.nameToResId(context, broker.iconName).takeIf { it != 0 } ?: R.drawable.type_finance_chart_increasing
+                                    colorHex = broker.color
+                                } else {
+                                    bankName = ""
+                                    accountLast4 = ""
+                                    iconResId = R.drawable.type_finance_chart_increasing
+                                    iconName = IconResolutionUtils.resIdToName(context, iconResId)
+                                    colorHex = "#33B5E5"
+                                }
                             }
                             isBroker = true
                             isCreditCard = false
                             isWallet = false
                         },
-                        shape = SegmentedButtonDefaults.itemShape(index = 3, count = 4),
-                        colors = SegmentedButtonDefaults.colors(
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                            inactiveBorderColor = Color.Transparent,
-                            activeBorderColor = Color.Transparent
-                        ),
-                        icon = {}
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isBroker) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        contentColor = if (isBroker) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .height(40.dp)
+                            .semantics {
+                                role = Role.RadioButton
+                                selected = isBroker
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Rounded.ShowChart, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.type_broker))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.AutoMirrored.Rounded.ShowChart, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            BasicText(
+                                text = stringResource(R.string.type_broker),
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = if (isBroker) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isBroker) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = 9.sp,
+                                    maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    stepSize = 0.5.sp
+                                )
+                            )
                         }
                     }
                 }
             }
 
-            // Broker: connect for read-only holdings, or keep the manual account below
-            if (isBroker && account == null && brokerAutoSync != null) {
-                brokerAutoSync()
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    Text(
-                        stringResource(R.string.broker_manual_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.semantics { heading() }
-                    )
-                    Text(
-                        stringResource(R.string.broker_manual_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // Broker: pick broker first, show capabilities (auto-sync or note), then details
+            AnimatedVisibility(
+                visible = isBroker && account == null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Section 1: Choose Broker (置顶第一步：选择券商)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.institution_choose_broker),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.semantics { heading() }
+                        )
+
+                        Surface(
+                            onClick = { showBrokerPickerSheet = true },
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                val brokerLogoRes = currentBroker?.iconName?.let {
+                                    IconResolutionUtils.nameToResId(context, it).takeIf { id -> id != 0 }
+                                } ?: R.drawable.type_finance_chart_increasing
+
+                                Image(
+                                    painter = painterResource(brokerLogoRes),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.White)
+                                        .padding(4.dp)
+                                )
+
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = currentBroker?.let { if (chinese) it.chineseName else it.englishName }
+                                            ?: stringResource(R.string.broker_name_label),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = currentBroker?.let { "${it.region} · ${it.currency}" }
+                                            ?: stringResource(R.string.connect_broker_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                TextButton(
+                                    onClick = { showBrokerPickerSheet = true },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.change_broker),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Section 2: Mode Tab (如果支持自动同步，展示「自动同步」与「手动建账」切换 Tab)
+                    if (supportsAutoSync && brokerAutoSync != null) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                // 1. Auto Sync Tab
+                                val isAutoSync = brokerAddMode == BrokerAddMode.AUTO_SYNC
+                                Surface(
+                                    onClick = { brokerAddMode = BrokerAddMode.AUTO_SYNC },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isAutoSync) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    contentColor = if (isAutoSync) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp)
+                                        .semantics {
+                                            role = Role.Tab
+                                            selected = isAutoSync
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Rounded.Sync, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        BasicText(
+                                            text = stringResource(R.string.broker_mode_auto_sync),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isAutoSync) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isAutoSync) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(
+                                                minFontSize = 9.sp,
+                                                maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                                stepSize = 0.5.sp
+                                            )
+                                        )
+                                    }
+                                }
+
+                                // 2. Manual Tab
+                                val isManual = brokerAddMode == BrokerAddMode.MANUAL
+                                Surface(
+                                    onClick = { brokerAddMode = BrokerAddMode.MANUAL },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isManual) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    contentColor = if (isManual) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(38.dp)
+                                        .semantics {
+                                            role = Role.Tab
+                                            selected = isManual
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Iconax.Edit2, null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        BasicText(
+                                            text = stringResource(R.string.broker_mode_manual),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isManual) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isManual) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(
+                                                minFontSize = 9.sp,
+                                                maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                                stepSize = 0.5.sp
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Auto Sync Mode content
+                        if (brokerAddMode == BrokerAddMode.AUTO_SYNC) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                brokerAutoSync.invoke()
+
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.CloudSync,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.broker_auto_sync_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else if (currentBroker != null && !supportsAutoSync) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ShowChart,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.broker_auto_sync_not_supported),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Section 3: Account Details & Balance Header (仅在手动录入模式展示)
+                    if (showManualForm) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                        ) {
+                            Text(
+                                stringResource(R.string.broker_manual_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.semantics { heading() }
+                            )
+                            Text(
+                                stringResource(R.string.broker_manual_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
-            // Preview Section
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
+            if (showManualForm) {
+                // Preview Section
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
                 PreviewAccountCard(
                     bankName = bankName.ifEmpty { stringResource(R.string.preview_bank_name) },
                     balance = balance,
@@ -540,7 +943,7 @@ fun EditAccountSheet(
                         }
                     }
                     // Balance/Outstanding Input
-                    Surface(
+                    if (account == null) Surface(
                         onClick = {
                             editingCreditLimit = false
                             showNumberPad = true
@@ -573,7 +976,7 @@ fun EditAccountSheet(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = CurrencyFormatter.formatCurrency(
+                                    text = CoreMoneyPresentation.formatCurrency(
                                         balance,
                                         selectedCurrency
                                     ),
@@ -620,7 +1023,7 @@ fun EditAccountSheet(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = CurrencyFormatter.formatCurrency(
+                                    text = CoreMoneyPresentation.formatCurrency(
                                         creditLimit,
                                         selectedCurrency
                                     ),
@@ -636,13 +1039,13 @@ fun EditAccountSheet(
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         CardDayField(
                             label = stringResource(R.string.card_statement_day),
-                            day = cardDates.statementDay,
+                            day = statementDay,
                             onClick = { pickingStatementDay = true },
                             modifier = Modifier.weight(1f)
                         )
                         CardDayField(
                             label = stringResource(R.string.card_due_day),
-                            day = cardDates.dueDay,
+                            day = dueDay,
                             onClick = { pickingStatementDay = false },
                             modifier = Modifier.weight(1f)
                         )
@@ -650,64 +1053,25 @@ fun EditAccountSheet(
                     pickingStatementDay?.let { statement ->
                         DayOfMonthDialog(
                             title = stringResource(if (statement) R.string.card_statement_day else R.string.card_due_day),
-                            selected = if (statement) cardDates.statementDay else cardDates.dueDay,
+                            selected = if (statement) statementDay else dueDay,
                             onSelect = { day ->
-                                cardDates = if (statement) cardDates.copy(statementDay = day) else cardDates.copy(dueDay = day)
+                                if (statement) statementDay = day else dueDay = day
                                 pickingStatementDay = null
                             },
                             onDismiss = { pickingStatementDay = null }
                         )
                     }
 
-                    // Available Credit Tip
-                    val availableCredit = creditLimit - balance
-                    val utilization = if (creditLimit > BigDecimal.ZERO) {
-                        ((balance.toDouble() / creditLimit.toDouble()) * 100).toInt()
-                    } else 0
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(Spacing.sm),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                        ) {
-                            Icon(
-                                Iconax.Information,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.available_credit_label, CurrencyFormatter.formatCurrency(availableCredit, selectedCurrency)),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Text(
-                                    text = stringResource(R.string.utilization_label, utilization),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (!isWallet) {
-                    InstitutionPickerButton(brokersOnly = isBroker) { institution, name ->
+                if (!isWallet && !isBroker) {
+                    InstitutionPickerButton(institutions = institutions, brokersOnly = false) { institution, name ->
                         bankName = name
                         iconName = institution.iconName
-                        iconResId = institution.iconResId
+                        iconResId = IconResolutionUtils.nameToResId(context, institution.iconName)
+                        institutionKey = institution.key
                         colorHex = institution.color
                     }
                 }
@@ -777,7 +1141,7 @@ fun EditAccountSheet(
                 // Currency Selection
                 val currencyInteractionSource = remember { MutableInteractionSource() }
                 TextField(
-                    value = "$selectedCurrency (${CurrencyFormatter.getCurrencySymbol(selectedCurrency)})",
+                    value = "$selectedCurrency (${CoreMoneyPresentation.getCurrencySymbol(selectedCurrency)})",
                     onValueChange = {},
                     label = { Text(stringResource(R.string.currency_label), fontWeight = FontWeight.SemiBold) },
                     readOnly = true,
@@ -838,7 +1202,7 @@ fun EditAccountSheet(
                         AssistChip(
                             onClick = {},
                             enabled = false,
-                            label = { Text(CurrencyFormatter.formatCurrency(amount, currency)) }
+                            label = { Text(CoreMoneyPresentation.formatCurrency(amount, currency)) }
                         )
                     }
                     addedCurrencies.forEach { (currency, amount) ->
@@ -849,7 +1213,7 @@ fun EditAccountSheet(
                                 editingCreditLimit = false
                                 showNumberPad = true
                             },
-                            label = { Text(CurrencyFormatter.formatCurrency(amount, currency)) }
+                            label = { Text(CoreMoneyPresentation.formatCurrency(amount, currency)) }
                         )
                     }
                     AssistChip(
@@ -869,10 +1233,12 @@ fun EditAccountSheet(
                     }
                 )
             }
+            }
 
         }
 
         // Action Buttons at Bottom
+        if (showManualForm) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -890,9 +1256,7 @@ fun EditAccountSheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val error = when {
-                    duplicateAccount -> stringResource(R.string.account_already_exists)
-                    brokerNameInvalid -> stringResource(R.string.broker_name_required)
-                    else -> saveError
+                    else -> saveError?.let { stringResource(it) }
                 }
                 if (error != null) {
                     Text(
@@ -935,22 +1299,18 @@ fun EditAccountSheet(
                     // Save button
                     Button(
                         onClick = {
-                            onSave(
-                                bankName.trim(),
-                                balance,
-                                accountLast4,
-                                iconResId,
-                                iconName,
-                                colorHex,
-                                isCreditCard,
-                                isWallet,
-                                if (isCreditCard) creditLimit else null,
-                                selectedCurrency,
-                                addedCurrencies.toMap(),
-                                if (isCreditCard) cardDates else CardDates()
-                            )
+                            onSave(NewAccount(
+                                name = bankName.trim(), last4 = accountLast4.takeIf { !isWallet && it.isNotBlank() },
+                                kind = when { isCreditCard -> AccountKind.CREDIT_CARD; isWallet -> AccountKind.WALLET; isBroker -> AccountKind.INVESTMENT; else -> AccountKind.BANK },
+                                mainCurrency = selectedCurrency, openingBalance = if (account == null) balance else null,
+                                openingAt = null, creditLimit = creditLimit.takeIf { isCreditCard },
+                                statementDay = statementDay?.toUByte().takeIf { isCreditCard },
+                                dueDay = dueDay?.toUByte().takeIf { isCreditCard }, institutionKey = institutionKey,
+                                icon = iconName, color = colorHex,
+                                extraCurrencies = addedCurrencies.map { (code, amount) -> NewCurrency(code, amount) },
+                            ))
                         },
-                        enabled = !isSaving && !duplicateAccount && !brokerNameInvalid && bankName.isNotBlank() && (isWallet || accountLast4.length == 4),
+                        enabled = !isSaving && bankName.isNotBlank() && (isWallet || accountLast4.length == 4),
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
@@ -964,6 +1324,7 @@ fun EditAccountSheet(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -1003,7 +1364,7 @@ private fun PreviewAccountCard(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = CurrencyFormatter.formatCurrency(balance, currency),
+                    text = CoreMoneyPresentation.formatCurrency(balance, currency),
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
@@ -1031,7 +1392,7 @@ private fun PreviewAccountCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = CurrencyFormatter.formatCurrency(creditLimit, currency),
+                            text = CoreMoneyPresentation.formatCurrency(creditLimit, currency),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium
                         )

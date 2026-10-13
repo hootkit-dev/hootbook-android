@@ -56,7 +56,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import io.github.hootkit_dev.hootbook.data.service.AttachmentService
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentPreview
+import androidx.compose.runtime.*
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
@@ -69,9 +71,9 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 
 /**
  * A composable for picking and displaying attachments.
- * 
+ *
  * @param attachments List of attachment relative paths
- * @param attachmentService The AttachmentService for file operations
+ * @param attachmentStore The CoreAttachmentStore for file operations
  * @param onAddAttachment Callback when a new attachment is added (receives relative path)
  * @param onRemoveAttachment Callback when an attachment is removed
  * @param onAttachmentClick Callback when an attachment is clicked for viewing
@@ -82,29 +84,22 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 @Composable
 fun AttachmentSection(
     attachments: List<String>,
-    attachmentService: AttachmentService,
-    onAddAttachment: (String) -> Unit,
+    attachmentStore: CoreAttachmentStore,
+    onAddAttachment: (Uri) -> Unit,
     onRemoveAttachment: (String) -> Unit,
-    onAttachmentClick: (String) -> Unit,
+
     modifier: Modifier = Modifier,
     isEditable: Boolean = true
 ) {
+    var preview by remember { mutableStateOf<String?>(null) }
+    preview?.let { CoreAttachmentPreview(it, attachmentStore) { preview = null } }
+    val onAttachmentClick: (String) -> Unit = { preview = it }
     val context = LocalContext.current
-    
+
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        uri?.let {
-            // Take persistable URI permission
-            context.contentResolver.takePersistableUriPermission(
-                it,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            // Save file to internal storage (use 0L as placeholder, will be updated on save)
-            attachmentService.saveAttachment(it, 0L)?.let { path ->
-                onAddAttachment(path)
-            }
-        }
+        uri?.let(onAddAttachment)
     }
 
     Column(
@@ -182,7 +177,7 @@ fun AttachmentSection(
                     attachments.forEach { attachment ->
                         AttachmentPreviewItem(
                             attachmentPath = attachment,
-                            attachmentService = attachmentService,
+                            attachmentStore = attachmentStore,
                             onClick = { onAttachmentClick(attachment) },
                             onRemove = if (isEditable) {
                                 { onRemoveAttachment(attachment) }
@@ -203,7 +198,7 @@ fun AttachmentSection(
                     items(attachments) { attachment ->
                         AttachmentPreviewItem(
                             attachmentPath = attachment,
-                            attachmentService = attachmentService,
+                            attachmentStore = attachmentStore,
                             onClick = { onAttachmentClick(attachment) },
                             onRemove = if (isEditable) {
                                 { onRemoveAttachment(attachment) }
@@ -220,17 +215,16 @@ fun AttachmentSection(
 @Composable
 private fun AttachmentPreviewItem(
     attachmentPath: String,
-    attachmentService: AttachmentService,
+    attachmentStore: CoreAttachmentStore,
     onClick: () -> Unit,
     onRemove: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isUrl = attachmentService.isUrl(attachmentPath)
-    val isImage = !isUrl && attachmentService.isImage(attachmentPath)
-    val fileName = if (isUrl) stringResource(R.string.attachment_link) else attachmentPath.substringAfterLast('/')
-    val fileUri = if (isUrl) null else attachmentService.getAttachmentUri(attachmentPath)
-    val isFileExists = isUrl || fileUri != null
+    val fileUri = attachmentStore.resolve(attachmentPath)
+    val isImage = fileUri?.extension?.lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
+    val fileName = attachmentPath.substringAfterLast('/')
+    val isFileExists = fileUri != null
 
     Card(
         modifier = modifier
@@ -242,7 +236,7 @@ private fun AttachmentPreviewItem(
             ),
         shape = RoundedCornerShape(Dimensions.Radius.md),
         colors = CardDefaults.cardColors(
-            containerColor = if (isFileExists) MaterialTheme.colorScheme.surfaceContainerHigh 
+            containerColor = if (isFileExists) MaterialTheme.colorScheme.surfaceContainerHigh
                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         )
     ) {
@@ -269,25 +263,11 @@ private fun AttachmentPreviewItem(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (isUrl) {
-                        Icon(
-                            imageVector = Icons.Rounded.Link,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.view_on_drive),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-                    } else if (isFileExists) {
+                    if (isFileExists) {
                         Icon(
                             imageVector = when {
                                 attachmentPath.endsWith(".pdf") -> Icons.Default.PictureAsPdf
-                                attachmentPath.endsWith(".csv") || 
+                                attachmentPath.endsWith(".csv") ||
                                 attachmentPath.endsWith(".xls") ||
                                 attachmentPath.endsWith(".xlsx") -> Icons.Default.TableChart
                                 else -> Icons.Default.InsertDriveFile

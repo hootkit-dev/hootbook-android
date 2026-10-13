@@ -1,51 +1,56 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
-import io.github.hootkit_dev.hootbook.data.currency.Conversions
 import androidx.annotation.StringRes
+import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.domain.model.PersonInfo
 import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
-import java.math.BigDecimal
+import java.time.LocalDate
+
+internal fun emptyTransactionFilter() =
+    TransactionFilter(
+        null,
+        null,
+        emptyList(),
+        emptyList(),
+        emptyList(),
+        null,
+        null,
+        DeletedFilter.EXCLUDE,
+        SortOrder.NEWEST_FIRST,
+    )
 
 data class TransactionsUiState(
-    val transactions: List<TransactionEntity> = emptyList(),
-    val groupedTransactions: Map<DateGroup, List<TransactionEntity>> = emptyMap(),
-    // Transactions in the main currency, where a rate is known
-    val conversions: Conversions = Conversions(),
+    val transactions: List<Transaction> = emptyList(),
+    val total: UInt = 0u,
+    val summary: LedgerSummary? = null,
+    val categories: Map<String, Category> = emptyMap(),
+    val accounts: Map<String, Account> = emptyMap(),
+    val debts: Map<String, DebtEntry> = emptyMap(),
+    val people: Map<String, Person> = emptyMap(),
+    val convertedAmounts: Map<String, java.math.BigDecimal?> = emptyMap(),
+    val currencies: List<String> = emptyList(),
+    val displayCurrency: String = "",
+    val filter: TransactionFilter = emptyTransactionFilter(),
+    val period: TimePeriod = TimePeriod.ALL,
+    val customDateRange: Pair<LocalDate, LocalDate>? = null,
     val isLoading: Boolean = true,
-)
-
-data class FilterParams(
-    val query: String,
-    val period: TimePeriod,
-    val category: String?,
-    val typeFilter: TransactionTypeFilter
+    val loadingMore: Boolean = false,
+    val writing: Boolean = false,
+    val selectionMode: Boolean = false,
+    val selectedIds: Set<String> = emptySet(),
+    val undoToken: String? = null,
+    val error: Int? = null,
 )
 
 enum class DateGroup(@StringRes val labelRes: Int) {
     TODAY(R.string.today_lbl),
     YESTERDAY(R.string.yesterday_lbl),
     THIS_WEEK(R.string.this_week_lbl),
-    EARLIER(R.string.earlier_lbl)
+    EARLIER(R.string.earlier_lbl),
 }
 
-enum class SortOption(@StringRes val labelRes: Int) {
-    DATE_NEWEST(R.string.sort_date_newest),
-    DATE_OLDEST(R.string.sort_date_oldest),
-    AMOUNT_HIGHEST(R.string.sort_amount_highest),
-    AMOUNT_LOWEST(R.string.sort_amount_lowest),
-    MERCHANT_AZ(R.string.sort_merchant_az),
-    MERCHANT_ZA(R.string.sort_merchant_za)
+enum class SortOption(@StringRes val labelRes: Int, val core: SortOrder) {
+    DATE_NEWEST(R.string.sort_date_newest, SortOrder.NEWEST_FIRST),
+    DATE_OLDEST(R.string.sort_date_oldest, SortOrder.OLDEST_FIRST),
+    AMOUNT_HIGHEST(R.string.sort_amount_highest, SortOrder.LARGEST_FIRST),
 }
-
-data class FilteredTotals(
-    val income: BigDecimal = BigDecimal.ZERO,
-    val expenses: BigDecimal = BigDecimal.ZERO,
-    val credit: BigDecimal = BigDecimal.ZERO,
-    val transfer: BigDecimal = BigDecimal.ZERO,
-    val investment: BigDecimal = BigDecimal.ZERO,
-    val netBalance: BigDecimal = BigDecimal.ZERO,
-    val transactionCount: Int = 0
-)

@@ -29,7 +29,7 @@ fun SubtitleTag(
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {

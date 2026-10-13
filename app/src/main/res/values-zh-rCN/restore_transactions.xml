@@ -1,0 +1,5 @@
+<resources>
+    <plurals name="restore_transaction_delete_confirm">
+        <item quantity="other">删除所选交易？删除后可立即撤销。</item>
+    </plurals>
+</resources>

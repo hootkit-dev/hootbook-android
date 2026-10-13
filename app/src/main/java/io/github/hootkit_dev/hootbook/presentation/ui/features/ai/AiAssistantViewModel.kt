@@ -1,320 +1,709 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.ai
 
-import io.github.hootkit_dev.hootbook.data.ai.aiMessage
-import dagger.hilt.android.qualifiers.ApplicationContext
-import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.ai.AiAttachment
-import io.github.hootkit_dev.hootbook.data.ai.AiAttachmentReader
-import io.github.hootkit_dev.hootbook.data.ai.AiConfig
-import io.github.hootkit_dev.hootbook.data.ai.AiException
-import io.github.hootkit_dev.hootbook.data.ai.AiChat
-import io.github.hootkit_dev.hootbook.data.ai.AiLedgerSession
-import io.github.hootkit_dev.hootbook.data.ai.AiModel
-import io.github.hootkit_dev.hootbook.data.ai.AiPart
-import io.github.hootkit_dev.hootbook.data.ai.AiStep
-import io.github.hootkit_dev.hootbook.data.ai.AiSettings
-import io.github.hootkit_dev.hootbook.data.ai.AppliedChanges
-import io.github.hootkit_dev.hootbook.data.ai.LedgerChange
-import io.github.hootkit_dev.hootbook.data.ai.LedgerTools
-import io.github.hootkit_dev.hootbook.data.ai.PdfPasswordRequired
-import io.github.hootkit_dev.hootbook.data.ai.TransactionDraft
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionLookups
-import io.github.hootkit_dev.hootbook.presentation.common.TransactionLookupsSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.hootkit.core.*
+import dev.hootkit.platform.ChangeBus
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.core.ai.*
+import io.github.hootkit_dev.hootbook.presentation.data.coreQuery
+import io.github.hootkit_dev.hootbook.presentation.data.observe
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
-import javax.inject.Singleton
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
-/**
- * The files in the AI request. Shared files are copied in as they arrive, while the sharing
- * app's permission lasts, and stay until used or removed, so they survive the lock screen and
- * the screen being closed.
- */
-@Singleton
-class AiShareInbox @Inject constructor(
-    private val reader: AiAttachmentReader,
-    @ApplicationContext private val context: Context
-) {
-    private val _attachments = MutableStateFlow<List<AiAttachment>>(emptyList())
-    val attachments: StateFlow<List<AiAttachment>> = _attachments.asStateFlow()
-
-    // Why the last shared file could not be read, for the screen to show
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
-
-    /** Copies [uris] in; a file that cannot be read is reported through [error]. */
-    suspend fun add(uris: List<Uri>) {
-        if (uris.isEmpty()) return
-        try {
-            val copied = reader.copy(uris)
-            _attachments.update { it + copied }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _error.value = e.aiMessage(context)
-        }
-    }
-
-    fun clearError() {
-        _error.value = null
-    }
-
-    fun remove(attachment: AiAttachment) {
-        _attachments.update { it - attachment }
-    }
-
-    fun clear() {
-        _attachments.value = emptyList()
-    }
-}
-
-/** The provider's models, loaded once a key is entered. */
-data class ModelListState(
-    val loading: Boolean = false,
-    val models: List<AiModel> = emptyList(),
-    val error: String? = null
-)
-
-/** A proposed change and whether it will be saved; the user can leave one out or edit it. */
-data class ReviewItem(val change: LedgerChange, val included: Boolean)
-
-sealed interface AiPhase {
-    data object Compose : AiPhase
-    /**
-     * The model is at work. [images] is how many images the files became (long screenshots are cut
-     * into tiles), null while they are still being read.
-     */
-    data class Running(
-        val files: Int,
-        val images: Int? = null,
-        val steps: List<AiStep> = emptyList(),
-        val startedAt: Long = SystemClock.elapsedRealtime(),
-        // Set once the run is over, when it is kept for the review
-        val finishedAt: Long? = null
-    ) : AiPhase {
-        val proposed get() = steps.sumOf { (it as? AiStep.Proposed)?.changes?.size ?: 0 }
-    }
-    data object Review : AiPhase
-    data class Saved(val applied: AppliedChanges) : AiPhase
+enum class AiPhase {
+    COMPOSE,
+    PREPARING,
+    RUNNING,
+    REVIEW,
+    SAVED,
 }
 
 data class AiAssistantUiState(
-    val config: AiConfig = AiConfig(),
-    val attachments: List<AiAttachment> = emptyList(),
+    val loading: Boolean = true,
+    val settings: AiSettings? = null,
+    val config: AiConfigDraft = AiConfigDraft(),
+    val configDirty: Boolean = false,
+    val configBusy: Boolean = false,
+    val modelLoading: Boolean = false,
+    val models: List<AiModel> = emptyList(),
+    val modelSearch: String = "",
+    val modelError: String? = null,
     val request: String = "",
-    val phase: AiPhase = AiPhase.Compose,
-    val review: List<ReviewItem> = emptyList(),
-    val summary: String = "",
-    // The run hit its turn limit, so the proposals may be incomplete
-    val stoppedAtLimit: Boolean = false,
+    val files: List<CoreAiInboxFile> = emptyList(),
+    val fileBusy: Boolean = false,
+    val phase: AiPhase = AiPhase.COMPOSE,
+    val steps: List<AiStep> = emptyList(),
+    val review: AiReview? = null,
+    val items: List<AiProposal> = emptyList(),
+    val decisions: Map<UInt, AiDecision> = emptyMap(),
+    val duplicates: Map<String, Transaction> = emptyMap(),
+    val startedAt: Long = 0,
+    val finishedAt: Long? = null,
+    val preparedImages: Int? = null,
+    val applied: AiApplied? = null,
+    val saving: Boolean = false,
+    val passwordFile: CoreAiInboxFile? = null,
+    val accounts: Map<String, Account> = emptyMap(),
+    val categories: Map<String, Category> = emptyMap(),
+    val subcategories: Map<String, Subcategory> = emptyMap(),
     val error: String? = null,
-    // A PDF that needs its password before it can be read
-    val passwordFor: String? = null,
-    val models: ModelListState = ModelListState(),
-    // The steps of the run that produced the review, kept so they can be read afterwards
-    val lastRun: AiPhase.Running? = null,
-    // Saving or undoing: Save and Undo wait, so a second tap cannot write everything twice
-    val busy: Boolean = false
+    val navigationBlocked: Boolean = false,
 )
 
+/** AI business is exclusively generated ai()/AiSession; this owns only UI and file preparation. */
 @HiltViewModel
-class AiAssistantViewModel @Inject constructor(
-    private val settings: AiSettings,
-    private val reader: AiAttachmentReader,
-    private val session: AiLedgerSession,
-    private val tools: LedgerTools,
-    private val inbox: AiShareInbox,
-    private val chat: AiChat,
-    lookupsSource: TransactionLookupsSource,
-    @ApplicationContext private val context: Context
+class AiAssistantViewModel
+private constructor(
+    private val core: CoreSession?,
+    private val changes: ChangeBus,
+    private val inbox: CoreAiInboxPort,
+    private val prepare: suspend (List<CoreAiInboxFile>, Map<String, String>) -> List<AiAttachment>,
+    private val testAi: (suspend () -> AiInterface)?,
+    private val testLookups: (suspend () -> Pair<List<Account>, List<Category>>)?,
+    private val nativeDispatcher: CoroutineDispatcher,
+    private val testDuplicates: (suspend (AiReview) -> Map<String, Transaction>)?,
+    private val invalidMessage: () -> String,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AiAssistantUiState(config = settings.config.value))
+    @Inject
+    constructor(
+        core: CoreSession,
+        changes: ChangeBus,
+        inbox: CoreAiInbox,
+        reader: CoreAiAttachmentReader,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context,
+    ) : this(
+        core,
+        changes,
+        inbox,
+        { files, passwords -> reader.prepare(files, inbox, passwords) },
+        null,
+        null,
+        CoreAiNativeDispatcher,
+        null,
+        { context.getString(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed) },
+    )
 
-    /** False when the keystore is unusable: the key then lasts only until the app closes. */
-    val keyStoredSecurely: Boolean get() = settings.keyStoredSecurely
-    val state: StateFlow<AiAssistantUiState> = _state.asStateFlow()
+    internal constructor(
+        changes: ChangeBus,
+        inbox: CoreAiInboxPort,
+        prepare: suspend (List<CoreAiInboxFile>, Map<String, String>) -> List<AiAttachment> =
+            { _, _ ->
+                emptyList()
+            },
+        lookups: suspend () -> Pair<List<Account>, List<Category>> = {
+            emptyList<Account>() to emptyList()
+        },
+        nativeDispatcher: CoroutineDispatcher = CoreAiNativeDispatcher,
+        duplicates: suspend (AiReview) -> Map<String, Transaction> = { emptyMap() },
+        ai: suspend () -> AiInterface,
+    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." })
 
-    // Categories and accounts, to show proposed transactions the way the lists do
-    val lookups: StateFlow<TransactionLookups> = lookupsSource.lookups
+    private fun failureText(error: Throwable): String =
+        if (error is CoreException.Invalid) invalidMessage() else aiFailureText(error)
 
-    private val passwords = mutableMapOf<String, String>()
-    private var lastDefaultRequest = ""
-    private var running: Job? = null
+    private val mutable = MutableStateFlow(AiAssistantUiState())
+    val state = mutable.asStateFlow()
+    private var query: Job? = null
+    private var queryRevision = 0L
     private var modelsJob: Job? = null
+    private var modelsRevision = 0L
+    private var runJob: Job? = null
+    private val runRevision = AtomicLong()
+    private val sessionLock = Any()
+    private var activeSession: AiSession? = null
+    // Cleanup must survive ViewModelStore.clear(), which cancels viewModelScope first.
+    private val sessionCleanup = CoroutineScope(SupervisorJob() + nativeDispatcher)
+    private var cleared = false
+    private val passwords = mutableMapOf<String, String>()
+
+    private suspend fun <T> withAi(block: suspend (AiInterface) -> T): T =
+        withContext(nativeDispatcher) {
+            val handle = testAi?.invoke() ?: core!!.awaitCore().ai()
+            if (handle is Disposable) handle.use { block(handle) } else block(handle)
+        }
 
     init {
         viewModelScope.launch {
-            inbox.attachments.collect { files -> _state.update { it.copy(attachments = files) } }
+            try {
+                inbox.reload()
+            } catch (_: Throwable) {
+                mutable.update { it.copy(error = "Inbox storage could not be read.") }
+            }
+            inbox.files.collect { files -> mutable.update { it.copy(files = files) } }
         }
-        viewModelScope.launch {
-            inbox.error.collect { error ->
-                if (error != null) {
-                    _state.update { it.copy(error = error) }
-                    inbox.clearError()
+        refresh()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun refresh() {
+        if (state.value.configBusy) return
+        val request = ++queryRevision
+        query?.cancel()
+        query =
+            viewModelScope.launch {
+                val tables =
+                    setOf(Table.SETTINGS, Table.ACCOUNTS, Table.CATEGORIES, Table.SUBCATEGORIES)
+                val snapshots =
+                    if (core != null)
+                        core.observe(changes, tables) { root ->
+                            coreQuery {
+                                val settings = root.ai().use { it.settings() }
+                                val accounts = root.accounts().use { it.overview().accounts }
+                                root.categories().use { categories ->
+                                    val all = categories.list(null, true)
+                                    AiAssistantUiState(
+                                        settings = settings,
+                                        accounts = accounts.associateBy { it.id },
+                                        categories = all.associateBy { it.id },
+                                        subcategories =
+                                            all.flatMap { it.subcategories }.associateBy { it.id },
+                                    )
+                                }
+                            }
+                        }
+                    else
+                        changes.observe(tables).mapLatest {
+                            coreQuery {
+                                val settings = withAi { it.settings() }
+                                val refs = testLookups!!.invoke()
+                                AiAssistantUiState(
+                                    settings = settings,
+                                    accounts = refs.first.associateBy { it.id },
+                                    categories = refs.second.associateBy { it.id },
+                                )
+                            }
+                        }
+                snapshots.collect { result ->
+                    if (request == queryRevision)
+                        result.fold(
+                            onSuccess = { loaded ->
+                                val config = loaded.settings!!
+                                mutable.update {
+                                    it.copy(
+                                        loading = false,
+                                        settings = config,
+                                        config =
+                                            if (it.configDirty) it.config
+                                            else
+                                                AiConfigDraft(
+                                                    config.protocol,
+                                                    config.baseUrl,
+                                                    config.model,
+                                                ),
+                                        accounts = loaded.accounts,
+                                        categories = loaded.categories,
+                                        subcategories = loaded.subcategories,
+                                    )
+                                }
+                            },
+                            onFailure = { error ->
+                                mutable.update {
+                                    it.copy(loading = false, error = failureText(error))
+                                }
+                            },
+                        )
                 }
             }
-        }
     }
 
-    fun saveConfig(config: AiConfig) {
-        settings.save(config)
-        _state.update { it.copy(config = settings.config.value) }
-    }
-
-    /** Lists the models [config]'s key can use; a newer call replaces one still loading. */
-    fun loadModels(config: AiConfig) {
+    fun configChanged(change: (AiConfigDraft) -> AiConfigDraft) {
+        if (
+            state.value.configBusy ||
+                state.value.phase in setOf(AiPhase.PREPARING, AiPhase.RUNNING) ||
+                state.value.saving
+        )
+            return
+        ++modelsRevision
         modelsJob?.cancel()
-        modelsJob = viewModelScope.launch {
-            _state.update { it.copy(models = it.models.copy(loading = true, error = null)) }
-            val result = try {
-                ModelListState(models = chat.listModels(config))
-            } catch (e: AiException) {
-                ModelListState(error = e.aiMessage(context))
-            }
-            _state.update { it.copy(models = result) }
+        mutable.update {
+            it.copy(
+                config = change(it.config),
+                configDirty = true,
+                modelLoading = false,
+                models = emptyList(),
+                modelError = null,
+            )
         }
+    }
+
+    fun protocol(protocol: AiProtocol) {
+        if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
+            return
+        val revision = ++modelsRevision
+        modelsJob?.cancel()
+        viewModelScope.launch {
+            try {
+                val defaults = withAi { it.protocolDefaults(protocol) }
+                if (
+                    revision != modelsRevision ||
+                        state.value.phase != AiPhase.COMPOSE ||
+                        state.value.configBusy
+                )
+                    return@launch
+                configChanged {
+                    it.copy(protocol = protocol, baseUrl = defaults.baseUrl, model = defaults.model)
+                }
+            } catch (error: Throwable) {
+                mutable.update { it.copy(error = failureText(error)) }
+            }
+        }
+    }
+
+    fun saveConfig() {
+        val s = state.value
+        if (s.configBusy || s.saving || s.loading || s.phase != AiPhase.COMPOSE) return
+        ++queryRevision
+        query?.cancel()
+        ++modelsRevision
+        modelsJob?.cancel()
+        val draft = s.config
+        mutable.update { it.copy(configBusy = true, error = null, modelLoading = false) }
+        viewModelScope.launch {
+            try {
+                withContext(NonCancellable) {
+                    withAi { ai ->
+                        // Separate Core commands; if settings succeeds and key fails, the error is
+                        // explicit.
+                        ai.setSettings(draft.protocol, draft.baseUrl, draft.model)
+                        if (draft.removeKey || draft.apiKey.isNotBlank())
+                            ai.setApiKey(if (draft.removeKey) null else draft.apiKey)
+                        val actual = ai.settings()
+                        mutable.update {
+                            it.copy(
+                                settings = actual,
+                                config =
+                                    AiConfigDraft(actual.protocol, actual.baseUrl, actual.model),
+                                configDirty = false,
+                            )
+                        }
+                    }
+                }
+            } catch (error: Throwable) {
+                mutable.update {
+                    it.copy(error = failureText(error), config = it.config.copy(apiKey = ""))
+                }
+            } finally {
+                mutable.update { it.copy(configBusy = false, navigationBlocked = false) }
+                if (!cleared) refresh()
+            }
+        }
+    }
+
+    fun loadModels() {
+        if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
+            return
+        val revision = ++modelsRevision
+        modelsJob?.cancel()
+        val draft = state.value.config
+        mutable.update { it.copy(modelLoading = true, error = null, modelError = null) }
+        modelsJob =
+            viewModelScope.launch {
+                try {
+                    val models = withAi {
+                        it.listModels(
+                            draft.protocol,
+                            draft.baseUrl,
+                            draft.apiKey.takeIf(String::isNotBlank),
+                        )
+                    }
+                    if (revision == modelsRevision)
+                        mutable.update { it.copy(models = models, modelLoading = false) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    if (revision == modelsRevision)
+                        mutable.update {
+                            it.copy(
+                                modelLoading = false,
+                                error = failureText(error),
+                                modelError = failureText(error),
+                            )
+                        }
+                }
+            }
+    }
+
+    fun modelSearch(value: String) {
+        mutable.update { it.copy(modelSearch = value) }
+    }
+
+    fun selectModel(id: String) {
+        if (state.value.configBusy || state.value.phase != AiPhase.COMPOSE) return
+        ++modelsRevision
+        modelsJob?.cancel()
+        mutable.update {
+            it.copy(config = it.config.copy(model = id), configDirty = true, modelLoading = false)
+        }
+    }
+
+    fun request(value: String) {
+        if (state.value.phase == AiPhase.COMPOSE && !state.value.saving)
+            mutable.update { it.copy(request = value) }
     }
 
     fun addFiles(uris: List<Uri>) {
-        viewModelScope.launch { inbox.add(uris) }
+        val real = inbox as? CoreAiInbox ?: return
+        filesCommand { real.copy(uris) }
     }
 
-    fun removeAttachment(attachment: AiAttachment) {
-        inbox.remove(attachment)
+    fun addSharedText(text: String) {
+        val real = inbox as? CoreAiInbox ?: return
+        filesCommand { real.addSharedText(text) }
     }
 
-    fun setRequest(text: String) {
-        _state.update { it.copy(request = text) }
+    fun removeFile(id: String) {
+        filesCommand {
+            inbox.remove(id)
+            passwords.remove(id)
+        }
     }
 
-    /** Sends the files and request to the model. [defaultRequest] is used when the box is empty. */
-    fun analyze(defaultRequest: String) {
-        lastDefaultRequest = defaultRequest
-        val s = _state.value
-        if (running?.isActive == true || (s.attachments.isEmpty() && s.request.isBlank())) return
-        running = viewModelScope.launch {
-            val started = AiPhase.Running(files = s.attachments.size)
-            _state.update { it.copy(phase = started, error = null, passwordFor = null) }
-            fun progress(change: (AiPhase.Running) -> AiPhase.Running) =
-                _state.update { state -> (state.phase as? AiPhase.Running)?.let { state.copy(phase = change(it)) } ?: state }
+    private fun filesCommand(finishOnClear: Boolean = false, block: suspend () -> Unit) {
+        if (state.value.phase != AiPhase.COMPOSE || state.value.fileBusy || state.value.saving)
+            return
+        mutable.update { it.copy(fileBusy = true, error = null) }
+        viewModelScope.launch(
+            start = if (finishOnClear) CoroutineStart.UNDISPATCHED else CoroutineStart.DEFAULT
+        ) {
             try {
-                val parts = reader.parts(s.attachments, passwords)
-                progress { it.copy(images = parts.count { part -> part is AiPart.Image }) }
-                val proposal = session.run(parts, s.request.ifBlank { defaultRequest }) { step ->
-                    progress { it.copy(steps = it.steps + step) }
-                }
-                _state.update {
+                if (finishOnClear) withContext(NonCancellable + nativeDispatcher) { block() }
+                else block()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                mutable.update {
                     it.copy(
-                        phase = AiPhase.Review,
-                        lastRun = (it.phase as? AiPhase.Running)?.copy(finishedAt = SystemClock.elapsedRealtime()),
-                        summary = proposal.summary,
-                        stoppedAtLimit = proposal.stoppedAtLimit,
-                        // Likely duplicates start left out
-                        review = proposal.changes.map { change ->
-                            ReviewItem(change, included = (change as? LedgerChange.Add)?.draft?.possibleDuplicate == null)
-                        }
+                        error =
+                            "File preparation failed. Use a file up to 20 MB; CSV, PDF, or screenshots are supported."
                     )
                 }
-            } catch (e: PdfPasswordRequired) {
-                _state.update { it.copy(phase = AiPhase.Compose, passwordFor = e.name) }
-            } catch (e: AiException) {
-                _state.update { it.copy(phase = AiPhase.Compose, error = e.aiMessage(context)) }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                _state.update { it.copy(phase = AiPhase.Compose) }
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(phase = AiPhase.Compose, error = e.aiMessage(context)) }
+            } finally {
+                mutable.update { it.copy(fileBusy = false) }
             }
+        }
+    }
+
+    fun analyze() {
+        val s = state.value
+        if (
+            s.phase != AiPhase.COMPOSE ||
+                s.loading ||
+                s.configBusy ||
+                s.fileBusy ||
+                s.saving ||
+                s.configDirty ||
+                (s.request.isBlank() && s.files.isEmpty())
+        )
+            return
+        val revision = runRevision.incrementAndGet()
+        mutable.update {
+            it.copy(
+                phase = AiPhase.PREPARING,
+                error = null,
+                passwordFile = null,
+                steps = emptyList(),
+                review = null,
+                items = emptyList(),
+                decisions = emptyMap(),
+                duplicates = emptyMap(),
+                applied = null,
+                startedAt = SystemClock.elapsedRealtime(),
+                finishedAt = null,
+                preparedImages = null,
+            )
+        }
+        val passwordSnapshot = passwords.toMap()
+        runJob =
+            viewModelScope.launch {
+                var native: AiSession? = null
+                var handedToReview = false
+                try {
+                    val attachments = prepare(s.files, passwordSnapshot)
+                    if (revision != runRevision.get()) return@launch
+                    mutable.update {
+                        it.copy(
+                            preparedImages =
+                                attachments.count { a -> a.kind == AiAttachmentKind.IMAGE }
+                        )
+                    }
+                    val listener =
+                        object : AiStepListener {
+                            override fun onStep(step: AiStep) {
+                                try {
+                                    mutable.update { current ->
+                                        if (
+                                            revision == runRevision.get() &&
+                                                current.phase == AiPhase.RUNNING
+                                        )
+                                            current.copy(steps = current.steps + step)
+                                        else current
+                                    }
+                                } catch (_: Throwable) {
+                                    /* Foreign callback must never unwind into Rust. */
+                                }
+                            }
+                        }
+                    mutable.update { it.copy(phase = AiPhase.RUNNING) }
+                    val (review, steps) =
+                        withContext(nativeDispatcher) {
+                            // Assign inside the dispatched block: cancellation at its return
+                            // boundary
+                            // must not lose a newly allocated native pointer.
+                            val running = withAi {
+                                it.start(AiRequest(s.request, attachments), listener).also {
+                                    allocated ->
+                                    native = allocated
+                                }
+                            }
+                            ensureActive()
+                            val result = running.run()
+                            result to running.steps()
+                        }
+                    val duplicates =
+                        testDuplicates?.invoke(review)
+                            ?: core!!.withCore { root ->
+                                root.ledger().use { ledger ->
+                                    val records = linkedMapOf<String, Transaction>()
+                                    review.changes
+                                        .mapNotNull {
+                                            (it.change as? AiChange.AddTransaction)
+                                                ?.possibleDuplicate
+                                        }
+                                        .distinct()
+                                        .forEach { id ->
+                                            try {
+                                                records[id] = ledger.get(id)
+                                            } catch (_: CoreException.NotFound) {}
+                                        }
+                                    records
+                                }
+                            }
+                    if (revision != runRevision.get() || cleared) return@launch
+                    // Running pointers belong only to this coroutine. Main hands ownership
+                    // to review after run has fully unwound; no native call occurs under this lock.
+                    synchronized(sessionLock) { activeSession = native }
+                    handedToReview = true
+                    mutable.update {
+                        it.copy(
+                            phase = AiPhase.REVIEW,
+                            review = review,
+                            duplicates = duplicates,
+                            items = review.changes,
+                            decisions =
+                                review.changes.associate { proposal ->
+                                    proposal.index to
+                                        AiDecision(
+                                            proposal.index,
+                                            (proposal.change as? AiChange.AddTransaction)
+                                                ?.possibleDuplicate == null,
+                                            null,
+                                        )
+                                },
+                            steps = steps,
+                            finishedAt = SystemClock.elapsedRealtime(),
+                        )
+                    }
+                } catch (password: CoreAiPdfPasswordRequired) {
+                    if (revision == runRevision.get())
+                        mutable.update {
+                            it.copy(
+                                phase = AiPhase.COMPOSE,
+                                passwordFile =
+                                    s.files.firstOrNull { file -> file.id == password.fileId },
+                            )
+                        }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    if (revision == runRevision.get())
+                        mutable.update { current ->
+                            current.copy(
+                                phase = AiPhase.COMPOSE,
+                                error =
+                                    if (current.phase == AiPhase.PREPARING)
+                                        "File preparation failed. Check file size (20 MB), PDF password, image readability, and long screenshots (up to 12 tiles). No request was sent."
+                                    else failureText(error),
+                            )
+                        }
+                } finally {
+                    if (!handedToReview) native?.let { releaseNative(it) }
+                }
+            }
+    }
+
+    fun password(value: String?) {
+        val file = state.value.passwordFile ?: return
+        mutable.update { it.copy(passwordFile = null) }
+        if (value != null) {
+            passwords[file.id] = value
+            analyze()
         }
     }
 
     fun cancel() {
-        running?.cancel()
-    }
-
-    fun submitPassword(password: String?) {
-        val name = _state.value.passwordFor ?: return
-        if (password == null) {
-            _state.update { it.copy(passwordFor = null) }
-            return
-        }
-        passwords[name] = password
-        analyze(lastDefaultRequest)
-    }
-
-    fun setIncluded(index: Int, included: Boolean) {
-        _state.update { s ->
-            s.copy(review = s.review.mapIndexed { i, item -> if (i == index) item.copy(included = included) else item })
+        if (state.value.phase !in setOf(AiPhase.PREPARING, AiPhase.RUNNING)) return
+        runRevision.incrementAndGet()
+        // Cancel the Kotlin continuation first. Its UniFFI finally frees the run
+        // future off Main before our finally requests native cancel and releases it.
+        runJob?.cancel()
+        mutable.update {
+            it.copy(
+                phase = AiPhase.COMPOSE,
+                steps = emptyList(),
+                items = emptyList(),
+                review = null,
+                error = null,
+            )
         }
     }
 
-    /** Replaces a proposed addition with the user's corrected version. */
-    fun editDraft(index: Int, draft: TransactionDraft) {
-        _state.update { s ->
-            s.copy(review = s.review.mapIndexed { i, item ->
-                if (i == index && item.change is LedgerChange.Add) item.copy(change = LedgerChange.Add(draft)) else item
-            })
+    fun keep(index: UInt, keep: Boolean) {
+        if (state.value.saving || state.value.phase != AiPhase.REVIEW) return
+        mutable.update { value ->
+            value.decisions[index]?.let { decision ->
+                value.copy(decisions = value.decisions + (index to decision.copy(keep = keep)))
+            } ?: value
         }
     }
 
-    fun save() {
-        val chosen = _state.value.review.filter { it.included }.map { it.change }
-        if (chosen.isEmpty() || _state.value.busy) return
-        _state.update { it.copy(busy = true) }
+    fun edit(index: UInt, form: AiDraftForm): Boolean {
+        if (
+            state.value.saving ||
+                state.value.phase != AiPhase.REVIEW ||
+                state.value.items.none { it.index == index && it.change is AiChange.AddTransaction }
+        )
+            return false
+        return try {
+            val draft = form.toDraft()
+            mutable.update { value ->
+                value.copy(
+                    decisions =
+                        value.decisions +
+                            (index to value.decisions.getValue(index).copy(edited = draft))
+                )
+            }
+            true
+        } catch (_: Exception) {
+            mutable.update {
+                it.copy(error = "Check amount, date/time, and transfer amount input.")
+            }
+            false
+        }
+    }
+
+    fun apply() {
+        val s = state.value
+        if (s.phase != AiPhase.REVIEW || s.saving) return
+        val native = synchronized(sessionLock) { activeSession } ?: return
+        val decisions = s.items.map { s.decisions.getValue(it.index) }
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
             try {
-                // All or nothing: a failure leaves nothing written, so Save can simply be tried again
-                val applied = tools.apply(chosen)
-                _state.update { it.copy(phase = AiPhase.Saved(applied)) }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.aiMessage(context)) }
+                withContext(NonCancellable + nativeDispatcher) {
+                    val applied = native.apply(decisions)
+                    mutable.update { it.copy(phase = AiPhase.SAVED, applied = applied) }
+                }
+            } catch (error: Throwable) {
+                mutable.update { it.copy(error = failureText(error)) }
             } finally {
-                _state.update { it.copy(busy = false) }
+                mutable.update { it.copy(saving = false, navigationBlocked = false) }
+                if (cleared) releaseSession()
             }
         }
     }
 
     fun undo() {
-        val applied = (_state.value.phase as? AiPhase.Saved)?.applied ?: return
-        if (_state.value.busy) return
-        _state.update { it.copy(busy = true) }
+        val s = state.value
+        if (s.phase != AiPhase.SAVED || s.saving) return
+        val token = s.applied?.undoToken ?: return
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
             try {
-                tools.undo(applied)
-                _state.update { it.copy(phase = AiPhase.Review) }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.aiMessage(context)) }
+                withContext(NonCancellable + nativeDispatcher) {
+                    withAi { it.undo(token) }
+                    mutable.update { it.copy(phase = AiPhase.REVIEW, applied = null) }
+                }
+            } catch (error: Throwable) {
+                mutable.update { it.copy(error = failureText(error)) }
             } finally {
-                _state.update { it.copy(busy = false) }
+                mutable.update { it.copy(saving = false, navigationBlocked = false) }
+                if (cleared) releaseSession()
             }
         }
     }
 
-    /** Back to an empty request and no files, keeping the provider settings. */
-    fun startOver() {
+    fun restart() {
+        if (state.value.saving || state.value.configBusy || state.value.fileBusy) return
+        cancel()
+        releaseSession()
         passwords.clear()
-        inbox.clear()
-        _state.update { AiAssistantUiState(config = it.config, attachments = emptyList()) }
+        mutable.update {
+            it.copy(
+                phase = AiPhase.COMPOSE,
+                request = "",
+                review = null,
+                items = emptyList(),
+                decisions = emptyMap(),
+                duplicates = emptyMap(),
+                steps = emptyList(),
+                applied = null,
+                passwordFile = null,
+                error = null,
+            )
+        }
+        filesCommand(finishOnClear = true) { inbox.clear() }
     }
 
-    fun dismissError() {
-        _state.update { it.copy(error = null) }
+    fun clearError() {
+        mutable.update { it.copy(error = null) }
+    }
+
+    fun back(): Boolean {
+        if (state.value.saving || state.value.configBusy || state.value.fileBusy) {
+            mutable.update { it.copy(navigationBlocked = true) }
+            return true
+        }
+        if (state.value.phase in setOf(AiPhase.PREPARING, AiPhase.RUNNING)) {
+            cancel()
+            return true
+        }
+        return false
+    }
+
+    private suspend fun releaseNative(native: AiSession) =
+        withContext(NonCancellable + nativeDispatcher) {
+            try {
+                native.cancel()
+            } finally {
+                native.destroy()
+            }
+        }
+
+    private fun releaseSession() {
+        val native =
+            synchronized(sessionLock) { activeSession.also { activeSession = null } } ?: return
+        sessionCleanup.launch { releaseNative(native) }
+    }
+
+    override fun onCleared() {
+        cleared = true
+        runRevision.incrementAndGet()
+        modelsRevision++
+        queryRevision++
+        runJob?.cancel()
+        passwords.clear()
+        if (!state.value.saving) releaseSession()
+        mutable.update { it.copy(config = it.config.copy(apiKey = "")) }
+        super.onCleared()
     }
 }
-
-/** How many changes a save wrote. */
-fun AppliedChanges.count(): Int =
-    createdAccounts.size + balanceRowIds.size + addedIds.size + updated.size + deleted.size

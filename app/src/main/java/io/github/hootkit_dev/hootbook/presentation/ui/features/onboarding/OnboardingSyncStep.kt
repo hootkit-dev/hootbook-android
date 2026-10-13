@@ -29,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.sync.SyncManager
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncUiState
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
-import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncProblemRow
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncErrorKindRow
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncSetupSection
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncViewModel
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
@@ -47,7 +47,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
  */
 @Composable
 internal fun SyncStep(
-    syncState: SyncManager.State,
+    syncState: SyncUiState,
     wrongPassphrase: Boolean,
     syncViewModel: SyncViewModel,
     accounts: Int,
@@ -95,7 +95,7 @@ internal fun SyncStep(
 /** Sync is on: what came down, any problem, and the main currency when accounts came. */
 @Composable
 private fun SyncReady(
-    state: SyncManager.State,
+    state: SyncUiState,
     accounts: Int,
     transactions: Int,
     selectedCurrency: String,
@@ -130,7 +130,7 @@ private fun SyncReady(
             }
         }
     }
-    state.problem?.let { SyncProblemRow(it) }
+    state.status?.lastError?.let { SyncErrorKindRow(it) }
     if (accounts > 0) {
         ListItem(
             headline = { Text(stringResource(R.string.onboarding_sync_currency)) },

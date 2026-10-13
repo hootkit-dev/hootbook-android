@@ -2,14 +2,16 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 
 import io.github.hootkit_dev.hootbook.utils.pickerDate
 import io.github.hootkit_dev.hootbook.utils.toPickerMillis
- 
+
 import androidx.compose.ui.platform.LocalContext
-import io.github.hootkit_dev.hootbook.presentation.ui.components.mainAccountKey
-import io.github.hootkit_dev.hootbook.presentation.ui.components.sortedForDisplay
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -87,11 +89,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetPeriod
-import io.github.hootkit_dev.hootbook.data.database.entity.BudgetType
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
 import io.github.hootkit_dev.hootbook.presentation.common.icons.CategoryMapping
 import io.github.hootkit_dev.hootbook.utils.titlecaseFirst
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BrandIcon
@@ -107,7 +104,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.History
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Wallet3
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
@@ -122,16 +119,18 @@ import java.util.Locale
 @Composable
 fun EditBudgetSheet(
     budgetState: EditBudgetState,
-    categories: List<CategoryEntity>,
-    subcategoriesMap: Map<Long, List<SubcategoryEntity>> = emptyMap(),
-    allAccounts: List<AccountBalanceEntity> = emptyList(),
+    saving: Boolean = false,
+    error: Int? = null,
+    categories: List<Category>,
+    subcategoriesMap: Map<String, List<Subcategory>> = emptyMap(),
+    allAccounts: List<Account> = emptyList(),
     onAmountChange: (BigDecimal) -> Unit,
     onNameChange: (String) -> Unit,
     onStartDateChange: (LocalDateTime) -> Unit,
     onEndDateChange: (LocalDateTime) -> Unit,
     onPeriodTypeChange: (BudgetPeriod) -> Unit,
-    onBudgetTypeChange: (BudgetType) -> Unit,
-    onAccountIdsChange: (List<String>) -> Unit,
+    onBudgetKindChange: (BudgetKind) -> Unit,
+    onAccountIdsChange: (List<String>?) -> Unit,
     onColorChange: (String) -> Unit,
     onAddCategoryLimit: (String, BigDecimal) -> Unit,
     onRemoveCategoryLimit: (String) -> Unit,
@@ -150,7 +149,7 @@ fun EditBudgetSheet(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var pendingCategoryName by remember { mutableStateOf<String?>(null) }
     var showTypeInfoSheet by remember { mutableStateOf(false) }
-    
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val hazeState = remember { HazeState() }
@@ -241,7 +240,7 @@ fun EditBudgetSheet(
             }
         }
     }
-    
+
     // Number pad for budget amount
     if (showNumberPad && editingCategoryLimit == null && pendingCategoryName == null) {
         HootbookModalBottomSheet(
@@ -260,14 +259,14 @@ fun EditBudgetSheet(
             )
         }
     }
-    
+
     // Number pad for category limit
     if (showNumberPad && (editingCategoryLimit != null || pendingCategoryName != null)) {
         val categoryName = editingCategoryLimit ?: pendingCategoryName ?: ""
-        val existingLimit = budgetState.categoryLimits.find { it.categoryName == categoryName }
-        
+        val existingLimit = budgetState.categoryLimits.find { it.categoryId == categoryName }
+
         HootbookModalBottomSheet(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showNumberPad = false
                 editingCategoryLimit = null
                 pendingCategoryName = null
@@ -277,7 +276,7 @@ fun EditBudgetSheet(
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             NumberPad(
-                initialValue = existingLimit?.limitAmount?.toString() ?: "0",
+                initialValue = existingLimit?.amount?.toString() ?: "0",
                 onDone = { value ->
                     val amount = value.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     if (amount > BigDecimal.ZERO) {
@@ -287,11 +286,11 @@ fun EditBudgetSheet(
                     editingCategoryLimit = null
                     pendingCategoryName = null
                 },
-                title = stringResource(R.string.set_limit_for_format, io.github.hootkit_dev.hootbook.presentation.common.categoryName(categoryName))
+                title = stringResource(R.string.set_limit_for_format, categories.find { it.id == categoryName }?.displayName.orEmpty())
             )
         }
     }
-    
+
     // Category selection sheet
     if (showCategorySheet) {
         HootbookModalBottomSheet(
@@ -301,11 +300,11 @@ fun EditBudgetSheet(
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             CategorySelectionSheet(
-                categories = categories.filter { !it.isIncome },
+                categories = categories.filter { it.kind == CategoryKind.EXPENSE },
                 subcategoriesMap = subcategoriesMap,
                 onSelectionComplete = { category, _ ->
                     showCategorySheet = false
-                    pendingCategoryName = category.name
+                    pendingCategoryName = category.id
                     showNumberPad = true
                 },
                 onDismiss = { showCategorySheet = false }
@@ -324,7 +323,7 @@ fun EditBudgetSheet(
                 onTypeSelected = {
                     scope.launch {
                         sheetState.hide()
-                        onBudgetTypeChange(it)
+                        onBudgetKindChange(it)
                         showTypeInfoSheet = false
                     }
                 },
@@ -351,7 +350,8 @@ fun EditBudgetSheet(
                 style = MaterialTheme.typography.titleMediumEmphasized,
                 fontWeight = FontWeight.Bold
             )
-            
+
+            error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             // Budget Preview Card
             BudgetPreviewCard(
                 name = budgetState.name.ifBlank { budgetState.getDefaultName() },
@@ -372,11 +372,11 @@ fun EditBudgetSheet(
                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
                 )
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    BudgetPeriod.entries.forEachIndexed { index, period ->
+                    BudgetPeriod.entries.filter { it != BudgetPeriod.UNKNOWN }.forEachIndexed { index, period ->
                         SegmentedButton(
                             selected = budgetState.periodType == period,
                             onClick = { onPeriodTypeChange(period) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = BudgetPeriod.entries.size),
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = BudgetPeriod.entries.filter { it != BudgetPeriod.UNKNOWN }.size),
                             colors = SegmentedButtonDefaults.colors(
                                 inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 inactiveContentColor = MaterialTheme.colorScheme.onSurface,
@@ -384,7 +384,7 @@ fun EditBudgetSheet(
                                 activeBorderColor = Color.Transparent
                             ),
                             icon = {},
-                            label = { 
+                            label = {
                                 Text(
                                     stringResource(period.labelRes()),
                                     maxLines = 1,
@@ -434,24 +434,9 @@ fun EditBudgetSheet(
                             )
                         }
                     }
-                } else {
-                     Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f),
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.ends), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(
-                                text = budgetState.endDate.format(DateFormats.fullDateFormatter()),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
                 }
             }
-            
+
             // Budget Type and Tracking
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -481,8 +466,8 @@ fun EditBudgetSheet(
                     }
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         SegmentedButton(
-                            selected = budgetState.budgetType == BudgetType.EXPENSE,
-                            onClick = { onBudgetTypeChange(BudgetType.EXPENSE) },
+                            selected = budgetState.budgetType == BudgetKind.EXPENSE,
+                            onClick = { onBudgetKindChange(BudgetKind.EXPENSE) },
                             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                             colors = SegmentedButtonDefaults.colors(
                                 inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -493,8 +478,8 @@ fun EditBudgetSheet(
                             label = { Text(stringResource(R.string.expense), style = MaterialTheme.typography.labelSmall) }
                         )
                         SegmentedButton(
-                            selected = budgetState.budgetType == BudgetType.SAVINGS,
-                            onClick = { onBudgetTypeChange(BudgetType.SAVINGS) },
+                            selected = budgetState.budgetType == BudgetKind.SAVINGS,
+                            onClick = { onBudgetKindChange(BudgetKind.SAVINGS) },
                             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                             colors = SegmentedButtonDefaults.colors(
                                 inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -524,15 +509,15 @@ fun EditBudgetSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(R.string.accounts), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         Text(
-                            text = if (budgetState.accountIds.isEmpty()) stringResource(R.string.all_accounts) 
-                                   else stringResource(R.string.accounts_selected_format, budgetState.accountIds.size),
+                            text = if (budgetState.accountIds == null) stringResource(R.string.all_accounts)
+                                   else stringResource(R.string.accounts_selected_format, budgetState.accountIds?.size ?: 0),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
                     Icon(Icons.Rounded.ChevronRight, contentDescription = null)
                 }
             }
-            
+
             // Stats/Amount and Color Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -540,10 +525,10 @@ fun EditBudgetSheet(
             ) {
                 // Budget Amount Input
                 Surface(
-                    onClick = { 
+                    onClick = {
                         editingCategoryLimit = null
                         pendingCategoryName = null
-                        showNumberPad = true 
+                        showNumberPad = true
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
@@ -588,7 +573,7 @@ fun EditBudgetSheet(
                     }
                 }
             }
-            
+
             // Budget Name Input
             TextField(
                 value = budgetState.name,
@@ -606,7 +591,7 @@ fun EditBudgetSheet(
                 ),
                 leadingIcon = { Icon(Iconax.Edit2, contentDescription = null) }
             )
-            
+
             // Category Limits Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -626,7 +611,7 @@ fun EditBudgetSheet(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         TextButton(
                             shapes = ButtonDefaults.shapes(),
                             onClick = { showCategorySheet = true }
@@ -640,7 +625,7 @@ fun EditBudgetSheet(
                             Text(stringResource(R.string.add_limit))
                         }
                     }
-                    
+
                     if (budgetState.categoryLimits.isEmpty()) {
                         Text(
                             text = stringResource(R.string.no_category_limits_desc),
@@ -650,27 +635,27 @@ fun EditBudgetSheet(
                         )
                     } else {
                         Spacer(modifier = Modifier.height(Spacing.sm))
-                        
+
                         budgetState.categoryLimits.forEach { limit ->
-                            val category = categories.find { it.name == limit.categoryName }
-                            val categoryInfo = CategoryMapping.categories[limit.categoryName]
-                            
-                            val iconRes = category?.iconResId ?: categoryInfo?.iconResId ?: R.drawable.type_stationary_clipboard
-                            val colorHex = category?.color ?: categoryInfo?.color?.let { String.format("#%06X", 0xFFFFFF and it.toArgb()) } ?: "#91CC4D"
+                            val category = categories.find { it.id == limit.categoryId }
+
+
+                            val iconRes = category?.let { io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.nameToResId(LocalContext.current, it.icon) } ?: R.drawable.type_stationary_clipboard
+                            val colorHex = category?.color ?: "#91CC4D"
 
                             CategoryLimitItem(
-                                categoryName = limit.categoryName,
-                                limitAmount = limit.limitAmount,
+                                categoryName = categories.find { it.id == limit.categoryId }?.displayName.orEmpty(),
+                                limitAmount = limit.amount,
                                 currency = budgetState.currency,
                                 iconResId = iconRes,
                                 backgroundColor = Color(colorHex.toColorInt()),
                                 onEdit = {
-                                    editingCategoryLimit = limit.categoryName
+                                    editingCategoryLimit = limit.categoryId
                                     showNumberPad = true
                                 },
-                                onRemove = { onRemoveCategoryLimit(limit.categoryName) }
+                                onRemove = { onRemoveCategoryLimit(limit.categoryId) }
                             )
-                            
+
                             if (limit != budgetState.categoryLimits.last()) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(vertical = Spacing.xs),
@@ -681,10 +666,10 @@ fun EditBudgetSheet(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(80.dp))
         }
-        
+
         // Action Buttons at Bottom
         Box(
             modifier = Modifier
@@ -731,14 +716,14 @@ fun EditBudgetSheet(
                         )
                     }
                 }
-                
+
                 // Save button
                 Button(
                     onClick = onSave,
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
-                    enabled = budgetState.amount > BigDecimal.ZERO,
+                    enabled = !saving && budgetState.amount > BigDecimal.ZERO,
                     shapes = ButtonDefaults.shapes()
                 ) {
                     Text(
@@ -789,10 +774,10 @@ private fun CategoryLimitItem(
                     tint = Color.Unspecified
                 )
             }
-            
+
             Column {
                 Text(
-                    text = io.github.hootkit_dev.hootbook.presentation.common.categoryName(categoryName),
+                    text = categoryName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -805,7 +790,7 @@ private fun CategoryLimitItem(
                 )
             }
         }
-        
+
         IconButton(shapes = IconButtonDefaults.shapes(), onClick = onRemove) {
             Icon(
                 imageVector = Iconax.Bag,
@@ -825,13 +810,10 @@ private fun BudgetPreviewCard(
     startDate: LocalDateTime,
     endDate: LocalDateTime,
     currency: String,
-    budgetType: BudgetType,
+    budgetType: BudgetKind,
     color: Color
 ) {
-    val isSavings = budgetType == BudgetType.SAVINGS
-    val daysRemaining = java.time.Duration.between(LocalDateTime.now(), endDate).toDays().coerceAtLeast(0)
-    val dailyBudget = if (daysRemaining > 0) amount.divide(BigDecimal.valueOf(daysRemaining.coerceAtLeast(1)), 2, java.math.RoundingMode.HALF_UP) else BigDecimal.ZERO
-
+    val isSavings = budgetType == BudgetKind.SAVINGS
     BudgetAnimatedGradientMeshCard(
         budgetColor = color
     ) {
@@ -892,25 +874,6 @@ private fun BudgetPreviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = if (isSavings) stringResource(R.string.daily_goal_remaining) else stringResource(R.string.daily_budget_left),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            letterSpacing = 0.5.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-
-                    Text(
-                        text = CurrencyFormatter.formatCurrency(dailyBudget, currency),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = if (isSavings) stringResource(R.string.saved_goal) else stringResource(R.string.spend_limit),
@@ -922,20 +885,6 @@ private fun BudgetPreviewCard(
                     )
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = CurrencyFormatter.formatCurrency(BigDecimal.ZERO, currency).replace(".00", ""),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Text(
-                            text = " / ",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-
                         Text(
                             text = CurrencyFormatter.formatCurrency(amount, currency).replace(".00", ""),
                             style = MaterialTheme.typography.titleMedium.copy(
@@ -949,31 +898,7 @@ private fun BudgetPreviewCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Progress Bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(0f)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(color)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = stringResource(R.string.days_remaining_format, daysRemaining),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
         }
     }
 }
@@ -981,13 +906,13 @@ private fun BudgetPreviewCard(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AccountMultiSelectionSheet(
-    allAccounts: List<AccountBalanceEntity>,
-    selectedAccountIds: List<String>,
-    onSelectionChange: (List<String>) -> Unit,
+    allAccounts: List<Account>,
+    selectedAccountIds: List<String>?,
+    onSelectionChange: (List<String>?) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val sortedAccounts = remember(allAccounts) { allAccounts.sortedForDisplay(context.mainAccountKey()) }
+    val sortedAccounts = allAccounts
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -1008,10 +933,10 @@ private fun AccountMultiSelectionSheet(
             ) {
                 item {
                     Surface(
-                        onClick = { onSelectionChange(emptyList()) },
+                        onClick = { onSelectionChange(null) },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         shape = RoundedCornerShape(Spacing.md),
-                        color = if (selectedAccountIds.isEmpty()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
+                        color = if (selectedAccountIds == null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
                             alpha = 0.5f
                         ),
                     ) {
@@ -1026,7 +951,7 @@ private fun AccountMultiSelectionSheet(
                                 modifier = Modifier.weight(1f),
                                 fontWeight = FontWeight.SemiBold
                             )
-                            if (selectedAccountIds.isEmpty()) {
+                            if (selectedAccountIds == null) {
                                 Icon(
                                     Icons.Default.Check,
                                     contentDescription = null,
@@ -1038,8 +963,8 @@ private fun AccountMultiSelectionSheet(
                 }
 
                 items(sortedAccounts) { account ->
-                    val accountId = "${account.bankName}:${account.accountLast4}"
-                    val isSelected = selectedAccountIds.contains(accountId)
+                    val accountId = account.id
+                    val isSelected = selectedAccountIds?.contains(accountId) == true
 
                     AccountRow(
                         account = account,
@@ -1047,13 +972,13 @@ private fun AccountMultiSelectionSheet(
                         showBalance = false,
                         modifier = Modifier.padding(vertical = 2.dp),
                         onClick = {
-                            onSelectionChange(if (isSelected) selectedAccountIds - accountId else selectedAccountIds + accountId)
+                            onSelectionChange(if (isSelected) selectedAccountIds.orEmpty() - accountId else selectedAccountIds.orEmpty() + accountId)
                         },
                         trailing = {
                             HootbookCheckbox(
                                 checked = isSelected,
                                 onCheckedChange = { checked ->
-                                    onSelectionChange(if (checked) selectedAccountIds + accountId else selectedAccountIds - accountId)
+                                    onSelectionChange(if (checked) selectedAccountIds.orEmpty() + accountId else selectedAccountIds.orEmpty() - accountId)
                                 }
                             )
                         }
@@ -1099,4 +1024,5 @@ internal fun BudgetPeriod.labelRes(): Int = when (this) {
     BudgetPeriod.WEEKLY -> R.string.budget_period_weekly
     BudgetPeriod.MONTHLY -> R.string.budget_period_monthly
     BudgetPeriod.YEARLY -> R.string.budget_period_yearly
+    BudgetPeriod.UNKNOWN -> R.string.budget_period_custom
 }

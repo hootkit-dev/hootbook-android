@@ -1,665 +1,585 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.add
 
-import io.github.hootkit_dev.hootbook.utils.pickerDate
-
-import kotlinx.coroutines.flow.first
-import io.github.hootkit_dev.hootbook.data.currency.CurrencyConversionService
-import kotlinx.coroutines.Job
-import android.content.Context
 import android.net.Uri
-import android.util.Log
-import androidx.core.content.edit
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
-import io.github.hootkit_dev.hootbook.data.repository.AccountBalanceRepository
-import io.github.hootkit_dev.hootbook.data.repository.QuickTemplateRepository
-import io.github.hootkit_dev.hootbook.data.database.entity.QuickTemplateEntity
-import io.github.hootkit_dev.hootbook.data.repository.SubcategoryRepository
-import io.github.hootkit_dev.hootbook.data.repository.TransactionRepository
-import io.github.hootkit_dev.hootbook.data.service.AttachmentService
-import io.github.hootkit_dev.hootbook.domain.usecase.AddEditLendBorrowPersonUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.AddSubscriptionUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.AddTransactionUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.GetCategoriesUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.GetLendBorrowPersonsUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.MarkTransactionAsLoanUseCase
-import io.github.hootkit_dev.hootbook.domain.usecase.UpdateSubscriptionUseCase
-import io.github.hootkit_dev.hootbook.domain.model.PersonCategory
-import io.github.hootkit_dev.hootbook.data.database.entity.LendBorrowType
-import io.github.hootkit_dev.hootbook.data.repository.SubscriptionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.hootkit.core.*
+import dev.hootkit.platform.ChangeBus
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
+import io.github.hootkit_dev.hootbook.presentation.data.coreQuery
+import io.github.hootkit_dev.hootbook.presentation.data.observe
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
+import io.github.hootkit_dev.hootbook.presentation.format.*
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.coreDate
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.coreTime
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.ledgerTables
+import io.github.hootkit_dev.hootbook.utils.pickerDate
 import java.math.BigDecimal
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
-import io.github.hootkit_dev.hootbook.R
+
+private fun emptyDraft() =
+    TransactionDraft(
+        TransactionKind.EXPENSE,
+        BigDecimal.ZERO,
+        null,
+        java.time.LocalDateTime.now().coreTime(),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "",
+        null,
+        null,
+        emptyList(),
+    )
+
+private fun emptySubscription() =
+    SubscriptionDraft(
+        "",
+        Money(BigDecimal.ZERO, ""),
+        Cycle(1u, CycleUnit.MONTH),
+        null,
+        java.time.LocalDate.now().coreDate(),
+        null,
+        null,
+        null,
+        null,
+    )
+
+data class AddUiState(
+    val transaction: TransactionDraft = emptyDraft(),
+    val subscription: SubscriptionDraft = emptySubscription(),
+    val subscriptionId: String? = null,
+    val accounts: Map<String, Account> = emptyMap(),
+    val categories: Map<String, Category> = emptyMap(),
+    val people: Map<String, Person> = emptyMap(),
+    val templates: List<QuickTemplate> = emptyList(),
+    val suggestions: List<TemplateSuggestion> = emptyList(),
+    val merchants: List<String> = emptyList(),
+    val duplicates: List<Transaction> = emptyList(),
+    val amount: String = "",
+    val targetAmount: String = "",
+    val subscriptionAmount: String = "",
+    val personId: String? = null,
+    val saveAsTemplate: Boolean = false,
+    val customCycle: Boolean = false,
+    val loading: Boolean = true,
+    val loadingSource: Boolean = false,
+    val writing: Boolean = false,
+    val importing: Boolean = false,
+    val error: Int? = null,
+    val amountPadRequested: Boolean = false,
+    val saved: Boolean = false,
+    // A completed ledger command must not be replayed if an optional follow-up fails.
+    val createdTransactionId: String? = null,
+    val loanLinked: Boolean = false,
+)
 
 @HiltViewModel
 class AddViewModel
 @Inject
 constructor(
-    private val addTransactionUseCase: AddTransactionUseCase,
-    private val addSubscriptionUseCase: AddSubscriptionUseCase,
-    private val addEditLendBorrowPersonUseCase: AddEditLendBorrowPersonUseCase,
-    private val getLendBorrowPersonsUseCase: GetLendBorrowPersonsUseCase,
-    private val markTransactionAsLoanUseCase: MarkTransactionAsLoanUseCase,
-    private val getCategoriesUseCase: GetCategoriesUseCase,
-    private val subcategoryRepository: SubcategoryRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
-    private val subscriptionRepository: SubscriptionRepository,
-    private val updateSubscriptionUseCase: UpdateSubscriptionUseCase,
-    private val quickTemplateRepository: QuickTemplateRepository,
-    private val transactionRepository: TransactionRepository,
-    private val currencyConversionService: CurrencyConversionService,
-    private val accountHoldings: io.github.hootkit_dev.hootbook.data.repository.AccountHoldingsSource,
-    val attachmentService: AttachmentService,
-    @ApplicationContext private val context: Context
+    private val session: CoreSession,
+    private val changes: ChangeBus,
+    private val savedState: SavedStateHandle,
+    val attachmentStore: CoreAttachmentStore,
+    private val preferences: CoreUiPreferencesStore,
 ) : ViewModel() {
-
-    private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
-
-
-    // General UI State
-    private val _uiState = MutableStateFlow(AddUiState())
-    val uiState: StateFlow<AddUiState> = _uiState.asStateFlow()
-
-    // Transaction Tab State
-    private val _transactionUiState = MutableStateFlow(TransactionUiState())
-    val transactionUiState: StateFlow<TransactionUiState> = _transactionUiState.asStateFlow()
-
-    // Subscription Tab State
-    private val _subscriptionUiState = MutableStateFlow(SubscriptionUiState())
-    val subscriptionUiState: StateFlow<SubscriptionUiState> = _subscriptionUiState.asStateFlow()
-
-    // Categories for dropdowns
-    val categories =
-        getCategoriesUseCase
-            .execute()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
-
-    // People available for linking LENT/BORROWED transactions to a Khata person.
-    val persons =
-        getLendBorrowPersonsUseCase()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
-
-    // Quick-add templates shown as chips at the top of the transaction form
-    val quickTemplates: StateFlow<List<QuickTemplateEntity>> = quickTemplateRepository.templates
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    // Recent history behind the form's suggestions: common categories, merchant completion
-    // and suggested templates. Read once per screen; new entries close the form anyway.
-    private val recentHistory: StateFlow<List<io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity>> =
-        flow {
-            val now = LocalDateTime.now()
-            emit(transactionRepository.getVisibleTransactionsBetween(
-                now.minusDays(EntrySuggestions.CATEGORY_DAYS), now.plusDays(1)).first())
-        }
-            .catch { e -> Log.w("AddViewModel", "History for suggestions not loaded", e); emit(emptyList()) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    private val dismissedSuggestions = MutableStateFlow(
-        sharedPrefs.getStringSet(DISMISSED_SUGGESTIONS_KEY, emptySet()).orEmpty().toSet()
-    )
-
-    /** Merchants used before, for completing the merchant field. */
-    val merchantSuggestions: StateFlow<List<MerchantSuggestion>> = recentHistory
-        .map { EntrySuggestions.merchants(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    /** Frequent merchant + category pairs offered next to the saved templates. */
-    val suggestedTemplates: StateFlow<List<SuggestedTemplate>> =
-        combine(recentHistory, quickTemplateRepository.templates, dismissedSuggestions) { history, templates, dismissed ->
-            EntrySuggestions.frequentTemplates(history, LocalDateTime.now(), templates, dismissed)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    /** The categories used most for the selected transaction type. */
-    val commonCategories: StateFlow<List<String>> =
-        combine(recentHistory, _transactionUiState.map { it.transactionType }.distinctUntilChanged()) { history, type ->
-            EntrySuggestions.topCategories(history, type, LocalDateTime.now())
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    // Accounts for dropdown
-    val accounts = accountBalanceRepository
-            .getAllLatestBalances()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
-
-    // All Subcategories for sheet
-    val allSubcategories = subcategoryRepository.subcategoriesMap
-
-
-
-    // Subcategories for the selected category
-    private val _transactionSubcategories =
-        MutableStateFlow<List<SubcategoryEntity>>(
-            emptyList()
-        )
-    val transactionSubcategories:
-            StateFlow<List<SubcategoryEntity>> =
-        _transactionSubcategories.asStateFlow()
-
-    private val _subscriptionSubcategories =
-        MutableStateFlow<List<SubcategoryEntity>>(
-            emptyList()
-        )
-    val subscriptionSubcategories:
-            StateFlow<List<SubcategoryEntity>> =
-        _subscriptionSubcategories.asStateFlow()
-
-    // Transaction attachments
-    private val _transactionAttachments = MutableStateFlow<List<String>>(emptyList())
-    val transactionAttachments: StateFlow<List<String>> = _transactionAttachments.asStateFlow()
-
-    // Subscription attachments
-    private val _subscriptionAttachments = MutableStateFlow<List<String>>(emptyList())
-    val subscriptionAttachments: StateFlow<List<String>> = _subscriptionAttachments.asStateFlow()
+    private val mutableState = MutableStateFlow(restoreAddDraft(savedState) ?: AddUiState())
+    val uiState = mutableState.asStateFlow()
+    private var initialized = savedState.contains("add_draft")
+    private var sourceVersion = 0L
+    private var sourceJob: Job? = null
+    private var conversionJob: Job? = null
+    private var merchantJob: Job? = null
+    private var duplicateJob: Job? = null
+    private var duplicateVersion = 0L
+    private var queryJob: Job? = null
+    private val imported = mutableSetOf<String>()
 
     init {
-        initializeData()
+        refresh()
     }
 
-    private fun initializeData() {
-        // Load default subcategories for both tabs
-        updateTransactionSubcategories("Miscellaneous")
-        updateSubscriptionSubcategories("Subscription")
-
-        // Pre-select main account
-        viewModelScope.launch {
-            accounts.filter { it.isNotEmpty() }.first().let { availableAccounts ->
-                val mainAccountKey = sharedPrefs.getString("main_account", null)
-                if (mainAccountKey != null) {
-                    val mainAccount = availableAccounts.find { 
-                        "${it.bankName}_${it.accountLast4}" == mainAccountKey 
+    fun refresh() {
+        queryJob?.cancel()
+        queryJob =
+            viewModelScope.launch {
+                session
+                    .observe(
+                        changes,
+                        ledgerTables +
+                            setOf(
+                                Table.SUBSCRIPTIONS,
+                                Table.QUICK_TEMPLATES,
+                                Table.PEOPLE,
+                                Table.DEBTS,
+                            ),
+                    ) { core ->
+                        coreQuery {
+                            val accounts =
+                                core.accounts().use {
+                                    it.overview().accounts.associateBy(Account::id)
+                                }
+                            val categories =
+                                core.categories().use {
+                                    it.list(null, true).associateBy(Category::id)
+                                }
+                            val today = java.time.LocalDate.now().coreDate()
+                            core.plans().use { plans ->
+                                AddUiState(
+                                    accounts = accounts,
+                                    categories = categories,
+                                    people = plans.people(false, today).associateBy(Person::id),
+                                    templates = plans.templates(),
+                                    suggestions = plans.templateSuggestions(today),
+                                )
+                            }
+                        }
                     }
-                    // Only where nothing is chosen yet: a template applied meanwhile keeps its account.
-                    if (mainAccount != null) {
-                        _transactionUiState.update {
-                            if (it.selectedAccount != null) it
-                            else it.copy(selectedAccount = mainAccount, currency = mainAccount.currency)
+                    .collect { result ->
+                        val rows =
+                            result.getOrElse { failure ->
+                                mutableState.update {
+                                    it.copy(loading = false, error = coreFailureText(failure))
+                                }
+                                return@collect
+                            }
+                        mutableState.update {
+                            it.copy(
+                                accounts = rows.accounts,
+                                categories = rows.categories,
+                                people = rows.people,
+                                templates = rows.templates,
+                                suggestions = rows.suggestions,
+                                loading = false,
+                            )
                         }
-                        _subscriptionUiState.update {
-                            if (it.selectedAccount != null) it
-                            else it.copy(selectedAccount = mainAccount, currency = mainAccount.currency)
-                        }
+                    }
+            }
+    }
+
+    fun initialize(initialTab: Int, subscriptionId: String?, kind: String?, templateId: String?) {
+        if (initialized) return
+        initialized = true
+        source {
+            val defaults =
+                session.withCore {
+                    it.settings().use { settings ->
+                        settings.mainCurrency() to settings.defaultAccount()
                     }
                 }
+            val prefs = preferences.ready()
+            val defaultAccount =
+                session.withCore {
+                    it.accounts().use { accounts ->
+                        accounts.overview().accounts.find { a -> a.id == defaults.second }
+                    }
+                }
+            val currency =
+                prefs.defaultEntryCurrency?.takeIf { prefs.defaultEntryEnabled }
+                    ?: defaultAccount?.mainCurrency
+                    ?: defaults.first
+            var state =
+                uiState.value.copy(
+                    transaction =
+                        uiState.value.transaction.copy(
+                            currency = currency,
+                            accountId = defaults.second,
+                            kind =
+                                kind?.let { TransactionKind.valueOf(it) } ?: TransactionKind.EXPENSE,
+                        ),
+                    subscription =
+                        uiState.value.subscription.copy(
+                            amount = Money(BigDecimal.ZERO, currency),
+                            accountId = defaults.second,
+                        ),
+                )
+            if (templateId != null) {
+                val prefill =
+                    session.withCore {
+                        it.plans().use { plans -> plans.templatePrefill(templateId) }
+                    }
+                state = prefill(state, prefill)
             }
-        }
-    }
-
-    fun resetAllStates() {
-        _amountPadRequested.value = false
-        _transactionUiState.value = TransactionUiState()
-        _subscriptionUiState.value = SubscriptionUiState()
-        _transactionAttachments.value = emptyList()
-        _subscriptionAttachments.value = emptyList()
-        initializeData()
-    }
-
-    // Transaction Tab Functions
-    fun updateTransactionAmount(amount: String) {
-        val filtered = amount.filter { it.isDigit() || it == '.' }
-        val decimalCount = filtered.count { it == '.' }
-        val validAmount = if (decimalCount <= 1) filtered else _transactionUiState.value.amount
-
-        _transactionUiState.update { currentState ->
-            currentState.copy(amount = validAmount, amountError = validateAmount(validAmount))
-        }
-        refreshTargetAmount()
-    }
-
-    fun updateTransactionType(type: TransactionType) {
-        val newCategory = when (type) {
-            TransactionType.INCOME -> "Income"
-            TransactionType.EXPENSE -> "Miscellaneous"
-            TransactionType.INVESTMENT -> "Investment"
-            TransactionType.CREDIT -> "Shopping"
-            TransactionType.TRANSFER -> "Self Transfer"
-            TransactionType.LENT -> "Lent"
-            TransactionType.BORROWED -> "Borrowed"
-            else -> _transactionUiState.value.category
-        }
-
-        _transactionUiState.update { currentState ->
-            currentState.copy(
-                transactionType = type,
-                category = newCategory,
-                subcategory = null,
-                categoryError = validateCategory(newCategory)
-            )
-        }
-
-        // Update subcategories for the new default category
-        updateTransactionSubcategories(newCategory)
-    }
-
-    fun updateTransactionMerchant(merchant: String) {
-        _transactionUiState.update { currentState ->
-            currentState.copy(merchant = merchant, merchantError = null)
-        }
-    }
-
-    /** Fill the merchant from history, with the category and account it was last used with. */
-    fun applyMerchantSuggestion(suggestion: MerchantSuggestion) {
-        val account = accounts.value.firstOrNull {
-            it.bankName == suggestion.bankName && it.accountLast4 == suggestion.accountLast4
-        }
-        _transactionUiState.update { current ->
-            current.copy(
-                merchant = suggestion.merchant,
-                merchantError = null,
-                category = suggestion.category,
-                subcategory = suggestion.subcategory,
-                categoryError = null,
-                selectedAccount = account ?: current.selectedAccount,
-                currency = account?.currency ?: current.currency
-            )
-        }
-        updateTransactionSubcategories(suggestion.category)
-    }
-
-    /** Keep a suggested template as a saved one. */
-    fun pinSuggestedTemplate(suggestion: SuggestedTemplate) {
-        viewModelScope.launch {
-            try { quickTemplateRepository.add(suggestion.toTemplate()) } catch (e: Exception) {
-                Log.w("AddViewModel", "Suggested template not saved", e)
+            if (subscriptionId != null) {
+                val row =
+                    session.withCore {
+                        it.plans().use { plans ->
+                            plans.subscriptions(java.time.LocalDate.now().coreDate(), true).find {
+                                it.id == subscriptionId
+                            }
+                        }
+                    } ?: error("Subscription no longer exists")
+                state =
+                    if (initialTab == 1)
+                        state.copy(
+                            subscriptionId = row.id,
+                            subscription =
+                                SubscriptionDraft(
+                                    row.name,
+                                    row.amount,
+                                    row.cycle,
+                                    row.endDate,
+                                    row.nextDue,
+                                    row.accountId,
+                                    row.categoryId,
+                                    row.subcategoryId,
+                                    row.notes,
+                                ),
+                            subscriptionAmount = row.amount.amount.toPlainString(),
+                            customCycle = entryCycleKey(row.cycle) == "Custom",
+                        )
+                    else
+                        state.copy(
+                            transaction =
+                                state.transaction.copy(
+                                    kind = TransactionKind.EXPENSE,
+                                    amount = row.amount.amount,
+                                    currency = row.amount.currency,
+                                    accountId = row.accountId,
+                                    categoryId = row.categoryId,
+                                    subcategoryId = row.subcategoryId,
+                                    merchant = row.name,
+                                    notes = row.notes,
+                                    subscriptionId = row.id,
+                                ),
+                            amount = row.amount.amount.toPlainString(),
+                        )
             }
+            state
         }
     }
 
-    /** Stop suggesting this merchant + category pair. */
-    fun dismissSuggestedTemplate(suggestion: SuggestedTemplate) {
-        val updated = dismissedSuggestions.value + suggestion.key
-        dismissedSuggestions.value = updated
-        sharedPrefs.edit { putStringSet(DISMISSED_SUGGESTIONS_KEY, updated) }
+    private fun prefill(state: AddUiState, value: TemplatePrefill) =
+        state.copy(
+            transaction =
+                state.transaction.copy(
+                    kind = value.kind,
+                    merchant = value.merchant,
+                    categoryId = value.categoryId,
+                    subcategoryId = value.subcategoryId,
+                    notes = value.notes,
+                    accountId = value.accountId ?: state.transaction.accountId,
+                    currency = value.currency ?: state.transaction.currency,
+                    amount = value.amount ?: state.transaction.amount,
+                    toAccountId = null,
+                    toCurrency = null,
+                    toAmount = null,
+                    subscriptionId = null,
+                ),
+            amount = value.amount?.toPlainString() ?: state.amount,
+            amountPadRequested = value.amount == null && state.amount.isBlank(),
+        )
+
+    private fun source(load: suspend () -> AddUiState) {
+        if (uiState.value.writing || uiState.value.createdTransactionId != null) return
+        val mine = ++sourceVersion
+        sourceJob?.cancel()
+        mutableState.update { it.copy(loadingSource = true, error = null) }
+        sourceJob =
+            viewModelScope.launch {
+                try {
+                    val value = load()
+                    ensureActive()
+                    if (mine == sourceVersion) {
+                        mutableState.update { old ->
+                            value.copy(
+                                accounts = old.accounts,
+                                categories = old.categories,
+                                people = old.people,
+                                templates = old.templates,
+                                suggestions = old.suggestions,
+                                loading = old.loading,
+                                loadingSource = false,
+                            )
+                        }
+                        persist()
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    if (mine == sourceVersion)
+                        mutableState.update {
+                            it.copy(loadingSource = false, error = coreFailureText(failure))
+                        }
+                }
+            }
     }
 
-    fun updateTransactionCategory(category: String) {
-        setTransactionCategoryInternal(category, subcategory = null)
+    private fun update(change: (AddUiState) -> AddUiState) {
+        if (
+            uiState.value.writing ||
+                uiState.value.saved ||
+                uiState.value.createdTransactionId != null
+        )
+            return
+        ++sourceVersion
+        sourceJob?.cancel()
+        mutableState.update {
+            change(it).copy(error = null, loadingSource = false, duplicates = emptyList())
+        }
+        persist()
     }
 
-    private fun setTransactionCategoryInternal(category: String, subcategory: String?) {
-        _transactionUiState.update { currentState ->
-            currentState.copy(
-                category = category,
-                subcategory = subcategory,
-                categoryError = validateCategory(category)
+    private fun transaction(change: (TransactionDraft) -> TransactionDraft) = update {
+        it.copy(transaction = change(it.transaction))
+    }
+
+    private fun subscription(change: (SubscriptionDraft) -> SubscriptionDraft) = update {
+        it.copy(subscription = change(it.subscription))
+    }
+
+    private fun persist() = saveAddDraft(savedState, uiState.value)
+
+    fun updateTransactionAmount(value: String) {
+        update {
+            it.copy(
+                amount = value,
+                transaction =
+                    it.transaction.copy(amount = value.toBigDecimalOrNull() ?: BigDecimal.ZERO),
             )
         }
-        updateTransactionSubcategories(category)
+        refreshTransferAmount()
     }
 
-    fun updateSaveAsQuickTemplate(enabled: Boolean) {
-        _transactionUiState.update { it.copy(saveAsQuickTemplate = enabled) }
-    }
-
-    // Set when the form should open the number pad for the amount, e.g. after a template
-    // without one. The form clears it once the pad is open.
-    private val _amountPadRequested = MutableStateFlow(false)
-    val amountPadRequested: StateFlow<Boolean> = _amountPadRequested.asStateFlow()
-
-    fun onAmountPadOpened() {
-        _amountPadRequested.value = false
-    }
-
-    /** Fill the form from the template with this id (launcher shortcut, home-screen widget). */
-    fun applyQuickTemplateById(id: Long) {
-        viewModelScope.launch {
-            val template = quickTemplateRepository.getById(id) ?: return@launch
-            // The template names its account; wait for the accounts so it can be matched.
-            withTimeoutOrNull(3_000) { accounts.first { it.isNotEmpty() } }
-            applyQuickTemplate(template)
-        }
-    }
-
-    /**
-     * Pre-fill the form from a template. The amount is only applied when the template says
-     * so; without one, the number pad opens for it.
-     */
-    fun applyQuickTemplate(template: QuickTemplateEntity) {
-        val account = accounts.value.firstOrNull {
-            it.bankName == template.bankName && it.accountLast4 == template.accountLast4
-        }
-        _transactionUiState.update { current ->
-            current.copy(
-                transactionType = template.transactionType,
-                merchant = template.merchantName,
-                merchantError = null,
-                category = template.category,
-                subcategory = template.subcategory,
-                categoryError = null,
-                notes = template.notes ?: "",
-                amount = if (template.prefillAmount && template.amount != null) template.amount.toPlainString() else current.amount,
-                amountError = null,
-                selectedAccount = account ?: current.selectedAccount,
-                currency = account?.currency ?: template.currency ?: current.currency,
-                error = null
-            )
-        }
-        updateTransactionSubcategories(template.category)
-        if (_transactionUiState.value.amount.isBlank()) _amountPadRequested.value = true
-    }
-
-    private suspend fun saveQuickTemplateFromState(state: TransactionUiState) {
-        quickTemplateRepository.add(
-            QuickTemplateEntity(
-                name = state.merchant.trim().ifBlank { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.display(state.subcategory ?: state.category) },
-                merchantName = state.merchant.trim(),
-                category = state.category,
-                subcategory = state.subcategory,
-                transactionType = state.transactionType,
-                amount = state.amount.toBigDecimalOrNull(),
-                prefillAmount = false,
-                bankName = state.selectedAccount?.bankName,
-                accountLast4 = state.selectedAccount?.accountLast4,
-                currency = state.currency,
-                notes = state.notes.takeIf { it.isNotBlank() }
-            )
+    fun updateTargetAmount(value: String) = update {
+        it.copy(
+            targetAmount = value,
+            transaction = it.transaction.copy(toAmount = value.toBigDecimalOrNull()),
         )
     }
 
-    private fun updateTransactionSubcategories(category: String) {
-        viewModelScope.launch {
-            val cat = categories.value.find { it.name == category }
-            if (cat != null) {
-                subcategoryRepository.getSubcategoriesByCategoryId(cat.id).collect {
-                    _transactionSubcategories.value = it
-                }
-            } else {
-                _transactionSubcategories.value = emptyList()
-            }
-        }
+    fun updateTransactionType(kind: TransactionKind) = transaction {
+        it.copy(
+            kind = kind,
+            categoryId = null,
+            subcategoryId = null,
+            toAccountId = null,
+            toCurrency = null,
+            toAmount = null,
+            subscriptionId = null,
+        )
     }
 
-    fun updateTransactionSubcategory(subcategory: String?) {
-        _transactionUiState.update { currentState -> currentState.copy(subcategory = subcategory) }
-    }
-
-    fun updateTransactionDate(dateMillis: Long) {
-        val localDate = pickerDate(dateMillis)
-        val currentTime = _transactionUiState.value.date.toLocalTime()
-        val newDateTime = LocalDateTime.of(localDate, currentTime)
-
-        _transactionUiState.update { currentState -> currentState.copy(date = newDateTime) }
-    }
-
-    fun updateTransactionTime(hour: Int, minute: Int) {
-        val currentDate = _transactionUiState.value.date.toLocalDate()
-        val newDateTime = currentDate.atTime(hour, minute)
-
-        _transactionUiState.update { currentState -> currentState.copy(date = newDateTime) }
-    }
-
-    fun updateTransactionNotes(notes: String) {
-        _transactionUiState.update { currentState -> currentState.copy(notes = notes) }
-    }
-
-    fun updateTransactionRecurring(isRecurring: Boolean) {
-        _transactionUiState.update { currentState -> currentState.copy(isRecurring = isRecurring) }
-    }
-
-    fun dismissOverdraftWarning() {
-        _transactionUiState.update { it.copy(overdraftBalance = null) }
-    }
-
-    fun saveTransaction(allowOverdraft: Boolean = false, onSuccess: () -> Unit) {
-        val state = _transactionUiState.value
-        if (state.isLoading) return
-
-        val isLoanType = state.transactionType == TransactionType.LENT ||
-            state.transactionType == TransactionType.BORROWED
-        val amountError = validateAmount(state.amount)
-        val categoryError = validateCategory(state.category)
-
-        // Additional validation for Transfer transactions
-        if (state.transactionType == TransactionType.TRANSFER) {
-            if (state.selectedAccount == null || state.targetAccount == null) {
-                _transactionUiState.update { currentState ->
-                    currentState.copy(
-                        error = context.getString(R.string.err_source_target_required)
-                    )
-                }
-                return
-            }
-            
-            if (state.targetCurrency != state.currency && state.targetAmount.toBigDecimalOrNull() == null) {
-                _transactionUiState.update { currentState ->
-                    currentState.copy(error = context.getString(R.string.err_transfer_received_amount))
-                }
-                return
-            }
-
-            // One account to itself only as an exchange between two of its currencies
-            if (state.selectedAccount?.id == state.targetAccount?.id && state.targetCurrency == state.currency) {
-                _transactionUiState.update { currentState ->
-                    currentState.copy(
-                        error = context.getString(R.string.err_accounts_different)
-                    )
-                }
-                return
-            }
-        }
-
-        // The merchant is optional: lists show the category and note when it is blank.
-        if (amountError != null || categoryError != null) {
-            _transactionUiState.update { currentState ->
-                currentState.copy(
-                    amountError = amountError,
-                    categoryError = categoryError
-                )
-            }
+    fun updateTransactionMerchant(value: String) {
+        transaction { it.copy(merchant = value) }
+        merchantJob?.cancel()
+        if (value.isBlank()) {
+            mutableState.update { it.copy(merchants = emptyList()) }
             return
         }
-
-        viewModelScope.launch {
-            try {
-                _transactionUiState.update { it.copy(isLoading = true) }
-
-                val amount = BigDecimal(state.amount)
-
-                val account = state.selectedAccount
-                val spendsMoney = state.transactionType in setOf(TransactionType.EXPENSE,
-                    TransactionType.INVESTMENT, TransactionType.LENT, TransactionType.TRANSFER)
-                if (!allowOverdraft && spendsMoney && account != null) {
-                    val projected = accountBalanceRepository.projectedExpenseBalance(
-                        account.bankName, account.accountLast4, state.date, amount, state.currency)
-                    if (projected != null && projected < BigDecimal.ZERO) {
-                        _transactionUiState.update { it.copy(overdraftBalance = projected, isLoading = false) }
-                        return@launch
-                    }
-                }
-                _transactionUiState.update { it.copy(overdraftBalance = null) }
-
-                val transactionId = addTransactionUseCase.execute(
-                    amount = amount,
-                    merchant = state.merchant.trim(),
-                    category = state.category,
-                    subcategory = state.subcategory,
-                    type = state.transactionType,
-                    date = state.date,
-                    notes = state.notes.takeIf { it.isNotBlank() },
-                    isRecurring = state.isRecurring,
-                    bankName = state.selectedAccount?.bankName,
-                    accountLast4 = state.selectedAccount?.accountLast4,
-                    currency = state.currency,
-                    sourceAccountId = state.selectedAccount?.id,
-                    targetAccountBankName = state.targetAccount?.bankName,
-                    targetAccountLast4 = state.targetAccount?.accountLast4,
-                    targetAmount = state.targetAmount.toBigDecimalOrNull()
-                        ?.takeIf { state.targetAccount != null && state.targetCurrency != state.currency },
-                    targetCurrency = state.targetCurrency,
-                    attachments = attachmentService.joinAttachments(_transactionAttachments.value)
-                )
-
-                if (state.saveAsQuickTemplate && !isLoanType && state.transactionType != TransactionType.TRANSFER) {
-                    try { saveQuickTemplateFromState(state) } catch (e: Exception) {
-                        Log.w("AddViewModel", "Quick template not saved", e)
-                    }
-                }
-
-                if (isLoanType && state.selectedPersonId != null) {
-                    val selectedPerson = persons.value.find { it.id == state.selectedPersonId }
-                    val loanTitle = selectedPerson?.name ?: state.merchant.trim()
-                    markTransactionAsLoanUseCase(
-                        transactionId = transactionId,
-                        personId = state.selectedPersonId,
-                        type = if (state.transactionType == TransactionType.LENT) {
-                            LendBorrowType.LENT
-                        } else {
-                            LendBorrowType.BORROWED
-                        },
-                        amount = amount,
-                        currency = state.currency,
-                        title = loanTitle,
-                        merchant = loanTitle,
-                        category = state.category,
-                        date = state.date,
-                        dueDate = state.dueDate,
-                        accountId = state.selectedAccount?.id
-                    )
-                }
-
-                onSuccess()
-            } catch (e: Exception) {
-                _transactionUiState.update { currentState ->
-                    currentState.copy(
-                        isLoading = false,
-                        error = context.getString(R.string.err_save_transaction)
-                    )
+        merchantJob =
+            viewModelScope.launch {
+                delay(150)
+                try {
+                    val rows =
+                        session.withCore {
+                            it.ledger().use { ledger -> merchantCompletions(ledger, value) }
+                        }
+                    ensureActive()
+                    if (uiState.value.transaction.merchant == value)
+                        mutableState.update { it.copy(merchants = rows) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    /* Completion is optional; retain the user's draft. */
                 }
             }
+    }
+
+    fun applyMerchantSuggestion(value: String) = updateTransactionMerchant(value)
+
+    fun updateTransactionCategory(id: String) = transaction {
+        it.copy(categoryId = id, subcategoryId = null)
+    }
+
+    fun updateTransactionSubcategory(id: String?) = transaction { it.copy(subcategoryId = id) }
+
+    fun updateTransactionNotes(value: String) = transaction { it.copy(notes = value) }
+
+    fun updateTransactionDate(millis: Long) = transaction {
+        it.copy(
+            dateTime =
+                pickerDate(millis).atTime(it.dateTime.toJavaDateTime().toLocalTime()).coreTime()
+        )
+    }
+
+    fun updateTransactionTime(hour: Int, minute: Int) = transaction {
+        it.copy(dateTime = it.dateTime.copy(hour = hour.toUByte(), minute = minute.toUByte()))
+    }
+
+    fun updateTransactionAccount(account: Account?) {
+        transaction {
+            it.copy(accountId = account?.id, currency = account?.mainCurrency ?: it.currency)
         }
+        refreshTransferAmount()
     }
 
-    fun updateTransactionAccount(
-        account: AccountBalanceEntity?
-    ) {
-        _transactionUiState.update { currentState -> 
-            currentState.copy(
-                selectedAccount = account,
-                currency = account?.currency ?: "CNY"
-            ) 
-        }
-        refreshTargetAmount()
-    }
-
-    /** The currencies an account holds, its main one first. */
-    fun currenciesOf(account: AccountBalanceEntity?): List<String> {
-        account ?: return emptyList()
-        val held = account.accountId?.let { accountHoldings.holdings.value[it] }?.pockets?.map { it.currency }.orEmpty()
-        return listOf(account.currency) + held.filter { it != account.currency }
-    }
-
-    /** Which of the source account's currencies the transaction is in. */
     fun updateTransactionCurrency(currency: String) {
-        _transactionUiState.update { it.copy(currency = currency) }
-        refreshTargetAmount()
+        transaction { it.copy(currency = currency) }
+        refreshTransferAmount()
     }
 
-    fun updateTransactionTargetAccount(
-        account: AccountBalanceEntity?
-    ) {
-        _transactionUiState.update { currentState ->
-            currentState.copy(targetAccount = account, targetAmountEdited = false, targetCurrencyPicked = false)
+    fun updateTransactionTargetAccount(account: Account?) {
+        transaction {
+            it.copy(toAccountId = account?.id, toCurrency = account?.mainCurrency, toAmount = null)
         }
-        refreshTargetAmount()
+        refreshTransferAmount()
     }
 
     fun updateTransactionTargetCurrency(currency: String) {
-        _transactionUiState.update { it.copy(targetCurrency = currency, targetCurrencyPicked = true, targetAmountEdited = false) }
-        refreshTargetAmount()
+        transaction { it.copy(toCurrency = currency, toAmount = null) }
+        refreshTransferAmount()
     }
 
-    /**
-     * Adds [currency] to [account] (it starts at zero and can't be removed), then uses it: as the
-     * transaction's currency, or with [asTarget] as the currency a transfer goes into.
-     */
-    fun addCurrencyToAccount(account: AccountBalanceEntity, currency: String, asTarget: Boolean) {
-        viewModelScope.launch {
-            val now = LocalDateTime.now()
-            accountBalanceRepository.insertBalance(
-                account.copy(
-                    id = 0, balance = BigDecimal.ZERO, currency = currency, timestamp = now,
-                    transactionId = null, sourceType = "MANUAL", createdAt = now
-                )
-            )
-            // Once the account is known to hold it, so the choice sticks
-            kotlinx.coroutines.withTimeoutOrNull(2_000) {
-                accountHoldings.holdings.first { held -> held[account.accountId]?.pockets?.any { it.currency == currency } == true }
-            }
-            if (asTarget) updateTransactionTargetCurrency(currency) else updateTransactionCurrency(currency)
+    private fun refreshTransferAmount() {
+        conversionJob?.cancel()
+        val draft = uiState.value.transaction
+        if (draft.kind != TransactionKind.TRANSFER) return
+        mutableState.update {
+            it.copy(targetAmount = "", transaction = it.transaction.copy(toAmount = null))
         }
-    }
-
-    fun updateTargetAmount(amount: String) {
-        val filtered = amount.filter { it.isDigit() || it == '.' }
-        if (filtered.count { it == '.' } > 1) return
-        _transactionUiState.update { it.copy(targetAmount = filtered, targetAmountEdited = true) }
-    }
-
-    private var targetAmountJob: Job? = null
-
-    /** Converts the amount into the target account's currency, until the user types their own. */
-    private fun refreshTargetAmount() {
-        // Unless picked, a transfer goes into the target's matching currency, else its main one
-        _transactionUiState.update { current ->
-            val target = current.targetAccount
-            current.copy(targetCurrency = when {
-                target == null -> null
-                current.targetCurrencyPicked && current.targetCurrency in currenciesOf(target) -> current.targetCurrency
-                // An exchange inside one account goes into another of its currencies
-                target.id == current.selectedAccount?.id -> currenciesOf(target).firstOrNull { it != current.currency }
-                current.currency in currenciesOf(target) -> current.currency
-                else -> target.currency
-            })
-        }
-        val state = _transactionUiState.value
-        val targetCurrency = state.targetCurrency
-        if (targetCurrency == null || targetCurrency == state.currency) {
-            _transactionUiState.update { it.copy(targetAmount = "", targetAmountEdited = false) }
+        val from = draft.currency ?: return
+        val to = draft.toCurrency ?: return
+        if (from == to || uiState.value.amount.toBigDecimalOrNull() == null) {
+            persist()
             return
         }
-        if (state.targetAmountEdited) return
-        val amount = state.amount.toBigDecimalOrNull() ?: return
-        targetAmountJob?.cancel()
-        targetAmountJob = viewModelScope.launch {
-            val converted = currencyConversionService.convertAmount(amount, state.currency, targetCurrency)
-            _transactionUiState.update {
-                if (it.targetAmountEdited) it else it.copy(targetAmount = converted.stripTrailingZeros().toPlainString())
+        val requested = uiState.value.transaction
+        conversionJob =
+            viewModelScope.launch {
+                try {
+                    val amount =
+                        session.withCore {
+                            it.currency().use { currency ->
+                                currency.convert(requested.amount, from, to)
+                            }
+                        }
+                    ensureActive()
+                    if (
+                        uiState.value.transaction == requested &&
+                            !uiState.value.writing &&
+                            !uiState.value.saved
+                    ) {
+                        mutableState.update {
+                            it.copy(
+                                targetAmount = amount?.toPlainString().orEmpty(),
+                                transaction = it.transaction.copy(toAmount = amount),
+                            )
+                        }
+                        persist()
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    /* The editable received-amount field remains available. */
+                }
+            }
+    }
+
+    fun currenciesOf(account: Account?) = account?.pockets.orEmpty().map { it.currency }
+
+    fun updateTransactionPersonId(id: String?) = update { it.copy(personId = id) }
+
+    fun updateSaveAsQuickTemplate(value: Boolean) = update { it.copy(saveAsTemplate = value) }
+
+    fun onAmountPadOpened() {
+        mutableState.update { it.copy(amountPadRequested = false) }
+        persist()
+    }
+
+    fun applyQuickTemplate(template: QuickTemplate) = applyQuickTemplateById(template.id)
+
+    fun applyQuickTemplateById(id: String) = source {
+        var state = uiState.value
+        if (state.transaction.currency == null) {
+            val defaults =
+                session.withCore { core ->
+                    val accountId = core.settings().use { it.defaultAccount() }
+                    val account =
+                        core.accounts().use {
+                            it.overview().accounts.find { a -> a.id == accountId }
+                        }
+                    (account?.mainCurrency ?: core.settings().use { it.mainCurrency() }) to
+                        accountId
+                }
+            val prefs = preferences.ready()
+            state =
+                state.copy(
+                    transaction =
+                        state.transaction.copy(
+                            accountId = state.transaction.accountId ?: defaults.second,
+                            currency =
+                                prefs.defaultEntryCurrency?.takeIf { prefs.defaultEntryEnabled }
+                                    ?: defaults.first,
+                        )
+                )
+        }
+        prefill(state, session.withCore { it.plans().use { plans -> plans.templatePrefill(id) } })
+    }
+
+    fun applySuggestedTemplate(row: TemplateSuggestion) = update {
+        prefill(
+            it,
+            TemplatePrefill(
+                row.kind,
+                row.merchant,
+                row.categoryId,
+                row.subcategoryId,
+                null,
+                row.amount,
+                row.accountId,
+                row.currency,
+            ),
+        )
+    }
+
+    fun pinSuggestedTemplate(row: TemplateSuggestion) = command {
+        session.withCore {
+            it.plans().use { plans ->
+                plans.createTemplate(
+                    QuickTemplateDraft(
+                        row.name,
+                        row.kind,
+                        row.merchant,
+                        row.categoryId,
+                        row.subcategoryId,
+                        row.amount,
+                        row.amount != null,
+                        row.accountId,
+                        row.currency,
+                        null,
+                    )
+                )
             }
         }
     }
 
-    fun updateTransactionPersonId(personId: Long?) {
-        _transactionUiState.update { currentState -> currentState.copy(selectedPersonId = personId) }
+    fun dismissSuggestedTemplate(row: TemplateSuggestion) = command {
+        session.withCore { it.plans().use { plans -> plans.dismissSuggestion(row.key) } }
     }
 
-    fun updateTransactionDueDate(dueDate: LocalDateTime?) {
-        _transactionUiState.update { currentState -> currentState.copy(dueDate = dueDate) }
+    fun addCurrencyToAccount(account: Account, currency: String, asTarget: Boolean) = command {
+        session.withCore {
+            it.accounts().use { api -> api.addCurrency(account.id, currency, null, null) }
+        }
+        mutableState.update {
+            it.copy(
+                transaction =
+                    if (asTarget) it.transaction.copy(toCurrency = currency)
+                    else it.transaction.copy(currency = currency)
+            )
+        }
+        persist()
     }
 
     fun addPerson(
@@ -668,395 +588,261 @@ constructor(
         notes: String?,
         color: String,
         avatar: String?,
-        category: PersonCategory?
-    ) {
-        viewModelScope.launch {
-            addEditLendBorrowPersonUseCase.addPerson(
-                name, phone, notes, color, avatar, category
-            )
-        }
+        relation: PersonRelation?,
+        onSaved: () -> Unit = {},
+    ) = command {
+        attachmentStore.retainForCore(listOfNotNull(avatar))
+        val id =
+            session.withCore {
+                it.plans().use { plans ->
+                    plans.createPerson(PersonDraft(name, phone, notes, color, avatar, relation))
+                }
+            }
+        mutableState.update { it.copy(personId = id) }
+        persist()
+        onSaved()
     }
 
-    // Attachment management for transactions
-    fun addTransactionAttachment(path: String) {
-        _transactionAttachments.update { it + path }
-    }
-
-    fun removeTransactionAttachment(path: String) {
-        attachmentService.deleteAttachment(path)
-        _transactionAttachments.update { it - path }
-    }
-
-    // Attachment management for subscriptions
-    fun addSubscriptionAttachment(path: String) {
-        _subscriptionAttachments.update { it + path }
-    }
-
-    fun removeSubscriptionAttachment(path: String) {
-        attachmentService.deleteAttachment(path)
-        _subscriptionAttachments.update { it - path }
-    }
-
-    // Subscription Edit Loading
-    fun loadSubscriptionForEdit(id: Long) {
+    fun addTransactionAttachment(uri: Uri) {
+        if (
+            uiState.value.writing ||
+                uiState.value.importing ||
+                uiState.value.saved ||
+                uiState.value.createdTransactionId != null
+        )
+            return
+        mutableState.update { it.copy(importing = true) }
         viewModelScope.launch {
             try {
-                _subscriptionUiState.update { it.copy(isLoading = true) }
-                val subscription = subscriptionRepository.getSubscriptionById(id)
-                if (subscription != null) {
-                    val cycle = subscription.billingCycle ?: "Monthly"
-                    val isCustom = cycle.startsWith("custom_")
-                    var customCount = 1
-                    var customUnit = "month"
-                    var customEndDate: LocalDate? = null
-                    var displayCycle = cycle
+                val ref = attachmentStore.importFrom(uri)
+                imported += ref
+                mutableState.update {
+                    it.copy(
+                        transaction =
+                            it.transaction.copy(attachments = it.transaction.attachments + ref)
+                    )
+                }
+                persist()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
+            } finally {
+                mutableState.update { it.copy(importing = false) }
+            }
+        }
+    }
 
-                    if (isCustom) {
-                        val parts = cycle.split("_")
-                        customCount = parts.getOrNull(1)?.toIntOrNull() ?: 1
-                        customUnit = parts.getOrNull(2) ?: "month"
-                        val endDateStr = parts.getOrNull(3)
-                        if (endDateStr != null && endDateStr != "forever") {
-                            customEndDate = try { LocalDate.parse(endDateStr) } catch (e: Exception) { null }
+    fun removeTransactionAttachment(ref: String) {
+        if (
+            uiState.value.writing ||
+                uiState.value.saved ||
+                uiState.value.createdTransactionId != null
+        )
+            return
+        transaction { it.copy(attachments = it.attachments - ref) }
+        if (imported.remove(ref))
+            viewModelScope.launch { attachmentStore.discardDraft(listOf(ref)) }
+    }
+
+    fun checkDuplicates() {
+        val draft = uiState.value.transaction
+        if (uiState.value.amount.toBigDecimalOrNull() == null) return
+        val mine = ++duplicateVersion
+        duplicateJob?.cancel()
+        duplicateJob =
+            viewModelScope.launch {
+                try {
+                    val rows =
+                        session.withCore {
+                            it.ledger().use { ledger ->
+                                ledger.findDuplicates(draft).map { id -> ledger.get(id) }
+                            }
                         }
-                        displayCycle = "Custom"
-                    }
+                    ensureActive()
+                    if (mine == duplicateVersion && draft == uiState.value.transaction)
+                        mutableState.update { it.copy(duplicates = rows) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    /* Duplicate hints never prevent saving an intentional entry. */
+                }
+            }
+    }
 
-                    _subscriptionUiState.update { state ->
-                        state.copy(
-                            subscriptionId = subscription.id,
-                            serviceName = subscription.merchantName,
-                            amount = subscription.amount.toString(),
-                            billingCycle = displayCycle,
-                            isCustomCycle = isCustom,
-                            customCycleCount = customCount,
-                            customCycleUnit = customUnit,
-                            customCycleEndDate = customEndDate,
-                            nextPaymentDate = subscription.nextPaymentDate ?: LocalDate.now(),
-                            category = subscription.category ?: "Subscription",
-                            subcategory = subscription.subcategory,
-                            currency = subscription.currency,
-                            notes = subscription.notes ?: "",
-                            isLoading = false
+    fun saveTransaction(onSuccess: () -> Unit) {
+        if (uiState.value.loadingSource || uiState.value.importing || uiState.value.saved) return
+        val before = uiState.value
+        command {
+            val draft =
+                before.transaction.copy(
+                    amount = BigDecimal(before.amount),
+                    toAmount =
+                        before.targetAmount
+                            .takeIf {
+                                it.isNotBlank() &&
+                                    before.transaction.kind == TransactionKind.TRANSFER
+                            }
+                            ?.let(::BigDecimal),
+                )
+            val loan = draft.kind in listOf(TransactionKind.LOAN_OUT, TransactionKind.LOAN_IN)
+            if (loan) requireNotNull(before.personId) { "Select a person" }
+            attachmentStore.retainForCore(draft.attachments)
+            val id =
+                before.createdTransactionId
+                    ?: session
+                        .withCore { it.ledger().use { ledger -> ledger.add(draft) } }
+                        .also { id ->
+                            mutableState.update { it.copy(createdTransactionId = id) }
+                            persist()
+                        }
+            if (loan && !before.loanLinked) {
+                session.withCore {
+                    it.plans().use { plans ->
+                        plans.linkTransaction(id, requireNotNull(before.personId), null)
+                    }
+                }
+                mutableState.update { it.copy(loanLinked = true) }
+                persist()
+            }
+            if (
+                before.saveAsTemplate &&
+                    draft.kind in
+                        listOf(
+                            TransactionKind.EXPENSE,
+                            TransactionKind.INCOME,
+                            TransactionKind.INVESTMENT,
+                        )
+            )
+                session.withCore {
+                    it.plans().use { plans ->
+                        plans.createTemplate(
+                            QuickTemplateDraft(
+                                draft.merchant,
+                                draft.kind,
+                                draft.merchant,
+                                draft.categoryId,
+                                draft.subcategoryId,
+                                draft.amount,
+                                true,
+                                draft.accountId,
+                                draft.currency,
+                                draft.notes,
+                            )
                         )
                     }
-                    
-                    // Pre-select account if possible
-                    accounts.filter { it.isNotEmpty() }.first().let { availableAccounts ->
-                        val matchedAccount = availableAccounts.find { 
-                            it.bankName == subscription.bankName
-                        }
-                        if (matchedAccount != null) {
-                            _subscriptionUiState.update { it.copy(selectedAccount = matchedAccount) }
-                        }
-                    }
-                    
-                    // Update subcategories for the loaded category
-                    updateSubscriptionSubcategories(subscription.category ?: "Subscription")
-                } else {
-                    _subscriptionUiState.update { it.copy(isLoading = false, error = context.getString(R.string.err_subscription_not_found)) }
                 }
-            } catch (e: Exception) {
-                _subscriptionUiState.update { it.copy(isLoading = false, error = e.message) }
-            }
+            imported.clear()
+            mutableState.update { it.copy(saved = true) }
+            persist()
+            onSuccess()
         }
     }
 
+    fun updateSubscriptionService(value: String) = subscription { it.copy(name = value) }
 
-    // Subscription Tab Functions
-    fun updateSubscriptionService(service: String) {
-        _subscriptionUiState.update { currentState ->
-            currentState.copy(
-                serviceName = service,
-                serviceError = if (service.isBlank()) context.getString(R.string.err_service_required) else null
-            )
-        }
+    fun updateSubscriptionAmount(value: String) = update {
+        it.copy(
+            subscriptionAmount = value,
+            subscription =
+                it.subscription.copy(
+                    amount =
+                        it.subscription.amount.copy(
+                            amount = value.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        )
+                ),
+        )
     }
 
-    fun updateSubscriptionAmount(amount: String) {
-        val filtered = amount.filter { it.isDigit() || it == '.' }
-        val decimalCount = filtered.count { it == '.' }
-        val validAmount = if (decimalCount <= 1) filtered else _subscriptionUiState.value.amount
-
-        _subscriptionUiState.update { currentState ->
-            currentState.copy(amount = validAmount, amountError = validateAmount(validAmount))
-        }
+    fun updateSubscriptionBillingCycle(value: String) = update {
+        it.copy(
+            customCycle = value == "Custom",
+            subscription =
+                it.subscription.copy(
+                    cycle = entryCycle(value) ?: it.subscription.cycle,
+                    endDate = it.subscription.endDate.takeIf { value == "Custom" },
+                ),
+        )
     }
 
-    fun updateSubscriptionBillingCycle(cycle: String) {
-        _subscriptionUiState.update { currentState ->
-            currentState.copy(
-                billingCycle = cycle, 
-                billingCycleError = null,
-                isCustomCycle = io.github.hootkit_dev.hootbook.utils.SubscriptionUtils.isCustom(cycle)
-            )
-        }
+    fun updateSubscriptionCustomCycleCount(value: Int) = subscription {
+        it.copy(cycle = it.cycle.copy(every = value.coerceAtLeast(1).toUInt()))
     }
 
-    fun updateSubscriptionCustomCycleCount(count: Int) {
-        _subscriptionUiState.update { it.copy(customCycleCount = count) }
+    fun updateSubscriptionCustomCycleUnit(value: String) = subscription {
+        it.copy(cycle = it.cycle.copy(unit = CycleUnit.valueOf(value.uppercase())))
     }
 
-    fun updateSubscriptionCustomCycleUnit(unit: String) {
-        _subscriptionUiState.update { it.copy(customCycleUnit = unit) }
+    fun updateSubscriptionCustomCycleEndDate(value: java.time.LocalDate?) = subscription {
+        it.copy(endDate = value?.coreDate())
     }
 
-    fun updateSubscriptionCustomCycleEndDate(date: LocalDate?) {
-        _subscriptionUiState.update { it.copy(customCycleEndDate = date) }
+    fun updateSubscriptionNextPaymentDate(millis: Long) = subscription {
+        it.copy(nextDue = pickerDate(millis).coreDate())
     }
 
-    fun updateSubscriptionNextPaymentDate(dateMillis: Long) {
-        val localDate = pickerDate(dateMillis)
-
-        _subscriptionUiState.update { currentState ->
-            currentState.copy(nextPaymentDate = localDate)
-        }
+    fun updateSubscriptionCategory(id: String) = subscription {
+        it.copy(categoryId = id, subcategoryId = null)
     }
 
-    fun updateSubscriptionCategory(category: String) {
-        _subscriptionUiState.update { currentState ->
-            currentState.copy(
-                category = category,
-                subcategory = null,
-                categoryError = validateCategory(category)
-            )
-        }
+    fun updateSubscriptionSubcategory(id: String?) = subscription { it.copy(subcategoryId = id) }
 
-        updateSubscriptionSubcategories(category)
-    }
+    fun updateSubscriptionNotes(value: String) = subscription { it.copy(notes = value) }
 
-    private fun updateSubscriptionSubcategories(category: String) {
-        viewModelScope.launch {
-            val cat = categories.value.find { it.name == category }
-            if (cat != null) {
-                subcategoryRepository.getSubcategoriesByCategoryId(cat.id).collect {
-                    _subscriptionSubcategories.value = it
-                }
-            } else {
-                _subscriptionSubcategories.value = emptyList()
-            }
-        }
-    }
-
-    fun updateSubscriptionSubcategory(subcategory: String?) {
-        _subscriptionUiState.update { currentState -> currentState.copy(subcategory = subcategory) }
-    }
-
-    fun updateSubscriptionNotes(notes: String) {
-        _subscriptionUiState.update { currentState -> currentState.copy(notes = notes) }
-    }
-
-    fun updateSubscriptionAccount(
-        account: AccountBalanceEntity?
-    ) {
-        _subscriptionUiState.update { currentState -> 
-            currentState.copy(
-                selectedAccount = account,
-                currency = account?.currency ?: "CNY"
-            ) 
-        }
+    fun updateSubscriptionAccount(account: Account?) = subscription {
+        it.copy(
+            accountId = account?.id,
+            amount = it.amount.copy(currency = account?.mainCurrency ?: it.amount.currency),
+        )
     }
 
     fun saveSubscription(onSuccess: () -> Unit) {
-        val state = _subscriptionUiState.value
-        Log.d("AddViewModel", "saveSubscription called with state: $state")
-
-        // Validate all fields
-        val serviceError = if (state.serviceName.isBlank()) context.getString(R.string.err_service_required) else null
-        val amountError = validateAmount(state.amount)
-        val categoryError = validateCategory(state.category)
-
-        Log.d(
-            "AddViewModel",
-            "Validation - serviceError: $serviceError, amountError: $amountError, categoryError: $categoryError"
-        )
-
-        if (serviceError != null || amountError != null || categoryError != null) {
-            _subscriptionUiState.update { currentState ->
-                currentState.copy(
-                    serviceError = serviceError,
-                    amountError = amountError,
-                    categoryError = categoryError
+        if (uiState.value.loadingSource || uiState.value.saved) return
+        val before = uiState.value
+        command {
+            val draft =
+                before.subscription.copy(
+                    amount =
+                        before.subscription.amount.copy(
+                            amount = BigDecimal(before.subscriptionAmount)
+                        )
                 )
+            session.withCore {
+                it.plans().use { plans ->
+                    if (before.subscriptionId == null) plans.createSubscription(draft)
+                    else plans.updateSubscription(before.subscriptionId, draft)
+                }
             }
-            return
+            mutableState.update { it.copy(saved = true) }
+            persist()
+            onSuccess()
         }
+    }
 
+    fun cancel(onClosed: () -> Unit) {
+        if (uiState.value.writing || uiState.value.importing) return
+        sourceJob?.cancel()
+        viewModelScope.launch {
+            attachmentStore.discardDraft(imported.toList())
+            imported.clear()
+            onClosed()
+        }
+    }
+
+    private fun command(block: suspend () -> Unit) {
+        if (uiState.value.writing || uiState.value.saved) return
+        mutableState.update { it.copy(writing = true, error = null) }
         viewModelScope.launch {
             try {
-                Log.d("AddViewModel", "Starting to save subscription...")
-                _subscriptionUiState.update { it.copy(isLoading = true) }
-
-                val amount = BigDecimal(state.amount)
-
-                val billingCycleToSave = if (state.isCustomCycle) {
-                    "custom_${state.customCycleCount}_${state.customCycleUnit.lowercase()}_${state.customCycleEndDate ?: "forever"}"
-                } else {
-                    state.billingCycle
-                }
-
-                if (state.subscriptionId != null) {
-                    // Update existing subscription
-                    val existingSubscription = subscriptionRepository.getSubscriptionById(state.subscriptionId)
-                    if (existingSubscription != null) {
-                        val updatedSubscription = existingSubscription.copy(
-                            merchantName = state.serviceName.trim(),
-                            amount = amount,
-                            nextPaymentDate = state.nextPaymentDate,
-                            billingCycle = billingCycleToSave,
-                            category = state.category,
-                            subcategory = state.subcategory,
-                            bankName = state.selectedAccount?.bankName,
-                            currency = state.currency,
-                            notes = state.notes.takeIf { it.isNotBlank() },
-                            updatedAt = java.time.LocalDateTime.now()
-                        )
-                        updateSubscriptionUseCase.execute(updatedSubscription)
-                        Log.d("AddViewModel", "Subscription updated successfully: ${state.subscriptionId}")
-                    } else {
-                        throw Exception(context.getString(R.string.err_subscription_not_found))
-                    }
-                } else {
-                    // A subscription is a payment plan, not an actual expense.
-                    // Keep the selected due date and leave payment history unset.
-                    val subscriptionId =
-                        addSubscriptionUseCase.execute(
-                            merchantName = state.serviceName.trim(),
-                            amount = amount,
-                            nextPaymentDate = state.nextPaymentDate,
-                            billingCycle = billingCycleToSave,
-                            category = state.category,
-                            subcategory = state.subcategory,
-                            bankName = state.selectedAccount?.bankName,
-                            autoRenewal = false, // Not implemented yet
-                            paymentReminder = false, // Not implemented yet
-                            currency = state.currency,
-                            notes = state.notes.takeIf { it.isNotBlank() },
-                            lastPaidDate = null
-                        )
-
-                    Log.d("AddViewModel", "Subscription saved successfully with ID: $subscriptionId")
-                }
-                onSuccess()
-            } catch (e: Exception) {
-                Log.e("AddViewModel", "Error saving subscription", e)
-                e.printStackTrace()
-                _subscriptionUiState.update { currentState ->
-                    currentState.copy(
-                        isLoading = false,
-                        error = context.getString(R.string.err_save_subscription)
-                    )
-                }
+                block()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
             } finally {
-                _subscriptionUiState.update { it.copy(isLoading = false) }
+                mutableState.update { it.copy(writing = false) }
+                refresh()
             }
         }
     }
-    
-
-    // Validation helpers
-    private fun validateAmount(amount: String): String? {
-        return when {
-            amount.isBlank() -> context.getString(R.string.err_amount_required)
-            amount.toDoubleOrNull() == null -> context.getString(R.string.err_invalid_amount)
-            amount.toDouble() <= 0 -> context.getString(R.string.err_amount_positive)
-            else -> null
-        }
-    }
-
-
-    private fun validateCategory(category: String): String? {
-        return when {
-            category.isBlank() -> context.getString(R.string.err_category_required)
-            else -> null
-        }
-    }
-}
-
-private const val DISMISSED_SUGGESTIONS_KEY = "dismissed_template_suggestions"
-
-// UI State Classes
-data class AddUiState(val currentTab: Int = 0)
-
-data class TransactionUiState(
-    val amount: String = "",
-    val amountError: String? = null,
-    val transactionType: TransactionType = TransactionType.EXPENSE,
-    val merchant: String = "",
-    val merchantError: String? = null,
-    val category: String = "Miscellaneous",
-    val subcategory: String? = null,
-    val categoryError: String? = null,
-    val date: LocalDateTime = LocalDateTime.now(),
-    val notes: String = "",
-    val isRecurring: Boolean = false,
-    val selectedAccount: AccountBalanceEntity? = null,
-    val targetAccount: AccountBalanceEntity? = null,
-    // A transfer to an account in another currency: what arrives there, and whether the user typed it
-    val targetAmount: String = "",
-    val targetAmountEdited: Boolean = false,
-    // The target account's currency a transfer goes into; picked by the user or resolved from the source's
-    val targetCurrency: String? = null,
-    val targetCurrencyPicked: Boolean = false,
-    val currency: String = "CNY",
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val overdraftBalance: BigDecimal? = null,
-    val selectedPersonId: Long? = null,
-    val dueDate: LocalDateTime? = null,
-    val saveAsQuickTemplate: Boolean = false
-) {
-    private val isLoanType: Boolean
-        get() = transactionType == TransactionType.LENT ||
-            transactionType == TransactionType.BORROWED
-
-    val isValid: Boolean
-        get() {
-            val baseValid = amount.isNotBlank() &&
-                    amount.toDoubleOrNull() != null &&
-                    amount.toDouble() > 0 &&
-                    category.isNotBlank() &&
-                    amountError == null &&
-                    categoryError == null
-            return if (isLoanType) {
-                baseValid && selectedPersonId != null
-            } else {
-                baseValid && merchantError == null
-            }
-        }
-}
-
-data class SubscriptionUiState(
-    val subscriptionId: Long? = null,
-    val serviceName: String = "",
-    val serviceError: String? = null,
-    val amount: String = "",
-    val amountError: String? = null,
-    val billingCycle: String = "Monthly",
-    val billingCycleError: String? = null,
-    val nextPaymentDate: LocalDate = LocalDate.now(), // Next scheduled payment, not a completed payment
-    val category: String = "Subscription",
-    val subcategory: String? = null,
-    val categoryError: String? = null,
-    val selectedAccount: AccountBalanceEntity? = null,
-    val currency: String = "CNY",
-    val notes: String = "",
-    val isCustomCycle: Boolean = false,
-    val customCycleCount: Int = 1,
-    val customCycleUnit: String = "month",
-    val customCycleEndDate: LocalDate? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-) {
-    val isValid: Boolean
-        get() =
-            serviceName.isNotBlank() &&
-                    amount.isNotBlank() &&
-                    amount.toDoubleOrNull() != null &&
-                    amount.toDouble() > 0 &&
-                    billingCycle.isNotBlank() &&
-                    category.isNotBlank() &&
-                    serviceError == null &&
-                    amountError == null &&
-                    categoryError == null
 }

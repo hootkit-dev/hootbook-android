@@ -1,330 +1,155 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.accounts
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.currency.CurrencyConversionService
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
-import io.github.hootkit_dev.hootbook.data.repository.AccountBalanceRepository
-import io.github.hootkit_dev.hootbook.data.repository.TransactionRepository
-import io.github.hootkit_dev.hootbook.data.repository.CurrencyRepository
-import io.github.hootkit_dev.hootbook.data.repository.LendBorrowRepository
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowTransactionItem
-import io.github.hootkit_dev.hootbook.domain.model.PersonInfo
-import io.github.hootkit_dev.hootbook.presentation.ui.components.BalancePoint
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import dev.hootkit.core.*
+import dev.hootkit.platform.ChangeBus
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.presentation.data.coreQuery
+import io.github.hootkit_dev.hootbook.presentation.data.observe
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.coreDate
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.coreTime
+import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.emptyTransactionFilter
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.LocalDate as JavaDate
 import javax.inject.Inject
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class AccountDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
-    private val transactionRepository: TransactionRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
-    private val currencyRepository: CurrencyRepository,
-    private val currencyConversionService: CurrencyConversionService,
-    transactionLookupsSource: io.github.hootkit_dev.hootbook.presentation.common.TransactionLookupsSource
+    private val session: CoreSession,
+    private val changes: ChangeBus,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    
-    private val bankName: String = savedStateHandle.get<String>("bankName") ?: ""
-    private val accountLast4: String = savedStateHandle.get<String>("accountLast4") ?: ""
-    
-    private val _uiState = MutableStateFlow(AccountDetailUiState())
-    val uiState: StateFlow<AccountDetailUiState> = _uiState.asStateFlow()
-
-    // Category, account and lend/borrow person lookups for the transaction rows
-    val lookups = transactionLookupsSource.lookups
-    
-    private val _selectedDateRange = MutableStateFlow(DateRange.LAST_30_DAYS)
-    val selectedDateRange: StateFlow<DateRange> = _selectedDateRange.asStateFlow()
-
-    /** Sets one currency of the account to [balance] (a card's amount owed), as the account list does. */
-    fun calibrate(balance: BigDecimal, currency: String) {
-        viewModelScope.launch { accountBalanceRepository.calibrate(bankName, accountLast4, balance, currency) }
+    private val mutable = MutableStateFlow(AccountDetailUiState())
+    val uiState = mutable.asStateFlow()
+    private var accountId: String? = savedState["accountId"]
+    private var query: Job? = null
+    private var more: Job? = null
+    private var generation = 0L
+    private var filter = emptyTransactionFilter()
+    init { accountId?.let { initialize(it) } }
+    fun initialize(id: String) {
+        if (accountId == id && query != null) return
+        accountId = id; savedState["accountId"] = id
+        mutable.update { it.copy(account = null, currency = null, transactions = emptyList(), summary = null) }
+        refresh()
     }
-
-    init {
-        loadAccountData()
-        observeTransactions()
-        observeBalanceHistory()
-        observeBalanceChartData()
-        observeCardBill()
+    fun selectDateRange(range: DateRange) {
+        mutable.update { it.copy(selectedDateRange = range, transactions = emptyList(), summary = null, error = null) }
+        refresh()
     }
-
-    /** A credit card's statement and due dates, and how much of the open statement is still owed. */
-    private fun observeCardBill() {
-        viewModelScope.launch {
-            combine(
-                accountBalanceRepository.observeAccounts().map { all -> all.firstOrNull { it.name == bankName && it.last4 == accountLast4 } },
-                accountBalanceRepository.getLatestBalanceFlow(bankName, accountLast4)
-            ) { account, latest -> account to latest }.collectLatest { (account, latest) ->
-                val dates = io.github.hootkit_dev.hootbook.domain.model.CardDates(account?.statementDay, account?.dueDay)
-                val status = if (account?.isCreditCard == true && latest != null) cardStatus(dates, latest) else null
-                _uiState.update { it.copy(cardDates = dates, cardStatus = status) }
-            }
+    fun selectCurrency(currency: String) {
+        if (uiState.value.saving) return
+        mutable.update { it.copy(currency = currency, anchors = emptyList(), balanceSeries = emptyList(), error = null) }
+        refresh()
+    }
+    private fun bounds(range: DateRange): Pair<JavaDate, JavaDate> {
+        val today = JavaDate.now()
+        val from = when (range) {
+            DateRange.LAST_7_DAYS -> today.minusDays(7)
+            DateRange.LAST_30_DAYS -> today.minusDays(30)
+            DateRange.LAST_3_MONTHS -> today.minusMonths(3)
+            DateRange.LAST_6_MONTHS -> today.minusMonths(6)
+            DateRange.LAST_YEAR -> today.minusYears(1)
+            DateRange.ALL_TIME -> JavaDate.of(2000, 1, 1)
         }
+        return from to today
     }
-
-    private suspend fun cardStatus(dates: io.github.hootkit_dev.hootbook.domain.model.CardDates, latest: AccountBalanceEntity): CardStatus? =
-        cardStatus(
-            dates,
-            java.time.LocalDate.now(),
-            statementAt = { closedAt ->
-                accountBalanceRepository.getLatestBalanceOnOrBefore(bankName, accountLast4, closedAt, latest.currency)?.balance
-            },
-            paidSince = { closedAt ->
-                paidOntoCard(
-                    transactionRepository.getTransactionsByAccount(bankName, accountLast4).first(),
-                    latest.accountId, latest.currency, closedAt
-                )
-            }
-        )
-    
-    private fun loadAccountData() {
-        _uiState.update { it.copy(
-            bankName = bankName,
-            accountLast4 = accountLast4,
-            isLoading = true
-        ) }
-    }
-    
-    private fun observeTransactions() {
-        viewModelScope.launch {
-            combine(
-                selectedDateRange,
-                transactionRepository.getTransactionsByAccount(bankName, accountLast4),
-                currencyRepository.effectiveBaseCurrencyCode,
-                accountBalanceRepository.getLatestBalanceFlow(bankName, accountLast4),
-                currencyConversionService.rateChangeTrigger
-            ) { args: Array<Any?> ->
-                val dateRange = args[0] as DateRange
-                val mainCurrency = args[2] as String
-                val latestBalance = args[3] as AccountBalanceEntity?
-                // Every currency the account holds, in one list
-                @Suppress("UNCHECKED_CAST")
-                val allTransactions = args[1] as List<TransactionEntity>
-
-                val (startDate, endDate) = getDateRangeValues(dateRange)
-
-                val filteredTransactions = if (dateRange == DateRange.ALL_TIME) {
-                    allTransactions
-                } else {
-                    allTransactions.filter { transaction ->
-                        transaction.dateTime.isAfter(startDate) &&
-                        transaction.dateTime.isBefore(endDate)
+    fun refresh() {
+        val id = accountId ?: return
+        val mine = ++generation
+        query?.cancel(); more?.cancel()
+        val state = uiState.value
+        val (from, to) = bounds(state.selectedDateRange)
+        val requestedCurrency = state.currency
+        filter = emptyTransactionFilter().copy(accountIds = listOf(id),
+            from = if (state.selectedDateRange == DateRange.ALL_TIME) null else from.atStartOfDay().coreTime(),
+            to = to.plusDays(1).atStartOfDay().coreTime())
+        val requestedFilter = filter
+        mutable.update { it.copy(isLoading = true, loadingMore = false) }
+        query = viewModelScope.launch {
+            session.observe(changes, accountTables + setOf(Table.CATEGORIES, Table.SUBCATEGORIES, Table.PEOPLE, Table.DEBTS)) { core ->
+                coreQuery {
+                    val account = core.accounts().use { it.get(id) }
+                    val currency = requestedCurrency?.takeIf { code -> account.pockets.any { it.currency == code } } ?: account.mainCurrency
+                    val accountResults = core.accounts().use { api ->
+                        Triple(api.anchors(id, currency), api.balanceSeries(id, currency, from.coreDate(), to.coreDate()),
+                            if (account.kind == AccountKind.CREDIT_CARD) api.cardStatus(id, to.coreDate()) else null)
                     }
+                    val accountCount = core.accounts().use { it.transactionCount(id, null) }
+                    val page = core.ledger().use { it.list(requestedFilter, PageRequest(0u, uiState.value.transactions.size.toUInt().coerceAtLeast(50u))) }
+                    val summary = core.ledger().use { it.summary(requestedFilter) }
+                    val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
+                    val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
+                    val converted = core.currency().use { api -> page.items.associate { tx ->
+                        tx.id to if (tx.currency == summary.currency) null else api.convert(tx.amount, tx.currency, summary.currency)
+                    } }
+                    val people = core.plans().use { it.people(true, to.coreDate()).associateBy(Person::id) }
+                    val debts = core.plans().use { api -> people.keys.flatMap { api.debts(it) }.associateBy(DebtEntry::id) }
+                    AccountDetailUiState(account = account, currency = currency, anchors = accountResults.first,
+                        balanceSeries = accountResults.second, cardStatus = accountResults.third,
+                        transactions = page.items, total = page.total, accountTransactionCount = accountCount, summary = summary, categories = categories,
+                        accounts = accounts, people = people, debts = debts, convertedAmounts = converted,
+                        selectedDateRange = state.selectedDateRange, isLoading = false)
                 }
-
-                val accountPrimaryCurrency = latestBalance?.currency ?: getPrimaryCurrencyForAccount(bankName)
-                val hasMultipleCurrencies = filteredTransactions.map { it.currency }.distinct().size > 1
-
-                // Refresh exchange rates if we have multiple currencies
-                if (hasMultipleCurrencies) {
-                    val accountCurrencies = filteredTransactions.map { it.currency }.distinct()
-                    currencyConversionService.refreshExchangeRatesForAccount(accountCurrencies)
-                }
-
-                // Income and spending in the app's main currency. A transfer counts by the side
-                // this account is on, in that side's currency; one between two of its own
-                // currencies is neither.
-                var totalIncome = BigDecimal.ZERO
-                var totalExpenses = BigDecimal.ZERO
-                val accountId = latestBalance?.accountId
-                suspend fun inMain(amount: BigDecimal, currency: String) =
-                    if (currency == mainCurrency) amount
-                    else currencyConversionService.convertAmount(amount, currency, mainCurrency)
-
-                filteredTransactions.forEach { tx ->
-                    when (tx.transactionType) {
-                        TransactionType.INCOME, TransactionType.BORROWED -> totalIncome += inMain(tx.amount, tx.currency)
-                        TransactionType.TRANSFER -> {
-                            val sends = tx.accountId?.let { it == accountId }
-                                ?: (tx.bankName == bankName && (tx.accountNumber == accountLast4 || tx.fromAccount == accountLast4))
-                            val receives = tx.toAccountId?.let { it == accountId } ?: (!sends && tx.toAccount == accountLast4)
-                            when {
-                                sends && receives -> Unit
-                                receives -> totalIncome += inMain(tx.toAmount ?: tx.amount, tx.toCurrency ?: tx.currency)
-                                sends -> totalExpenses += inMain(tx.amount, tx.currency)
-                            }
-                        }
-                        TransactionType.BALANCE_UPDATE -> Unit
-                        else -> totalExpenses += inMain(tx.amount, tx.currency)
-                    }
-                }
-
-                // Rates known now; missing ones arrive through rateChangeTrigger
-                val conversions = currencyConversionService.convert(filteredTransactions, mainCurrency)
-
-                _uiState.update { state ->
-                    state.copy(
-                        transactions = filteredTransactions,
-                        totalIncome = totalIncome,
-                        totalExpenses = totalExpenses,
-                        netBalance = totalIncome - totalExpenses,
-                        primaryCurrency = accountPrimaryCurrency,
-                        baseCurrency = mainCurrency,
-                        hasMultipleCurrencies = hasMultipleCurrencies,
-                        conversions = conversions,
-                        isLoading = false
-                    )
-                }
-            }.collectLatest { }
-        }
-    }
-    
-    private fun observeBalanceHistory() {
-        viewModelScope.launch {
-            accountBalanceRepository.getLatestBalanceFlow(bankName, accountLast4)
-                .collect { latestBalance ->
-                    _uiState.update { state ->
-                        state.copy(currentBalance = latestBalance)
-                    }
-                }
-        }
-        
-        viewModelScope.launch {
-            selectedDateRange.flatMapLatest { dateRange ->
-                val (startDate, endDate) = getDateRangeValues(dateRange)
-                accountBalanceRepository.getBalanceHistory(
-                    bankName, 
-                    accountLast4,
-                    startDate,
-                    endDate
-                )
-            }.collect { balanceHistory ->
-                _uiState.update { state ->
-                    state.copy(balanceHistory = balanceHistory)
-                }
+            }.collect { result ->
+                if (mine != generation) return@collect
+                result.fold(onSuccess = { snapshot ->
+                    more?.cancel()
+                    mutable.update { snapshot.copy(saving = it.saving, commandRevision = it.commandRevision) }
+                }, onFailure = { failure -> mutable.update { it.copy(isLoading = false, loadingMore = false, error = coreFailureText(failure)) } })
             }
         }
     }
-    
-    private fun observeBalanceChartData() {
+    fun loadMore() {
+        val state = uiState.value
+        if (state.isLoading || state.loadingMore || state.error != null || state.transactions.size.toUInt() >= state.total) return
+        val mine = generation; val revision = changes.revisions.value; val request = filter
+        mutable.update { it.copy(loadingMore = true) }
+        more = viewModelScope.launch {
+            try {
+                val result = session.withCore { core ->
+                    val page = core.ledger().use { it.list(request, PageRequest(state.transactions.size.toUInt(), 50u)) }
+                    val converted = core.currency().use { api -> page.items.associate { tx -> tx.id to
+                        if (tx.currency == state.summary?.currency) null else api.convert(tx.amount, tx.currency, state.summary!!.currency) } }
+                    page to converted
+                }
+                ensureActive()
+                if (mine == generation && revision == changes.revisions.value) {
+                    check(result.first.items.isNotEmpty() && result.first.total == state.total &&
+                        (state.transactions + result.first.items).distinctBy(Transaction::id).size == state.transactions.size + result.first.items.size)
+                    mutable.update { it.copy(transactions = state.transactions + result.first.items,
+                        convertedAmounts = state.convertedAmounts + result.second, loadingMore = false) }
+                }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { if (mine == generation) mutable.update { it.copy(loadingMore = false, error = coreFailureText(failure)) } }
+            finally { if (mine == generation) mutable.update { it.copy(loadingMore = false) } }
+        }
+    }
+    fun calibrate(balance: BigDecimal, currency: String, onSaved: () -> Unit = {}) {
+        val id = accountId ?: return
+        command(onSaved) { it.calibrate(id, currency, balance, null) }
+    }
+    fun updateAnchor(id: String, balance: BigDecimal) = command { it.updateAnchor(id, AnchorPatch(balance = balance)) }
+    fun deleteAnchor(id: String) = command { it.deleteAnchor(id) }
+    fun clearError() { mutable.update { it.copy(error = null) } }
+    private fun command(onSuccess: () -> Unit = {}, block: suspend (AccountsInterface) -> Unit) {
+        if (uiState.value.saving) return
+        mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            combine(selectedDateRange, currencyConversionService.rateChangeTrigger) { dateRange, _ -> dateRange }
-                .flatMapLatest { dateRange ->
-                val (startDate, endDate) = getDateRangeValues(dateRange)
-
-                val chartStartDate = when (dateRange) {
-                    DateRange.LAST_7_DAYS -> endDate.minusDays(14)
-                    DateRange.LAST_30_DAYS -> endDate.minusMonths(2)
-                    DateRange.LAST_3_MONTHS -> endDate.minusMonths(4)
-                    DateRange.LAST_6_MONTHS -> endDate.minusMonths(8)
-                    DateRange.LAST_YEAR -> endDate.minusMonths(15)
-                    DateRange.ALL_TIME -> LocalDateTime.of(2000, 1, 1, 0, 0)
-                }
-
-                accountBalanceRepository.getBalanceHistory(
-                    bankName,
-                    accountLast4,
-                    chartStartDate,
-                    endDate
-                )
-            }.collect { balanceHistory ->
-                val effectiveCurrency = currencyRepository.effectiveBaseCurrencyCode.first()
-
-                // The account's total over time: each currency at its latest balance by then,
-                // in the main currency at today's rates
-                val rates = balanceHistory.map { it.currency }.distinct().associateWith { currency ->
-                    if (currency == effectiveCurrency) BigDecimal.ONE
-                    else currencyConversionService.getExchangeRate(currency, effectiveCurrency) ?: BigDecimal.ONE
-                }
-                val latest = linkedMapOf<String, BigDecimal>()
-                val chartData = balanceHistory.sortedWith(compareBy({ it.timestamp }, { it.id })).map { entity ->
-                    latest[entity.currency] = entity.balance
-                    BalancePoint(
-                        timestamp = entity.timestamp,
-                        balance = latest.entries.fold(BigDecimal.ZERO) { sum, (currency, balance) ->
-                            sum + balance.multiply(rates.getValue(currency))
-                        },
-                        currency = effectiveCurrency
-                    )
-                }
-
-                _uiState.update { state ->
-                    state.copy(balanceChartData = chartData)
-                }
-            }
+            try {
+                session.withCore { core -> core.accounts().use { block(it) } }
+                mutable.update { it.copy(commandRevision = it.commandRevision + 1) }
+                onSuccess()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(error = coreFailureText(failure)) } }
+            finally { mutable.update { it.copy(saving = false) } }
         }
-    }
-    
-    fun selectDateRange(dateRange: DateRange) {
-        _selectedDateRange.value = dateRange
-    }
-    
-    private fun getDateRangeValues(dateRange: DateRange): Pair<LocalDateTime, LocalDateTime> {
-        val endDate = LocalDateTime.now()
-        val startDate = when (dateRange) {
-            DateRange.LAST_7_DAYS -> endDate.minusDays(7)
-            DateRange.LAST_30_DAYS -> endDate.minusDays(30)
-            DateRange.LAST_3_MONTHS -> endDate.minusMonths(3)
-            DateRange.LAST_6_MONTHS -> endDate.minusMonths(6)
-            DateRange.LAST_YEAR -> endDate.minusYears(1)
-            DateRange.ALL_TIME -> LocalDateTime.of(2000, 1, 1, 0, 0)
-        }
-        return startDate to endDate
-    }
-
-    private fun getPrimaryCurrencyForAccount(bankName: String): String {
-        return CurrencyFormatter.getBankBaseCurrency(bankName)
     }
 }
-
-/**
- * The bill of a card with [dates] on [today]: the last statement ([statementAt] its closing
- * time; what was owed then) less what was paid onto the card since ([paidSince]). A bill past
- * its due date stays shown until paid off; with no statement day only the due date is known.
- */
-internal suspend fun cardStatus(
-    dates: io.github.hootkit_dev.hootbook.domain.model.CardDates,
-    today: java.time.LocalDate,
-    statementAt: suspend (java.time.LocalDateTime) -> BigDecimal?,
-    paidSince: suspend (java.time.LocalDateTime) -> BigDecimal
-): CardStatus? {
-    val cycle = io.github.hootkit_dev.hootbook.domain.model.CardCycle
-    val dueDay = dates.dueDay ?: return null
-    val statementDay = dates.statementDay ?: return CardStatus(cycle.nextDue(dueDay, today), null, null, null)
-    val closing = cycle.lastClosing(statementDay, today)
-    val due = cycle.dueAfter(closing, dueDay, statementDay)
-    val closedAt = closing.atTime(java.time.LocalTime.MAX)
-    val nextBill = {
-        val next = cycle.nextClosing(statementDay, today)
-        CardStatus(cycle.dueAfter(next, dueDay, statementDay), next, null, null)
-    }
-    // Nothing recorded by the closing date: only the next bill is known
-    val statement = statementAt(closedAt)?.coerceAtLeast(BigDecimal.ZERO) ?: return nextBill()
-    val remaining = (statement - paidSince(closedAt)).coerceAtLeast(BigDecimal.ZERO)
-    if (today.isAfter(due)) {
-        return if (remaining.signum() > 0) CardStatus(due, closing, statement, remaining, overdue = true) else nextBill()
-    }
-    return CardStatus(due, closing, statement, remaining)
-}
-
-/** What [transactions] paid onto card [cardId] after [after], in the card's [currency]. */
-internal fun paidOntoCard(
-    transactions: List<io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity>,
-    cardId: Long?,
-    currency: String,
-    after: java.time.LocalDateTime
-): BigDecimal = transactions
-    .filter { it.dateTime.isAfter(after) && !it.isDeleted }
-    .sumOf { tx ->
-        val transfer = tx.transactionType == TransactionType.TRANSFER
-        val ontoCard = when (tx.transactionType) {
-            TransactionType.INCOME, TransactionType.BORROWED -> tx.accountId == cardId
-            TransactionType.TRANSFER -> tx.toAccountId == cardId && tx.accountId != cardId
-            else -> false
-        }
-        val txCurrency = if (transfer) tx.toCurrency ?: tx.currency else tx.currency
-        val amount = if (transfer) tx.toAmount ?: tx.amount else tx.amount
-        if (ontoCard && txCurrency == currency) amount else BigDecimal.ZERO
-    }

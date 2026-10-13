@@ -83,8 +83,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.CategoryKind
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CategoryItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CategorySelectionSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
@@ -117,30 +118,23 @@ fun CategoriesScreen(
     blurEffects: Boolean
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val categories by categoriesViewModel.filteredCategories.collectAsStateWithLifecycle()
-    val searchQuery by categoriesViewModel.searchQuery.collectAsStateWithLifecycle()
-    
-    // Use local TextFieldValue state for SearchBarBox to handle cursor position
-    var searchInput by remember { mutableStateOf(TextFieldValue(text = searchQuery)) }
-
-    // Sync input with ViewModel state (in case it changes externally)
-    LaunchedEffect(searchQuery) {
-        if (searchQuery != searchInput.text) {
-            searchInput = searchInput.copy(text = searchQuery)
-        }
+    val state by categoriesViewModel.uiState.collectAsStateWithLifecycle()
+    val categories = state.categories.values.filter { category ->
+        state.searchQuery.isBlank() || category.displayName.contains(state.searchQuery, true) ||
+            category.subcategories.any { it.displayName.contains(state.searchQuery, true) }
     }
-
-    val showAddEditDialog by categoriesViewModel.showAddEditDialog.collectAsStateWithLifecycle()
-    val editingCategory by categoriesViewModel.editingCategory.collectAsStateWithLifecycle()
-    val snackbarMessage by categoriesViewModel.snackbarMessage.collectAsStateWithLifecycle()
-    val subcategories by categoriesViewModel.subcategories.collectAsStateWithLifecycle()
-    val showSubcategoryDialog by categoriesViewModel.showSubcategoryDialog.collectAsStateWithLifecycle()
-    val editingSubcategory by categoriesViewModel.editingSubcategory.collectAsStateWithLifecycle()
-
-    val showDeleteConfirmation by categoriesViewModel.showDeleteConfirmation.collectAsStateWithLifecycle()
-    val categoryToDelete by categoriesViewModel.categoryToDelete.collectAsStateWithLifecycle()
-    val hasTransactions by categoriesViewModel.hasTransactions.collectAsStateWithLifecycle()
-    val showMigrationSheet by categoriesViewModel.showMigrationSheet.collectAsStateWithLifecycle()
+    val searchQuery = state.searchQuery
+    var searchInput by remember { mutableStateOf(TextFieldValue(text = searchQuery)) }
+    val showAddEditDialog = state.showAddEditDialog
+    val editingCategory = state.editingCategory
+    val snackbarMessage = state.errorMessage
+    val subcategories = state.categories.mapValues { it.value.subcategories }
+    val showSubcategoryDialog = state.showSubcategoryDialog
+    val editingSubcategory = state.editingSubcategory
+    val showDeleteConfirmation = state.showDeleteConfirmation
+    val categoryToDelete = state.categoryToDelete
+    val hasTransactions = state.hasTransactions
+    val showMigrationSheet = state.showMigrationSheet
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -152,10 +146,11 @@ fun CategoriesScreen(
     var showFloatingLabel by remember { mutableStateOf(true) }
     var showFilterMenu by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("All") }
-    val searchLabel = stringResource(R.string.search_fruits)
+    val searchLabel = stringResource(R.string.search_categories)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val operationFailed = stringResource(R.string.onboarding_operation_failed)
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.firstVisibleItemIndex }.collect { firstVisibleItem ->
             // Show the label only when the list is scrolled to the top
@@ -166,7 +161,7 @@ fun CategoriesScreen(
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
             scope.launch {
-                snackbarHostState.showSnackbar(it)
+                snackbarHostState.showSnackbar(operationFailed)
                 categoriesViewModel.clearSnackbarMessage()
             }
         }
@@ -334,8 +329,8 @@ fun CategoriesScreen(
             }
 
             // Recalculate grouped categories for the displayed list
-            val dispExpenseCategories = categories.filter { !it.isIncome }
-            val dispIncomeCategories = categories.filter { it.isIncome }
+            val dispExpenseCategories = categories.filter { it.kind != CategoryKind.INCOME }
+            val dispIncomeCategories = categories.filter { it.kind == CategoryKind.INCOME }
 
 
             when (selectedFilter) {
@@ -357,9 +352,9 @@ fun CategoriesScreen(
                         ) { animatedCategory ->
                             val categorySubcategories = subcategories[animatedCategory.id] ?: emptyList()
                             val displayedSubs = if (searchQuery.isNotBlank()) {
-                                val catMatches = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(animatedCategory.name, searchQuery)
+                                val catMatches = animatedCategory.displayName.contains(searchQuery, ignoreCase = true)
                                 if (catMatches) categorySubcategories
-                                else categorySubcategories.filter { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery) }
+                                else categorySubcategories.filter { it.displayName.contains(searchQuery, ignoreCase = true) }
                             } else {
                                 categorySubcategories
                             }
@@ -392,9 +387,9 @@ fun CategoriesScreen(
                             key = { "expense-${it.id}" }) { category ->
                             val categorySubcategories = subcategories[category.id] ?: emptyList()
                             val displayedSubs = if (searchQuery.isNotBlank()) {
-                                val catMatches = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(category.name, searchQuery)
+                                val catMatches = category.displayName.contains(searchQuery, ignoreCase = true)
                                 if (catMatches) categorySubcategories
-                                else categorySubcategories.filter { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery) }
+                                else categorySubcategories.filter { it.displayName.contains(searchQuery, ignoreCase = true) }
                             } else {
                                 categorySubcategories
                             }
@@ -428,9 +423,9 @@ fun CategoriesScreen(
                             key = { "income-${it.id}" }) { category ->
                             val categorySubcategories = subcategories[category.id] ?: emptyList()
                             val displayedSubs = if (searchQuery.isNotBlank()) {
-                                val catMatches = io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(category.name, searchQuery)
+                                val catMatches = category.displayName.contains(searchQuery, ignoreCase = true)
                                 if (catMatches) categorySubcategories
-                                else categorySubcategories.filter { io.github.hootkit_dev.hootbook.presentation.common.CategoryNames.matches(it.name, searchQuery) }
+                                else categorySubcategories.filter { it.displayName.contains(searchQuery, ignoreCase = true) }
                             } else {
                                 categorySubcategories
                             }
@@ -466,13 +461,14 @@ fun CategoriesScreen(
             EditCategorySheet(
                 category = editingCategory,
                 onDismiss = { categoriesViewModel.hideDialog() },
-                onSave = { name, description, color, iconResId, iconName, isIncome ->
-                    categoriesViewModel.saveCategory(name, description, color, iconResId, iconName, isIncome)
+                saving = state.saving,
+                onSave = { name, color, iconName, isIncome ->
+                    categoriesViewModel.saveCategory(name, color, iconName, isIncome)
                 },
-                onReset = if (editingCategory?.isSystem == true) {
+                onReset = if (editingCategory?.builtinKey != null) {
                     { categoryId -> categoriesViewModel.resetCategory(categoryId) }
                 } else null,
-                onDelete = if (editingCategory != null && !editingCategory!!.isSystem) {
+                onDelete = if (editingCategory != null && editingCategory!!.builtinKey == null) {
                     { categoriesViewModel.deleteCategory(editingCategory!!) }
                 } else null
             )
@@ -493,26 +489,27 @@ fun CategoriesScreen(
         ) {
             EditSubcategorySheet(
                 subcategory = editingSubcategory,
+                saving = state.saving,
                 categoryColor = currentCategory?.color ?: "#757575",
                 categoryIconResId = currentCategory?.let { cat ->
-                    if (cat.iconName.isNotEmpty()) {
-                        io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.nameToResId(context, cat.iconName)
-                            .takeIf { it != 0 } ?: cat.iconResId
+                    if (cat.icon.isNotEmpty()) {
+                        io.github.hootkit_dev.hootbook.utils.IconResolutionUtils.nameToResId(context, cat.icon)
+                            .takeIf { it != 0 } ?: R.drawable.type_food_dining
                     } else {
-                        cat.iconResId
+                        R.drawable.type_food_dining
                     }
                 } ?: R.drawable.type_food_dining,
                 onDismiss = { categoriesViewModel.hideSubcategoryDialog() },
                 onSave = { name, iconResId, iconName, color ->
                     categoriesViewModel.saveSubcategory(name, iconResId, iconName, color)
                 },
-                onReset = if (editingSubcategory?.isSystem == true) {
+                onReset = if (editingSubcategory?.builtinKey != null) {
                     { subcategoryId -> categoriesViewModel.resetSubcategory(subcategoryId) }
                 } else null,
                 onDelete = if (editingSubcategory != null) {
                     { subcategoryId ->
                         editingSubcategory?.let { categoriesViewModel.deleteSubcategory(it) }
-                        categoriesViewModel.hideSubcategoryDialog()
+
                     }
                 } else null
             )
@@ -521,7 +518,7 @@ fun CategoriesScreen(
 
     // Deletion Confirmation Dialog
     if (showDeleteConfirmation && categoryToDelete != null) {
-        val categoryName = categoryToDelete?.name ?: "this category"
+        val categoryName = categoryToDelete?.displayName ?: "this category"
         DeleteCategoryDialog(
             hasTransactions = hasTransactions,
             categoryName = categoryName,
@@ -544,7 +541,7 @@ fun CategoriesScreen(
         ) {
             Box(modifier = Modifier.padding(bottom = Spacing.xxl)) {
                 CategorySelectionSheet(
-                    categories = categories.filter { it.id != (categoryToDelete?.id ?: -1) },
+                    categories = state.categories.values.filter { it.id != categoryToDelete?.id && it.kind == categoryToDelete?.kind },
                     subcategoriesMap = subcategories,
                     onSelectionComplete = { newCategory, newSubcategory ->
                         categoriesViewModel.confirmMigrationToCategory(newCategory, newSubcategory)
@@ -559,17 +556,17 @@ fun CategoriesScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableCategoryItem(
-        category: CategoryEntity,
-        subcategories: List<SubcategoryEntity>,
+        category: Category,
+        subcategories: List<Subcategory>,
         onEdit: () -> Unit,
         onDelete: () -> Unit,
         onAddSubcategory: () -> Unit,
-        onEditSubcategory: (SubcategoryEntity) -> Unit,
+        onEditSubcategory: (Subcategory) -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {SwipeToDismissBoxValue.EndToStart -> {
-                if (!category.isSystem) {
+                if (category.builtinKey == null) {
                     onDelete()
                 }
                 false // Don't dismiss until confirmed
@@ -581,7 +578,7 @@ private fun SwipeableCategoryItem(
 
     SwipeToDismissBox(
         state = dismissState,
-        backgroundContent = { if (!category.isSystem) {
+        backgroundContent = { if (category.builtinKey == null) {
             val color by
             animateColorAsState(
                 when (dismissState.dismissDirection) {SwipeToDismissBoxValue.EndToStart ->
@@ -617,7 +614,7 @@ private fun SwipeableCategoryItem(
             )
         },
         enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = !category.isSystem
+        enableDismissFromEndToStart = category.builtinKey == null
     )
 }
 

@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
+import dev.hootkit.core.Category
+import dev.hootkit.core.Subcategory
 import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.SubcategoryRow
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
@@ -22,11 +22,11 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CategoryItem(
-    category: CategoryEntity,
-    subcategories: List<SubcategoryEntity>,
+    category: Category,
+    subcategories: List<Subcategory>,
     onClick: (() -> Unit)?,
     onAddSubcategory: () -> Unit,
-    onEditSubcategory: (SubcategoryEntity) -> Unit,
+    onEditSubcategory: (Subcategory) -> Unit,
     showAddSubcategoryButton: Boolean = true,
     modifier: Modifier = Modifier
 ) {

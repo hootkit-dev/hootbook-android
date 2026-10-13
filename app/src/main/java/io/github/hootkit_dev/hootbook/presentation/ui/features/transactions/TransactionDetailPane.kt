@@ -34,9 +34,9 @@ const val LIST_DETAIL_MIN_WIDTH_DP = 720
  */
 @Composable
 fun TransactionDetailPane(
-    transactionId: Long?,
+    transactionId: String?,
     onClose: () -> Unit,
-    onNavigateToPersonDetail: (Long) -> Unit,
+    onNavigateToPersonDetail: (String) -> Unit,
     blurEffects: Boolean
 ) {
     // One view model for the pane, apart from the full-screen detail route's

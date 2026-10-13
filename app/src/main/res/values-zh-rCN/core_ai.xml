@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ai_title">AI 助手</string>
+    <string name="core_ai_configuration">提供方配置</string>
+    <string name="core_ai_request">你想让 AI 做什么？</string>
+    <string name="core_ai_analyze">发送并分析</string>
+    <string name="core_ai_cancel">取消</string>
+    <string name="core_ai_limit">模型已达到轮次上限；请检查建议是否完整。</string>
+    <string name="core_ai_apply">保存已审阅的修改</string>
+    <string name="core_ai_undo">撤销本次保存</string>
+    <string name="core_ai_base_url">HTTPS 接口地址</string>
+    <string name="core_ai_model">模型 ID</string>
+    <string name="core_ai_key_replace">替换 Key（留空保留已有）</string>
+    <string name="core_ai_key">API Key</string>
+    <string name="core_ai_save_configuration">保存配置</string>
+</resources>

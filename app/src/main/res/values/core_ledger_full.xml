@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="core_full_cash_history">Cash balance history</string>
+    <string name="core_full_history_from">From date YYYY-MM-DD</string>
+    <string name="core_full_history_to">Through date YYYY-MM-DD</string>
+    <string name="core_full_history_query">Query Core history</string>
+    <string name="core_full_attachment_view">Preview attachment</string>
+    <string name="core_full_attachment_add">Choose attachment</string>
+    <string name="core_full_bulk_edit">Edit selected transactions</string>
+    <string name="core_full_select_all">Select all matching Core results</string>
+    <string name="core_full_export_all_pages">Export all matching pages to CSV</string>
+    <string name="core_full_export_count">Complete CSV ready: %1$s transactions</string>
+    <string name="core_full_confirm">Confirm</string>
+    <string name="core_full_bulk_amount">Replace amount</string>
+    <string name="core_full_label_3">Undo latest deletion</string>
+    <string name="core_full_label_5">Edit</string>
+    <string name="core_full_label_6">Delete</string>
+    <string name="core_full_label_14">Next page</string>
+    <string name="core_full_label_17">Confirm deletion</string>
+    <string name="core_full_label_33">Expand filters</string>
+    <string name="core_full_label_34">Search merchant/notes/category</string>
+    <string name="core_full_label_40">Category</string>
+    <string name="core_full_label_49">Active transactions</string>
+    <string name="core_full_label_50">Recycle bin</string>
+    <string name="core_full_label_51">Include deleted</string>
+    <string name="core_full_label_52">Apply filters</string>
+    <string name="core_full_label_55">Amount (decimal)</string>
+    <string name="core_full_label_67">Merchant</string>
+    <string name="core_full_label_68">Notes</string>
+    <string name="core_full_label_71">Save in Core</string>
+    <string name="core_full_securities">Securities value: %1$s</string>
+    <string name="core_kind_expense">Expense</string>
+    <string name="core_kind_income">Income</string>
+    <string name="core_kind_transfer">Transfer</string>
+    <string name="core_kind_investment">Investment</string>
+    <string name="core_kind_loan_out">Loan out / repayment out</string>
+    <string name="core_kind_loan_in">Loan in / repayment in</string>
+    <string name="core_kind_unknown">Unknown</string>
+</resources>

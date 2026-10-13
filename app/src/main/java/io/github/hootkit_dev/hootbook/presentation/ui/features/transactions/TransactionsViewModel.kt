@@ -1,897 +1,517 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.transactions
 
-import io.github.hootkit_dev.hootbook.data.currency.Conversions
-import android.content.Context
-import android.util.Log
-import androidx.lifecycle.SavedStateHandle
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.SubcategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.TransactionType
-import io.github.hootkit_dev.hootbook.data.repository.CategoryRepository
-import io.github.hootkit_dev.hootbook.data.repository.TransactionRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.hootkit.core.*
+import dev.hootkit.platform.ChangeBus
+import dev.hootkit.platform.CoreSession
+import io.github.hootkit_dev.hootbook.core.ui.CoreUiPreferencesStore
 import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
 import io.github.hootkit_dev.hootbook.presentation.common.TransactionTypeFilter
 import io.github.hootkit_dev.hootbook.presentation.common.getDateRangeForPeriod
-import io.github.hootkit_dev.hootbook.presentation.common.CurrencyGroupedTotals
-import io.github.hootkit_dev.hootbook.presentation.common.CurrencyTotals
-import io.github.hootkit_dev.hootbook.core.Constants
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.preferences.UserPreferencesRepository
-import io.github.hootkit_dev.hootbook.data.repository.AccountBalanceRepository
-import io.github.hootkit_dev.hootbook.data.repository.TransactionEditor
-import io.github.hootkit_dev.hootbook.data.repository.CurrencyRepository
-import io.github.hootkit_dev.hootbook.data.repository.SubcategoryRepository
-import io.github.hootkit_dev.hootbook.data.currency.CurrencyConversionService
-import io.github.hootkit_dev.hootbook.utils.CurrencyUtils
-import io.github.hootkit_dev.hootbook.data.repository.LendBorrowRepository
-import io.github.hootkit_dev.hootbook.domain.model.PersonInfo
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import io.github.hootkit_dev.hootbook.presentation.data.coreQuery
+import io.github.hootkit_dev.hootbook.presentation.data.observe
+import io.github.hootkit_dev.hootbook.presentation.data.withCore
 import java.math.BigDecimal
-import java.net.URLDecoder
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-@HiltViewModel
-class TransactionsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository,
-    private val subcategoryRepository: SubcategoryRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
-    private val transactionEditor: TransactionEditor,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val currencyRepository: CurrencyRepository,
-    private val currencyConversionService: CurrencyConversionService,
-    transactionLookupsSource: io.github.hootkit_dev.hootbook.presentation.common.TransactionLookupsSource,
-    private val savedStateHandle: SavedStateHandle,
-    @ApplicationContext private val context: Context
-) : ViewModel() {
-    
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-    
-    private val _selectedPeriod = MutableStateFlow(TimePeriod.THIS_MONTH)
-    val selectedPeriod: StateFlow<TimePeriod> = _selectedPeriod.asStateFlow()
-    
-    private val _categoryFilter = MutableStateFlow<Set<String>>(emptySet())
-    val categoryFilter: StateFlow<Set<String>> = _categoryFilter.asStateFlow()
-
-    private val _subcategoryFilter = MutableStateFlow<Set<String>>(emptySet())
-    val subcategoryFilter: StateFlow<Set<String>> = _subcategoryFilter.asStateFlow()
-
-    private val _amountRangeFilter = MutableStateFlow<Pair<BigDecimal, BigDecimal>?>(null)
-    val amountRangeFilter: StateFlow<Pair<BigDecimal, BigDecimal>?> = _amountRangeFilter.asStateFlow()
-
-    private val _accountsFilter = MutableStateFlow<Set<String>>(emptySet())
-    val accountsFilter: StateFlow<Set<String>> = _accountsFilter.asStateFlow()
-
-    private val _currenciesFilter = MutableStateFlow<Set<String>>(emptySet())
-    val currenciesFilter: StateFlow<Set<String>> = _currenciesFilter.asStateFlow()
-    
-    private val _transactionTypeFilter = MutableStateFlow<Set<TransactionTypeFilter>>(emptySet())
-    val transactionTypeFilter: StateFlow<Set<TransactionTypeFilter>> = _transactionTypeFilter.asStateFlow()
-    
-    private val _sortOption = MutableStateFlow(SortOption.DATE_NEWEST)
-    val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
-
-    private val _selectedCurrency = MutableStateFlow("CNY") // Default to CNY
-    val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
-
-    val baseCurrency: StateFlow<String> = currencyRepository.effectiveBaseCurrencyCode
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "CNY"
-        )
-
-    // Store custom date range as epoch days to survive process death
-    // Stored as Pair<Long, Long> (startEpochDay, endEpochDay) in SavedStateHandle
-    private val _customDateRangeEpochDays = savedStateHandle.getStateFlow<Pair<Long, Long>?>("customDateRange", null)
-
-    // Expose as LocalDate pair for convenience
-    val customDateRange: StateFlow<Pair<LocalDate, LocalDate>?> = _customDateRangeEpochDays
-        .map { epochDays ->
-            epochDays?.let { (startEpochDay, endEpochDay) ->
-                LocalDate.ofEpochDay(startEpochDay) to LocalDate.ofEpochDay(endEpochDay)
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = null
-        )
-
-    private val _uiState = MutableStateFlow(TransactionsUiState())
-    val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
-
-    private val _canLoadData = MutableStateFlow(false)
-    
-    private val _currencyGroupedTotals = MutableStateFlow(CurrencyGroupedTotals())
-    val currencyGroupedTotals: StateFlow<CurrencyGroupedTotals> = _currencyGroupedTotals.asStateFlow()
-
-    // Available currencies for the selected time period and all accounts
-    val availableCurrencies: StateFlow<List<String>> = combine(
-        selectedPeriod,
-        customDateRange,
-        accountBalanceRepository.getAllLatestBalances()
-    ) { period, customRange, accounts ->
-        Triple(period, customRange, accounts)
-    }.flatMapLatest { (period, customRange, accounts) ->
-        val accountCurrencies = accounts.map { it.currency }.distinct()
-        val transactionCurrenciesFlow = if (period == TimePeriod.ALL) {
-            transactionRepository.getAllCurrencies()
-        } else if (period == TimePeriod.CUSTOM && customRange != null) {
-            val (startDate, endDate) = customRange
-            val startDateTime = startDate.atStartOfDay()
-            val endDateTime = endDate.atTime(23, 59, 59)
-            transactionRepository.getCurrenciesForPeriod(startDateTime, endDateTime)
-        } else {
-            val dateRange = getDateRangeForPeriod(period)
-            if (dateRange != null) {
-                val (startDate, endDate) = dateRange
-                val startDateTime = startDate.atStartOfDay()
-                val endDateTime = endDate.atTime(23, 59, 59)
-                transactionRepository.getCurrenciesForPeriod(startDateTime, endDateTime)
-            } else {
-                transactionRepository.getAllCurrencies()
-            }
-        }
-        transactionCurrenciesFlow.map { txCurrencies ->
-            (txCurrencies + accountCurrencies).distinct().sortedWith { a, b ->
-                when {
-                    a == b -> 0
-                    a == "CNY" -> -1 // CNY first
-                    b == "CNY" -> 1
-                    else -> a.compareTo(b) // Alphabetical for others
-                }
-            }
-        }
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    // Computed property for current selected currency totals
-    val filteredTotals: StateFlow<FilteredTotals> = _uiState.map { state ->
-        var income = BigDecimal.ZERO
-        var expenses = BigDecimal.ZERO
-        var credit = BigDecimal.ZERO
-        var transfer = BigDecimal.ZERO
-        var investment = BigDecimal.ZERO
-
-        state.transactions.forEach { tx ->
-            val valAmount = state.conversions.amountOf(tx) ?: tx.amount
-            when (tx.transactionType) {
-                TransactionType.INCOME -> income += valAmount
-                TransactionType.EXPENSE -> expenses += valAmount
-                TransactionType.CREDIT -> credit += valAmount
-                TransactionType.TRANSFER -> transfer += valAmount
-                TransactionType.INVESTMENT -> investment += valAmount
-                TransactionType.LENT -> expenses += valAmount
-                TransactionType.BORROWED -> income += valAmount
-                else -> {}
-            }
-        }
-        val netBalance = income - expenses
-        FilteredTotals(
-            income = income,
-            expenses = expenses,
-            credit = credit,
-            transfer = transfer,
-            investment = investment,
-            netBalance = netBalance,
-            transactionCount = state.transactions.size
-        )
-    }.flowOn(Dispatchers.Default).stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = FilteredTotals()
+internal val ledgerTables =
+    setOf(
+        Table.TRANSACTIONS,
+        Table.CATEGORIES,
+        Table.SUBCATEGORIES,
+        Table.ACCOUNTS,
+        Table.ACCOUNT_CURRENCIES,
+        Table.SETTINGS,
+        Table.EXCHANGE_RATES,
     )
-    
-    private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
-    val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
-    
-    // Selection mode state for bulk deletion
-    private val _selectionMode = MutableStateFlow(false)
-    val selectionMode: StateFlow<Boolean> = _selectionMode.asStateFlow()
-    
-    private val _selectedTransactionIds = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedTransactionIds: StateFlow<Set<Long>> = _selectedTransactionIds.asStateFlow()
-    
-    private val _deletedTransactions = MutableStateFlow<List<TransactionEntity>?>(null)
-    val deletedTransactions: StateFlow<List<TransactionEntity>?> = _deletedTransactions.asStateFlow()
-    
-    // Track if initial filters have been applied to prevent resetting on back navigation
-    private var hasAppliedInitialFilters = false
-    
-    // Categories flow - will be used to map category names to colors
-    val categories: StateFlow<Map<String, CategoryEntity>> = categoryRepository.getAllCategories()
-        .map { categoryList ->
-            categoryList.associateBy { it.name }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
-    
-    // Subcategories flow - will be used to map subcategory names to entities
-    val subcategories: StateFlow<Map<String, SubcategoryEntity>> = subcategoryRepository.getAllSubcategories()
-        .map { subcategoryList ->
-            subcategoryList.associateBy { it.name }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
 
-    val allSubcategoriesByCategoryId: StateFlow<Map<Long, List<SubcategoryEntity>>> = subcategoryRepository.getAllSubcategories()
-        .map { subcategoryList ->
-            subcategoryList.groupBy { it.categoryId }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
+internal fun java.time.LocalDateTime.coreTime() =
+    dev.hootkit.core.LocalDateTime(
+        year,
+        monthValue.toUByte(),
+        dayOfMonth.toUByte(),
+        hour.toUByte(),
+        minute.toUByte(),
+        second.toUByte(),
+        nano.toUInt(),
+    )
 
-    // Category, account and lend/borrow person lookups for the transaction rows
-    val lookups = transactionLookupsSource.lookups
+internal fun LocalDate.coreDate() =
+    dev.hootkit.core.LocalDate(year, monthValue.toUByte(), dayOfMonth.toUByte())
 
-    val accountsMap: StateFlow<Map<String, AccountBalanceEntity>> = accountBalanceRepository.getAllLatestBalances()
-        .map { accountList ->
-            accountList.associateBy { "${it.bankName}_${it.accountLast4}" }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
-        
-    // Calculate the absolute maximum transaction amount across all transactions
-    val maxTransactionAmount: StateFlow<Float> = transactionRepository.getAllTransactions()
-        .map { transactions ->
-            transactions.maxOfOrNull<io.github.hootkit_dev.hootbook.data.database.entity.TransactionEntity, java.math.BigDecimal> { tx -> tx.amount }?.toFloat() ?: 0f
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0f
-        )
-    
+internal fun TransactionTypeFilter.kind(): TransactionKind? =
+    when (this) {
+        TransactionTypeFilter.ALL -> null
+        TransactionTypeFilter.LENT -> TransactionKind.LOAN_OUT
+        TransactionTypeFilter.BORROWED -> TransactionKind.LOAN_IN
+        else -> TransactionKind.valueOf(name)
+    }
+
+internal fun TransactionKind.typeFilter(): TransactionTypeFilter? =
+    when (this) {
+        TransactionKind.LOAN_OUT -> TransactionTypeFilter.LENT
+        TransactionKind.LOAN_IN -> TransactionTypeFilter.BORROWED
+        TransactionKind.UNKNOWN -> null
+        else -> TransactionTypeFilter.valueOf(name)
+    }
+
+@HiltViewModel
+class TransactionsViewModel
+@Inject
+constructor(
+    private val session: CoreSession,
+    private val changes: ChangeBus,
+    private val preferences: CoreUiPreferencesStore,
+) : ViewModel() {
+    private val mutableState = MutableStateFlow(TransactionsUiState())
+    val uiState = mutableState.asStateFlow()
+    private var queryJob: Job? = null
+    private var moreJob: Job? = null
+    private var generation = 0L
+    private var initialized = false
+
     init {
-        // Observe the effective base currency dynamically
-        viewModelScope.launch {
-            var lastBaseCurrency: String? = null
-            baseCurrency.collectLatest { effectiveCurrency ->
-                if (lastBaseCurrency == null || effectiveCurrency != lastBaseCurrency) {
-                    _selectedCurrency.value = effectiveCurrency
-                    lastBaseCurrency = effectiveCurrency
+        selectPeriod(TimePeriod.THIS_MONTH)
+    }
+
+    fun refresh() {
+        val mine = ++generation
+        queryJob?.cancel()
+        moreJob?.cancel()
+        val filter = uiState.value.filter
+        mutableState.update { it.copy(isLoading = true, loadingMore = false) }
+        queryJob =
+            viewModelScope.launch {
+                session
+                    .observe(changes, ledgerTables + setOf(Table.DEBTS, Table.PEOPLE)) { core ->
+                        coreQuery {
+                            // Refresh every already-visible page after a change; never append to
+                            // stale pages.
+                            val limit = uiState.value.transactions.size.toUInt().coerceAtLeast(50u)
+                            val page = core.ledger().use { it.list(filter, PageRequest(0u, limit)) }
+                            val summary = core.ledger().use { it.summary(filter) }
+                            val accounts =
+                                core.accounts().use {
+                                    it.overview().accounts.associateBy(Account::id)
+                                }
+                            val categories =
+                                core.categories().use {
+                                    it.list(null, true).associateBy(Category::id)
+                                }
+                            val prefs = preferences.ready()
+                            val displayCurrency =
+                                prefs.unifiedDisplayCurrency?.takeIf { prefs.unifiedDisplayEnabled }
+                                    ?: summary.currency
+                            val converted =
+                                core.currency().use { currency ->
+                                    page.items.associate { tx ->
+                                        tx.id to
+                                            if (tx.currency != displayCurrency)
+                                                currency.convert(
+                                                    tx.amount,
+                                                    tx.currency,
+                                                    displayCurrency,
+                                                )
+                                            else null
+                                    }
+                                }
+                            val people =
+                                core.plans().use {
+                                    it.people(true, LocalDate.now().coreDate())
+                                        .associateBy(Person::id)
+                                }
+                            val debts =
+                                core.plans().use { plans ->
+                                    people.keys
+                                        .flatMap { plans.debts(it) }
+                                        .associateBy(DebtEntry::id)
+                                }
+                            val currencies =
+                                core.ledger().use {
+                                    it.summary(
+                                            emptyTransactionFilter()
+                                                .copy(deleted = DeletedFilter.INCLUDE)
+                                        )
+                                        .perCurrency
+                                        .map(CurrencyTotals::currency)
+                                }
+                            TransactionsUiState(
+                                debts = debts,
+                                people = people,
+                                convertedAmounts = converted,
+                                displayCurrency = displayCurrency,
+                                currencies = currencies,
+                                transactions = page.items,
+                                total = page.total,
+                                summary = summary,
+                                accounts = accounts,
+                                categories = categories,
+                                filter = filter,
+                                isLoading = false,
+                            )
+                        }
+                    }
+                    .collect { result ->
+                        val snapshot =
+                            result.getOrElse { failure ->
+                                if (mine == generation)
+                                    mutableState.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            loadingMore = false,
+                                            error = coreFailureText(failure),
+                                        )
+                                    }
+                                return@collect
+                            }
+                        if (mine == generation) {
+                            moreJob?.cancel()
+                            mutableState.update {
+                                it.copy(
+                                    debts = snapshot.debts,
+                                    people = snapshot.people,
+                                    convertedAmounts = snapshot.convertedAmounts,
+                                    displayCurrency = snapshot.displayCurrency,
+                                    currencies = snapshot.currencies,
+                                    transactions = snapshot.transactions,
+                                    total = snapshot.total,
+                                    summary = snapshot.summary,
+                                    accounts = snapshot.accounts,
+                                    categories = snapshot.categories,
+                                    isLoading = false,
+                                    loadingMore = false,
+                                )
+                            }
+                        }
+                    }
+            }
+    }
+
+    fun loadMore() {
+        val before = uiState.value
+        if (
+            before.error != null ||
+                before.isLoading ||
+                before.loadingMore ||
+                before.transactions.size.toUInt() >= before.total
+        )
+            return
+        val mine = generation
+        val revision = changes.revisions.value
+        mutableState.update { it.copy(loadingMore = true) }
+        moreJob =
+            viewModelScope.launch {
+                try {
+                    val page =
+                        session.withCore { core ->
+                            core.ledger().use {
+                                it.list(
+                                    before.filter,
+                                    PageRequest(before.transactions.size.toUInt(), 50u),
+                                )
+                            }
+                        }
+                    val converted =
+                        session.withCore { core ->
+                            core.currency().use { currency ->
+                                page.items.associate { tx ->
+                                    tx.id to
+                                        if (tx.currency != before.displayCurrency)
+                                            currency.convert(
+                                                tx.amount,
+                                                tx.currency,
+                                                before.displayCurrency,
+                                            )
+                                        else null
+                                }
+                            }
+                        }
+                    ensureActive()
+                    if (mine == generation && revision == changes.revisions.value) {
+                        check(page.items.isNotEmpty()) { "Incomplete Core page" }
+                        check(
+                            page.total == before.total &&
+                                (before.transactions + page.items)
+                                    .distinctBy(Transaction::id)
+                                    .size == before.transactions.size + page.items.size
+                        ) {
+                            "Ledger changed; refresh the list"
+                        }
+                        mutableState.update {
+                            it.copy(
+                                convertedAmounts = it.convertedAmounts + converted,
+                                transactions = before.transactions + page.items,
+                                total = page.total,
+                                loadingMore = false,
+                            )
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (failure: Exception) {
+                    if (mine == generation)
+                        mutableState.update {
+                            it.copy(error = coreFailureText(failure), loadingMore = false)
+                        }
+                } finally {
+                    if (mine == generation) mutableState.update { it.copy(loadingMore = false) }
                 }
             }
+    }
+
+    fun applyFilter(filter: TransactionFilter) {
+        mutableState.update {
+            it.copy(
+                filter = filter.copy(deleted = DeletedFilter.EXCLUDE),
+                transactions = emptyList(),
+                summary = null,
+                selectedIds = emptySet(),
+                error = null,
+            )
         }
-
-        _canLoadData
-            .filter { it }
-            .flatMapLatest {
-                merge(
-                    // debounce(300) also delayed the initial empty query by 300 ms, which
-                    // restarted the pipeline and loaded and drew the list a second time.
-                    searchQuery.debounce { if (it.isEmpty()) 0L else 300L }.map { "search" },
-                    selectedPeriod.map { "period" },
-                    categoryFilter.map { "category" },
-                    subcategoryFilter.map { "subcategory" },
-                    amountRangeFilter.map { "amount" },
-                    accountsFilter.map { "accounts" },
-                    currenciesFilter.map { "currencies" },
-                    transactionTypeFilter.map { "typeFilter" },
-                    selectedCurrency.map { "currency" },
-                    sortOption.map { "sort" },
-                    customDateRange.map { "customDate" },
-                    baseCurrency.map { "baseCurrency" },
-                    currencyConversionService.rateChangeTrigger.map { "rates" }
-                    // Lend/borrow changes arrive through the combine below. As a trigger, the
-                    // Room query's first result lands after the list is already published
-                    // and made it load and draw the whole list a second time.
-                )
-            }
-            .transformLatest { trigger ->
-                // Benchmark traces name what restarted the list and which source re-emitted.
-                androidx.core.os.trace("TransactionsList.restart:$trigger") {}
-                // Get current values from all StateFlows
-                val query = searchQuery.value
-                val period = selectedPeriod.value
-                val category = categoryFilter.value
-                val subcategory = subcategoryFilter.value
-                val amountRange = amountRangeFilter.value
-                val accounts = accountsFilter.value
-                val filterCurrencies = currenciesFilter.value
-                val typeFilter = transactionTypeFilter.value
-                val currency = selectedCurrency.value
-                val baseCurrencyCode = baseCurrency.value
-                val sort = sortOption.value
- 
-                 // Get filtered transactions. Categories, accounts and lend/borrow people come
-                 // from the shared lookups the screen reads, so they never republish the list.
-                 getFilteredTransactions(query, period, category, subcategory, amountRange, accounts, filterCurrencies, typeFilter)
-                     .flowOn(Dispatchers.Default)
-                     .onEach { androidx.core.os.trace("TransactionsList.source:transactions") {} }
-                     .map { transactions ->
-                     // No longer filtering by selectedCurrency. Show all unless explicitly filtered via filter sheet
-                     val currencyFilteredTransactions = transactions
-                     
-                     // Converted amounts from rates known now; missing ones are fetched in the
-                     // background and restart the list through rateChangeTrigger when they land.
-                     val conversions = currencyConversionService.convert(currencyFilteredTransactions, baseCurrencyCode)
-
-                     withContext(Dispatchers.Default) {
-                         val sorted = sortTransactions(currencyFilteredTransactions, sort)
-                         PreparedTransactionList(
-                             sorted, groupTransactionsByDate(sorted), conversions,
-                             calculateCurrencyGroupedTotals(sorted)
-                         )
-                     }
-                 }.collect { prepared ->
-                     emit(prepared)
-                 }
-            }
-            .onEach { (transactions, groups, conversions, totals) ->
-                // Counted by the Macrobenchmark suite: each publish recomposes the list.
-                androidx.core.os.trace("TransactionsList.publish") {}
-                _uiState.value = _uiState.value.copy(
-                    transactions = transactions,
-                    groupedTransactions = groups,
-                    conversions = conversions,
-                    isLoading = false
-                )
-                // Calculate totals for filtered transactions
-                _currencyGroupedTotals.value = totals
-
-                // Auto-select primary currency if not already selected or if current currency no longer exists
-                val currentCurrency = selectedCurrency.value
-                if (!_currencyGroupedTotals.value.availableCurrencies.contains(currentCurrency) && _currencyGroupedTotals.value.hasAnyCurrency()) {
-                    _selectedCurrency.value = _currencyGroupedTotals.value.getPrimaryCurrency(currentCurrency)
-                }
-            }
-            .launchIn(viewModelScope)
+        refresh()
     }
 
-    /**
-     * Call this when the transition is finished to start loading heavy data.
-     */
-    fun startLoading() {
-        _canLoadData.value = true
+    fun updateSearchQuery(text: String) =
+        applyFilter(uiState.value.filter.copy(text = text.takeIf(String::isNotBlank)))
+
+    fun selectCurrency(code: String) =
+        applyFilter(uiState.value.filter.copy(currency = code.takeIf(String::isNotBlank)))
+
+    fun selectSortOption(option: SortOption) =
+        applyFilter(uiState.value.filter.copy(sort = option.core))
+
+
+    fun setCategoryFilter(id: String) {
+        val ids = uiState.value.filter.categoryIds
+        applyFilter(uiState.value.filter.copy(categoryIds = if (id in ids) ids - id else ids + id))
     }
-    
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
+
+    fun clearCategoryFilter() = applyFilter(uiState.value.filter.copy(categoryIds = emptyList()))
+
+    fun toggleAccountFilter(id: String) {
+        val ids = uiState.value.filter.accountIds
+        applyFilter(uiState.value.filter.copy(accountIds = if (id in ids) ids - id else ids + id))
     }
-    
+
+    fun toggleCurrencyFilter(code: String) =
+        selectCurrency(if (uiState.value.filter.currency == code) "" else code)
+
+    fun setTransactionTypeFilter(type: TransactionTypeFilter) {
+        val kind = type.kind()
+        val kinds = uiState.value.filter.kinds
+        applyFilter(
+            uiState.value.filter.copy(
+                kinds =
+                    if (kind == null) emptyList()
+                    else if (kind in kinds) kinds - kind else kinds + kind
+            )
+        )
+    }
+
     fun selectPeriod(period: TimePeriod) {
-        _selectedPeriod.value = period
-    }
-    
-    fun setCategoryFilter(category: String) {
-        val current = _categoryFilter.value
-        _categoryFilter.value = if (current.contains(category)) {
-            current - category
-        } else {
-            current + category
-        }
-    }
-    
-    fun clearCategoryFilter() {
-        _categoryFilter.value = emptySet()
+        mutableState.update { it.copy(period = period) }
+        val range = if (period == TimePeriod.ALL) null else getDateRangeForPeriod(period)
+        applyFilter(
+            uiState.value.filter.copy(
+                from = range?.first?.atStartOfDay()?.coreTime(),
+                to = range?.second?.plusDays(1)?.atStartOfDay()?.coreTime(),
+            )
+        )
     }
 
-    fun setSubcategoryFilter(subcategory: String?) {
-        if (subcategory == null) {
-            _subcategoryFilter.value = emptySet()
-            return
-        }
-        val current = _subcategoryFilter.value
-        _subcategoryFilter.value = if (current.contains(subcategory)) {
-            current - subcategory
-        } else {
-            current + subcategory
-        }
+    fun setCustomDateRange(from: LocalDate, to: LocalDate) {
+        mutableState.update { it.copy(period = TimePeriod.CUSTOM, customDateRange = from to to) }
+        applyFilter(
+            uiState.value.filter.copy(
+                from = from.atStartOfDay().coreTime(),
+                to = to.plusDays(1).atStartOfDay().coreTime(),
+            )
+        )
     }
 
-    fun toggleAccountFilter(accountKey: String) {
-        val current = _accountsFilter.value
-        _accountsFilter.value = if (current.contains(accountKey)) {
-            current - accountKey
-        } else {
-            current + accountKey
-        }
+    fun resetFilters() {
+        val currency = uiState.value.filter.currency
+        mutableState.update { it.copy(customDateRange = null) }
+        applyFilter(emptyTransactionFilter().copy(currency = currency))
+        selectPeriod(TimePeriod.THIS_MONTH)
     }
 
-    fun toggleCurrencyFilter(currencyCode: String) {
-        val current = _currenciesFilter.value
-        _currenciesFilter.value = if (current.contains(currencyCode)) {
-            current - currencyCode
-        } else {
-            current + currencyCode
+    fun initialize(filter: TransactionFilter) {
+        if (initialized) return
+        initialized = true
+        mutableState.update {
+            it.copy(
+                period =
+                    if (filter.from == null && filter.to == null) TimePeriod.ALL
+                    else TimePeriod.CUSTOM
+            )
         }
+        applyFilter(filter)
     }
 
-    fun setAmountRangeFilter(min: BigDecimal, max: BigDecimal) {
-        _amountRangeFilter.value = Pair(min, max)
+    fun applyInitialFilters(
+        category: String?,
+        merchant: String?,
+        period: String?,
+        currency: String?,
+        type: String?,
+        account: String? = null,
+    ) {
+        if (initialized) return
+        initialized = true
+        period?.let { runCatching { TimePeriod.valueOf(it) }.getOrNull()?.let(::selectPeriod) }
+        applyFilter(
+            uiState.value.filter.copy(
+                categoryIds = listOfNotNull(category),
+                text = merchant,
+                currency = currency,
+                kinds =
+                    listOfNotNull(
+                        type?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() }
+                    ),
+                accountIds = listOfNotNull(account),
+            )
+        )
     }
 
-    fun clearExtendedFilters() {
-        _subcategoryFilter.value = emptySet()
-        _amountRangeFilter.value = null
-        _accountsFilter.value = emptySet()
-        _currenciesFilter.value = emptySet()
-    }
-    
-    fun setTransactionTypeFilter(filter: TransactionTypeFilter) {
-        if (filter == TransactionTypeFilter.ALL) {
-            _transactionTypeFilter.value = emptySet()
-            return
-        }
-        val current = _transactionTypeFilter.value
-        _transactionTypeFilter.value = if (current.contains(filter)) {
-            current - filter
-        } else {
-            current + filter
-        }
-    }
-    
-    fun setSortOption(option: SortOption) {
-        _sortOption.value = option
-    }
-
-    fun selectCurrency(currency: String) {
-        _selectedCurrency.value = currency
-    }
-
-    /**
-     * Sets a custom date range filter and switches the period to CUSTOM.
-     * Date range is persisted in SavedStateHandle to survive process death.
-     *
-     * @param startDate The start date (inclusive)
-     * @param endDate The end date (inclusive)
-     * @throws IllegalArgumentException if startDate > endDate
-     */
-    fun setCustomDateRange(startDate: LocalDate, endDate: LocalDate) {
-        require(startDate <= endDate) {
-            "Start date ($startDate) must be before or equal to end date ($endDate)"
-        }
-        // Store as epoch days for process death survival
-        savedStateHandle["customDateRange"] = startDate.toEpochDay() to endDate.toEpochDay()
-        _selectedPeriod.value = TimePeriod.CUSTOM
-    }
-
-    /**
-     * Clears the custom date range and resets to THIS_MONTH period.
-     * Always safe to call - ensures we never have CUSTOM period with null dates.
-     */
-    fun clearCustomDateRange() {
-        savedStateHandle["customDateRange"] = null
-        // Always reset to a valid period to prevent CUSTOM with null dates
-        if (_selectedPeriod.value == TimePeriod.CUSTOM) {
-            _selectedPeriod.value = TimePeriod.THIS_MONTH
-        }
-    }
-
-    private val _balanceOperationError = MutableStateFlow<String?>(null)
-    val balanceOperationError = _balanceOperationError.asStateFlow()
-
-    fun clearBalanceOperationError() { _balanceOperationError.value = null }
-
-    private fun launchBalanceOperation(block: suspend () -> Unit) {
-        viewModelScope.launch {
-            try {
-                block()
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e("TransactionsViewModel", "Ledger operation rolled back", e)
-                _balanceOperationError.value = context.getString(io.github.hootkit_dev.hootbook.R.string.balance_operation_failed)
-            }
-        }
-    }
-
-    fun deleteTransaction(transaction: TransactionEntity) {
-        launchBalanceOperation {
-            transactionRepository.deleteTransaction(transaction)
-            _deletedTransaction.value = transaction
-        }
-    }
-    
-    fun undoDelete() {
-        _deletedTransaction.value?.let { transaction ->
-            launchBalanceOperation {
-                transactionRepository.undoDeleteTransaction(transaction)
-                _deletedTransaction.value = null
-            }
-        }
-    }
-    
-    fun undoDeleteTransaction(transaction: TransactionEntity) {
-        launchBalanceOperation {
-            transactionRepository.undoDeleteTransaction(transaction)
-        }
-    }
-    
-    fun clearDeletedTransaction() {
-        _deletedTransaction.value = null
-    }
-    
-    // Selection mode methods for bulk deletion
     fun toggleSelectionMode() {
-        _selectionMode.value = !_selectionMode.value
-        if (!_selectionMode.value) {
-            // Clear selections when exiting selection mode
-            _selectedTransactionIds.value = emptySet()
-        }
-    }
-    
-    fun toggleTransactionSelection(transactionId: Long) {
-        _selectedTransactionIds.value = if (_selectedTransactionIds.value.contains(transactionId)) {
-            _selectedTransactionIds.value - transactionId
-        } else {
-            _selectedTransactionIds.value + transactionId
-        }
-    }
-    
-    fun selectAllTransactions() {
-        val allTransactionIds = _uiState.value.transactions.map { it.id }.toSet()
-        _selectedTransactionIds.value = allTransactionIds
-    }
-    
-    fun clearSelection() {
-        _selectedTransactionIds.value = emptySet()
-    }
-    
-    fun deleteSelectedTransactions() {
-        launchBalanceOperation {
-            val selectedIds = _selectedTransactionIds.value
-            if (selectedIds.isEmpty()) return@launchBalanceOperation
-            
-            val transactionsToDelete = _uiState.value.transactions.filter { it.id in selectedIds }
-            transactionRepository.deleteTransactions(transactionsToDelete)
-            _deletedTransactions.value = transactionsToDelete
-            
-            // Clear selection and exit selection mode
-            _selectedTransactionIds.value = emptySet()
-            _selectionMode.value = false
-        }
-    }
-    
-    fun undoDeleteTransactions(transactions: List<TransactionEntity>) {
-        launchBalanceOperation {
-            transactionRepository.undoDeleteTransactions(transactions)
-        }
-    }
-    
-    fun clearDeletedTransactions() {
-        _deletedTransactions.value = null
+        if (!uiState.value.writing)
+            mutableState.update {
+                it.copy(selectionMode = !it.selectionMode, selectedIds = emptySet())
+            }
     }
 
-    fun selectTransactionSet(ids: Set<Long>) {
-        _selectedTransactionIds.value = ids
+    fun toggleTransactionSelection(id: String) {
+        if (!uiState.value.writing)
+            mutableState.update {
+                it.copy(
+                    selectedIds =
+                        if (id in it.selectedIds) it.selectedIds - id else it.selectedIds + id
+                )
+            }
+    }
+
+    fun selectTransactionSet(ids: Set<String>) {
+        if (!uiState.value.writing) mutableState.update { it.copy(selectedIds = ids) }
+    }
+
+    fun clearSelection() = selectTransactionSet(emptySet())
+
+    fun clearError() {
+        mutableState.update { it.copy(error = null) }
+    }
+
+    fun clearUndo() {
+        mutableState.update { it.copy(undoToken = null) }
+    }
+
+    fun selectAllTransactions() {
+        val filter = uiState.value.filter
+        write {
+            val revision = changes.revisions.value
+            val ids =
+                session.withCore { core ->
+                    core.ledger().use { ledger ->
+                        val result = mutableListOf<String>()
+                        do {
+                            check(changes.revisions.value == revision) {
+                                "Ledger changed; select again"
+                            }
+                            val page = ledger.list(filter, PageRequest(result.size.toUInt(), 200u))
+                            check(page.items.isNotEmpty() || result.size.toUInt() >= page.total) {
+                                "Incomplete Core page"
+                            }
+                            result += page.items.map(Transaction::id)
+                        } while (result.size.toUInt() < page.total)
+                        check(result.distinct().size == result.size) {
+                            "Ledger changed; select again"
+                        }
+                        result.toSet()
+                    }
+                }
+            if (uiState.value.filter == filter && changes.revisions.value == revision)
+                mutableState.update { it.copy(selectedIds = ids) }
+        }
+    }
+
+    fun deleteSelectedTransactions() {
+        val before = uiState.value
+        if (before.selectedIds.isEmpty()) return
+        write {
+            val token =
+                session.withCore { core ->
+                    core.ledger().use {
+                        it.delete(before.selectedIds.toList())
+                    }
+                }
+            mutableState.update {
+                it.copy(selectedIds = emptySet(), selectionMode = false, undoToken = token)
+            }
+        }
+    }
+
+    fun undoDelete(token: String) = write {
+        session.withCore { it.ledger().use { ledger -> ledger.undo(token) } }
+        clearUndo()
     }
 
     fun batchUpdateTransactions(
-        selectedIds: Set<Long>,
+        selectedIds: Set<String>,
         newDate: LocalDate?,
         newTime: LocalTime?,
         newCategory: String?,
         newSubcategory: String?,
         newAmount: BigDecimal?,
         newNote: String?,
-        onComplete: () -> Unit = {}
-    ) {
-        viewModelScope.launch {
-            val currentTransactions = _uiState.value.transactions.filter { it.id in selectedIds }
-            if (currentTransactions.isEmpty()) {
-                onComplete()
-                return@launch
-            }
-
-            for (txn in currentTransactions) {
-                val oldDateTime = txn.dateTime ?: LocalDateTime.now()
-                val targetDate = newDate ?: oldDateTime.toLocalDate()
-                val targetTime = newTime ?: oldDateTime.toLocalTime()
-                val updatedDateTime = LocalDateTime.of(targetDate, targetTime)
-
-                val updatedCategory = newCategory ?: txn.category
-                val updatedSubcategory = if (newCategory != null) newSubcategory else txn.subcategory
-                val updatedAmount = newAmount ?: txn.amount
-                val updatedDescription = if (newNote != null) {
-                    if (newNote.isBlank()) null else newNote.trim()
-                } else {
-                    txn.description
-                }
-
-                val updatedTxn = txn.copy(
-                    dateTime = updatedDateTime,
-                    category = updatedCategory,
-                    subcategory = updatedSubcategory,
-                    amount = updatedAmount,
-                    description = updatedDescription,
-                    updatedAt = LocalDateTime.now()
+    ) = write {
+        session.withCore { core ->
+            core.ledger().use {
+                it.bulkUpdate(
+                    selectedIds.toList(),
+                    TransactionBulkPatch(
+                        date = newDate?.coreDate(),
+                        time =
+                            newTime?.let {
+                                dev.hootkit.core.LocalTime(
+                                    it.hour.toUByte(),
+                                    it.minute.toUByte(),
+                                    it.second.toUByte(),
+                                    it.nano.toUInt(),
+                                )
+                            },
+                        categoryId = newCategory,
+                        subcategoryId = newSubcategory,
+                        amount = newAmount,
+                        notes = newNote,
+                    ),
                 )
-
-                // A new amount or date moves the transaction's effect on balances with it
-                if (updatedTxn.amount.compareTo(txn.amount) != 0 || updatedTxn.dateTime != txn.dateTime) {
-                    transactionEditor.update(txn, updatedTxn)
-                } else {
-                    transactionRepository.updateTransaction(updatedTxn)
-                }
             }
-
-            _selectedTransactionIds.value = emptySet()
-            _selectionMode.value = false
-            onComplete()
         }
+        mutableState.update { it.copy(selectedIds = emptySet(), selectionMode = false) }
     }
 
-    fun resetFilters() {
-        hasAppliedInitialFilters = false
-        clearCategoryFilter()
-        clearExtendedFilters()
-        updateSearchQuery("")
-        clearCustomDateRange()
-        selectPeriod(TimePeriod.THIS_MONTH)
-        setTransactionTypeFilter(TransactionTypeFilter.ALL)
-        setSortOption(SortOption.DATE_NEWEST)
-        // Don't reset currency as it might be user preference
-    }
-    
-    fun applyInitialFilters(
-        category: String?,
-        merchant: String?,
-        period: String?,
-        currency: String?,
-        type: String?
-    ) {
-        if (!hasAppliedInitialFilters) {
-            // Only apply filters once, when first navigating to the screen
-            clearCategoryFilter()
-            updateSearchQuery("")
-            selectPeriod(TimePeriod.THIS_MONTH)
-            setTransactionTypeFilter(TransactionTypeFilter.ALL)
-            setSortOption(SortOption.DATE_NEWEST)
-
-            category?.let {
-                val decoded = if (it.contains("+") || it.contains("%")) {
-                    URLDecoder.decode(it, "UTF-8")
-                } else it
-                _categoryFilter.value = setOf(decoded)
-            }
-
-            merchant?.let {
-                val decoded = if (it.contains("+") || it.contains("%")) {
-                    URLDecoder.decode(it, "UTF-8")
-                } else it
-                updateSearchQuery(decoded)
-            }
-
-            period?.let { periodName ->
-                val timePeriod = when (periodName) {
-                    "THIS_MONTH" -> TimePeriod.THIS_MONTH
-                    "LAST_MONTH" -> TimePeriod.LAST_MONTH
-                    "CURRENT_FY" -> TimePeriod.CURRENT_FY
-                    "ALL" -> TimePeriod.ALL
-                    else -> null
-                }
-                timePeriod?.let { selectPeriod(it) }
-            }
-
-            type?.let { typeName ->
-                val typeFilter = when (typeName) {
-                    "INCOME" -> TransactionTypeFilter.INCOME
-                    "EXPENSE" -> TransactionTypeFilter.EXPENSE
-                    "CREDIT" -> TransactionTypeFilter.CREDIT
-                    "TRANSFER" -> TransactionTypeFilter.TRANSFER
-                    "INVESTMENT" -> TransactionTypeFilter.INVESTMENT
-                    else -> TransactionTypeFilter.ALL
-                }
-                _transactionTypeFilter.value = if (typeFilter == TransactionTypeFilter.ALL) emptySet() else setOf(typeFilter)
-            }
-
-            // Only set currency if it's provided (from navigation)
-            currency?.let { selectCurrency(it) }
-
-            hasAppliedInitialFilters = true
-        }
-    }
-
-    fun applyNavigationFilters(
-        category: String?,
-        merchant: String?,
-        period: String?,
-        currency: String?,
-        type: String?
-    ) {
-        // This function can be called multiple times for navigation updates
-        clearCategoryFilter()
-        updateSearchQuery("")
-        selectPeriod(TimePeriod.THIS_MONTH)
-        setTransactionTypeFilter(TransactionTypeFilter.ALL)
-        setSortOption(SortOption.DATE_NEWEST)
-
-        category?.let {
-            val decoded = if (it.contains("+") || it.contains("%")) {
-                URLDecoder.decode(it, "UTF-8")
-            } else it
-            _categoryFilter.value = setOf(decoded)
-        }
-
-        merchant?.let {
-            val decoded = if (it.contains("+") || it.contains("%")) {
-                URLDecoder.decode(it, "UTF-8")
-            } else it
-            updateSearchQuery(decoded)
-        }
-
-        period?.let { periodName ->
-            val timePeriod = when (periodName) {
-                "THIS_MONTH" -> TimePeriod.THIS_MONTH
-                "LAST_MONTH" -> TimePeriod.LAST_MONTH
-                "CURRENT_FY" -> TimePeriod.CURRENT_FY
-                "ALL" -> TimePeriod.ALL
-                else -> null
-            }
-            timePeriod?.let { selectPeriod(it) }
-        }
-
-        type?.let { typeName ->
-            val typeFilter = when (typeName) {
-                "INCOME" -> TransactionTypeFilter.INCOME
-                "EXPENSE" -> TransactionTypeFilter.EXPENSE
-                "CREDIT" -> TransactionTypeFilter.CREDIT
-                "TRANSFER" -> TransactionTypeFilter.TRANSFER
-                "INVESTMENT" -> TransactionTypeFilter.INVESTMENT
-                else -> TransactionTypeFilter.ALL
-            }
-            _transactionTypeFilter.value = if (typeFilter == TransactionTypeFilter.ALL) emptySet() else setOf(typeFilter)
-        }
-
-        // Only set currency if it's provided (from navigation)
-        currency?.let { selectCurrency(it) }
-    }
-    
-    private fun getFilteredTransactions(
-        searchQuery: String,
-        period: TimePeriod,
-        category: Set<String>,
-        subcategory: Set<String>,
-        amountRange: Pair<BigDecimal, BigDecimal>?,
-        accounts: Set<String>,
-        filterCurrencies: Set<String>,
-        typeFilter: Set<TransactionTypeFilter>
-    ): Flow<List<TransactionEntity>> {
-        // Date-bounded periods are filtered in SQL so only the range is loaded.
-        fun between(startDate: LocalDate, endDate: LocalDate) =
-            transactionRepository.getVisibleTransactionsBetween(
-                startDate.atStartOfDay(), endDate.atTime(23, 59, 59)
-            )
-
-        val periodFilteredFlow = when (period) {
-            TimePeriod.ALL -> transactionRepository.getAllTransactions()
-            TimePeriod.CUSTOM -> {
-                val customRange = customDateRange.value
-                // Guard against invalid state: CUSTOM period must have a date range
-                // This should never happen due to clearCustomDateRange() logic, but be defensive
-                if (customRange == null) {
-                    Log.e("TransactionsViewModel",
-                        "CUSTOM period selected but no date range set - falling back to THIS_MONTH")
-                    // Auto-correct the invalid state
-                    _selectedPeriod.value = TimePeriod.THIS_MONTH
-                    val (startDate, endDate) = getDateRangeForPeriod(TimePeriod.THIS_MONTH)!!
-                    between(startDate, endDate)
-                } else {
-                    val (startDate, endDate) = customRange
-                    between(startDate, endDate)
-                }
-            }
-            else -> {
-                val dateRange = getDateRangeForPeriod(period)
-                if (dateRange != null) {
-                    between(dateRange.first, dateRange.second)
-                } else {
-                    transactionRepository.getAllTransactions()
-                }
-            }
-        }
-        
-        // Apply transaction type filter
-        val typeFilteredFlow = periodFilteredFlow.map { transactions ->
-            if (typeFilter.isEmpty()) {
-                transactions
-            } else {
-                transactions.filter { tx ->
-                    typeFilter.any { filter ->
-                        when (filter) {
-                             TransactionTypeFilter.ALL -> true
-                             TransactionTypeFilter.INCOME -> tx.transactionType == TransactionType.INCOME
-                             TransactionTypeFilter.EXPENSE -> tx.transactionType == TransactionType.EXPENSE
-                             TransactionTypeFilter.CREDIT -> tx.transactionType == TransactionType.CREDIT
-                             TransactionTypeFilter.TRANSFER -> tx.transactionType == TransactionType.TRANSFER
-                             TransactionTypeFilter.INVESTMENT -> tx.transactionType == TransactionType.INVESTMENT
-                             TransactionTypeFilter.LENT -> tx.transactionType == TransactionType.LENT
-                             TransactionTypeFilter.BORROWED -> tx.transactionType == TransactionType.BORROWED
-                        }
-                    }
-                }
-            }
-        }
-
-        // Apply new extended filters (Category, Subcategory, Amount Range, Accounts, Currencies)
-        val extendedFilteredFlow = typeFilteredFlow.map { transactions ->
-            transactions.filter { tx ->
-                val matchesCategory = category.isEmpty() || (tx.category != null && category.contains(tx.category))
-                val matchesSubcat = subcategory.isEmpty() || (tx.subcategory != null && subcategory.contains(tx.subcategory))
-                val matchesAmount = amountRange == null || (tx.amount >= amountRange.first && tx.amount <= amountRange.second)
-                val txAccountKey = "${tx.bankName}_${tx.accountNumber}"
-                val matchesAccount = accounts.isEmpty() || accounts.contains(txAccountKey)
-                val matchesCurrencyOpts = filterCurrencies.isEmpty() || filterCurrencies.contains(tx.currency)
-                
-                matchesCategory && matchesSubcat && matchesAmount && matchesAccount && matchesCurrencyOpts
-            }
-        }
-        
-        // Apply search filter
-        return if (searchQuery.isBlank()) {
-            extendedFilteredFlow
-        } else {
-            extendedFilteredFlow.map { transactions ->
-                transactions.filter { transaction ->
-                    // Check merchant name and description
-                    val matchesMerchant = transaction.merchantName.contains(searchQuery, ignoreCase = true)
-                    val matchesDescription = transaction.description?.contains(searchQuery, ignoreCase = true) == true
-                    
-                    // Check if search query matches amount
-                    val matchesAmount = try {
-                        // Remove commas and spaces from search query for number parsing
-                        val cleanedQuery = searchQuery.replace(",", "").replace(" ", "").trim()
-                        
-                        // Check if it's a valid number and matches the amount
-                        if (cleanedQuery.isNotEmpty() && cleanedQuery.all { it.isDigit() || it == '.' }) {
-                            val amountString = transaction.amount.toPlainString()
-                            // Support both exact and partial matches
-                            amountString.contains(cleanedQuery) || 
-                            // Also match formatted amount (e.g., "1,000" matches "1000")
-                            amountString.replace(",", "").contains(cleanedQuery)
-                        } else {
-                            false
-                        }
-                    } catch (e: Exception) {
-                        false
-                    }
-                    
-                    matchesMerchant || matchesDescription || matchesAmount
-                }
+    private fun write(command: suspend () -> Unit) {
+        if (uiState.value.writing) return
+        mutableState.update { it.copy(writing = true, error = null) }
+        viewModelScope.launch {
+            try {
+                command()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableState.update { it.copy(error = coreFailureText(failure)) }
+            } finally {
+                mutableState.update { it.copy(writing = false) }
+                refresh()
             }
         }
     }
-    
-    
 }
-
-private data class PreparedTransactionList(
-    val transactions: List<TransactionEntity>,
-    val groups: Map<DateGroup, List<TransactionEntity>>,
-    val conversions: Conversions,
-    val totals: CurrencyGroupedTotals
-)

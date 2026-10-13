@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_analytics_this_month">This month</string>
+  <string name="core_analytics_all_time">All time</string>
+  <string name="core_analytics_query_failed">Analytics could not be loaded. Check dates and retry.</string>
+  <string name="core_analytics_count">%1$s transactions</string>
+</resources>

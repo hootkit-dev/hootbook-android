@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_system_shortcut_unavailable">This older or unavailable template shortcut is disabled. Open Add to choose a current template.</string>
+    <string name="core_system_private_reminder">Open the app to view your reminders.</string>
+    <string name="core_system_allow_notifications">Allow notifications</string>
+    <string name="core_system_hour">Hour (0–23)</string>
+    <string name="core_system_minute">Minute (0–59)</string>
+</resources>

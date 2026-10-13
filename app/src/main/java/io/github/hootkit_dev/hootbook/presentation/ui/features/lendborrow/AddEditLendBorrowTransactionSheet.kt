@@ -1,5 +1,13 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow
 
+import io.github.hootkit_dev.hootbook.presentation.format.coreFailureText
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import io.github.hootkit_dev.hootbook.utils.DateFormats
 import io.github.hootkit_dev.hootbook.utils.pickerDate
 import io.github.hootkit_dev.hootbook.utils.toPickerMillis
@@ -72,13 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.CategoryEntity
-import io.github.hootkit_dev.hootbook.data.database.entity.LendBorrowType
-import io.github.hootkit_dev.hootbook.data.service.AttachmentService
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowPerson
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowTransactionItem
-import io.github.hootkit_dev.hootbook.domain.model.PersonCategory
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountSelectionSheet
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AttachmentSection
 import io.github.hootkit_dev.hootbook.presentation.ui.components.AccountField
@@ -96,7 +97,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Information
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.LocalBlurEffects
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -110,78 +111,60 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalHazeApi::class)
 @Composable
 fun AddEditLendBorrowTransactionSheet(
-    personsList: List<LendBorrowPerson>,
-    initialPerson: LendBorrowPerson? = null,
-    accounts: List<AccountBalanceEntity> = emptyList(),
-    categories: List<CategoryEntity> = emptyList(),
-    attachmentService: AttachmentService,
+    personsList: List<Person>,
+    initialPerson: Person? = null,
+    accounts: List<Account> = emptyList(),
+    attachmentStore: CoreAttachmentStore,
+    mainCurrency: String,
+    saving: Boolean = false,
+    error: Int? = null,
     showPersonSelection: Boolean = true,
-    transactionToEdit: LendBorrowTransactionItem? = null,
-    initialType: LendBorrowType? = null,
+    transactionToEdit: DebtEntry? = null,
+    initialType: DebtKind? = null,
     initialAmount: BigDecimal? = null,
     initialTitle: String? = null,
     blurEffects: Boolean = LocalBlurEffects.current,
     onDismiss: () -> Unit,
-    onAddPerson: (name: String, phone: String?, notes: String?, color: String, avatar: String?, category: PersonCategory?) -> Unit,
-    onSave: (personId: Long, type: LendBorrowType, amount: BigDecimal, title: String, dueDate: LocalDateTime?, accountId: Long?, category: String?, merchant: String?, attachments: List<String>) -> Unit,
-    onUpdate: (transactionId: Long, type: LendBorrowType, amount: BigDecimal, title: String, dueDate: LocalDateTime?, date: LocalDateTime, accountId: Long?, category: String?, merchant: String?, attachments: List<String>) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> }
+    onAddPerson: (PersonDraft, (String) -> Unit) -> Unit,
+    onSave: (DebtDraft) -> Unit,
+    onUpdate: (String, DebtDraft) -> Unit = { _, _ -> }
 ) {
     var selectedPerson by remember {
         mutableStateOf(
-            transactionToEdit?.let { tx ->
-                personsList.find { it.id == tx.personId } ?: initialPerson
-            } ?: initialPerson ?: personsList.firstOrNull()
+            if (transactionToEdit != null) personsList.find { it.id == transactionToEdit.personId } ?: initialPerson
+            else initialPerson ?: personsList.firstOrNull()
         )
     }
-    var selectedType by remember { mutableStateOf(transactionToEdit?.type ?: initialType ?: LendBorrowType.LENT) }
+    var selectedType by remember { mutableStateOf(transactionToEdit?.kind ?: initialType ?: DebtKind.LENT) }
     var amountText by remember {
-        mutableStateOf(transactionToEdit?.amount?.stripTrailingZeros()?.toPlainString()
+        mutableStateOf(transactionToEdit?.amount?.amount?.stripTrailingZeros()?.toPlainString()
             ?: initialAmount?.stripTrailingZeros()?.toPlainString()
             ?: "0")
     }
 
-    var lastAddedPersonName by remember { mutableStateOf<String?>(null) }
+    var lastAddedPersonId by remember { mutableStateOf<String?>(null) }
 
     // Update selected person if list changes and nothing was selected,
     // or auto-select a person that was just added via the in-sheet Add Person flow
     LaunchedEffect(personsList) {
-        val lastAdded = lastAddedPersonName
+        val lastAdded = lastAddedPersonId
         if (lastAdded != null) {
-            personsList.firstOrNull { it.name == lastAdded }?.let { selectedPerson = it }
-            lastAddedPersonName = null
+            personsList.firstOrNull { it.id == lastAdded }?.let { selectedPerson = it }
+            if (personsList.any { it.id == lastAdded }) lastAddedPersonId = null
         } else if (selectedPerson == null && personsList.isNotEmpty()) {
             selectedPerson = personsList.first()
         }
     }
 
     val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE) }
-    val mainAccountKey = remember { sharedPrefs.getString("main_account", null) }
-
     var selectedAccount by remember {
-        mutableStateOf(
-            transactionToEdit?.let { tx ->
-                tx.accountId?.let { id -> accounts.find { it.id == id } }
-            } ?: accounts.find { "${it.bankName}_${it.accountLast4}" == mainAccountKey } ?: accounts.firstOrNull()
-        )
+        mutableStateOf(if (transactionToEdit != null) accounts.find { it.id == transactionToEdit.accountId } else accounts.firstOrNull())
     }
 
-    fun getDefaultCategory(type: LendBorrowType): CategoryEntity? {
-        val targetName = if (type == LendBorrowType.LENT) "Lent" else "Borrowed"
-        return categories.find { it.name.equals(targetName, ignoreCase = true) }
-    }
-
-    var selectedCategory by remember {
-        mutableStateOf(
-            transactionToEdit?.let { tx ->
-                tx.category?.let { name -> categories.find { it.name == name } }
-            } ?: getDefaultCategory(selectedType)
-        )
-    }
     var titleText by remember { mutableStateOf(transactionToEdit?.title ?: initialTitle ?: "") }
     var attachments by remember { mutableStateOf(transactionToEdit?.attachments ?: emptyList()) }
-    var dateTime by remember { mutableStateOf(transactionToEdit?.date ?: LocalDateTime.now()) }
-    var dueDate by remember { mutableStateOf<LocalDateTime?>(transactionToEdit?.dueDate) }
+    var dateTime by remember { mutableStateOf(transactionToEdit?.date?.toJavaDateTime() ?: LocalDateTime.now()) }
+    var dueDate by remember { mutableStateOf<LocalDateTime?>(transactionToEdit?.dueDate?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()).atStartOfDay() }) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDueDatePicker by remember { mutableStateOf(false) }
@@ -194,13 +177,6 @@ fun AddEditLendBorrowTransactionSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val hazeState = remember { HazeState() }
-
-    // Update category when type changes
-    LaunchedEffect(selectedType, transactionToEdit) {
-        if (transactionToEdit == null) {
-            selectedCategory = getDefaultCategory(selectedType)
-        }
-    }
 
     // Handle dismissal with animation when parent state changes
     LaunchedEffect(Unit) {
@@ -215,7 +191,7 @@ fun AddEditLendBorrowTransactionSheet(
     }
 
     HootbookModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!saving) onDismiss() },
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
@@ -236,12 +212,13 @@ fun AddEditLendBorrowTransactionSheet(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                 )
 
+                error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 // Type Switcher
-                GenericTypeSwitcher(
-                    selectedIndex = if (selectedType == LendBorrowType.LENT) 0 else 1,
+                if (selectedType == DebtKind.LENT || selectedType == DebtKind.BORROWED) GenericTypeSwitcher(
+                    selectedIndex = if (selectedType == DebtKind.LENT) 0 else 1,
                     onIndexChange = { index ->
                         selectedType =
-                            if (index == 0) LendBorrowType.LENT else LendBorrowType.BORROWED
+                            if (index == 0) DebtKind.LENT else DebtKind.BORROWED
                     },
                     options = listOf(
                         stringResource(R.string.type_lent),
@@ -274,10 +251,13 @@ fun AddEditLendBorrowTransactionSheet(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (selectedType == LendBorrowType.LENT)
-                                stringResource(R.string.amount_they_owe_me)
-                            else
-                                stringResource(R.string.amount_i_owe_them),
+                            text = stringResource(when (selectedType) {
+                                DebtKind.LENT -> R.string.amount_they_owe_me
+                                DebtKind.BORROWED -> R.string.amount_i_owe_them
+                                DebtKind.REPAID_TO_ME -> R.string.settlement_received
+                                DebtKind.REPAID_BY_ME -> R.string.settlement_paid
+                                DebtKind.UNKNOWN -> R.string.record_options
+                            }),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -288,7 +268,7 @@ fun AddEditLendBorrowTransactionSheet(
                 AmountInput(
                     amount = amountText,
                     currencySymbol = CurrencyFormatter.getCurrencySymbol(
-                        selectedAccount?.currency ?: "CNY"
+                        transactionToEdit?.amount?.currency ?: selectedAccount?.mainCurrency ?: mainCurrency
                     ),
                     onClick = { showNumberPad = true },
                     modifier = Modifier.fillMaxWidth()
@@ -329,13 +309,13 @@ fun AddEditLendBorrowTransactionSheet(
                             Column(verticalArrangement = Arrangement.Center) {
                                 Text(
                                     text = yearLabel,
-                                    
+
                                     color = themeColors.primary,
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
                                     text = dateLabel,
-                                    
+
                                     color = themeColors.onSurface,
                                     style = MaterialTheme.typography.bodyLarge,
                                     maxLines = 1,
@@ -535,7 +515,7 @@ fun AddEditLendBorrowTransactionSheet(
                                     ) {
                                         if (person.avatar != null) {
                                             AsyncImage(
-                                                model = person.avatar,
+                                                model = person.avatar?.let(attachmentStore::resolve),
                                                 contentDescription = null,
                                                 modifier = Modifier
                                                     .size(56.dp)
@@ -580,88 +560,6 @@ fun AddEditLendBorrowTransactionSheet(
                         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
                     )
 
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        TextField(
-                            value = io.github.hootkit_dev.hootbook.presentation.common.categoryName(selectedCategory?.name),
-                            onValueChange = {},
-                            label = {
-                                Text(
-                                    stringResource(R.string.category_label),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            },
-                            readOnly = true,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(
-                                topStart = 4.dp,
-                                topEnd = 4.dp,
-                                bottomStart = 16.dp,
-                                bottomEnd = 16.dp
-                            ),
-                            leadingIcon = {
-                                val context = LocalContext.current
-                                val resolvedResId = remember(selectedCategory) {
-                                    selectedCategory?.let { cat ->
-                                        if (!cat.iconName.isNullOrEmpty()) {
-                                            val res = IconResolutionUtils.nameToResId(
-                                                context,
-                                                cat.iconName
-                                            )
-                                            if (res != 0) res else cat.iconResId
-                                        } else cat.iconResId
-                                    } ?: 0
-                                }
-
-                                if (resolvedResId != 0) {
-                                    Icon(
-                                        painter = painterResource(id = resolvedResId),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                } else {
-                                    Icon(Iconax.Box2, contentDescription = null)
-                                }
-                            },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = false,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                    0.7f
-                                ),
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                disabledIndicatorColor = Color.Transparent,
-                                disabledLabelColor = MaterialTheme.colorScheme.primary,
-                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clip(
-                                    RoundedCornerShape(
-                                        topStart = 4.dp,
-                                        topEnd = 4.dp,
-                                        bottomStart = 16.dp,
-                                        bottomEnd = 16.dp
-                                    )
-                                )
-                                .clickable { showCategoryMenu = true }
-                        )
-                    }
                 }
 
                 TextField(
@@ -679,39 +577,19 @@ fun AddEditLendBorrowTransactionSheet(
                     )
                 )
 
-                // Attachments
+                var importError by remember { mutableStateOf<Int?>(null) }
+                importError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 AttachmentSection(
                     attachments = attachments,
-                    attachmentService = attachmentService,
-                    onAddAttachment = { attachments = attachments + it },
-                    onRemoveAttachment = { path ->
-                        attachments = attachments - path
-                    },
-                    onAttachmentClick = { path ->
-                        if (attachmentService.isUrl(path)) {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(path))
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                // Handle error
-                            }
-                        } else {
-                            val uri = attachmentService.getAttachmentUri(path)
-                            if (uri != null) {
-                                val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, attachmentService.getAttachmentMimeType(path))
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                try {
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    // Handle error
-                                }
-                            }
-                        }
-                    },
-                    isEditable = true
+                    attachmentStore = attachmentStore,
+                    onAddAttachment = { uri -> scope.launch {
+                        try { attachments = attachments + attachmentStore.importFrom(uri) }
+                        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                        catch (failure: Exception) { importError = coreFailureText(failure) }
+                    } },
+                    onRemoveAttachment = { path -> attachments = attachments - path }
                 )
+
                 Spacer(modifier = Modifier.height(48.dp))
             }
             Box(
@@ -733,39 +611,12 @@ fun AddEditLendBorrowTransactionSheet(
                     onClick = {
                         val parsedAmount = amountText.toBigDecimalOrNull()
                         val personId = selectedPerson?.id
-                        val merchant = transactionToEdit?.merchant ?: selectedPerson?.name
-
                         if (personId != null && parsedAmount != null && parsedAmount > BigDecimal.ZERO) {
-                            scope.launch {
-                                sheetState.hide()
-                                val tx = transactionToEdit
-                                if (tx != null) {
-                                    onUpdate(
-                                        tx.id,
-                                        selectedType,
-                                        parsedAmount,
-                                        titleText,
-                                        dueDate,
-                                        dateTime,
-                                        selectedAccount?.id,
-                                        selectedCategory?.name,
-                                        merchant,
-                                        attachments
-                                    )
-                                } else {
-                                    onSave(
-                                        personId,
-                                        selectedType,
-                                        parsedAmount,
-                                        titleText,
-                                        dueDate,
-                                        selectedAccount?.id,
-                                        selectedCategory?.name,
-                                        merchant,
-                                        attachments
-                                    )
-                                }
-                            }
+                            val draft = DebtDraft(personId, selectedType, parsedAmount,
+                                transactionToEdit?.amount?.currency ?: selectedAccount?.mainCurrency ?: mainCurrency,
+                                dateTime.toCoreDateTime(), dueDate?.let { LocalDate(it.year, it.monthValue.toUByte(), it.dayOfMonth.toUByte()) },
+                                titleText, selectedAccount?.id, attachments)
+                            if (transactionToEdit != null) onUpdate(transactionToEdit.id, draft) else onSave(draft)
                         }
                     },
                     modifier = Modifier
@@ -773,7 +624,7 @@ fun AddEditLendBorrowTransactionSheet(
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .height(56.dp),
-                    enabled = titleText.isNotBlank(),
+                    enabled = !saving && titleText.isNotBlank(),
                     shapes = ButtonDefaults.shapes(),
                 ) {
                     Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium)
@@ -789,9 +640,9 @@ fun AddEditLendBorrowTransactionSheet(
         ) {
             NumberPad(
                 initialValue = amountText,
-                onDone = { 
+                onDone = {
                     amountText = it
-                    showNumberPad = false 
+                    showNumberPad = false
                 }
             )
         }
@@ -803,11 +654,11 @@ fun AddEditLendBorrowTransactionSheet(
         )
         DatePicker(
             onDismiss = { showDatePicker = false },
-            onConfirm = { 
+            onConfirm = {
                 datePickerState.selectedDateMillis?.let { millis ->
                     dateTime = pickerDate(millis).atTime(dateTime.toLocalTime())
                 }
-                showDatePicker = false 
+                showDatePicker = false
             },
             datePickerState = datePickerState,
             blurEffects = blurEffects,
@@ -821,7 +672,7 @@ fun AddEditLendBorrowTransactionSheet(
         )
         DatePicker(
             onDismiss = { showDueDatePicker = false },
-            onConfirm = { 
+            onConfirm = {
                 datePickerState.selectedDateMillis?.let { millis ->
                     dueDate = pickerDate(millis).atStartOfDay()
                 }
@@ -841,9 +692,9 @@ fun AddEditLendBorrowTransactionSheet(
         )
         TimePicker(
             onDismiss = { showTimePicker = false },
-            onConfirm = { 
+            onConfirm = {
                 dateTime = dateTime.withHour(timePickerState.hour).withMinute(timePickerState.minute)
-                showTimePicker = false 
+                showTimePicker = false
             },
             timePickerState = timePickerState,
             blurEffects = blurEffects,
@@ -859,40 +710,25 @@ fun AddEditLendBorrowTransactionSheet(
             AccountSelectionSheet(
                 accounts = accounts,
                 selectedAccount = selectedAccount,
-                showNoneOption = false,
-                onAccountSelected = { 
-                    selectedAccount = it 
-                    showAccountSheet = false 
+                showNoneOption = true,
+                onAccountSelected = {
+                    selectedAccount = it
+                    showAccountSheet = false
                 }
-            )
-        }
-    }
-
-    if (showCategoryMenu) {
-        HootbookModalBottomSheet(
-            onDismissRequest = { showCategoryMenu = false },
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            CategorySelectionSheet(
-                categories = categories,
-                subcategoriesMap = emptyMap(),
-                onSelectionComplete = { cat, _ -> 
-                    selectedCategory = cat 
-                    showCategoryMenu = false 
-                },
-                onDismiss = { showCategoryMenu = false }
             )
         }
     }
 
     if (showAddPersonSheet) {
         AddEditPersonSheet(
-            attachmentService = attachmentService,
-            onDismiss = { showAddPersonSheet = false },
+            attachmentStore = attachmentStore,
+            saving = saving, error = error,
+            onDismiss = { if (!saving) showAddPersonSheet = false },
             onSave = { name, phone, notes, color, avatar, category ->
-                lastAddedPersonName = name
-                onAddPerson(name, phone, notes, color, avatar, category)
-                showAddPersonSheet = false
+                onAddPerson(PersonDraft(name, phone, notes, color, avatar, category)) { id ->
+                    lastAddedPersonId = id
+                    showAddPersonSheet = false
+                }
             }
         )
     }

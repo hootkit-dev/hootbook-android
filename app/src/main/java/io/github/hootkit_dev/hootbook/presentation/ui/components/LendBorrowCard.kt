@@ -1,5 +1,12 @@
 package io.github.hootkit_dev.hootbook.presentation.ui.components
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
+import io.github.hootkit_dev.hootbook.presentation.format.toCoreDateTime
+import io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore
+import io.github.hootkit_dev.hootbook.presentation.ui.components.AddEditPersonSheet
+
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Text
@@ -30,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.domain.model.LendBorrowSummary
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -48,7 +54,8 @@ import dev.chrisbanes.haze.hazeEffect
 @OptIn(ExperimentalHazeApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.LendBorrowCard(
-    summary: LendBorrowSummary,
+    summary: DebtSummary,
+    people: List<Person> = emptyList(),
     onClick: () -> Unit,
     onLentClick: () -> Unit,
     onBorrowedClick: () -> Unit,
@@ -86,14 +93,15 @@ fun SharedTransitionScope.LendBorrowCard(
         ),
         contentPadding = Dimensions.Padding.content
     ) {
+        if (!summary.complete) Text(stringResource(R.string.core_debts_incomplete), color = MaterialTheme.colorScheme.error)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             LoanSummaryItem(
                 title = stringResource(R.string.total_lent),
-                amount = summary.totalLentRemaining,
-                persons = summary.lentPersons,
+                amount = summary.receivable,
+                persons = people.filter { it.totals.net.signum() > 0 },
                 currency = currency,
                 color = MaterialTheme.colorScheme.primary,
                 icon = Icons.Default.ArrowUpward,
@@ -104,8 +112,8 @@ fun SharedTransitionScope.LendBorrowCard(
             )
             LoanSummaryItem(
                 title = stringResource(R.string.total_borrowed),
-                amount = summary.totalBorrowedRemaining,
-                persons = summary.borrowedPersons,
+                amount = summary.payable,
+                persons = people.filter { it.totals.net.signum() < 0 },
                 currency = currency,
                 color = MaterialTheme.colorScheme.secondary,
                 icon = Icons.Default.ArrowDownward,
@@ -124,7 +132,8 @@ fun SharedTransitionScope.LendBorrowCard(
  */
 @Composable
 fun LendBorrowRow(
-    summary: LendBorrowSummary,
+    summary: DebtSummary,
+    people: List<Person> = emptyList(),
     currency: String,
     onClick: () -> Unit,
     onLentClick: () -> Unit,
@@ -154,9 +163,9 @@ fun LendBorrowRow(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f)
             )
-            LoanAmountChip(stringResource(R.string.type_lent), summary.totalLentRemaining, currency,
+            LoanAmountChip(stringResource(R.string.type_lent), summary.receivable, currency,
                 MaterialTheme.colorScheme.primary, Icons.Default.ArrowUpward, onLentClick)
-            LoanAmountChip(stringResource(R.string.type_borrowed), summary.totalBorrowedRemaining, currency,
+            LoanAmountChip(stringResource(R.string.type_borrowed), summary.payable, currency,
                 MaterialTheme.colorScheme.secondary, Icons.Default.ArrowDownward, onBorrowedClick)
         }
     }
@@ -179,7 +188,7 @@ private fun LoanAmountChip(
         ) {
             Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(14.dp))
             Text(
-                text = io.github.hootkit_dev.hootbook.utils.CurrencyFormatter.formatCurrency(amount, currency),
+                text = io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation.formatCurrency(amount, currency),
                 style = MaterialTheme.typography.labelLarge,
                 color = color,
                 maxLines = 1

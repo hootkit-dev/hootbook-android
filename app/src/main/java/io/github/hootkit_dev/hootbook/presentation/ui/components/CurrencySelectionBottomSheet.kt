@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.model.Currency
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +51,7 @@ fun CurrencySelectionBottomSheet(
                 ListItem(
                     headline = {
                         Text(
-                            text = Currency.getByCode(currency)?.let { "${it.localizedName()} (${it.code})" } ?: currency
+                            text = runCatching { "${java.util.Currency.getInstance(currency).displayName} ($currency)" }.getOrDefault(currency)
                         )
                     },
                     trailing = {

@@ -29,37 +29,26 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
-import io.github.hootkit_dev.hootbook.utils.CurrencyFormatter
+import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-data class BalancePoint(
-    val timestamp: LocalDateTime,
-    val balance: BigDecimal,
-    val currency: String = "CNY"
-)
+import dev.hootkit.core.BalanceDay
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 
 @Composable
 fun BalanceChart(
     primaryCurrency: String,
-    balanceHistory: List<BalancePoint>,
+    balanceHistory: List<BalanceDay>,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     height: Int = 200
 ) {
     if (balanceHistory.isEmpty()) return
 
-    // Sort by timestamp to ensure chronological order (oldest to newest)
+    // Keep Core calendar samples in chronological order.
     val sortedHistory = remember(balanceHistory) {
-        balanceHistory.sortedBy { it.timestamp }
+        balanceHistory.sortedBy { it.date.coreDateText() }
     }
 
-    // Apply data smoothing to reduce noise
-    val smoothedHistory = remember(sortedHistory) {
-        smoothBalanceData(sortedHistory)
-    }
-    
     val lineColor = MaterialTheme.colorScheme.primary
     val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
 
@@ -71,9 +60,9 @@ fun BalanceChart(
         )
     }
     
-    // Calculate min and max for scaling using smoothed data
-    val maxBalance = smoothedHistory.maxOf { it.balance }
-    val minBalance = smoothedHistory.minOf { it.balance }
+    // Scale the canvas to Core values without changing any balance samples.
+    val maxBalance = sortedHistory.maxOf { it.balance }
+    val minBalance = sortedHistory.minOf { it.balance }
     val balanceRange = maxBalance - minBalance
     
     // Add some padding to the range
@@ -95,7 +84,7 @@ fun BalanceChart(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = CurrencyFormatter.formatCurrency(paddedMax, primaryCurrency),
+                    text = CoreMoneyPresentation.formatCurrency(paddedMax, primaryCurrency),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -146,10 +135,11 @@ fun BalanceChart(
                         )
                     }
                     
-                    if (smoothedHistory.size < 2) {
+                    if (sortedHistory.size < 2) {
                         // Just draw a single point if we only have one data point
-                        val point = smoothedHistory.first()
-                        val y = canvasHeight * (1f - ((point.balance - paddedMin).toFloat() / paddedRange.toFloat()))
+                        val point = sortedHistory.first()
+                        val fraction = if (paddedRange.signum() == 0) 0.5f else (point.balance - paddedMin).toFloat() / paddedRange.toFloat()
+                        val y = canvasHeight * (1f - fraction)
                         drawCircle(
                             color = lineColor,
                             radius = 4.dp.toPx(),
@@ -160,9 +150,10 @@ fun BalanceChart(
                         val path = Path()
                         val points = mutableListOf<Offset>()
 
-                        smoothedHistory.forEachIndexed { index, point ->
-                            val x = canvasWidth * (index.toFloat() / (smoothedHistory.size - 1).coerceAtLeast(1))
-                            val y = canvasHeight * (1f - ((point.balance - paddedMin).toFloat() / paddedRange.toFloat()))
+                        sortedHistory.forEachIndexed { index, point ->
+                            val x = canvasWidth * (index.toFloat() / (sortedHistory.size - 1).coerceAtLeast(1))
+                            val fraction = if (paddedRange.signum() == 0) 0.5f else (point.balance - paddedMin).toFloat() / paddedRange.toFloat()
+                            val y = canvasHeight * (1f - fraction)
 
                             val offset = Offset(x, y)
                             points.add(offset)
@@ -234,20 +225,20 @@ fun BalanceChart(
                 modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs ),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (smoothedHistory.isNotEmpty()) {
+                if (sortedHistory.isNotEmpty()) {
                     // First (oldest) date on the left
                     Text(
-                        text = smoothedHistory.first().timestamp.format(
+                        text = sortedHistory.first().date.coreDateText(
                             DateFormats.monthDayFormatter()
                         ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (smoothedHistory.size > 1) {
+                    if (sortedHistory.size > 1) {
                         // Last (newest) date on the right
                         Text(
-                            text = smoothedHistory.last().timestamp.format(
+                            text = sortedHistory.last().date.coreDateText(
                                 DateFormats.monthDayFormatter()
                             ),
                             style = MaterialTheme.typography.labelSmall,
@@ -259,51 +250,11 @@ fun BalanceChart(
             
             // Min balance label
             Text(
-                text = CurrencyFormatter.formatCurrency(paddedMin, primaryCurrency),
+                text = CoreMoneyPresentation.formatCurrency(paddedMin, primaryCurrency),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(Spacing.xs))
         }
     }
-}
-
-/**
- * Smooth balance data to reduce noise in the chart
- * Applies time-based aggregation and moving average smoothing
- */
-private fun smoothBalanceData(
-    balanceHistory: List<BalancePoint>,
-    maxPoints: Int = 50  // Maximum number of points to display
-): List<BalancePoint> {
-    if (balanceHistory.size <= maxPoints) {
-        return balanceHistory
-    }
-
-    // Calculate the time span of the data
-    val timeSpan = balanceHistory.last().timestamp.toLocalDate()
-        .toEpochDay() - balanceHistory.first().timestamp.toLocalDate().toEpochDay()
-
-    // Determine the aggregation interval based on time span and desired max points
-    val intervalDays = maxOf(1, (timeSpan / maxPoints).toInt())
-
-    // Group data by intervals and calculate averages
-    val groupedData = balanceHistory.groupBy { point ->
-        val dayIndex = (point.timestamp.toLocalDate().toEpochDay() -
-            balanceHistory.first().timestamp.toLocalDate().toEpochDay()) / intervalDays
-        dayIndex
-    }
-
-    return groupedData.map { (_, group) ->
-        val avgBalance = group.map { it.balance }.reduce { acc, balance -> acc + balance } /
-            BigDecimal(group.size.toLong())
-        val middleIndex = group.size / 2
-        val representativePoint = group[middleIndex]
-
-        BalancePoint(
-            timestamp = representativePoint.timestamp,
-            balance = avgBalance,
-            currency = representativePoint.currency
-        )
-    }.sortedBy { it.timestamp }
 }

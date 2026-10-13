@@ -29,12 +29,6 @@ fun TypeFilterIcon(typeFilter: TransactionTypeFilter) {
             modifier = Modifier.size(Dimensions.Icon.small),
             tint = MaterialTheme.colorScheme.onTertiaryContainer
         )
-        TransactionTypeFilter.CREDIT -> Icon(
-            Icons.Rounded.CreditCard,
-            contentDescription = null,
-            modifier = Modifier.size(Dimensions.Icon.small),
-            tint = MaterialTheme.colorScheme.onTertiaryContainer
-        )
         TransactionTypeFilter.TRANSFER -> Icon(
             Icons.Rounded.SwapHoriz,
             contentDescription = null,

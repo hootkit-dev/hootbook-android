@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.database.entity.AccountBalanceEntity
+import dev.hootkit.core.Account
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 
 /**
@@ -25,16 +25,16 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
  */
 @Composable
 fun AccountSelectionSheet(
-    accounts: List<AccountBalanceEntity>,
-    selectedAccount: AccountBalanceEntity?,
+    accounts: List<Account>,
+    selectedAccount: Account?,
     title: String = stringResource(R.string.select_account),
-    onAccountSelected: (AccountBalanceEntity?) -> Unit,
+    onAccountSelected: (Account?) -> Unit,
     isTransitioning: Boolean = false,
     showNoneOption: Boolean = true
 ) {
     val context = LocalContext.current
     val groups = remember(accounts, selectedAccount) {
-        accounts.groupedForDisplay(context.mainAccountKey())
+        accounts.filter { !it.archived || it.id == selectedAccount?.id }.groupedForDisplay()
     }
 
     Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {

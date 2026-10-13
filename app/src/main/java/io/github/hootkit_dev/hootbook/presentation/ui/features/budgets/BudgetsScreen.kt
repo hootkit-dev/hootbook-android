@@ -2,6 +2,10 @@
 
 package io.github.hootkit_dev.hootbook.presentation.ui.features.budgets
 
+import dev.hootkit.core.*
+import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.features.budgets.budgetProgressFraction
+
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -61,7 +65,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import io.github.hootkit_dev.hootbook.R
-import io.github.hootkit_dev.hootbook.data.repository.BudgetWithSpending
 import io.github.hootkit_dev.hootbook.presentation.ui.components.BudgetCard
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.LoadingCircle
@@ -83,30 +86,29 @@ import kotlinx.coroutines.launch
 @Composable
 fun SharedTransitionScope.BudgetsScreen(
     onNavigateBack: () -> Unit,
-    onBudgetClick: (Long, String?) -> Unit,
-    onHistoryClick: (Long) -> Unit = {},
+    onBudgetClick: (String, String?) -> Unit,
+    onHistoryClick: (String) -> Unit = {},
     budgetViewModel: BudgetViewModel = hiltViewModel(),
-    categoriesViewModel: CategoriesViewModel = hiltViewModel(),
     animatedContentScope: AnimatedContentScope? = null,
-    sharedElementPrefix: Long? = null,
+    sharedElementPrefix: String? = null,
     blurEffects: Boolean
 ) {
     val uiState by budgetViewModel.uiState.collectAsStateWithLifecycle()
     val editBudgetState by budgetViewModel.editBudgetState.collectAsStateWithLifecycle()
-    val categories by categoriesViewModel.categories.collectAsStateWithLifecycle()
-    val subcategories by categoriesViewModel.subcategories.collectAsStateWithLifecycle()
-    
+    val categories = uiState.categories.values.toList()
+    val subcategories = emptyMap<String, List<Subcategory>>()
+
     var showEditSheet by remember { mutableStateOf(false) }
     var showTypeWizard by remember { mutableStateOf(false) }
-    var editingBudgetId by remember { mutableStateOf<Long?>(null) }
-    
+    var editingBudgetId by remember { mutableStateOf<String?>(null) }
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    
+
     // Edit budget sheet
     if (showEditSheet) {
         HootbookModalBottomSheet(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showEditSheet = false
                 editingBudgetId = null
                 budgetViewModel.clearEditState()
@@ -117,15 +119,16 @@ fun SharedTransitionScope.BudgetsScreen(
         ) {
             EditBudgetSheet(
                 budgetState = editBudgetState,
+                saving = uiState.saving, error = uiState.error,
                 categories = categories,
                 subcategoriesMap = subcategories,
-                allAccounts = uiState.allAccounts,
+                allAccounts = uiState.accounts.values.toList(),
                 onAmountChange = budgetViewModel::updateBudgetAmount,
                 onNameChange = budgetViewModel::updateBudgetName,
                 onStartDateChange = budgetViewModel::updateStartDate,
                 onEndDateChange = budgetViewModel::updateEndDate,
                 onPeriodTypeChange = budgetViewModel::updatePeriodType,
-                onBudgetTypeChange = budgetViewModel::updateBudgetType,
+                onBudgetKindChange = budgetViewModel::updateBudgetType,
                 onAccountIdsChange = budgetViewModel::updateAccountIds,
                 onColorChange = budgetViewModel::updateColor,
                 onAddCategoryLimit = budgetViewModel::addCategoryLimit,
@@ -270,6 +273,7 @@ fun SharedTransitionScope.BudgetsScreen(
             modifier = Modifier.fillMaxSize()
                 .hazeSource(state = hazeState)
         ) {
+            uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }
             when {
                 uiState.isLoading -> {
                     Box(
@@ -279,7 +283,7 @@ fun SharedTransitionScope.BudgetsScreen(
                         LoadingCircle()
                     }
                 }
-                
+
                 uiState.budgets.isEmpty() -> {
                     EmptyBudgetsContent(
                         onCreateBudget = {
@@ -287,7 +291,7 @@ fun SharedTransitionScope.BudgetsScreen(
                         }
                     )
                 }
-                
+
                 else -> {
                     var lastClickTime by remember { mutableLongStateOf(0L) }
                     BudgetsList(
@@ -298,7 +302,7 @@ fun SharedTransitionScope.BudgetsScreen(
                             val currentTime = System.currentTimeMillis()
                             if (currentTime - lastClickTime > 500) { // Debounce 500ms
                                 lastClickTime = currentTime
-                                val budget = uiState.budgets.find { it.budget.id == budgetId }?.budget
+                                val budget = uiState.budgets.find { it.id == budgetId }
                                 if (budget != null) {
                                     budgetViewModel.initEditBudget(budget)
                                     editingBudgetId = budgetId
@@ -320,14 +324,14 @@ fun SharedTransitionScope.BudgetsScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun SharedTransitionScope.BudgetsList(
-    budgets: List<BudgetWithSpending>,
-    onEditClick: (Long) -> Unit,
-    onBudgetClick: (Long, String?) -> Unit,
-    onHistoryClick: (Long) -> Unit = {},
+    budgets: List<Budget>,
+    onEditClick: (String) -> Unit,
+    onBudgetClick: (String, String?) -> Unit,
+    onHistoryClick: (String) -> Unit = {},
     paddingValues: PaddingValues,
     lazyListState: LazyListState,
     animatedContentScope: AnimatedContentScope? = null,
-    sharedElementPrefix: Long? = null
+    sharedElementPrefix: String? = null
 ) {
     LazyColumn(
         state = lazyListState,
@@ -344,14 +348,14 @@ private fun SharedTransitionScope.BudgetsList(
     ) {
         items(
             items = budgets,
-            key = { it.budget.id }
+            key = { it.id }
         ) { budgetWithSpending ->
             BudgetCard(
                 budgetWithSpending = budgetWithSpending,
-                onClick = { onBudgetClick(budgetWithSpending.budget.id, "budget_card_${budgetWithSpending.budget.id}") },
+                onClick = { onBudgetClick(budgetWithSpending.id, "budget_card_${budgetWithSpending.id}") },
                 onHistoryClick = onHistoryClick,
                 animatedVisibilityScope = animatedContentScope,
-                sharedElementKey = if (sharedElementPrefix != null) null else "budget_card_${budgetWithSpending.budget.id}"
+                sharedElementKey = if (sharedElementPrefix != null) null else "budget_card_${budgetWithSpending.id}"
             )
         }
     }
@@ -372,26 +376,26 @@ private fun EmptyBudgetsContent(
             text = "🎯",
             style = MaterialTheme.typography.displayLarge
         )
-        
+
         Spacer(modifier = Modifier.height(Spacing.md))
-        
+
         Text(
             text = stringResource(R.string.no_budgets_yet),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
-        
+
         Spacer(modifier = Modifier.height(Spacing.xs))
-        
+
         Text(
             text = stringResource(R.string.create_first_budget_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = Spacing.xl)
         )
-        
+
         Spacer(modifier = Modifier.height(Spacing.lg))
-        
+
         Button(shapes = ButtonDefaults.shapes(), onClick = onCreateBudget) {
             Icon(Icons.Rounded.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))

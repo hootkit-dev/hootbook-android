@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="core_complete_profile">个人资料</string>
+  <string name="core_complete_display_missing">%1$s 显示换算不可用，保留原币种。</string>
+  <string name="core_complete_incomplete">部分汇总：有币种未能换算。</string>
+  <string name="core_complete_missing">缺少汇率：%1$s</string>
+  <string name="core_complete_analytics">分析</string>
+  <string name="core_complete_accounts">账户</string>
+  <string name="core_complete_debts">人员与借贷</string>
+  <string name="core_complete_budgets">预算</string>
+  <string name="core_complete_subscriptions">管理订阅</string>
+  <string name="core_complete_transactions">交易记录</string>
+  <string name="core_complete_templates">快捷模板</string>
+  <string name="core_complete_categories">分类</string>
+  <string name="core_complete_settings">业务设置</string>
+  <string name="core_complete_currencies">币种与汇率</string>
+  <string name="core_complete_backup">文件备份与恢复</string>
+  <string name="core_complete_layout">外观与首页布局</string>
+</resources>

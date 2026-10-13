@@ -33,12 +33,12 @@ import androidx.compose.material3.MaterialTheme
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -116,7 +116,7 @@ fun EditWidgetsSheet(
                 val item = list.removeAt(from.index)
                 list.add(to.index, item)
                 reorderableWidgets = list
-                
+
                 // Notify parent to save (debounced)
                 onReorder(list.map { it.widget })
             }

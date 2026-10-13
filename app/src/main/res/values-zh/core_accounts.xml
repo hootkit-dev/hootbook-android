@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_accounts_11">取消归档</string>
+    <string name="core_accounts_12">归档</string>
+    <string name="core_accounts_13">取消默认</string>
+    <string name="core_accounts_14">设为默认</string>
+    <string name="core_accounts_15">删除账户</string>
+    <string name="core_accounts_18">添加</string>
+    <string name="core_accounts_19">校准余额</string>
+    <string name="core_accounts_25">仅删除账户</string>
+    <string name="core_accounts_31">信用卡</string>
+    <string name="core_accounts_32">钱包</string>
+    <string name="core_accounts_37">名称</string>
+    <string name="core_accounts_38">尾号（可选，4 位）</string>
+    <string name="core_accounts_40">初始欠款（可选）</string>
+    <string name="core_accounts_41">初始余额（可选）</string>
+    <string name="core_accounts_43">账户额度（可选）</string>
+    <string name="core_accounts_44">账单日 1–31（可选）</string>
+    <string name="core_accounts_45">还款日 1–31（可选）</string>
+    <string name="core_accounts_53">货币代码</string>
+    <string name="core_accounts_55">余额／欠款</string>
+    <string name="core_accounts_59">保存</string>
+    <string name="account_move_up">上移</string>
+    <string name="account_move_down">下移</string>
+    <string name="account_archive">归档</string>
+    <string name="account_unarchive">取消归档</string>
+    <string name="account_set_default">设为默认账户</string>
+    <string name="account_clear_default">取消默认账户</string>
+    <string name="account_delete">删除账户</string>
+    <string name="account_delete_title">删除 %1$s？</string>
+    <string name="account_delete_confirm_msg">确定要删除该账户吗？</string>
+    <string name="account_section_currencies">货币</string>
+    <string name="account_currency_add">添加货币</string>
+    <string name="account_currency_main">主货币</string>
+    <string name="account_section_recent">最近交易</string>
+    <string name="account_no_transactions">暂无交易</string>
+    <string name="account_all_transactions">全部交易</string>
+    <string name="account_section_balance">余额</string>
+    <string name="account_section_balance_currency">余额 · %1$s</string>
+    <string name="account_calibrate">校准余额</string>
+    <string name="account_balance_trend">余额走势</string>
+    <string name="account_calibrations">校准记录</string>
+</resources>

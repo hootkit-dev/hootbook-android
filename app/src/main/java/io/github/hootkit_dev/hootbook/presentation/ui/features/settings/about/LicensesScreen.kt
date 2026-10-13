@@ -24,8 +24,7 @@ import androidx.compose.ui.res.pluralStringResource
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.presentation.effects.BlurredAnimatedVisibility
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
-import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.NavigationContent
-import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.SettingsViewModel
+import io.github.hootkit_dev.hootbook.presentation.ui.components.NavigationContent
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import dev.chrisbanes.haze.HazeState
@@ -35,7 +34,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun LicensesScreen(
     onNavigateBack: () -> Unit,
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    coreSchemaVersion: UInt? = null
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
@@ -482,7 +481,7 @@ fun LicensesScreen(
                         )
 
                         Text(
-                            text = stringResource(R.string.license_version_format, io.github.hootkit_dev.hootbook.BuildConfig.VERSION_NAME, settingsViewModel.databaseVersion),
+                            text = coreSchemaVersion?.let { stringResource(R.string.license_version_format, io.github.hootkit_dev.hootbook.BuildConfig.VERSION_NAME, it.toInt()) } ?: io.github.hootkit_dev.hootbook.BuildConfig.VERSION_NAME,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center
