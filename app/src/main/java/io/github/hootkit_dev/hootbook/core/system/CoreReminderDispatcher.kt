@@ -43,9 +43,9 @@ class CoreReminderDispatcher @Inject constructor(@ApplicationContext private val
         val (title,text)=reminderText(context,due,p.appLockEnabled)
         val entry=if(due.size==1)QuickEntry.Entry.Subscription(due.single().id) else QuickEntry.Entry.Home
         val content=PendingIntent.getActivity(context,100,QuickEntry.intent(context,entry),PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val generic=NotificationCompat.Builder(context,NotificationChannels.REMINDER_CHANNEL_ID).setSmallIcon(R.drawable.hootbook)
+        val generic=NotificationCompat.Builder(context,NotificationChannels.REMINDER_CHANNEL_ID).setSmallIcon(R.drawable.ic_notification_hootbook)
             .setContentTitle(context.getString(R.string.reminder_daily_title)).setContentText(context.getString(R.string.core_system_private_reminder)).build()
-        val n=NotificationCompat.Builder(context,NotificationChannels.REMINDER_CHANNEL_ID).setSmallIcon(R.drawable.hootbook)
+        val n=NotificationCompat.Builder(context,NotificationChannels.REMINDER_CHANNEL_ID).setSmallIcon(R.drawable.ic_notification_hootbook)
             .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setPublicVersion(generic).setContentIntent(content)
             .setOnlyAlertOnce(true).setAutoCancel(true).build()

@@ -12,16 +12,10 @@ object IconSwitchingUtils {
         // Component class names follow the namespace, not the suffixed application ID.
         val activityName = MainActivity::class.java.name
 
-        val iconComponents = mapOf(
-            AppIcon.ORIGINAL to "${activityName}Original",
-            AppIcon.ANARCHY to "${activityName}Anarchy",
-            AppIcon.ZENITH to "${activityName}Zenith",
-            AppIcon.MONOCHROME to "${activityName}Monochrome",
-            AppIcon.COMIC to "${activityName}Comic"
-        )
-
-        iconComponents.forEach { (icon, componentName) ->
-            val component = ComponentName(context, componentName)
+        // Enable the destination first so there is always a launchable component.
+        val icons = listOf(targetIcon) + AppIcon.entries.filter { it != targetIcon }
+        icons.forEach { icon ->
+            val component = ComponentName(context, "$activityName${icon.activityAliasSuffix}")
             val newState = if (icon == targetIcon) {
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             } else {

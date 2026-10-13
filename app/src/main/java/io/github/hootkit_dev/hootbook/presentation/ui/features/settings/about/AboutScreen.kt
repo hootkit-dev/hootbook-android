@@ -147,10 +147,9 @@ fun AboutScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.hootbook),
+                            painter = painterResource(id = R.drawable.hootbook_icon_white),
                             contentDescription = stringResource(R.string.hootbook_logo_cd),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                            modifier = Modifier.size(64.dp)
+                            modifier = Modifier.size(90.dp).clip(CircleShape)
                         )
                     }
 

@@ -41,15 +41,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Existing alias names are retained so upgrades preserve launcher shortcuts. -->
         <activity-alias
             android:name=".MainActivityOriginal"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_original"
+            android:icon="@mipmap/ic_launcher_hootbook_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_original_round"
+            android:roundIcon="@mipmap/ic_launcher_hootbook_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Original">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hootbook.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -63,11 +64,11 @@
             android:name=".MainActivityAnarchy"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_anarchy"
+            android:icon="@mipmap/ic_launcher_hootbook_cream"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_anarchy_round"
+            android:roundIcon="@mipmap/ic_launcher_hootbook_cream_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Anarchy">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hootbook.cream">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -79,11 +80,11 @@
             android:name=".MainActivityZenith"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_zenith"
+            android:icon="@mipmap/ic_launcher_hoot_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_zenith_round"
+            android:roundIcon="@mipmap/ic_launcher_hoot_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Zenith">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hoot.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -95,11 +96,11 @@
             android:name=".MainActivityMonochrome"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_monochrome"
+            android:icon="@mipmap/ic_launcher_book_white"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_monochrome_round"
+            android:roundIcon="@mipmap/ic_launcher_book_white_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Monochrome">
+            android:theme="@style/Theme.Hootbook.SplashScreen.book.white">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -111,11 +112,27 @@
             android:name=".MainActivityComic"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_comic"
+            android:icon="@mipmap/ic_launcher_hoot_cream"
             android:label="${appLabel}"
-            android:roundIcon="@mipmap/ic_launcher_comic_round"
+            android:roundIcon="@mipmap/ic_launcher_hoot_cream_round"
             android:targetActivity=".MainActivity"
-            android:theme="@style/Theme.Hootbook.SplashScreen.Comic">
+            android:theme="@style/Theme.Hootbook.SplashScreen.hoot.cream">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:name=".MainActivityBookCream"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_book_cream"
+            android:label="${appLabel}"
+            android:roundIcon="@mipmap/ic_launcher_book_cream_round"
+            android:targetActivity=".MainActivity"
+            android:theme="@style/Theme.Hootbook.SplashScreen.book.cream">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

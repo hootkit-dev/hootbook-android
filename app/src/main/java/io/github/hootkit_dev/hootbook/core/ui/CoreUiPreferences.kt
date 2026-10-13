@@ -13,7 +13,7 @@ data class CoreUiPreferences(
     val themeStyle: ThemeStyle = ThemeStyle.DYNAMIC,
     val accent: AccentColor = AccentColor.BLUE,
     val blur: Boolean = false,
-    val appIcon: AppIcon = AppIcon.ORIGINAL,
+    val appIcon: AppIcon = AppIcon.HOOTBOOK_WHITE,
     val userName: String = "",
     val avatar: String? = null,
     val banner: String? = null,
@@ -74,7 +74,7 @@ object CoreUiPreferencesCodec {
             darkTheme = if (t.has("dark")) nullableBoolean(t, "dark") else current.darkTheme,
             dynamicColor = bool(t, "dynamic", current.dynamicColor), amoled = bool(t, "amoled", current.amoled),
             font = enum(t, "font", current.font), themeStyle = enum(t, "style", current.themeStyle),
-            accent = enum(t, "accent", current.accent), blur = bool(t, "blur", current.blur), appIcon = enum(t, "icon", current.appIcon),
+            accent = enum(t, "accent", current.accent), blur = bool(t, "blur", current.blur), appIcon = appIcon(t, "icon", current.appIcon),
             userName = str(p, "name", current.userName), avatar = optionalString(p, "avatar", current.avatar),
             banner = optionalString(p, "banner", current.banner), profileBackground = int(p, "background", current.profileBackground),
             showBanner = bool(p, "showBanner", current.showBanner), homeOrder = widgets(h, "order", current.homeOrder),
@@ -98,7 +98,7 @@ object CoreUiPreferencesCodec {
             darkTheme = if (t.has("is_dark_theme_enabled")) nullableBoolean(t, "is_dark_theme_enabled") else c.darkTheme,
             dynamicColor = bool(t, "is_dynamic_color_enabled", c.dynamicColor), amoled = bool(t, "is_amoled_mode", c.amoled),
             font = enum(t, "app_font", c.font), themeStyle = enum(t, "theme_style", c.themeStyle), accent = enum(t, "accent_color", c.accent),
-            blur = bool(t, "blur_effects", c.blur), appIcon = enum(t, "app_icon", c.appIcon), userName = str(p, "user_name", c.userName),
+            blur = bool(t, "blur_effects", c.blur), appIcon = appIcon(t, "app_icon", c.appIcon), userName = str(p, "user_name", c.userName),
             avatar = optionalString(p, "profile_image_uri", c.avatar), banner = optionalString(p, "banner_image_uri", c.banner),
             profileBackground = int(p, "profile_background_color", c.profileBackground), showBanner = bool(p, "show_banner_image", c.showBanner),
             homeOrder = widgets(h, "order", c.homeOrder), hiddenHomeWidgets = widgets(h, "hidden", c.hiddenHomeWidgets.toList()).toSet(),
@@ -129,6 +129,7 @@ object CoreUiPreferencesCodec {
     private fun optionalString(o: JSONObject, key: String, default: String?): String? = if (!o.has(key)) default else if (o.isNull(key)) null else { require(o.get(key) is String); o.getString(key) }
     private fun int(o: JSONObject, key: String, default: Int): Int = if (!o.has(key) || o.isNull(key)) default else { require(o.get(key) is Number); val v=o.getLong(key); require(o.get(key).toString().matches(Regex("-?[0-9]+"))); require(v in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()); v.toInt() }
     private fun long(o: JSONObject, key: String, default: Long): Long = if (!o.has(key) || o.isNull(key)) default else { require(o.get(key) is Number); require(o.get(key).toString().matches(Regex("-?[0-9]+"))); o.getLong(key) }
+    private fun appIcon(o: JSONObject, key: String, default: AppIcon): AppIcon = if (!o.has(key) || o.isNull(key)) default else AppIcon.fromStoredName(o.getString(key))
     private inline fun <reified E: Enum<E>> enum(o: JSONObject, key: String, default: E): E = if (!o.has(key) || o.isNull(key)) default else enumValueOf(o.getString(key))
     private fun strings(o: JSONObject, key: String, default: List<String>): List<String> { if (!o.has(key) || o.isNull(key)) return default; val v=o.getJSONArray(key); require(v.length()<=1000); return (0 until v.length()).map { require(v.get(it) is String); v.getString(it) } }
     private fun widgets(o: JSONObject, key: String, default: List<HomeWidget>) = strings(o,key,default.map {it.name}).mapNotNull(HomeWidget::fromName).distinct()

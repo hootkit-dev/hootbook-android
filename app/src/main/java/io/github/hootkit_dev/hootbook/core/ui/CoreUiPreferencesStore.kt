@@ -92,7 +92,7 @@ class CoreUiPreferencesStore @Inject constructor(@ApplicationContext private val
         val known = mapOf("app_font" to io.github.hootkit_dev.hootbook.data.preferences.AppFont.entries.map { it.name },
             "theme_style" to io.github.hootkit_dev.hootbook.data.preferences.ThemeStyle.entries.map { it.name },
             "accent_color" to io.github.hootkit_dev.hootbook.data.preferences.AccentColor.entries.map { it.name },
-            "app_icon" to io.github.hootkit_dev.hootbook.data.preferences.AppIcon.entries.map { it.name })
+            "app_icon" to io.github.hootkit_dev.hootbook.data.preferences.AppIcon.storedNames.toList())
         known.forEach { (key, values) -> if (theme.has(key) && theme.opt(key) !in values) {
             theme.remove(key); warnings.value = (warnings.value + io.github.hootkit_dev.hootbook.R.string.core_shell_legacy_defaults).distinct()
         } }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -467,66 +469,12 @@ fun AppearanceScreen(
                     contentPadding = PaddingValues(horizontal = Spacing.md),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    item {
+                    items(AppIcon.entries, key = { it.name }) { icon ->
                         AppLogoOption(
-                            name = stringResource(R.string.logo_original),
-                            icon = AppIcon.ORIGINAL,
-                            backgroundColor = Color(0xFF1F1F1F),
-                            drawableResId = R.drawable.hootbook_original,
-                            isSelected = themeUiState.appIcon == AppIcon.ORIGINAL,
-                            onClick = {
-                                themeViewModel.updateAppIcon(AppIcon.ORIGINAL)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_anarchy),
-                            icon = AppIcon.ANARCHY,
-                            backgroundColor = Color(0xFFF5EEE5),
-                            drawableResId = R.drawable.hootbook_anarchy,
-                            isSelected = themeUiState.appIcon == AppIcon.ANARCHY,
-                            onClick = {
-                                themeViewModel.updateAppIcon(AppIcon.ANARCHY)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_comic),
-                            icon = AppIcon.COMIC,
-                            backgroundColor = Color.Transparent,
-                            drawableResId = R.drawable.hootbook_comic,
-                            backgroundDrawableResId = R.drawable.ic_logo_comic_bg,
-                            isSelected = themeUiState.appIcon == AppIcon.COMIC,
-                            onClick = {
-                                themeViewModel.updateAppIcon(AppIcon.COMIC)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_zenith),
-                            icon = AppIcon.ZENITH,
-                            backgroundColor = Color(0xFFE6E6E6),
-                            drawableResId = R.drawable.hootbook_zenith,
-                            isSelected = themeUiState.appIcon == AppIcon.ZENITH,
-                            onClick = {
-                                themeViewModel.updateAppIcon(AppIcon.ZENITH)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_monochrome),
-                            icon = AppIcon.MONOCHROME,
-                            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                            drawableResId = R.drawable.hootbook_monochrome,
-                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            isSelected = themeUiState.appIcon == AppIcon.MONOCHROME,
-                            onClick = {
-                                themeViewModel.updateAppIcon(AppIcon.MONOCHROME)
-                            }
+                            name = stringResource(icon.labelRes),
+                            drawableResId = icon.previewRes,
+                            isSelected = themeUiState.appIcon == icon,
+                            onClick = { themeViewModel.updateAppIcon(icon) }
                         )
                     }
 
@@ -892,19 +840,17 @@ fun ColorSchemeBox(
 @Composable
 fun AppLogoOption(
     name: String,
-    icon: AppIcon,
-    backgroundColor: Color,
     drawableResId: Int,
     isSelected: Boolean,
-    iconTint: Color? = null,
-    backgroundDrawableResId: Int? = null,
     onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         modifier = Modifier
-            .clickable(
+            .selectable(
+                selected = isSelected,
+                role = Role.RadioButton,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
                 onClick = onClick
@@ -917,27 +863,12 @@ fun AppLogoOption(
                 .clip(RoundedCornerShape(Dimensions.Radius.lg)),
             contentAlignment = Alignment.Center
         ) {
-            if (backgroundDrawableResId != null) {
-                Image(
-                    painter = painterResource(id = backgroundDrawableResId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                )
-            }
-            
             Image(
                 painter = painterResource(id = drawableResId),
                 contentDescription = null,
-                modifier = Modifier.size(84.dp),
-                colorFilter = iconTint?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) }
+                modifier = Modifier.fillMaxSize()
             )
-            
+
             if (isSelected) {
                 Box(
                     modifier = Modifier

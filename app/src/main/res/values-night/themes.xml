@@ -1,32 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base dark theme -->
     <style name="Theme.HootbookCompose" parent="Theme.AppCompat.NoActionBar" />
-    
-    <!-- Splash Screen theme for dark mode -->
-    <style name="Theme.Hootbook.SplashScreen" parent="Theme.SplashScreen">
-        <!-- Dark background color matching Material Design 3 dark theme -->
-        
-        <!-- Set splash screen duration (Android 12+) -->
-        <item name="windowSplashScreenAnimationDuration">3000</item>
-        
-        <!-- Set the theme to use after splash screen -->
-        <item name="postSplashScreenTheme">@style/Theme.HootbookCompose</item>
-    </style>
-
-    <style name="Theme.Hootbook.SplashScreen.Original" parent="Theme.Hootbook.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_original_fg</item>
-    </style>
-
-    <style name="Theme.Hootbook.SplashScreen.Anarchy" parent="Theme.Hootbook.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_anarchy_fg</item>
-    </style>
-
-    <style name="Theme.Hootbook.SplashScreen.Zenith" parent="Theme.Hootbook.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_zenith_fg</item>
-    </style>
-
-    <style name="Theme.Hootbook.SplashScreen.Comic" parent="Theme.Hootbook.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_comic_fg</item>
-    </style>
 </resources>

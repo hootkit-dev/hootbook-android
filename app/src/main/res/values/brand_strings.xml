@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="logo_hootbook_white">Twin owls · White</string>
+    <string name="logo_hootbook_cream">Twin owls · Cream</string>
+    <string name="logo_hoot_white">hoot · White</string>
+    <string name="logo_hoot_cream">hoot · Cream</string>
+    <string name="logo_book_white">book · White</string>
+    <string name="logo_book_cream">book · Cream</string>
+</resources>

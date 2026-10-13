@@ -905,10 +905,9 @@ fun SettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.hootbook),
+                                painter = painterResource(id = R.drawable.hootbook_icon_white),
                                 contentDescription = stringResource(R.string.hootbook_logo_cd),
-                                colorFilter = ColorFilter.tint(orange_dark),
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape)
                             )
                         }
                     },

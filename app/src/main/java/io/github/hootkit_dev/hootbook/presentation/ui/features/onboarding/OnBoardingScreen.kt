@@ -233,10 +233,9 @@ internal fun WelcomeStep(syncAvailable: Boolean, onSync: () -> Unit, onImportBac
     ) {
         Surface(shape = MaterialTheme.shapes.extraLargeIncreased, color = MaterialTheme.colorScheme.primaryContainer) {
             Image(
-                painter = painterResource(R.drawable.hootbook),
+                painter = painterResource(R.drawable.hootbook_icon_white),
                 contentDescription = null,
-                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                modifier = Modifier.padding(32.dp).size(72.dp)
+                modifier = Modifier.size(120.dp)
             )
         }
         Text(stringResource(R.string.onboarding_welcome_title), style = MaterialTheme.typography.displaySmallEmphasized, textAlign = TextAlign.Center)

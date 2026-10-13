@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="logo_monochrome_bg">#2A2B52</color>
-    <color name="logo_monochrome_accent">#8083F2</color>
-    <color name="logo_monochrome_grad_start">#2A2B52</color>
-    <color name="logo_monochrome_grad_end">#1A1B42</color>
-</resources>
