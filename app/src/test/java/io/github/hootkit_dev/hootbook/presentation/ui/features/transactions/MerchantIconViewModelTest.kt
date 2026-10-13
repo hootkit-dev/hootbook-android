@@ -4,6 +4,7 @@ import android.app.Application
 import dev.hootkit.core.*
 import io.ktor.client.engine.mock.respond
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -67,12 +68,15 @@ class MerchantIconViewModelTest : CoreViewModelTest() {
                 )
             assertFalse(vm.state.value.loading)
             vm.search("old")
-            awaitState { started.isCompleted }
+            // Suspend on completion signals so runTest can drive Main while the mock HTTP
+            // and asset operations finish on real IO threads. Avoid the shared 5-second poll.
+            started.await()
             vm.search("new")
-            awaitState { vm.state.value.results?.singleOrNull()?.name == "new" }
+            vm.state.first { !it.loading && it.results?.singleOrNull()?.name == "new" }
+            assertFalse("The new search must finish while the old request is blocked", gate.isCompleted)
             gate.complete(Unit)
             vm.search("fail")
-            awaitState { vm.state.value.error != null }
+            vm.state.first { !it.loading && it.error != null }
             assertEquals(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed, vm.state.value.error)
             val candidate =
                 io.github.hootkit_dev.hootbook.data.icons.AppIconCandidate(
@@ -84,13 +88,18 @@ class MerchantIconViewModelTest : CoreViewModelTest() {
             var completed = 0
             vm.choose("Coffee", candidate) { completed++ }
             vm.choose("Coffee", candidate) { completed++ }
-            awaitState { vm.state.value.saving == null }
+            vm.state.first { it.saving == null }
+            assertNull("Icon download and persistence must succeed", vm.state.value.error)
             assertEquals(1, completed)
             assertEquals(1, downloads)
             assertNotNull(assets.merchantIcon("Coffee"))
+            val revision = assets.revision.value
             vm.reset("Coffee")
-            awaitState { assets.merchantIcon("Coffee") == null }
+            assets.revision.first { it > revision }
+            assertNull(assets.merchantIcon("Coffee"))
         } finally {
+            // A failed assertion must not leave the cancelled request stuck in NonCancellable.
+            gate.complete(Unit)
             client.close()
         }
     }
