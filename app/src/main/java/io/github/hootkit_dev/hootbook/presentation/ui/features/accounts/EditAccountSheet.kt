@@ -46,9 +46,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Pin
+import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -142,7 +144,8 @@ fun EditAccountSheet(
     onDelete: (() -> Unit)? = null,
     institutions: List<Institution> = emptyList(),
     brokerAutoSync: (@Composable () -> Unit)? = null,
-    onSave: (NewAccount) -> Unit
+    onEditSave: ((NewAccount, Boolean, Boolean, Map<String, BigDecimal>) -> Unit)? = null,
+    onSave: (NewAccount) -> Unit = {}
 ) {
     val context = LocalContext.current
     var bankName by remember { mutableStateOf(account?.name ?: "") }
@@ -169,6 +172,8 @@ fun EditAccountSheet(
         mutableStateOf(account?.icon ?: IconResolutionUtils.resIdToName(context, iconResId))
     }
     var colorHex by remember { mutableStateOf(account?.color ?: "#33B5E5") }
+    var isDefaultAccount by remember(account) { mutableStateOf(account?.isDefault ?: false) }
+    var isArchivedAccount by remember(account) { mutableStateOf(account?.archived ?: false) }
 
     var showNumberPad by remember { mutableStateOf(false) }
     var editingCreditLimit by remember { mutableStateOf(false) }
@@ -176,8 +181,12 @@ fun EditAccountSheet(
     var showCurrencySheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
-    // Currencies the account already holds besides the selected one, with their balances
-    val heldBalances = remember(account) { account?.pockets?.associate { it.currency to it.balance }.orEmpty() }
+    // Currencies the account already holds, with their editable balances
+    val heldBalances = remember(account) {
+        mutableStateMapOf<String, BigDecimal>().apply {
+            account?.pockets?.forEach { put(it.currency, it.balance) }
+        }
+    }
     var institutionKey by remember(account) { mutableStateOf(account?.institutionKey) }
     // Currencies added here become Core pockets on save.
     val addedCurrencies = remember { mutableStateMapOf<String, BigDecimal>() }
@@ -185,6 +194,7 @@ fun EditAccountSheet(
     var pendingCurrency by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     var addingCurrency by remember { mutableStateOf(false) }
     var editingAddedCurrency by remember { mutableStateOf<String?>(null) }
+    var editingHeldCurrency by remember { mutableStateOf<String?>(null) }
 
 
     val chinese = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "zh"
@@ -248,26 +258,43 @@ fun EditAccountSheet(
 
     if (showNumberPad) {
         HootbookModalBottomSheet(
-            onDismissRequest = { showNumberPad = false },
+            onDismissRequest = {
+                showNumberPad = false
+                editingAddedCurrency = null
+                editingHeldCurrency = null
+            },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             NumberPad(
                 initialValue = editingAddedCurrency?.let { addedCurrencies[it]?.toString() }
+                    ?: editingHeldCurrency?.let { heldBalances[it]?.toString() }
                     ?: if (editingCreditLimit) creditLimit.toString() else balance.toString(),
                 onDone = {
+                    val newAmount = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val added = editingAddedCurrency
+                    val held = editingHeldCurrency
                     if (added != null) {
-                        addedCurrencies[added] = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        addedCurrencies[added] = newAmount
+                        if (selectedCurrency == added) balance = newAmount
                         editingAddedCurrency = null
+                    } else if (held != null) {
+                        heldBalances[held] = newAmount
+                        if (selectedCurrency == held) balance = newAmount
+                        editingHeldCurrency = null
                     } else if (editingCreditLimit) {
-                        creditLimit = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        creditLimit = newAmount
                     } else {
-                        balance = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        balance = newAmount
+                        if (selectedCurrency in heldBalances) {
+                            heldBalances[selectedCurrency] = newAmount
+                        } else if (selectedCurrency in addedCurrencies) {
+                            addedCurrencies[selectedCurrency] = newAmount
+                        }
                     }
                     showNumberPad = false
-                    },
+                },
                 title = if (editingCreditLimit) stringResource(R.string.enter_credit_limit)
                         else if (account == null) stringResource(R.string.enter_amount)
                         else stringResource(R.string.update_amount)
@@ -872,11 +899,6 @@ fun EditAccountSheet(
             }
 
             if (showManualForm) {
-                // Preview Section
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-                ) {
                 PreviewAccountCard(
                     bankName = bankName.ifEmpty { stringResource(R.string.preview_bank_name) },
                     balance = balance,
@@ -887,114 +909,25 @@ fun EditAccountSheet(
                     currency = selectedCurrency,
                     isCreditCard = isCreditCard,
                     isWallet = isWallet,
-                    creditLimit = creditLimit
+                    creditLimit = creditLimit,
+                    onBalanceClick = {
+                        editingCreditLimit = false
+                        editingAddedCurrency = null
+                        editingHeldCurrency = null
+                        showNumberPad = true
+                    },
+                    onIconClick = { showIconSelector = true }
                 )
-                Text(
-                    text = stringResource(R.string.preview_label),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-            }
 
             // Input Fields
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Icon Button
-                    Box(
-                        modifier = Modifier
-                            .size(62.dp)
-                            .clip(CircleShape)
-                            .clickable { showIconSelector = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BrandIcon(
-                            merchantName = bankName,
-                            size = 58.dp,
-                            accountIconResId = iconResId,
-                            accountIconName = iconName,
-                            accountColorHex = colorHex
-                        )
-                        // Edit badge
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(16.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary,
-                                    CircleShape
-                                )
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.surface,
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Iconax.Edit2,
-                                contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-                    }
-                    // Balance/Outstanding Input
-                    if (account == null) Surface(
-                        onClick = {
-                            editingCreditLimit = false
-                            showNumberPad = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Leading Icon
-                            Icon(
-                                imageVector = Iconax.Wallet3,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            // Label and Value
-                            Column(verticalArrangement = Arrangement.Center) {
-                                Text(
-                                    text = if (isCreditCard) stringResource(R.string.outstanding_label) else stringResource(R.string.balance_label),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = CoreMoneyPresentation.formatCurrency(
-                                        balance,
-                                        selectedCurrency
-                                    ),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-
                 if (isCreditCard) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     // Credit Limit Input
                     Surface(
                         onClick = {
                             editingCreditLimit = true
+                            editingAddedCurrency = null
+                            editingHeldCurrency = null
                             showNumberPad = true
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -1199,9 +1132,14 @@ fun EditAccountSheet(
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
                     others.forEach { (currency, amount) ->
-                        AssistChip(
-                            onClick = {},
-                            enabled = false,
+                        InputChip(
+                            selected = true,
+                            onClick = {
+                                editingHeldCurrency = currency
+                                editingAddedCurrency = null
+                                editingCreditLimit = false
+                                showNumberPad = true
+                            },
                             label = { Text(CoreMoneyPresentation.formatCurrency(amount, currency)) }
                         )
                     }
@@ -1210,6 +1148,7 @@ fun EditAccountSheet(
                             selected = true,
                             onClick = {
                                 editingAddedCurrency = currency
+                                editingHeldCurrency = null
                                 editingCreditLimit = false
                                 showNumberPad = true
                             },
@@ -1232,6 +1171,33 @@ fun EditAccountSheet(
                         colorHex = String.format("#%06X", 0xFFFFFF and colorInt)
                     }
                 )
+
+                if (account != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch(
+                            title = stringResource(R.string.account_set_default),
+                            subtitle = stringResource(R.string.account_set_default_subtitle),
+                            checked = isDefaultAccount,
+                            onCheckedChange = { isDefaultAccount = it },
+                            leadingIcon = { Icon(Icons.Rounded.StarOutline, contentDescription = null) },
+                            padding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                            isFirst = true,
+                        )
+                        io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch(
+                            title = stringResource(R.string.account_archive),
+                            subtitle = stringResource(R.string.account_archive_subtitle),
+                            checked = isArchivedAccount,
+                            onCheckedChange = { isArchivedAccount = it },
+                            leadingIcon = { Icon(Icons.Rounded.Archive, contentDescription = null) },
+                            padding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                            isLast = true,
+                        )
+                    }
+                }
             }
             }
 
@@ -1299,7 +1265,7 @@ fun EditAccountSheet(
                     // Save button
                     Button(
                         onClick = {
-                            onSave(NewAccount(
+                            val newAccount = NewAccount(
                                 name = bankName.trim(), last4 = accountLast4.takeIf { !isWallet && it.isNotBlank() },
                                 kind = when { isCreditCard -> AccountKind.CREDIT_CARD; isWallet -> AccountKind.WALLET; isBroker -> AccountKind.INVESTMENT; else -> AccountKind.BANK },
                                 mainCurrency = selectedCurrency, openingBalance = if (account == null) balance else null,
@@ -1308,7 +1274,15 @@ fun EditAccountSheet(
                                 dueDay = dueDay?.toUByte().takeIf { isCreditCard }, institutionKey = institutionKey,
                                 icon = iconName, color = colorHex,
                                 extraCurrencies = addedCurrencies.map { (code, amount) -> NewCurrency(code, amount) },
-                            ))
+                            )
+                            if (onEditSave != null) {
+                                val updatedBalances = heldBalances.toMutableMap().apply {
+                                    if (selectedCurrency in this) put(selectedCurrency, balance)
+                                }
+                                onEditSave(newAccount, isDefaultAccount, isArchivedAccount, updatedBalances)
+                            } else {
+                                onSave(newAccount)
+                            }
                         },
                         enabled = !isSaving && bankName.isNotBlank() && (isWallet || accountLast4.length == 4),
                         modifier = Modifier
@@ -1341,7 +1315,9 @@ private fun PreviewAccountCard(
     currency: String,
     isCreditCard: Boolean = false,
     isWallet: Boolean = false,
-    creditLimit: BigDecimal = BigDecimal.ZERO
+    creditLimit: BigDecimal = BigDecimal.ZERO,
+    onBalanceClick: () -> Unit = {},
+    onIconClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.padding(bottom = Spacing.sm).fillMaxWidth(),
@@ -1355,22 +1331,46 @@ private fun PreviewAccountCard(
             modifier = Modifier.fillMaxWidth().animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Balance/Outstanding Section
-            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp)) {
+            // Balance/Outstanding Section (clickable to edit/calibrate balance)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onBalanceClick)
+                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp)
+            ) {
                 Text(
                     text = if (isCreditCard) stringResource(R.string.outstanding_label) else stringResource(R.string.balance_label),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = CoreMoneyPresentation.formatCurrency(balance, currency),
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = CoreMoneyPresentation.formatCurrency(balance, currency),
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Iconax.Edit2,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             BlurredAnimatedVisibility(
@@ -1426,14 +1426,44 @@ private fun PreviewAccountCard(
                         )
                     }
 
-                    BrandIcon(
-                        merchantName = bankName,
-                        size = 48.dp,
-                        showBackground = true,
-                        accountIconResId = iconResId,
-                        accountIconName = iconName,
-                        accountColorHex = colorHex
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onIconClick),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BrandIcon(
+                            merchantName = bankName,
+                            size = 48.dp,
+                            showBackground = true,
+                            accountIconResId = iconResId,
+                            accountIconName = iconName,
+                            accountColorHex = colorHex
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(16.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.primary,
+                                    CircleShape
+                                )
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.surface,
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Iconax.Edit2,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -23,8 +23,10 @@
     <string name="account_move_up">Move up</string>
     <string name="account_move_down">Move down</string>
     <string name="account_archive">Archive</string>
+    <string name="account_archive_subtitle">Hide from account pickers while keeping transaction history</string>
     <string name="account_unarchive">Unarchive</string>
-    <string name="account_set_default">Set as default</string>
+    <string name="account_set_default">Default account</string>
+    <string name="account_set_default_subtitle">Preselect when adding transactions and pin to top</string>
     <string name="account_clear_default">Remove as default</string>
     <string name="account_delete">Delete account</string>
     <string name="account_delete_title">Delete %1$s?</string>

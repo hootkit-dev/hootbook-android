@@ -22,9 +22,11 @@
     <string name="core_accounts_59">保存</string>
     <string name="account_move_up">上移</string>
     <string name="account_move_down">下移</string>
-    <string name="account_archive">归档</string>
+    <string name="account_archive">归档账户</string>
+    <string name="account_archive_subtitle">在记账选户列表中隐藏，保留历史交易与净资产</string>
     <string name="account_unarchive">取消归档</string>
     <string name="account_set_default">设为默认账户</string>
+    <string name="account_set_default_subtitle">记账时自动预选此账户，并在列表中置顶</string>
     <string name="account_clear_default">取消默认账户</string>
     <string name="account_delete">删除账户</string>
     <string name="account_delete_title">删除 %1$s？</string>

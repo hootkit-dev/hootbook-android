@@ -62,6 +62,7 @@ fun AccountCard(
     account: Account,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onBalanceClick: (() -> Unit)? = null,
     content: @Composable () -> Unit = {}
 ) {
     Card(
@@ -90,31 +91,56 @@ fun AccountCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Top Section
-                Row(
+                // Top & Balance Section
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 8.dp, top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .then(
+                            if (onBalanceClick != null) {
+                                Modifier.clickable(onClick = onBalanceClick)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = stringResource(if ((account.kind == AccountKind.CREDIT_CARD)) R.string.outstanding_label else R.string.balance_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
 
-                // Balance: an account in several currencies shows their sum, then each currency
-                Text(
-                    text = accountBalanceText(account),
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = accountBalanceText(account),
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (onBalanceClick != null) {
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Iconax.Edit2,
+                                        contentDescription = stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.update_outstanding_title else R.string.account_calibrate),
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 AccountIncompleteIndicator(account)
                 AccountCurrencyPills(account, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
 

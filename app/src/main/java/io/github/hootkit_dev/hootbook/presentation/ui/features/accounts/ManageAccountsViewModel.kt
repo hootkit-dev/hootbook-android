@@ -169,16 +169,31 @@ class ManageAccountsViewModel @Inject constructor(
     fun addAccount(input: NewAccount, onSaved: () -> Unit = {}) = command(onSaved) { core ->
         core.accounts().use { it.create(input) }
     }
-    fun editAccount(account: Account, input: NewAccount, onSaved: () -> Unit = {}) = command(onSaved) { core ->
+    fun editAccount(
+        account: Account,
+        input: NewAccount,
+        isDefault: Boolean = account.isDefault,
+        archived: Boolean = account.archived,
+        calibratedBalances: Map<String, java.math.BigDecimal> = emptyMap(),
+        onSaved: () -> Unit = {}
+    ) = command(onSaved) { core ->
         core.accounts().use { api ->
-            // Added pockets retain their explicit opening anchors. Editing account metadata never calibrates balances.
             input.extraCurrencies.forEach { api.addCurrency(account.id, it.currency, it.openingBalance, null) }
             api.update(account.id, AccountPatch(name = input.name, last4 = input.last4,
                 clearLast4 = input.last4 == null, kind = input.kind, mainCurrency = input.mainCurrency,
                 institutionKey = input.institutionKey, clearInstitution = input.institutionKey == null,
                 icon = input.icon, color = input.color, creditLimit = input.creditLimit,
                 clearCreditLimit = input.creditLimit == null, statementDay = input.statementDay,
-                dueDay = input.dueDay, clearBillingDays = true))
+                dueDay = input.dueDay, clearBillingDays = true, archived = archived))
+            calibratedBalances.forEach { (currency, newBalance) ->
+                val oldBalance = account.pockets.firstOrNull { it.currency == currency }?.balance
+                if (oldBalance == null || newBalance.compareTo(oldBalance) != 0) {
+                    api.calibrate(account.id, currency, newBalance, null)
+                }
+            }
+        }
+        if (isDefault != account.isDefault) {
+            core.settings().use { it.setDefaultAccount(if (isDefault) account.id else null) }
         }
     }
     fun deleteAccount(accountId: String, deleteTransactions: Boolean = false, onDeleted: () -> Unit = {}) = command(onDeleted) { core ->
