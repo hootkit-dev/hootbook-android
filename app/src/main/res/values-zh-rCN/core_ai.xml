@@ -36,6 +36,7 @@
     <string name="core_ai_key_masked_synced_hint">API 密钥已保存，并已通过同步密码端到端加密同步。</string>
     <string name="home_ai_pending_banner_title">有未完成的 AI 记账待审阅（%1$d 项变更）</string>
     <string name="home_ai_pending_banner_subtitle">点击继续确认入账或丢弃草稿</string>
+    <string name="core_ai_endpoint_custom">自定义</string>
     <string name="core_ai_endpoint_deepseek">DeepSeek</string>
     <string name="core_ai_endpoint_openai">OpenAI</string>
     <string name="core_ai_endpoint_gemini">Gemini</string>

@@ -771,12 +771,32 @@ private fun ProviderForm(
         }
     }
     if (preset == AiPreset.CUSTOM) {
+        val matchedEndpoint =
+            AiCustomEndpoint.entries.firstOrNull {
+                cleanedUrl.equals(it.baseUrl, ignoreCase = true)
+            }
         androidx.compose.foundation.lazy.LazyRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             modifier = Modifier.fillMaxWidth(),
         ) {
+            item(key = "custom_endpoint") {
+                val isCustomSelected = matchedEndpoint == null
+                androidx.compose.material3.FilterChip(
+                    selected = isCustomSelected,
+                    onClick = {
+                        if (!isCustomSelected) {
+                            baseUrl = ""
+                            model = ""
+                            reasoning = AiReasoning.PROVIDER_DEFAULT
+                            if (hasKey) editingKey = true
+                            onClearModels()
+                        }
+                    },
+                    label = { Text(stringResource(R.string.core_ai_endpoint_custom), maxLines = 1) },
+                )
+            }
             items(AiCustomEndpoint.entries) { endpoint ->
-                val selected = cleanedUrl.equals(endpoint.baseUrl, ignoreCase = true)
+                val selected = matchedEndpoint == endpoint
                 androidx.compose.material3.FilterChip(
                     selected = selected,
                     onClick = {
