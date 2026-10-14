@@ -41,6 +41,8 @@ class HootbookNavigationTest {
             composable<Subscriptions> { }
             composable<CurrencySettings> { }
             composable<Settings> { }
+            composable<DataPrivacy> { }
+            composable<BackupRestore> { }
             composable<Profile> { }
             composable<Appearance> { }
             composable<AppLockSettings> { }
@@ -79,7 +81,8 @@ class HootbookNavigationTest {
 
     @Test fun allSettingsChildrenReturnToHomeWithoutRestoringAChildStack() {
         val nav = nav()
-        listOf(Profile, Appearance, AppLockSettings, NotificationSettings, About, CloudSync, Investments()).forEach { child ->
+        listOf(Profile, Appearance, AppLockSettings, NotificationSettings, About, DataPrivacy,
+            coreScreenDestination("backup"), CloudSync, Investments()).forEach { child ->
             nav.navigate(Settings)
             nav.navigate(child)
             nav.settle()

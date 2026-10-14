@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy
+package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.backup
 
 import io.github.hootkit_dev.hootbook.presentation.data.backup.*
 
@@ -27,16 +27,16 @@ import dev.hootkit.core.ImportMode
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [28], manifest = Config.NONE)
-class DataPrivacyViewModelTest {
+class BackupViewModelTest {
     @get:Rule val temp = TemporaryFolder()
     private val stores = mutableListOf<ViewModelStore>()
     private val context get() = ApplicationProvider.getApplicationContext<Application>()
     @Before fun setup() { Dispatchers.setMain(StandardTestDispatcher()) }
     @After fun cleanup() { stores.forEach(ViewModelStore::clear); Dispatchers.resetMain() }
-    private fun model(access: BackupTestAccess) = DataPrivacyViewModel(context, access, temp.newFolder()).also { vm ->
+    private fun model(access: BackupTestAccess) = BackupViewModel(context, access, temp.newFolder()).also { vm ->
         stores += ViewModelStore().also { it.put("vm", vm) }
     }
-    private suspend fun select(vm: DataPrivacyViewModel) {
+    private suspend fun select(vm: BackupViewModel) {
         vm.state.first { !it.busy }
         val uri = Uri.parse("content://test-provider/source")
         Shadows.shadowOf(context.contentResolver).registerInputStream(uri, ByteArrayInputStream("backup".toByteArray()))

@@ -67,6 +67,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.Inves
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.appearance.AppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.applock.AppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy.DataPrivacyScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.backup.BackupScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.currency.CurrencySettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.app.LocaleGate
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.notifications.NotificationScreen
@@ -548,7 +549,8 @@ fun HootbookNavHost(
                                         onNavigateToProfile = { go(Profile) }, onNavigateToNotifications = { go(NotificationSettings) },
                                         onNavigateToBudgets = { go(Budgets()) }, onNavigateToSubscriptions = { go(Subscriptions()) },
                                         onNavigateToLendBorrow = { go(LendBorrow()) },
-                                        onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToCloudBackup = { go(DataPrivacy) },
+                                        onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToBackup = { go(BackupRestore) },
+                                        onNavigateToSync = { go(CloudSync) },
                                         onNavigateToAbout = { go(About) }, onNavigateToCurrency = { go(CurrencySettings()) }, blurEffects = prefs.blur)
                                 }
                             }
@@ -569,7 +571,17 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    DataPrivacyScreen(back, onNavigateToAccounts = { go(ManageAccounts) }, onNavigateToSync = { go(CloudSync) }, blurEffects = prefs.blur)
+                                    DataPrivacyScreen(back)
+                                }
+                            }
+                            composable<BackupRestore>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    BackupScreen(back)
                                 }
                             }
                             composable<CloudSync>(

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Backup & sync, and its Firebase sync page (docs/sync.md) -->
+<!-- Settings → Ledger sync (docs/sync.md) -->
 <resources>
     <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage connections are not uploaded.</string>
     <string name="sync_unavailable_title">Not available in this build</string>
@@ -32,7 +32,6 @@
     <string name="sync_done">Synced</string>
     <string name="sync_failed">Sync failed. It retries when the device is online.</string>
     <!-- Backup & sync page -->
-    <string name="sync_firebase_title">Firebase sync</string>
     <string name="sync_enabled">Sync</string>
     <string name="sync_enabled_body">Changes on this device sync automatically</string>
     <string name="sync_paused_body">Paused. The account and key are kept; turn it on to resume.</string>

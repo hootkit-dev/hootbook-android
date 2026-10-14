@@ -10,6 +10,11 @@
     <string name="core_shell_device_security">设置设备锁屏</string>
     <string name="core_shell_profile">个人资料</string>
     <string name="core_shell_sync">账本同步</string>
+    <string name="core_shell_sync_subtitle">在多台设备间同步账本</string>
+    <string name="core_shell_backup">备份与恢复</string>
+    <string name="core_shell_backup_subtitle">导出或恢复本地备份</string>
+    <string name="data_privacy_title">数据隐私</string>
+    <string name="data_privacy_subtitle">管理应用锁和本机访问保护</string>
     <string name="core_shell_notifications">通知</string>
     <string name="core_shell_finish">完成设置</string>
     <string name="core_shell_share_failed">分享内容读取失败；请选择外部文档后重试。</string>

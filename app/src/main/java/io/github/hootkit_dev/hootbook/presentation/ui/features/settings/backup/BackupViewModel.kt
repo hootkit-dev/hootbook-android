@@ -1,4 +1,4 @@
-package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy
+package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.backup
 
 import io.github.hootkit_dev.hootbook.presentation.data.backup.*
 
@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
 
 
 @HiltViewModel
-class DataPrivacyViewModel private constructor(
+class BackupViewModel private constructor(
     private val context: Context,
     private val workflow: BackupWorkflow,
     private val platform: BackupPlatformApplier? = null,
@@ -41,7 +41,7 @@ class DataPrivacyViewModel private constructor(
         }, platform)
     internal constructor(context: Context, access: CoreBackupAccess, root: File) : this(context,
         CoreBackupFiles(root).let { files -> BackupWorkflow(access, files, BackupOperationJournal(files), root) })
-    private val mutable = MutableStateFlow(DataPrivacyUiState())
+    private val mutable = MutableStateFlow(BackupUiState())
     val state = mutable.asStateFlow()
     private var inspectedPassword: String? = null
     init {

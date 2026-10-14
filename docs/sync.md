@@ -1,5 +1,9 @@
 # Multi-device sync
 
+Settings → Ledger sync opens the dedicated sync page. Settings → Backup & restore
+contains local file export and restore. Data Privacy contains only device access
+protection (app lock and its timeout); it has no backup or sync actions.
+
 Core owns the encrypted sync protocol, change tracking and conflict records. The Android
 standard flavor provides Firebase Auth and the Firestore v2 RemoteStore callbacks. Firebase
 configuration and Google sign-in are managed by `CoreFirebaseSyncPlatform`; no ledger data

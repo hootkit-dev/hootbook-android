@@ -10,6 +10,9 @@
     <string name="core_shell_device_security">Set up device screen lock</string>
     <string name="core_shell_profile">Profile</string>
     <string name="core_shell_sync">Ledger sync</string>
+    <string name="core_shell_sync_subtitle">Sync your ledger across devices</string>
+    <string name="core_shell_backup">Backup &amp; restore</string>
+    <string name="core_shell_backup_subtitle">Export or restore a local backup</string>
     <string name="core_shell_notifications">Notifications</string>
     <string name="core_shell_finish">Finish setup</string>
     <string name="core_shell_share_failed">Shared content could not be read. Choose an external document and retry.</string>
