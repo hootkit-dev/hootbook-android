@@ -517,40 +517,58 @@ private fun TagRowCard(
                         text = tag.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                     Text(
                         text = stringResource(
-                            R.string.overview_count,
-                            tag.transactionCount.toInt(),
+                            R.string.core_analytics_count,
+                            tag.transactionCount.toString(),
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!tag.archived) {
-                    IconButton(onClick = onMoveUp, enabled = canMoveUp) {
+                if (!tag.archived && (canMoveUp || canMoveDown)) {
+                    IconButton(
+                        onClick = onMoveUp,
+                        enabled = canMoveUp,
+                        modifier = Modifier.size(36.dp),
+                    ) {
                         Icon(
                             Icons.Default.ArrowUpward,
                             contentDescription = stringResource(R.string.account_move_up),
                         )
                     }
-                    IconButton(onClick = onMoveDown, enabled = canMoveDown) {
+                    IconButton(
+                        onClick = onMoveDown,
+                        enabled = canMoveDown,
+                        modifier = Modifier.size(36.dp),
+                    ) {
                         Icon(
                             Icons.Default.ArrowDownward,
                             contentDescription = stringResource(R.string.account_move_down),
                         )
                     }
                 }
-                IconButton(onClick = onEdit) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(36.dp),
+                ) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = stringResource(R.string.core_tags_edit),
                     )
                 }
-                IconButton(onClick = onToggleArchive) {
+                IconButton(
+                    onClick = onToggleArchive,
+                    modifier = Modifier.size(36.dp),
+                ) {
                     Icon(
                         imageVector = if (tag.archived) Icons.Default.Unarchive else Icons.Default.Archive,
                         contentDescription = stringResource(
@@ -558,7 +576,10 @@ private fun TagRowCard(
                         ),
                     )
                 }
-                IconButton(onClick = onDelete) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp),
+                ) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = stringResource(R.string.core_full_label_6),

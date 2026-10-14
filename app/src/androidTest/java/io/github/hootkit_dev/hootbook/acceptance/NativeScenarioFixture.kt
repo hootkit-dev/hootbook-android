@@ -34,7 +34,7 @@ class NativeScenarioFixture {
     fun text(id:Int)=context.getString(id)
     fun note(case:String,message:String){File(output,"native-events.log").appendText("${java.time.Instant.now()} $case $message\n");android.util.Log.i("NativeAcceptance","$case $message")}
     suspend fun seed():Seed {
-        val c=core();check(c.version().spec=="1.0")
+        val c=core();check(c.version().spec=="1.1")
         val now=JavaTime.now().nativeTime();val day=JavaDate.now()
         val account=c.accounts().use{it.create(NewAccount("$tag Wallet",null,AccountKind.WALLET,"CNY",BigDecimal("1000"),now,null,null,null,null,"wallet","#336699",emptyList()))}
         val second=c.accounts().use{it.create(NewAccount("$tag Savings",null,AccountKind.BANK,"CNY",BigDecimal("100"),now,null,null,null,null,"bank","#663399",emptyList()))}

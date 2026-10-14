@@ -386,7 +386,7 @@ class RealMainJourneys {
     @Test fun realFirebaseDemoSdkBackendRoundTrip()=runBlocking{f.firebaseDemoRoundTrip()}
     @Test fun realColdRuntimeAndAllSupportedMenuRoutes()=runBlocking {
         assertTrue(main.application is io.github.hootkit_dev.hootbook.HootbookApplication)
-        assertSame(f.session,main.coreSession);assertEquals("1.0",f.core().version().spec)
+        assertSame(f.session,main.coreSession);assertEquals("1.1",f.core().version().spec)
         home();click(R.string.core_complete_settings)
         for(label in listOf(R.string.core_shell_profile,R.string.core_shell_appearance,R.string.core_shell_app_lock,
             R.string.core_shell_notifications,R.string.core_shell_about,R.string.core_shell_sync,R.string.core_shell_investments)){
