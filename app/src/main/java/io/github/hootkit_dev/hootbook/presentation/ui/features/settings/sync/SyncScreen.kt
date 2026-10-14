@@ -106,7 +106,7 @@ import java.time.ZoneId
 
 
 /**
- * Backup & sync → Firebase sync: Google sign-in, the on/off switch, the sync passphrase, the
+ * Ledger sync: Google sign-in, the on/off switch, the sync passphrase, the
  * first-sync choice and a collapsed status and debug section (docs/sync.md). Core supplies the current setup phase.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,7 +128,7 @@ fun SyncScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             CustomTitleTopAppBar(
-                title = stringResource(R.string.sync_firebase_title),
+                title = stringResource(R.string.core_shell_sync),
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehavior,
                 hazeState = hazeState,

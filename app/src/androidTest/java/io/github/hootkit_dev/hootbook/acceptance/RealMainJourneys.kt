@@ -369,8 +369,8 @@ class RealMainJourneys {
         documentDownloads()
         val edit=nodes().first{it.isEditable&&it.isEnabled};check(edit.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
         val fileName="${f.tag}-ui.hkbak";check(edit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,Bundle().apply{putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,fileName)}));clickText("Save")
-        awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-DataPrivacy"}}
-        click(R.string.core_backup_share);awaitCondition{nodes().none{it.viewIdResourceName=="hootbook-screen-DataPrivacy"}};systemBack()
+        awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-BackupRestore"}}
+        click(R.string.core_backup_share);awaitCondition{nodes().none{it.viewIdResourceName=="hootbook-screen-BackupRestore"}};systemBack()
         click(R.string.core_backup_select);documentDownloads();clickText(fileName)
         field(R.string.core_backup_password,"fixture-password",last=true);click(R.string.core_backup_inspect)
         val source=root.walkTopDown().filter{it.isFile&&it.name=="source.backup"}.maxBy{it.lastModified()}
@@ -395,7 +395,7 @@ class RealMainJourneys {
         }
         home();for(label in listOf(R.string.core_complete_categories,R.string.core_complete_currencies,R.string.core_complete_backup,
             R.string.core_complete_templates,R.string.core_complete_subscriptions,R.string.core_complete_debts,R.string.core_complete_budgets)){
-            click(label);awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-"+when(label){R.string.core_complete_categories->"Categories";R.string.core_complete_currencies->"CurrencySettings";R.string.core_complete_backup->"DataPrivacy";R.string.core_complete_templates->"QuickTemplates";R.string.core_complete_subscriptions->"Subscriptions";R.string.core_complete_debts->"LendBorrow";else->"Budgets"}}};shot("home-route-$label");f.note("menu","real home route=${f.text(label)}")
+            click(label);awaitCondition{nodes().any{it.viewIdResourceName=="hootbook-screen-"+when(label){R.string.core_complete_categories->"Categories";R.string.core_complete_currencies->"CurrencySettings";R.string.core_complete_backup->"BackupRestore";R.string.core_complete_templates->"QuickTemplates";R.string.core_complete_subscriptions->"Subscriptions";R.string.core_complete_debts->"LendBorrow";else->"Budgets"}}};shot("home-route-$label");f.note("menu","real home route=${f.text(label)}")
             home()
         }
     }

@@ -430,7 +430,7 @@
     <string name="accounts_subtitle">Add accounts and update balances</string>
     <string name="budgets_subtitle">Set and manage monthly spending limits</string>
     <string name="categories_subtitle">Manage expense and income categories</string>
-    <string name="data_privacy_subtitle">Manage your data and privacy settings</string>
+    <string name="data_privacy_subtitle">Manage app lock and on-device access</string>
     <string name="notifications">Notifications</string>
     <string name="notifications_subtitle">Manage reminder notification settings</string>
     <string name="about_subtitle">App version, source code and more</string>

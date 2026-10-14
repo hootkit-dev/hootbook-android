@@ -1,5 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
-package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy
+package io.github.hootkit_dev.hootbook.presentation.ui.features.settings.backup
 
 import android.content.ClipData
 import android.content.Intent
@@ -29,7 +29,6 @@ import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hootkit.core.*
-import dev.chrisbanes.haze.HazeState
 import io.github.hootkit_dev.hootbook.R
 import io.github.hootkit_dev.hootbook.core.backup.BackupPhase
 import io.github.hootkit_dev.hootbook.presentation.ui.components.*
@@ -38,7 +37,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.theme.*
 
 /** Original manual backup rows and export dialog, backed by Core's durable restore workflow. */
 @Composable
-internal fun BackupActions(blurEffects: Boolean, hazeState: HazeState, viewModel: DataPrivacyViewModel = hiltViewModel()) {
+internal fun BackupActions(viewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var exportDialog by remember { mutableStateOf(false) }
