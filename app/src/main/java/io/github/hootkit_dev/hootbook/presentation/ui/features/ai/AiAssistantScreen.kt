@@ -652,6 +652,22 @@ private enum class AiPreset(val labelRes: Int, val protocol: AiApiProtocol, val 
     }
 }
 
+private enum class AiCustomEndpoint(val labelRes: Int, val baseUrl: String) {
+    DEEPSEEK(R.string.core_ai_endpoint_deepseek, "https://api.deepseek.com/v1"),
+    OPENAI(R.string.core_ai_endpoint_openai, "https://api.openai.com/v1"),
+    GEMINI(
+        R.string.core_ai_endpoint_gemini,
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+    ),
+    QWEN(R.string.core_ai_endpoint_qwen, "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+    SILICONFLOW(R.string.core_ai_endpoint_siliconflow, "https://api.siliconflow.cn/v1"),
+    KIMI(R.string.core_ai_endpoint_kimi, "https://api.moonshot.cn/v1"),
+    GLM(R.string.core_ai_endpoint_glm, "https://open.bigmodel.cn/api/paas/v4"),
+    VOLCENGINE(R.string.core_ai_endpoint_volcengine, "https://ark.cn-beijing.volces.com/api/v3"),
+    XAI(R.string.core_ai_endpoint_xai, "https://api.x.ai/v1"),
+    GROQ(R.string.core_ai_endpoint_groq, "https://api.groq.com/openai/v1"),
+}
+
 /**
  * Provider, key, then model: once the key and address are ready, the provider's models load in the
  * background, and the picker also allows entering any model ID directly.
@@ -751,6 +767,39 @@ private fun ProviderForm(
                 icon = {},
             ) {
                 Text(stringResource(p.labelRes), maxLines = 1)
+            }
+        }
+    }
+    if (preset == AiPreset.CUSTOM) {
+        androidx.compose.foundation.lazy.LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            items(AiCustomEndpoint.entries) { endpoint ->
+                val selected = cleanedUrl.equals(endpoint.baseUrl, ignoreCase = true)
+                androidx.compose.material3.FilterChip(
+                    selected = selected,
+                    onClick = {
+                        if (!selected) {
+                            baseUrl = endpoint.baseUrl
+                            val matchesSaved =
+                                hasKey &&
+                                    savedPreset == AiPreset.CUSTOM &&
+                                    host(endpoint.baseUrl).equals(savedHost, ignoreCase = true)
+                            if (matchesSaved && config.baseUrl.isNotBlank()) {
+                                model = config.model
+                                reasoning = config.reasoning
+                                if (apiKey.isBlank()) editingKey = false
+                            } else {
+                                model = ""
+                                reasoning = AiReasoning.PROVIDER_DEFAULT
+                                if (hasKey) editingKey = true
+                            }
+                            onClearModels()
+                        }
+                    },
+                    label = { Text(stringResource(endpoint.labelRes), maxLines = 1) },
+                )
             }
         }
     }

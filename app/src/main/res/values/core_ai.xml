@@ -36,4 +36,14 @@
     <string name="core_ai_key_masked_synced_hint">API key is saved and synced with end-to-end encryption.</string>
     <string name="home_ai_pending_banner_title">Unfinished AI bookkeeping (%1$d changes)</string>
     <string name="home_ai_pending_banner_subtitle">Tap to resume review or discard proposals</string>
+    <string name="core_ai_endpoint_deepseek">DeepSeek</string>
+    <string name="core_ai_endpoint_openai">OpenAI</string>
+    <string name="core_ai_endpoint_gemini">Gemini</string>
+    <string name="core_ai_endpoint_qwen">Qwen</string>
+    <string name="core_ai_endpoint_siliconflow">SiliconFlow</string>
+    <string name="core_ai_endpoint_kimi">Kimi</string>
+    <string name="core_ai_endpoint_glm">Zhipu GLM</string>
+    <string name="core_ai_endpoint_volcengine">Volcengine</string>
+    <string name="core_ai_endpoint_xai">xAI</string>
+    <string name="core_ai_endpoint_groq">Groq</string>
 </resources>
