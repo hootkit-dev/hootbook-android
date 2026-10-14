@@ -55,7 +55,7 @@ internal fun AccountCategoryCard(
     onToggle: (() -> Unit)? = null,
     titleOverride: Int? = null,
     onNavigateToAccountDetail: (String) -> Unit = {},
-    onBrokerage: (Long, String) -> Unit = { _, _ -> },
+    onBrokerage: (String, String) -> Unit = { _, _ -> },
     onNavigateToAddAccount: (AccountCategory?) -> Unit = {},
 ) {
     val (title, icon) = when (kind) {
@@ -280,7 +280,10 @@ internal fun AccountCategoryCard(
                                             modifier = Modifier.padding(top = 4.dp)
                                         ) {
                                             Text(
-                                                text = stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText(),
+                                                text = listOfNotNull(
+                                                    stringResource(R.string.overview_investments),
+                                                    broker.asOf?.coreDateText(),
+                                                ).joinToString(" · "),
                                                 style = MaterialTheme.typography.labelMedium
                                             )
                                         }

@@ -24,6 +24,8 @@ private val analyticsTables =
         Table.ACCOUNTS,
         Table.EXCHANGE_RATES,
         Table.SETTINGS,
+        Table.TAGS,
+        Table.TRANSACTION_TAGS,
     )
 
 @HiltViewModel

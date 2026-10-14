@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_budgets_history_incomplete">This period is incomplete (missing exchange rates)</string>
+  <string name="core_budgets_transactions_title">Counted transactions</string>
+  <string name="core_budgets_transactions_empty">No counted transactions in this period</string>
+  <string name="core_budgets_transactions_all_categories">All</string>
+  <string name="core_budgets_transactions_incomplete">Some transactions could not be converted (missing exchange rate)</string>
+  <string name="core_budgets_counted_amount">Counted: %1$s</string>
 </resources>

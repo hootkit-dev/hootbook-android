@@ -24,6 +24,9 @@ class FakeLedgerCore : HootKitCore(NoPointer) {
             null,
             null,
             null,
+            null,
+            emptyList(),
+            null,
             emptyList(),
             false,
             now,
@@ -102,6 +105,9 @@ class FakeLedgerCore : HootKitCore(NoPointer) {
             BigDecimal("123"),
             BigDecimal("45"),
             BigDecimal("78"),
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
             false,
             listOf("USD"),
             emptyList(),
@@ -398,6 +404,27 @@ class FakeLedgerCore : HootKitCore(NoPointer) {
             override suspend fun markSubscriptionPaid(subscriptionId: String, today: LocalDate) {
                 paidCalls++
             }
+
+            private var released = false
+
+            override fun destroy() {
+                if (!released) {
+                    released = true
+                    closed.incrementAndGet()
+                }
+                super.destroy()
+            }
+        }
+    }
+
+    var tagRows: List<Tag> = emptyList()
+
+    override fun tags(): Tags {
+        opened.incrementAndGet()
+        return object : Tags(NoPointer) {
+            override suspend fun list(includeArchived: Boolean) = tagRows
+
+            override suspend fun create(input: NewTag): String = "tag-created"
 
             private var released = false
 

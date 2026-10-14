@@ -41,7 +41,7 @@ class PlansUiTest {
     private val time = LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u)
     private val person = Person("person/中文?&=", "Alice", null, null, "#4CAF50", null, PersonRelation.FRIEND, false,
         PersonTotals("GBP", BigDecimal("888"), BigDecimal("111"), BigDecimal("777"), true, false, listOf("EUR")), time)
-    private val account = Account("account/中文", "Wallet", null, AccountKind.WALLET, "GBP", listOf(Pocket("GBP", BigDecimal("9"), null, null)),
+    private val account = Account("account/中文", "Wallet", null, AccountKind.WALLET, "GBP", listOf(Pocket("GBP", BigDecimal("9"), null, null, null)),
         Money(BigDecimal("9"), "GBP"), false, null, null, null, null, null, null, "type_finance_bank", "#4CAF50", false, false, 0, time)
     private fun text(id: Int) = context.getString(id)
     private fun shot(name: String) {

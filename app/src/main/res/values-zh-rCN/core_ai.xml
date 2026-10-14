@@ -13,4 +13,19 @@
     <string name="core_ai_key_replace">替换 Key（留空保留已有）</string>
     <string name="core_ai_key">API Key</string>
     <string name="core_ai_save_configuration">保存配置</string>
+    <string name="core_ai_reasoning">思考强度</string>
+    <string name="core_ai_reasoning_default">服务商默认</string>
+    <string name="core_ai_reasoning_none">关闭 (None)</string>
+    <string name="core_ai_reasoning_minimal">极低 (Minimal)</string>
+    <string name="core_ai_reasoning_low">低 (Low)</string>
+    <string name="core_ai_reasoning_medium">中 (Medium)</string>
+    <string name="core_ai_reasoning_high">高 (High)</string>
+    <string name="core_ai_reasoning_xhigh">极高 (XHigh)</string>
+    <string name="core_ai_reasoning_custom_hint">自定义或未列出的模型可能不支持思考参数；若请求被拒绝，请改回「服务商默认」。</string>
+    <string name="core_ai_reasoning_rejected">当前服务商或模型不支持所选的思考强度，请将思考强度改为「服务商默认」或「关闭」后重试。</string>
+    <string name="core_ai_synced_missing_key">AI 服务商配置已从其他设备同步，请在本机填写 API Key 后使用。</string>
+    <string name="core_ai_pending_title">有未完成的 AI 审阅</string>
+    <string name="core_ai_pending_body">创建于 %1$s · %2$s</string>
+    <string name="core_ai_pending_resume">继续审阅</string>
+    <string name="core_ai_pending_discard">丢弃</string>
 </resources>

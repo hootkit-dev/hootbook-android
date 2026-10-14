@@ -38,6 +38,8 @@ data class AiAssistantUiState(
     val models: List<AiModel> = emptyList(),
     val modelSearch: String = "",
     val modelError: String? = null,
+    val reasoningLevels: List<AiReasoning> = emptyList(),
+    val pendingReview: AiPendingReview? = null,
     val request: String = "",
     val files: List<CoreAiInboxFile> = emptyList(),
     val fileBusy: Boolean = false,
@@ -152,17 +154,33 @@ private constructor(
         query =
             viewModelScope.launch {
                 val tables =
-                    setOf(Table.SETTINGS, Table.ACCOUNTS, Table.CATEGORIES, Table.SUBCATEGORIES)
+                    setOf(
+                        Table.AI_SETTINGS,
+                        Table.SETTINGS,
+                        Table.ACCOUNTS,
+                        Table.CATEGORIES,
+                        Table.SUBCATEGORIES,
+                    )
                 val snapshots =
                     if (core != null)
                         core.observe(changes, tables) { root ->
                             coreQuery {
-                                val settings = root.ai().use { it.settings() }
+                                val (settings, pending, levels) =
+                                    root.ai().use { ai ->
+                                        val s = ai.settings()
+                                        Triple(
+                                            s,
+                                            ai.pendingReview(),
+                                            ai.reasoningLevels(s.protocol, s.baseUrl),
+                                        )
+                                    }
                                 val accounts = root.accounts().use { it.overview().accounts }
                                 root.categories().use { categories ->
                                     val all = categories.list(null, true)
                                     AiAssistantUiState(
                                         settings = settings,
+                                        pendingReview = pending,
+                                        reasoningLevels = levels,
                                         accounts = accounts.associateBy { it.id },
                                         categories = all.associateBy { it.id },
                                         subcategories =
@@ -174,10 +192,20 @@ private constructor(
                     else
                         changes.observe(tables).mapLatest {
                             coreQuery {
-                                val settings = withAi { it.settings() }
+                                val (settings, pending, levels) =
+                                    withAi { ai ->
+                                        val s = ai.settings()
+                                        Triple(
+                                            s,
+                                            ai.pendingReview(),
+                                            ai.reasoningLevels(s.protocol, s.baseUrl),
+                                        )
+                                    }
                                 val refs = testLookups!!.invoke()
                                 AiAssistantUiState(
                                     settings = settings,
+                                    pendingReview = pending,
+                                    reasoningLevels = levels,
                                     accounts = refs.first.associateBy { it.id },
                                     categories = refs.second.associateBy { it.id },
                                 )
@@ -192,6 +220,8 @@ private constructor(
                                     it.copy(
                                         loading = false,
                                         settings = config,
+                                        pendingReview = loaded.pendingReview,
+                                        reasoningLevels = loaded.reasoningLevels,
                                         config =
                                             if (it.configDirty) it.config
                                             else
@@ -199,6 +229,7 @@ private constructor(
                                                     config.protocol,
                                                     config.baseUrl,
                                                     config.model,
+                                                    reasoning = config.reasoning,
                                                 ),
                                         accounts = loaded.accounts,
                                         categories = loaded.categories,
@@ -236,7 +267,7 @@ private constructor(
         }
     }
 
-    fun protocol(protocol: AiProtocol) {
+    fun protocol(protocol: AiApiProtocol) {
         if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
             return
         val revision = ++modelsRevision
@@ -275,14 +306,22 @@ private constructor(
                         // Separate Core commands; if settings succeeds and key fails, the error is
                         // explicit.
                         ai.setSettings(draft.protocol, draft.baseUrl, draft.model)
+                        ai.setReasoning(draft.reasoning)
                         if (draft.removeKey || draft.apiKey.isNotBlank())
                             ai.setApiKey(if (draft.removeKey) null else draft.apiKey)
                         val actual = ai.settings()
+                        val levels = ai.reasoningLevels(actual.protocol, actual.baseUrl)
                         mutable.update {
                             it.copy(
                                 settings = actual,
+                                reasoningLevels = levels,
                                 config =
-                                    AiConfigDraft(actual.protocol, actual.baseUrl, actual.model),
+                                    AiConfigDraft(
+                                        actual.protocol,
+                                        actual.baseUrl,
+                                        actual.model,
+                                        reasoning = actual.reasoning,
+                                    ),
                                 configDirty = false,
                             )
                         }
@@ -393,6 +432,103 @@ private constructor(
         }
     }
 
+    private suspend fun lookupDuplicates(review: AiReview): Map<String, Transaction> =
+        testDuplicates?.invoke(review)
+            ?: core!!.withCore { root ->
+                root.ledger().use { ledger ->
+                    val records = linkedMapOf<String, Transaction>()
+                    review.changes
+                        .mapNotNull {
+                            (it.change as? AiChange.AddTransaction)?.possibleDuplicate
+                        }
+                        .distinct()
+                        .forEach { id ->
+                            try {
+                                records[id] = ledger.get(id)
+                            } catch (_: CoreException.NotFound) {}
+                        }
+                    records
+                }
+            }
+
+    fun resumePendingReview() {
+        val s = state.value
+        val pending = s.pendingReview ?: return
+        if (s.phase != AiPhase.COMPOSE || s.loading || s.configBusy || s.fileBusy || s.saving)
+            return
+        val revision = runRevision.incrementAndGet()
+        val review = pending.review
+        mutable.update { it.copy(saving = true, error = null) }
+        runJob =
+            viewModelScope.launch {
+                var native: AiSession? = null
+                var handedToReview = false
+                try {
+                    val steps =
+                        withContext(nativeDispatcher) {
+                            val session =
+                                withAi {
+                                    it.resumePending().also { allocated -> native = allocated }
+                                }
+                            ensureActive()
+                            session.steps()
+                        }
+                    val duplicates = lookupDuplicates(review)
+                    if (revision != runRevision.get() || cleared) return@launch
+                    synchronized(sessionLock) { activeSession = native }
+                    handedToReview = true
+                    mutable.update {
+                        it.copy(
+                            saving = false,
+                            pendingReview = null,
+                            phase = AiPhase.REVIEW,
+                            review = review,
+                            duplicates = duplicates,
+                            items = review.changes,
+                            decisions =
+                                review.changes.associate { proposal ->
+                                    proposal.index to
+                                        AiDecision(
+                                            proposal.index,
+                                            (proposal.change as? AiChange.AddTransaction)
+                                                ?.possibleDuplicate == null,
+                                            null,
+                                        )
+                                },
+                            steps = steps,
+                            startedAt = SystemClock.elapsedRealtime(),
+                            finishedAt = SystemClock.elapsedRealtime(),
+                        )
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    if (revision == runRevision.get())
+                        mutable.update {
+                            it.copy(saving = false, error = failureText(error))
+                        }
+                } finally {
+                    if (!handedToReview) native?.let { releaseNative(it) }
+                }
+            }
+    }
+
+    fun discardPendingReview() {
+        val s = state.value
+        if (s.phase != AiPhase.COMPOSE || s.saving || s.configBusy) return
+        mutable.update { it.copy(saving = true, error = null) }
+        viewModelScope.launch {
+            try {
+                withAi { it.discardPending() }
+                mutable.update { it.copy(pendingReview = null) }
+            } catch (error: Throwable) {
+                mutable.update { it.copy(error = failureText(error)) }
+            } finally {
+                mutable.update { it.copy(saving = false) }
+            }
+        }
+    }
+
     fun analyze() {
         val s = state.value
         if (
@@ -409,6 +545,7 @@ private constructor(
         mutable.update {
             it.copy(
                 phase = AiPhase.PREPARING,
+                pendingReview = null,
                 error = null,
                 passwordFile = null,
                 steps = emptyList(),
@@ -469,25 +606,7 @@ private constructor(
                             val result = running.run()
                             result to running.steps()
                         }
-                    val duplicates =
-                        testDuplicates?.invoke(review)
-                            ?: core!!.withCore { root ->
-                                root.ledger().use { ledger ->
-                                    val records = linkedMapOf<String, Transaction>()
-                                    review.changes
-                                        .mapNotNull {
-                                            (it.change as? AiChange.AddTransaction)
-                                                ?.possibleDuplicate
-                                        }
-                                        .distinct()
-                                        .forEach { id ->
-                                            try {
-                                                records[id] = ledger.get(id)
-                                            } catch (_: CoreException.NotFound) {}
-                                        }
-                                    records
-                                }
-                            }
+                    val duplicates = lookupDuplicates(review)
                     if (revision != runRevision.get() || cleared) return@launch
                     // Running pointers belong only to this coroutine. Main hands ownership
                     // to review after run has fully unwound; no native call occurs under this lock.
@@ -611,7 +730,9 @@ private constructor(
             try {
                 withContext(NonCancellable + nativeDispatcher) {
                     val applied = native.apply(decisions)
-                    mutable.update { it.copy(phase = AiPhase.SAVED, applied = applied) }
+                    mutable.update {
+                        it.copy(phase = AiPhase.SAVED, applied = applied, pendingReview = null)
+                    }
                 }
             } catch (error: Throwable) {
                 mutable.update { it.copy(error = failureText(error)) }

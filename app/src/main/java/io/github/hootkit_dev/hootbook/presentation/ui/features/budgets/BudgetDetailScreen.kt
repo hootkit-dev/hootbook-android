@@ -287,6 +287,71 @@ fun SharedTransitionScope.BudgetDetailScreen(
                             Spacer(modifier = Modifier.height(Spacing.xl))
                         }
                     }
+
+                    item(key = "budget_transactions_header") {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            SectionHeader(title = stringResource(R.string.core_budgets_transactions_title))
+                            if (budgetWithSpending.current.byCategory.isNotEmpty()) {
+                                androidx.compose.foundation.layout.FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                ) {
+                                    androidx.compose.material3.FilterChip(
+                                        selected = uiState.selectedCategoryId == null,
+                                        onClick = { budgetViewModel.selectCategoryFilter(null) },
+                                        label = { Text(stringResource(R.string.core_budgets_transactions_all_categories)) },
+                                    )
+                                    budgetWithSpending.current.byCategory.forEach { catSpend ->
+                                        val catName = uiState.categories[catSpend.categoryId]?.displayName ?: catSpend.categoryId
+                                        androidx.compose.material3.FilterChip(
+                                            selected = uiState.selectedCategoryId == catSpend.categoryId,
+                                            onClick = { budgetViewModel.selectCategoryFilter(catSpend.categoryId) },
+                                            label = { Text(catName) },
+                                        )
+                                    }
+                                }
+                            }
+                            if (uiState.transactionsPage?.complete == false) {
+                                Text(
+                                    text = stringResource(R.string.core_budgets_transactions_incomplete),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            if (uiState.transactionsPage?.items.isNullOrEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.core_budgets_transactions_empty),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = Spacing.sm),
+                                )
+                            }
+                        }
+                    }
+
+                    val txItems = uiState.transactionsPage?.items.orEmpty()
+                    itemsIndexed(txItems, key = { _, item -> "btx_${item.transaction.id}" }) { index, item ->
+                        val tx = item.transaction
+                        val cat = tx.categoryId?.let { uiState.categories[it] }
+                        val subcat = cat?.subcategories?.firstOrNull { it.id == tx.subcategoryId }
+                        val acc = uiState.accounts[tx.accountId]
+                        Box(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                            TransactionItem(
+                                transaction = tx,
+                                categoryEntity = cat,
+                                subcategoryEntity = subcat,
+                                accountIconName = acc?.icon,
+                                accountColorHex = acc?.color,
+                                shape = ListItemPosition.from(index, txItems.size).toShape(),
+                                convertedAmount = item.amount,
+                                mainCurrency = budgetWithSpending.amount.currency,
+                                rateLoading = false,
+                            )
+                        }
+                    }
                 }
             }
             uiState.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(paddingValues)) }

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="core_budgets_history_incomplete">本期统计不完整（缺少汇率）</string>
+  <string name="core_budgets_transactions_title">计入预算的交易</string>
+  <string name="core_budgets_transactions_empty">本期暂无计入预算的交易</string>
+  <string name="core_budgets_transactions_all_categories">全部</string>
+  <string name="core_budgets_transactions_incomplete">部分交易因缺少汇率未计入总额</string>
+  <string name="core_budgets_counted_amount">计入：%1$s</string>
 </resources>

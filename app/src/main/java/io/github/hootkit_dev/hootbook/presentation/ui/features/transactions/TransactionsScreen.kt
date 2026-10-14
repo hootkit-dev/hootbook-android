@@ -155,6 +155,7 @@ fun TransactionsScreen(
     initialPeriod: String? = null,
     initialCurrency: String? = null,
     initialType: String? = null,
+    initialTag: String? = null,
     focusSearch: Boolean = false,
     transactionsViewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
@@ -175,6 +176,7 @@ fun TransactionsScreen(
     val selectedPeriod = uiState.period
     val categoryFilter = uiState.filter.categoryIds
     val transactionTypeFilter = uiState.filter.kinds
+    val tagFilter = uiState.filter.tagIds
     val categoriesMap = uiState.categories
     val allSubcategoriesByCategoryId = remember(categoriesMap) { categoriesMap.mapValues { it.value.subcategories } }
     val availableCurrencies = uiState.currencies
@@ -244,7 +246,8 @@ fun TransactionsScreen(
     // Calculate active filter count for filters
     val activeFilterCount = listOf(
         transactionTypeFilter.isNotEmpty(),
-        categoryFilter.isNotEmpty()
+        categoryFilter.isNotEmpty(),
+        tagFilter.isNotEmpty()
     ).count { it }
 
     // Remember scroll position across navigation
@@ -281,7 +284,9 @@ fun TransactionsScreen(
             initialMerchant,
             initialPeriod,
             initialCurrency,
-            initialType, initialAccount
+            initialType,
+            initialAccount,
+            initialTag
         )
         // Data preparation is dispatched off-main; do not add an artificial half-second wait.
 
@@ -499,7 +504,7 @@ fun TransactionsScreen(
                                                 ) {
                                                     RadioButton(
                                                         selected = sortOption == option,
-                                                        onClick = null,
+                                                    onClick = null,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                     Text(stringResource(option.labelRes))
@@ -684,6 +689,9 @@ fun TransactionsScreen(
                                     income = summary.income,
                                     expenses = summary.expense,
                                     netBalance = summary.net,
+                                    receivable = summary.receivable,
+                                    collected = summary.collected,
+                                    outstanding = summary.outstanding,
                                     currency = baseCurrency,
                                     isLoading = uiState.isLoading,
                                     modifier = Modifier
@@ -745,6 +753,9 @@ fun TransactionsScreen(
                                 ) { index, transaction ->
                                     val position = ListItemPosition.from(index, transactions.size)
                                     val person = uiState.people[uiState.debts[transaction.debtId]?.personId]
+                                    val txTags = remember(transaction.tagIds, uiState.tags) {
+                                        transaction.tagIds.mapNotNull(uiState.tags::get)
+                                    }
                                     TransactionItem(
                                         linkedLoanPersonName = person?.name,
                                         linkedLoanPersonColor = person?.color,
@@ -773,7 +784,8 @@ fun TransactionsScreen(
                                                 transactionsViewModel.toggleTransactionSelection(transaction.id)
                                             }
                                         },
-                                        mainCurrency = uiState.displayCurrency
+                                        mainCurrency = uiState.displayCurrency,
+                                        tags = txTags
                                     )
                                 }
                             }
@@ -885,8 +897,9 @@ fun TransactionsScreen(
             selectedIdsCount = selectedTransactionIds.size,
             categories = categoriesMap,
             subcategoriesMap = allSubcategoriesByCategoryId,
+            tags = uiState.tags.values.filter { !it.archived },
             onDismiss = { showBatchEditSheet = false },
-            onApply = { newDate, newTime, newCategory, newSubcategory, newAmount, newNote ->
+            onApply = { newDate, newTime, newCategory, newSubcategory, newAmount, newNote, addTagIds, removeTagIds ->
                 transactionsViewModel.batchUpdateTransactions(
                     selectedIds = selectedTransactionIds,
                     newDate = newDate,
@@ -894,7 +907,9 @@ fun TransactionsScreen(
                     newCategory = newCategory,
                     newSubcategory = newSubcategory,
                     newAmount = newAmount,
-                    newNote = newNote
+                    newNote = newNote,
+                    addTagIds = addTagIds,
+                    removeTagIds = removeTagIds
                 )
             },
             blurEffects = blurEffects,

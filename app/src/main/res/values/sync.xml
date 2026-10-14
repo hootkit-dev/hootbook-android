@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Settings → Backup & sync, and its Firebase sync page (docs/sync.md) -->
 <resources>
-    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage connections are not uploaded.</string>
+    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage credentials are not uploaded.</string>
     <string name="sync_unavailable_title">Not available in this build</string>
     <string name="sync_unavailable_body">Sync is currently unavailable. You can still move data with a backup file under Backup &amp; Sync.</string>
     <string name="sync_sign_in">Sign in with Google</string>
@@ -51,4 +51,12 @@
     <string name="backup_export_local_body">Choose what to include, then where to save the file</string>
     <string name="backup_restore_from">Restore from %1$s</string>
     <string name="backup_restore_local_body">Pick a backup file</string>
+    <string name="sync_first_sync_choice_title">Both this device and the cloud have data</string>
+    <string name="sync_first_sync_choice_body">Choose whether to merge both ledgers or replace this device\'s data with the cloud copy.</string>
+    <string name="sync_first_sync_merge">Merge both ledgers</string>
+    <string name="sync_first_sync_merge_body">Keep records from this device and combine them with the cloud copy.</string>
+    <string name="sync_first_sync_replace">Use cloud data only</string>
+    <string name="sync_first_sync_replace_body">A local safety backup is created first, then local records (including AI settings and broker connections) are replaced by the cloud copy.</string>
+    <string name="sync_first_sync_replace_confirm_title">Replace local data with cloud?</string>
+    <string name="sync_first_sync_replace_confirm_body">Core will create a local safety backup first, then clear local ledger records, AI settings, and broker connections before downloading the cloud copy.</string>
 </resources>

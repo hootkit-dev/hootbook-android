@@ -61,6 +61,10 @@ class SyncViewModel @Inject constructor(
         mutable.update { it.copy(outcome = coordinator.runManual()) }
     }
     fun clearWrongPassphrase() { wrong.value = false }
+    fun chooseFirstSync(choice: FirstSyncChoice) = command {
+        coordinator.command { it.chooseFirstSync(choice) }
+        mutable.update { it.copy(outcome = coordinator.runManual()) }
+    }
     fun setEnabled(value: Boolean) = command { coordinator.command { it.setPaused(!value) } }
     fun syncNow() = command { mutable.update { it.copy(outcome = coordinator.runManual()) } }
     fun clearError() { mutable.update { it.copy(error = null) }; coordinator.clearError() }

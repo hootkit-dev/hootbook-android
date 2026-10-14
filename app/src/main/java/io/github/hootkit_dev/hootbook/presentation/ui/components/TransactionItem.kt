@@ -107,6 +107,7 @@ fun TransactionItem(
     linkedLoanPersonAvatar: String? = null,
     useHomeStyle: Boolean = false,
     customSymbols: Map<String, String> = emptyMap(),
+    tags: List<dev.hootkit.core.Tag> = emptyList(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val attachmentStore = remember(context) { io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore(context) }
@@ -395,6 +396,37 @@ fun TransactionItem(
                             SubtitleTag(
                                 text = stringResource(R.string.recurring),
                                 color = Color(0xFF5B54D6)
+                            )
+                            needsSeparator = true
+                        }
+
+                        // Receivable / Collected Badge
+                        if (transaction?.receivable != null && transaction.receivable!! > BigDecimal.ZERO) {
+                            TagSeparator()
+                            SubtitleTag(
+                                text = stringResource(R.string.core_receivable_short),
+                                color = Color(0xFFD97706)
+                            )
+                            needsSeparator = true
+                        } else if (transaction?.collected != null && transaction.collected!! > BigDecimal.ZERO) {
+                            TagSeparator()
+                            SubtitleTag(
+                                text = stringResource(R.string.core_collected_short),
+                                color = Color(0xFF059669)
+                            )
+                            needsSeparator = true
+                        }
+
+                        // User Tags
+                        tags.take(2).forEach { tag ->
+                            TagSeparator()
+                            SubtitleTag(
+                                text = tag.name,
+                                color = try {
+                                    Color(tag.color.toColorInt())
+                                } catch (e: Exception) {
+                                    MaterialTheme.colorScheme.secondary
+                                }
                             )
                             needsSeparator = true
                         }

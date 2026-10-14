@@ -35,6 +35,9 @@ internal fun Transaction.draft() =
         notes,
         subscriptionId,
         attachments,
+        receivable,
+        collected,
+        tagIds,
     )
 
 @HiltViewModel
@@ -79,6 +82,10 @@ constructor(
                                 core.categories().use {
                                     it.list(null, true).associateBy(Category::id)
                                 }
+                            val tags =
+                                core.tags().use {
+                                    it.list(true).associateBy(Tag::id)
+                                }
                             val accounts =
                                 core.accounts().use {
                                     it.overview().accounts.associateBy(Account::id)
@@ -113,6 +120,7 @@ constructor(
                             TransactionDetailUiState(
                                 transaction = tx,
                                 categories = categories,
+                                tags = tags,
                                 accounts = accounts,
                                 people = people,
                                 linkedLendBorrow = debt,
@@ -215,11 +223,50 @@ constructor(
             toAccountId = null,
             toCurrency = null,
             toAmount = null,
+            receivable = null,
+            collected = null,
             categoryId =
                 if (value in listOf(TransactionKind.EXPENSE, TransactionKind.INCOME)) it.categoryId
                 else null,
             subcategoryId = null,
         )
+    }
+
+    fun toggleReceivable(enabled: Boolean) = edit {
+        it.copy(receivable = if (enabled) it.amount else null, collected = null)
+    }
+
+    fun updateReceivableAmount(value: String) = edit {
+        it.copy(receivable = value.toBigDecimalOrNull() ?: it.amount)
+    }
+
+    fun toggleCollected(enabled: Boolean) = edit {
+        it.copy(collected = if (enabled) it.amount else null, receivable = null)
+    }
+
+    fun updateCollectedAmount(value: String) = edit {
+        it.copy(collected = value.toBigDecimalOrNull() ?: it.amount)
+    }
+
+    fun toggleTag(tagId: String) = edit {
+        val current = it.tagIds
+        it.copy(tagIds = if (tagId in current) current - tagId else current + tagId)
+    }
+
+    fun createTag(name: String, color: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        write {
+            val id = session.withCore { it.tags().use { tags -> tags.create(NewTag(trimmed, color)) } }
+            mutableState.update { state ->
+                state.copy(
+                    editableTransaction =
+                        state.editableTransaction?.let { tx ->
+                            tx.copy(tagIds = if (id in tx.tagIds) tx.tagIds else tx.tagIds + id)
+                        }
+                )
+            }
+        }
     }
 
     fun updateTransactionAccount(value: Account?) = edit { it.copy(accountId = value?.id) }

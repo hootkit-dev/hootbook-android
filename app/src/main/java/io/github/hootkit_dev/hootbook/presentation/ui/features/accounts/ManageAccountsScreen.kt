@@ -122,7 +122,7 @@ fun ManageAccountsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAccountDetail: (String) -> Unit,
     onNavigateToAddAccount: (AccountCategory?) -> Unit,
-    onBrokerage: (Long, String) -> Unit,
+    onBrokerage: (String, String) -> Unit,
     category: AccountCategory? = null,
     manageAccountsViewModel: ManageAccountsViewModel = hiltViewModel(),
 ) {
@@ -178,6 +178,17 @@ fun ManageAccountsScreen(
                         top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
                         bottom = 96.dp + paddingValues.calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (category == null) {
+                        uiState.netWorthHistory?.takeIf { it.points.isNotEmpty() }?.let { history ->
+                            item(key = "net_worth_history") {
+                                NetWorthHistoryCard(
+                                    history = history,
+                                    step = uiState.netWorthStep,
+                                    onSelectStep = manageAccountsViewModel::selectNetWorthStep,
+                                )
+                            }
+                        }
+                    }
                     sections.forEach { (kind, members) ->
                         if (members.isNotEmpty() || (kind == AccountCategory.INVESTMENTS && connections.isNotEmpty())) {
                             item(key = "header_$kind") {
@@ -204,7 +215,7 @@ fun ManageAccountsScreen(
                                             modifier = Modifier.padding(horizontal = 8.dp)
                                         ) {
                                             Text(
-                                                text = stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText(),
+                                                text = stringResource(R.string.overview_investments) + (broker.asOf?.let { " · " + it.coreDateText() }.orEmpty()),
                                                 style = MaterialTheme.typography.labelMedium
                                             )
                                         }
@@ -224,8 +235,14 @@ fun ManageAccountsScreen(
                                     }
                                     if (connection.accounts.isEmpty()) {
                                         item(key = "conn_${connection.id}") {
+                                            val subtitle = when {
+                                                !connection.hasCredentials -> stringResource(R.string.core_invest_missing_credentials_hint)
+                                                connection.syncedAt == null -> stringResource(R.string.core_invest_needs_first_refresh_hint)
+                                                else -> null
+                                            }
                                             io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
                                                 headline = { Text(connection.label) },
+                                                supporting = subtitle?.let { { Text(it) } },
                                                 onClick = { onBrokerage(connection.id, "") }
                                             )
                                         }
@@ -253,6 +270,98 @@ fun ManageAccountsScreen(
                                     showTitle = false
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NetWorthHistoryCard(
+    history: NetWorthHistory,
+    step: HistoryStep,
+    onSelectStep: (HistoryStep) -> Unit,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.account_net_worth_trend),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    history.points.lastOrNull()?.let { latest ->
+                        Text(
+                            CoreMoneyPresentation.formatCurrency(latest.netWorth, history.currency) +
+                                " · " + latest.date.coreDateText(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (history.points.any { !it.complete }) {
+                Text(
+                    stringResource(R.string.account_net_worth_securities_missing),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (expanded) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        HistoryStep.DAILY to R.string.account_net_worth_step_daily,
+                        HistoryStep.MONTHLY to R.string.account_net_worth_step_monthly,
+                    ).forEach { (s, labelRes) ->
+                        androidx.compose.material3.FilterChip(
+                            selected = step == s,
+                            onClick = { onSelectStep(s) },
+                            label = { Text(stringResource(labelRes)) },
+                        )
+                    }
+                }
+                history.points.takeLast(8).reversed().forEach { point ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            point.date.coreDateText() + (if (!point.complete) " *" else ""),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                CoreMoneyPresentation.formatCurrency(point.netWorth, history.currency),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                "+${CoreMoneyPresentation.formatCurrency(point.assets, history.currency)} / -${CoreMoneyPresentation.formatCurrency(point.liabilities, history.currency)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }

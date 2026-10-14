@@ -15,10 +15,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 internal val accountTables = setOf(Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.BALANCE_ANCHORS,
-    Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE)
+    Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE,
+    Table.BROKERAGE_CONNECTIONS, Table.BROKERAGE_LINKS, Table.TAGS, Table.TRANSACTION_TAGS)
 
 data class ManageAccountsUiState(
     val overview: AccountsOverview? = null,
+    val netWorthHistory: NetWorthHistory? = null,
+    val netWorthStep: HistoryStep = HistoryStep.DAILY,
     val connections: List<BrokerageConnection> = emptyList(),
     val institutions: List<Institution> = emptyList(),
     val customCurrencies: List<CustomCurrency> = emptyList(),
@@ -30,6 +33,7 @@ data class ManageAccountsUiState(
     val commandRevision: Long = 0,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ManageAccountsViewModel @Inject constructor(
     private val session: CoreSession,
@@ -37,27 +41,47 @@ class ManageAccountsViewModel @Inject constructor(
 ) : ViewModel() {
     private val mutable = MutableStateFlow(ManageAccountsUiState())
     val uiState = mutable.asStateFlow()
+    private val stepFlow = MutableStateFlow(HistoryStep.DAILY)
     init {
         viewModelScope.launch {
-            session.observe(changes, accountTables) { core ->
-                coreQuery {
-                    val overview = core.accounts().use { it.overview() }
-                    val institutions = core.catalog().use { it.all() }
-                    val currency = core.settings().use { it.mainCurrency() }
-                    val custom = core.currency().use { it.customCurrencies() }
-                    val connections = core.brokerage().use { it.connections() }
-                    ManageAccountsUiState(overview = overview, connections = connections, institutions = institutions,
-                        customCurrencies = custom, defaultCurrency = currency, isLoading = false)
+            stepFlow.flatMapLatest { step ->
+                session.observe(changes, accountTables) { core ->
+                    coreQuery {
+                        val today = java.time.LocalDate.now()
+                        val from = when (step) {
+                            HistoryStep.DAILY -> today.minusDays(30)
+                            HistoryStep.MONTHLY -> today.minusMonths(12)
+                        }
+                        val (overview, history) = core.accounts().use { api ->
+                            api.overview() to api.netWorthHistory(
+                                LocalDate(from.year, from.monthValue.toUByte(), from.dayOfMonth.toUByte()),
+                                LocalDate(today.year, today.monthValue.toUByte(), today.dayOfMonth.toUByte()),
+                                step,
+                            )
+                        }
+                        val institutions = core.catalog().use { it.all() }
+                        val currency = core.settings().use { it.mainCurrency() }
+                        val custom = core.currency().use { it.customCurrencies() }
+                        val connections = core.brokerage().use { it.connections() }
+                        ManageAccountsUiState(overview = overview, netWorthHistory = history, netWorthStep = step,
+                            connections = connections, institutions = institutions,
+                            customCurrencies = custom, defaultCurrency = currency, isLoading = false)
+                    }
                 }
             }.collect { result ->
                 result.fold(
-                    onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview, connections = snapshot.connections,
-                        institutions = snapshot.institutions, customCurrencies = snapshot.customCurrencies,
-                        defaultCurrency = snapshot.defaultCurrency, isLoading = false) } },
+                    onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview,
+                        netWorthHistory = snapshot.netWorthHistory, netWorthStep = snapshot.netWorthStep,
+                        connections = snapshot.connections, institutions = snapshot.institutions,
+                        customCurrencies = snapshot.customCurrencies, defaultCurrency = snapshot.defaultCurrency,
+                        isLoading = false) } },
                     onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = coreFailureText(failure)) } },
                 )
             }
         }
+    }
+    fun selectNetWorthStep(step: HistoryStep) {
+        stepFlow.value = step
     }
     fun addAccount(input: NewAccount, onSaved: () -> Unit = {}) = command(onSaved) { core ->
         core.accounts().use { it.create(input) }

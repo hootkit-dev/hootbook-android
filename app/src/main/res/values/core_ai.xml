@@ -13,4 +13,19 @@
     <string name="core_ai_key_replace">Replace key (blank keeps existing)</string>
     <string name="core_ai_key">API key</string>
     <string name="core_ai_save_configuration">Save configuration</string>
+    <string name="core_ai_reasoning">Reasoning effort</string>
+    <string name="core_ai_reasoning_default">Provider default</string>
+    <string name="core_ai_reasoning_none">None</string>
+    <string name="core_ai_reasoning_minimal">Minimal</string>
+    <string name="core_ai_reasoning_low">Low</string>
+    <string name="core_ai_reasoning_medium">Medium</string>
+    <string name="core_ai_reasoning_high">High</string>
+    <string name="core_ai_reasoning_xhigh">Extra high</string>
+    <string name="core_ai_reasoning_custom_hint">Custom or unlisted models may not support reasoning parameters; if rejected, switch back to Provider default.</string>
+    <string name="core_ai_reasoning_rejected">The provider or model rejected the reasoning setting. Switch Reasoning effort to Provider default or None and try again.</string>
+    <string name="core_ai_synced_missing_key">AI provider settings were synced from another device. Enter your API key on this device to use AI.</string>
+    <string name="core_ai_pending_title">Unfinished AI review</string>
+    <string name="core_ai_pending_body">Created at %1$s · %2$s</string>
+    <string name="core_ai_pending_resume">Resume review</string>
+    <string name="core_ai_pending_discard">Discard</string>
 </resources>

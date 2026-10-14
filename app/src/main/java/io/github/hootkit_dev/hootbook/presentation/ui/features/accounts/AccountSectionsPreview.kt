@@ -11,7 +11,7 @@ import java.math.BigDecimal
 
 private val previewTime = LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u)
 private val previewAccount = Account("sample", "Bank", "1234", AccountKind.BANK, "CNY",
-    listOf(Pocket("CNY", BigDecimal("1250"), null, null), Pocket("USD", BigDecimal("30"), null, null)),
+    listOf(Pocket("CNY", BigDecimal("1250"), null, null, null), Pocket("USD", BigDecimal("30"), null, null, null)),
     Money(BigDecimal("1460"), "CNY"), false, null, null, null, null, null, null,
     "type_finance_bank", "#33B5E5", false, true, 0, previewTime)
 

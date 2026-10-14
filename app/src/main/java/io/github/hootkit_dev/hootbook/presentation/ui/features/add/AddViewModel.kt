@@ -61,6 +61,7 @@ data class AddUiState(
     val accounts: Map<String, Account> = emptyMap(),
     val categories: Map<String, Category> = emptyMap(),
     val people: Map<String, Person> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val templates: List<QuickTemplate> = emptyList(),
     val suggestions: List<TemplateSuggestion> = emptyList(),
     val merchants: List<String> = emptyList(),
@@ -68,6 +69,10 @@ data class AddUiState(
     val amount: String = "",
     val targetAmount: String = "",
     val subscriptionAmount: String = "",
+    val receivableEnabled: Boolean = false,
+    val collectedEnabled: Boolean = false,
+    val reimbursementAmount: String = "",
+    val showBackdatedAnchorPrompt: Boolean = false,
     val personId: String? = null,
     val saveAsTemplate: Boolean = false,
     val customCycle: Boolean = false,
@@ -133,11 +138,16 @@ constructor(
                                 core.categories().use {
                                     it.list(null, true).associateBy(Category::id)
                                 }
+                            val tags =
+                                core.tags().use {
+                                    it.list(false).associateBy(Tag::id)
+                                }
                             val today = java.time.LocalDate.now().coreDate()
                             core.plans().use { plans ->
                                 AddUiState(
                                     accounts = accounts,
                                     categories = categories,
+                                    tags = tags,
                                     people = plans.people(false, today).associateBy(Person::id),
                                     templates = plans.templates(),
                                     suggestions = plans.templateSuggestions(today),
@@ -157,6 +167,7 @@ constructor(
                             it.copy(
                                 accounts = rows.accounts,
                                 categories = rows.categories,
+                                tags = rows.tags,
                                 people = rows.people,
                                 templates = rows.templates,
                                 suggestions = rows.suggestions,
@@ -211,10 +222,11 @@ constructor(
                 state = prefill(state, prefill)
             }
             if (subscriptionId != null) {
+                val today = java.time.LocalDate.now().coreDate()
                 val row =
                     session.withCore {
                         it.plans().use { plans ->
-                            plans.subscriptions(java.time.LocalDate.now().coreDate(), true).find {
+                            plans.subscriptions(today, true).find {
                                 it.id == subscriptionId
                             }
                         }
@@ -238,13 +250,22 @@ constructor(
                             subscriptionAmount = row.amount.amount.toPlainString(),
                             customCycle = entryCycleKey(row.cycle) == "Custom",
                         )
-                    else
+                    else {
+                        val defaultDateTime =
+                            row.nextDue?.takeIf { it != today }?.let { due ->
+                                java.time.LocalDate.of(
+                                    due.year,
+                                    due.month.toInt(),
+                                    due.day.toInt(),
+                                ).atStartOfDay().coreTime()
+                            } ?: java.time.LocalDateTime.now().coreTime()
                         state.copy(
                             transaction =
                                 state.transaction.copy(
                                     kind = TransactionKind.EXPENSE,
                                     amount = row.amount.amount,
                                     currency = row.amount.currency,
+                                    dateTime = defaultDateTime,
                                     accountId = row.accountId,
                                     categoryId = row.categoryId,
                                     subcategoryId = row.subcategoryId,
@@ -254,6 +275,7 @@ constructor(
                                 ),
                             amount = row.amount.amount.toPlainString(),
                         )
+                    }
             }
             state
         }
@@ -275,8 +297,13 @@ constructor(
                     toCurrency = null,
                     toAmount = null,
                     subscriptionId = null,
+                    receivable = null,
+                    collected = null,
                 ),
             amount = value.amount?.toPlainString() ?: state.amount,
+            receivableEnabled = false,
+            collectedEnabled = false,
+            reimbursementAmount = "",
             amountPadRequested = value.amount == null && state.amount.isBlank(),
         )
 
@@ -295,6 +322,7 @@ constructor(
                             value.copy(
                                 accounts = old.accounts,
                                 categories = old.categories,
+                                tags = old.tags,
                                 people = old.people,
                                 templates = old.templates,
                                 suggestions = old.suggestions,
@@ -342,10 +370,16 @@ constructor(
 
     fun updateTransactionAmount(value: String) {
         update {
+            val dec = value.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val reimbDec = it.reimbursementAmount.toBigDecimalOrNull() ?: dec.takeIf { d -> d > BigDecimal.ZERO }
             it.copy(
                 amount = value,
                 transaction =
-                    it.transaction.copy(amount = value.toBigDecimalOrNull() ?: BigDecimal.ZERO),
+                    it.transaction.copy(
+                        amount = dec,
+                        receivable = if (it.receivableEnabled) reimbDec else null,
+                        collected = if (it.collectedEnabled) reimbDec else null,
+                    ),
             )
         }
         refreshTransferAmount()
@@ -358,16 +392,88 @@ constructor(
         )
     }
 
-    fun updateTransactionType(kind: TransactionKind) = transaction {
+    fun updateTransactionType(kind: TransactionKind) = update {
         it.copy(
-            kind = kind,
-            categoryId = null,
-            subcategoryId = null,
-            toAccountId = null,
-            toCurrency = null,
-            toAmount = null,
-            subscriptionId = null,
+            receivableEnabled = false,
+            collectedEnabled = false,
+            reimbursementAmount = "",
+            transaction =
+                it.transaction.copy(
+                    kind = kind,
+                    categoryId = null,
+                    subcategoryId = null,
+                    toAccountId = null,
+                    toCurrency = null,
+                    toAmount = null,
+                    subscriptionId = null,
+                    receivable = null,
+                    collected = null,
+                ),
         )
+    }
+
+    fun toggleReceivable(enabled: Boolean) = update {
+        val reimbDec =
+            it.reimbursementAmount.toBigDecimalOrNull()
+                ?: it.amount.toBigDecimalOrNull()?.takeIf { d -> d > BigDecimal.ZERO }
+        it.copy(
+            receivableEnabled = enabled,
+            collectedEnabled = false,
+            transaction =
+                it.transaction.copy(
+                    receivable = if (enabled) reimbDec else null,
+                    collected = null,
+                ),
+        )
+    }
+
+    fun toggleCollected(enabled: Boolean) = update {
+        val reimbDec =
+            it.reimbursementAmount.toBigDecimalOrNull()
+                ?: it.amount.toBigDecimalOrNull()?.takeIf { d -> d > BigDecimal.ZERO }
+        it.copy(
+            collectedEnabled = enabled,
+            receivableEnabled = false,
+            transaction =
+                it.transaction.copy(
+                    collected = if (enabled) reimbDec else null,
+                    receivable = null,
+                ),
+        )
+    }
+
+    fun updateReimbursementAmount(value: String) = update {
+        val reimbDec =
+            value.toBigDecimalOrNull()
+                ?: it.amount.toBigDecimalOrNull()?.takeIf { d -> d > BigDecimal.ZERO }
+        it.copy(
+            reimbursementAmount = value,
+            transaction =
+                it.transaction.copy(
+                    receivable = if (it.receivableEnabled) reimbDec else null,
+                    collected = if (it.collectedEnabled) reimbDec else null,
+                ),
+        )
+    }
+
+    fun toggleTag(tagId: String) = transaction {
+        val current = it.tagIds.orEmpty()
+        it.copy(tagIds = if (tagId in current) current - tagId else current + tagId)
+    }
+
+    fun createTag(name: String, color: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        command {
+            val id = session.withCore { it.tags().use { tags -> tags.create(NewTag(trimmed, color)) } }
+            mutableState.update { state ->
+                val current = state.transaction.tagIds.orEmpty()
+                state.copy(
+                    transaction = state.transaction.copy(tagIds = if (id in current) current else current + id)
+                )
+            }
+            persist()
+        }
     }
 
     fun updateTransactionMerchant(value: String) {
@@ -670,13 +776,65 @@ constructor(
             }
     }
 
-    fun saveTransaction(onSuccess: () -> Unit) {
+    fun dismissBackdatedAnchorPrompt() {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+    }
+
+    fun confirmBackdatedSaveAsIs(onSuccess: () -> Unit) {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+        saveTransaction(ignoreAnchorCheck = true, onSuccess = onSuccess)
+    }
+
+    fun confirmBackdatedUseNow(onSuccess: () -> Unit) {
+        val now = java.time.LocalDateTime.now().coreTime()
+        mutableState.update {
+            it.copy(
+                showBackdatedAnchorPrompt = false,
+                transaction = it.transaction.copy(dateTime = now),
+            )
+        }
+        persist()
+        saveTransaction(ignoreAnchorCheck = true, onSuccess = onSuccess)
+    }
+
+    fun saveTransaction(ignoreAnchorCheck: Boolean = false, onSuccess: () -> Unit = {}) {
         if (uiState.value.loadingSource || uiState.value.importing || uiState.value.saved) return
         val before = uiState.value
+        if (before.createdTransactionId == null && !ignoreAnchorCheck) {
+            val txTime = before.transaction.dateTime.toJavaDateTime()
+            val sourceAnchor =
+                before.accounts[before.transaction.accountId]
+                    ?.pockets
+                    ?.find { it.currency == before.transaction.currency }
+                    ?.lastAnchorAt
+                    ?.toJavaDateTime()
+            val targetAnchor =
+                if (before.transaction.kind == TransactionKind.TRANSFER)
+                    before.accounts[before.transaction.toAccountId]
+                        ?.pockets
+                        ?.find {
+                            it.currency ==
+                                (before.transaction.toCurrency ?: before.transaction.currency)
+                        }
+                        ?.lastAnchorAt
+                        ?.toJavaDateTime()
+                else null
+            if (
+                (sourceAnchor != null && !txTime.isAfter(sourceAnchor)) ||
+                    (targetAnchor != null && !txTime.isAfter(targetAnchor))
+            ) {
+                mutableState.update { it.copy(showBackdatedAnchorPrompt = true) }
+                return
+            }
+        }
         command {
+            val amountDec = BigDecimal(before.amount)
+            val reimbDec =
+                before.reimbursementAmount.takeIf { it.isNotBlank() }?.let(::BigDecimal)
+                    ?: amountDec
             val draft =
                 before.transaction.copy(
-                    amount = BigDecimal(before.amount),
+                    amount = amountDec,
                     toAmount =
                         before.targetAmount
                             .takeIf {
@@ -684,6 +842,20 @@ constructor(
                                     before.transaction.kind == TransactionKind.TRANSFER
                             }
                             ?.let(::BigDecimal),
+                    receivable =
+                        if (
+                            before.receivableEnabled &&
+                                before.transaction.kind == TransactionKind.EXPENSE
+                        )
+                            reimbDec
+                        else null,
+                    collected =
+                        if (
+                            before.collectedEnabled &&
+                                before.transaction.kind == TransactionKind.INCOME
+                        )
+                            reimbDec
+                        else null,
                 )
             val loan = draft.kind in listOf(TransactionKind.LOAN_OUT, TransactionKind.LOAN_IN)
             if (loan) requireNotNull(before.personId) { "Select a person" }

@@ -99,5 +99,5 @@ private fun firstCsvRecord(csv: String): List<String> {
 
 private fun csvTransaction(index: Int) = Transaction(index.toString(), TransactionKind.TRANSFER, BigDecimal("10.25"), "CNY",
     LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u), "source", "to/账户", "USD", BigDecimal("1.25"),
-    null, null, "=merchant,\"fixture\"", "two\nlines", null, null, listOf("receipts/fixture.png"), false,
+    null, null, "=merchant,\"fixture\"", "two\nlines", null, null, null, emptyList(), null, listOf("receipts/fixture.png"), false,
     LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u), LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u))

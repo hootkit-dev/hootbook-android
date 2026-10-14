@@ -110,7 +110,7 @@ class CoreSyncCoordinator private constructor(private val session: (() -> CoreSe
     private suspend fun runLocked(reason: SyncReason): SyncOutcome? {
         return try { withSync { it.run(reason) }.also { outcome -> outcome.retryAfterMs?.let { scheduler.schedule(it.toLong()) } } }
         catch (failure: CoreException.Sync) {
-            if (failure.kind !in setOf(SyncErrorKind.NOT_SIGNED_IN, SyncErrorKind.NEEDS_PASSPHRASE, SyncErrorKind.PAUSED, SyncErrorKind.NEEDS_ACCOUNT_CHOICE, SyncErrorKind.UNAVAILABLE))
+            if (failure.kind !in setOf(SyncErrorKind.NOT_SIGNED_IN, SyncErrorKind.NEEDS_PASSPHRASE, SyncErrorKind.PAUSED, SyncErrorKind.NEEDS_ACCOUNT_CHOICE, SyncErrorKind.NEEDS_FIRST_SYNC_CHOICE, SyncErrorKind.UNAVAILABLE))
                 mutable.update { it.copy(error = syncFailureText(failure)) }
             null
         } catch (cancelled: CancellationException) { throw cancelled }

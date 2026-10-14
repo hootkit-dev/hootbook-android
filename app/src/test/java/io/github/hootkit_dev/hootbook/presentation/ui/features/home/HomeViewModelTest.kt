@@ -30,7 +30,7 @@ class HomeViewModelTest {
     @Test fun initialLoadQueriesRecentDueHeatmapAndCoreDisplayConversion()=runTest{
         Dispatchers.setMain(StandardTestDispatcher(testScheduler));val store=ViewModelStore()
         try{val prefs=CoreUiPreferencesStore(context());prefs.update{it.copy(unifiedDisplayEnabled=true,unifiedDisplayCurrency="USD")};val core=WidgetCore()
-            val connection = BrokerageConnection(42, "ibkr_flex", "IBKR", null, null, emptyList())
+            val connection = BrokerageConnection("42", "ibkr_flex", "IBKR", null, null, true, emptyList())
             core.connections = listOf(connection)
             val vm=HomeViewModel(CoreSession(backgroundScope){core},ChangeBus(),prefs,io.github.hootkit_dev.hootbook.core.ui.CorePlatformAssets(ApplicationProvider.getApplicationContext()));store.put("vm",vm)
             val state=vm.uiState.first{!it.loading&&it.displayNetWorth!=null}
@@ -148,7 +148,7 @@ class HomeViewModelTest {
 /** Complete generated service overrides for the production widget path; no native calls in JVM. */
 private class WidgetCore:HootKitCore(NoPointer){
     private val day=JavaDate.now();private val at=JavaTime.now().let{LocalDateTime(it.year,it.monthValue.toUByte(),it.dayOfMonth.toUByte(),it.hour.toUByte(),it.minute.toUByte(),0u,0u)}
-    val transaction=Transaction("tx",TransactionKind.EXPENSE,BigDecimal("5"),"CNY",at,null,null,null,null,null,null,"Merchant",null,null,null,emptyList(),false,at,at)
+    val transaction=Transaction("tx",TransactionKind.EXPENSE,BigDecimal("5"),"CNY",at,null,null,null,null,null,null,"Merchant",null,null,null,null,emptyList(),null,emptyList(),false,at,at)
     val subscription=Subscription(
         id="subscription",name="Subscription",amount=Money(BigDecimal.TEN,"CNY"),cycle=Cycle(1u,CycleUnit.MONTH),
         endDate=null,nextDue=day.plusDays(2).coreDate(),lastPaid=null,accountId=null,categoryId=null,subcategoryId=null,notes=null,
@@ -156,7 +156,7 @@ private class WidgetCore:HootKitCore(NoPointer){
     )
     var overviewError = false
     var overview=AccountsOverview(emptyList(),Money(BigDecimal("100"),"CNY"),true,null,null)
-    val summary=LedgerSummary("CNY",BigDecimal("10"),BigDecimal("5"),BigDecimal("5"),true,emptyList(),emptyList(),emptyList(),emptyList())
+    val summary=LedgerSummary("CNY",BigDecimal("10"),BigDecimal("5"),BigDecimal("5"),BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,true,emptyList(),emptyList(),emptyList(),emptyList())
     val summaryFilters = mutableListOf<TransactionFilter>()
     var opened=0;var destroyed=0;var recentReads=0;var dailyReads=0;var dueReads=0
     var displayCurrency:String?=null;var dueThrough:LocalDate?=null;val conversions=mutableListOf<Triple<BigDecimal,String,String>>()

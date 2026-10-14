@@ -66,6 +66,7 @@ fun BrokerAutoSyncSection(
     val busy = state.busy
     val error = state.error
     val connecting = state.connectProvider
+    val settingCredentials = state.credentialsTarget
     val disconnecting = state.connections.find { it.id == state.disconnectTarget }
 
     BrokerAutoSyncContent(
@@ -75,10 +76,18 @@ fun BrokerAutoSyncSection(
         busy = busy,
         showTitle = showTitle,
         // A failed connection shows in its form; other failures (disconnect) show here
-        error = error.takeIf { connecting == null },
+        error = error.takeIf { connecting == null && settingCredentials == null },
         onConnect = viewModel::showConnect,
+        onSetCredentials = { viewModel.showSetCredentials(it.id) },
+        onRefresh = { viewModel.refresh(it.id) },
         onDisconnect = { viewModel.showDisconnect(it.id) },
-        onOpenConnection = onOpenConnection,
+        onOpenConnection = { connection ->
+            when {
+                !connection.hasCredentials -> viewModel.showSetCredentials(connection.id)
+                connection.syncedAt == null -> viewModel.refresh(connection.id)
+                else -> onOpenConnection(connection)
+            }
+        },
         modifier = modifier,
     )
 
@@ -92,6 +101,18 @@ fun BrokerAutoSyncSection(
                 viewModel.clearError()
             },
             onConnect = { label, fields -> viewModel.connect(providerId, label, fields) },
+        )
+    }
+    settingCredentials?.let { connection ->
+        BrokerConnectForm(
+            providerId = connection.providerId,
+            busy = busy,
+            error = error,
+            onDismiss = {
+                if (busy) viewModel.cancelOperation() else viewModel.showSetCredentials(null)
+                viewModel.clearError()
+            },
+            onConnect = { _, fields -> viewModel.setCredentials(connection.id, fields) },
         )
     }
     disconnecting?.let { connection ->
@@ -128,6 +149,8 @@ internal fun BrokerAutoSyncContent(
     onDisconnect: (BrokerageConnection) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
+    onSetCredentials: (BrokerageConnection) -> Unit = {},
+    onRefresh: (BrokerageConnection) -> Unit = {},
     onOpenConnection: (BrokerageConnection) -> Unit = {},
 ) {
     val language = LocalConfiguration.current.locales[0].language
@@ -209,11 +232,22 @@ internal fun BrokerAutoSyncContent(
                             onClick = { onOpenConnection(row) },
                             headline = { Text(row.label) },
                             supporting = {
-                                Text(
-                                    row.accounts
-                                        .joinToString { it.accountId }
-                                        .ifBlank { row.providerId }
-                                )
+                                val text =
+                                    when {
+                                        !row.hasCredentials ->
+                                            stringResource(
+                                                R.string.core_invest_missing_credentials_hint
+                                            )
+                                        row.syncedAt == null ->
+                                            stringResource(
+                                                R.string.core_invest_needs_first_refresh_hint
+                                            )
+                                        else ->
+                                            row.accounts
+                                                .joinToString { it.accountId }
+                                                .ifBlank { row.providerId }
+                                    }
+                                Text(text)
                             },
                             leading = {
                                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
@@ -225,12 +259,38 @@ internal fun BrokerAutoSyncContent(
                                 }
                             },
                             trailing = {
-                                TextButton(
-                                    onClick = { onDisconnect(row) },
-                                    enabled = !busy,
-                                    shapes = ButtonDefaults.shapes(),
+                                androidx.compose.foundation.layout.Row(
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(stringResource(R.string.investments_disconnect))
+                                    when {
+                                        !row.hasCredentials ->
+                                            TextButton(
+                                                onClick = { onSetCredentials(row) },
+                                                enabled = !busy,
+                                                shapes = ButtonDefaults.shapes(),
+                                            ) {
+                                                Text(
+                                                    stringResource(
+                                                        R.string.core_invest_set_credentials
+                                                    )
+                                                )
+                                            }
+                                        row.syncedAt == null ->
+                                            TextButton(
+                                                onClick = { onRefresh(row) },
+                                                enabled = !busy,
+                                                shapes = ButtonDefaults.shapes(),
+                                            ) {
+                                                Text(stringResource(R.string.core_invest_refresh))
+                                            }
+                                    }
+                                    TextButton(
+                                        onClick = { onDisconnect(row) },
+                                        enabled = !busy,
+                                        shapes = ButtonDefaults.shapes(),
+                                    ) {
+                                        Text(stringResource(R.string.investments_disconnect))
+                                    }
                                 }
                             },
                             shape = shape,

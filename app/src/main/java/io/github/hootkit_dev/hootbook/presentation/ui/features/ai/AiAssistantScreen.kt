@@ -238,13 +238,25 @@ fun AiAssistantScreen(
             }
             when (val phase = state.phase) {
                 AiPhase.COMPOSE -> {
+                    state.pendingReview?.let { pending ->
+                        item(key = "pending_review") {
+                            PendingReviewCard(
+                                pending = pending,
+                                busy = state.saving,
+                                onResume = viewModel::resumePendingReview,
+                                onDiscard = viewModel::discardPendingReview,
+                            )
+                        }
+                    }
                     item(key = "provider") {
                         ProviderCard(
                             state.config,
                             state.models,
                             state.modelLoading,
                             state.modelError,
+                            state.reasoningLevels,
                             state.settings?.configured == true,
+                            state.settings?.hasKey == true,
                             busy = state.configBusy,
                             onLoadModels = { draft ->
                                 viewModel.configChanged { draft }
@@ -434,6 +446,69 @@ private fun AiBottomBar(
     }
 }
 
+@Composable
+private fun PendingReviewCard(
+    pending: AiPendingReview,
+    busy: Boolean,
+    onResume: () -> Unit,
+    onDiscard: () -> Unit,
+) {
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.sm + Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                stringResource(R.string.core_ai_pending_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            val createdAtText =
+                "%04d-%02d-%02d %02d:%02d".format(
+                    pending.createdAt.year,
+                    pending.createdAt.month.toInt(),
+                    pending.createdAt.day.toInt(),
+                    pending.createdAt.hour.toInt(),
+                    pending.createdAt.minute.toInt(),
+                )
+            Text(
+                stringResource(
+                    R.string.core_ai_pending_body,
+                    createdAtText,
+                    pending.review.summary ?: "${pending.review.changes.size}",
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End),
+            ) {
+                TextButton(
+                    onClick = onDiscard,
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_pending_discard))
+                }
+                Button(
+                    onClick = onResume,
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_pending_resume))
+                }
+            }
+        }
+    }
+}
+
 /** The provider in one line once it is set up; the form until then, or when changing it. */
 @Composable
 private fun ProviderCard(
@@ -441,7 +516,9 @@ private fun ProviderCard(
     models: List<AiModel>,
     modelLoading: Boolean,
     modelError: String?,
+    reasoningLevels: List<AiReasoning>,
     configured: Boolean,
+    hasKey: Boolean,
     busy: Boolean,
     onLoadModels: (AiConfigDraft) -> Unit,
     onSave: (AiConfigDraft) -> Unit,
@@ -464,7 +541,8 @@ private fun ProviderCard(
                     )
                     Text(
                         text =
-                            if (configured) "${config.model} · ${host(config.baseUrl)}"
+                            if (configured || config.model.isNotBlank())
+                                "${config.model} · ${host(config.baseUrl)}"
                             else stringResource(R.string.ai_not_configured),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -478,12 +556,20 @@ private fun ProviderCard(
                     }
                 }
             }
+            if (config.model.isNotBlank() && !hasKey) {
+                Text(
+                    text = stringResource(R.string.core_ai_synced_missing_key),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
             if (!configured || editing) {
                 ProviderForm(
                     config,
                     models,
                     modelLoading,
                     modelError,
+                    reasoningLevels,
                     configured,
                     busy,
                     onLoadModels,
@@ -497,20 +583,20 @@ private fun ProviderCard(
 }
 
 /** Shortcuts for the provider form: each fills the protocol and address. */
-private enum class AiPreset(val labelRes: Int, val protocol: AiProtocol, val baseUrl: String) {
-    CLAUDE(R.string.ai_preset_claude, AiProtocol.CLAUDE, "https://api.anthropic.com"),
+private enum class AiPreset(val labelRes: Int, val protocol: AiApiProtocol, val baseUrl: String) {
+    CLAUDE(R.string.ai_preset_claude, AiApiProtocol.CLAUDE, "https://api.anthropic.com"),
     // One key for Claude, Gemini, GPT, DeepSeek, Qwen…
     OPENROUTER(
         R.string.ai_preset_openrouter,
-        AiProtocol.OPEN_AI_COMPATIBLE,
+        AiApiProtocol.OPEN_AI_COMPATIBLE,
         "https://openrouter.ai/api/v1",
     ),
-    CUSTOM(R.string.ai_preset_custom, AiProtocol.OPEN_AI_COMPATIBLE, "");
+    CUSTOM(R.string.ai_preset_custom, AiApiProtocol.OPEN_AI_COMPATIBLE, "");
 
     companion object {
         fun of(config: AiConfigDraft): AiPreset =
             when {
-                config.protocol == AiProtocol.CLAUDE -> CLAUDE
+                config.protocol == AiApiProtocol.CLAUDE -> CLAUDE
                 host(config.baseUrl) == "openrouter.ai" -> OPENROUTER
                 else -> CUSTOM
             }
@@ -521,12 +607,14 @@ private enum class AiPreset(val labelRes: Int, val protocol: AiProtocol, val bas
  * Provider, key, then model: once the key is in, the provider's models load and the picker opens,
  * so the model is chosen from what the key can actually use.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ProviderForm(
     config: AiConfigDraft,
     models: List<AiModel>,
     modelLoading: Boolean,
     modelError: String?,
+    reasoningLevels: List<AiReasoning>,
     configured: Boolean,
     busy: Boolean,
     onLoadModels: (AiConfigDraft) -> Unit,
@@ -535,6 +623,7 @@ private fun ProviderForm(
     var preset by rememberSaveable { mutableStateOf(AiPreset.of(config)) }
     var baseUrl by rememberSaveable { mutableStateOf(config.baseUrl) }
     var model by rememberSaveable { mutableStateOf(config.model) }
+    var reasoning by rememberSaveable { mutableStateOf(config.reasoning) }
     // Not saveable: the key must not land in the saved-state bundle
     var apiKey by remember { mutableStateOf(config.apiKey) }
     var picking by remember { mutableStateOf(false) }
@@ -544,7 +633,15 @@ private fun ProviderForm(
     LaunchedEffect(preset, baseUrl, apiKey) {
         if (!ready) return@LaunchedEffect
         delay(600)
-        onLoadModels(AiConfigDraft(preset.protocol, baseUrl.trim().trimEnd('/'), "", apiKey.trim()))
+        onLoadModels(
+            AiConfigDraft(
+                preset.protocol,
+                baseUrl.trim().trimEnd('/'),
+                "",
+                apiKey.trim(),
+                reasoning = reasoning,
+            )
+        )
     }
     // On first setup, or when the chosen model is not on the list, open the picker once per list
     var offered by rememberSaveable { mutableStateOf(configured) }
@@ -563,6 +660,7 @@ private fun ProviderForm(
                         preset = p
                         baseUrl = p.baseUrl
                         model = ""
+                        reasoning = AiReasoning.PROVIDER_DEFAULT
                     }
                 },
                 shape = SegmentedButtonDefaults.itemShape(index, AiPreset.entries.size),
@@ -612,15 +710,79 @@ private fun ProviderForm(
             onClick = { picking = true },
             onRetry = {
                 onLoadModels(
-                    AiConfigDraft(preset.protocol, baseUrl.trim().trimEnd('/'), "", apiKey.trim())
+                    AiConfigDraft(
+                        preset.protocol,
+                        baseUrl.trim().trimEnd('/'),
+                        "",
+                        apiKey.trim(),
+                        reasoning = reasoning,
+                    )
                 )
             },
         )
+        if (model.isNotBlank()) {
+            val chosenModel = models.firstOrNull { it.id == model }
+            val modelReasoning = chosenModel?.reasoning
+            val availableLevels =
+                if (modelReasoning?.known == true) {
+                    if (modelReasoning.levels.isEmpty()) emptyList()
+                    else
+                        listOf(AiReasoning.PROVIDER_DEFAULT) +
+                            modelReasoning.levels.filter { it != AiReasoning.PROVIDER_DEFAULT }
+                } else {
+                    val base = reasoningLevels.ifEmpty { AiReasoning.entries }
+                    listOf(AiReasoning.PROVIDER_DEFAULT) +
+                        base.filter { it != AiReasoning.PROVIDER_DEFAULT }
+                }
+            if (availableLevels.isNotEmpty()) {
+                val effectiveReasoning =
+                    if (reasoning in availableLevels) reasoning else AiReasoning.PROVIDER_DEFAULT
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(
+                        stringResource(R.string.core_ai_reasoning),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    ) {
+                        availableLevels.forEach { level ->
+                            InputChip(
+                                selected = effectiveReasoning == level,
+                                onClick = { reasoning = level },
+                                label = { Text(reasoningLabel(level)) },
+                            )
+                        }
+                    }
+                    if (
+                        modelReasoning?.known != true &&
+                            effectiveReasoning != AiReasoning.PROVIDER_DEFAULT
+                    ) {
+                        Text(
+                            stringResource(R.string.core_ai_reasoning_custom_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Button(
             shapes = ButtonDefaults.shapes(),
-            onClick = { onSave(AiConfigDraft(preset.protocol, baseUrl, model, apiKey)) },
+            onClick = {
+                onSave(
+                    AiConfigDraft(
+                        preset.protocol,
+                        baseUrl,
+                        model,
+                        apiKey,
+                        reasoning = reasoning,
+                    )
+                )
+            },
             enabled = !busy && ready && model.isNotBlank(),
         ) {
             Text(stringResource(R.string.ai_save))
@@ -639,6 +801,16 @@ private fun ProviderForm(
         )
     }
 }
+
+@Composable
+private fun reasoningLabel(level: AiReasoning): String =
+    when (level) {
+        AiReasoning.PROVIDER_DEFAULT, AiReasoning.UNKNOWN -> stringResource(R.string.core_ai_reasoning_default)
+        AiReasoning.OFF -> stringResource(R.string.core_ai_reasoning_none)
+        AiReasoning.LOW -> stringResource(R.string.core_ai_reasoning_low)
+        AiReasoning.MEDIUM -> stringResource(R.string.core_ai_reasoning_medium)
+        AiReasoning.HIGH -> stringResource(R.string.core_ai_reasoning_high)
+    }
 
 /** The chosen model as a row that opens the picker, with loading and error states. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

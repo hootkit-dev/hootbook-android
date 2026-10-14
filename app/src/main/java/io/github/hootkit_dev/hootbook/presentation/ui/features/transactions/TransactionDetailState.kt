@@ -9,6 +9,7 @@ data class TransactionDetailUiState(
     val editingSubscriptionId: String? = null,
     val editableTransaction: Transaction? = null,
     val categories: Map<String, Category> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val accounts: Map<String, Account> = emptyMap(),
     val people: Map<String, Person> = emptyMap(),
     val subscription: Subscription? = null,

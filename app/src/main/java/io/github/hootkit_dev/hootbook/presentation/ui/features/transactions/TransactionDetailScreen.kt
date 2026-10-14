@@ -1089,6 +1089,7 @@ private fun TransactionDetailContent(
                                 .align(Alignment.Center)
                         )
                     }
+                    val detailTags by viewModel.uiState.collectAsStateWithLifecycle()
                     TransactionReceipt(
                         transaction = transaction,
                         primaryCurrency = accountPrimaryCurrency,
@@ -1096,6 +1097,7 @@ private fun TransactionDetailContent(
                         availableAccounts = availableAccounts,
                         categories = categories,
                         subcategoriesMap = subcategoriesMap,
+                        tags = detailTags.tags,
                         linkedSubscription = linkedSubscription,
                         attachmentStore = viewModel.attachmentStore,
                         animatedContentScope = animatedContentScope,
@@ -1461,6 +1463,146 @@ private fun EditableExtractedInfoCard(
 
             // Option 2: Update EXISTING transactions (only shown when there are matches)
 
+
+            Spacer(modifier = Modifier.height(Spacing.xs))
+
+            // Receivable / Collected in edit mode
+            if (transaction.kind == TransactionKind.EXPENSE || transaction.kind == TransactionKind.INCOME) {
+                val isExpense = transaction.kind == TransactionKind.EXPENSE
+                val currentReimb = if (isExpense) transaction.receivable else transaction.collected
+                val checked = currentReimb != null
+                PreferenceSwitch(
+                    title = stringResource(
+                        if (isExpense) R.string.core_receivable_label
+                        else R.string.core_collected_label
+                    ),
+                    subtitle = currentReimb?.let { CoreMoneyPresentation.formatCurrency(it, transaction.currency) }.orEmpty(),
+                    checked = checked,
+                    onCheckedChange = {
+                        if (isExpense) viewModel.toggleReceivable(it)
+                        else viewModel.toggleCollected(it)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Iconax.Wallet3,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    isSingle = !checked,
+                    isFirst = checked,
+                    padding = PaddingValues(horizontal = 0.dp, vertical = 1.5.dp)
+                )
+                if (checked) {
+                    var reimbText by remember(transaction.id, isExpense) {
+                        mutableStateOf(currentReimb?.stripTrailingZeros()?.toPlainString().orEmpty())
+                    }
+                    TextField(
+                        value = reimbText,
+                        onValueChange = {
+                            reimbText = it
+                            if (isExpense) viewModel.updateReceivableAmount(it)
+                            else viewModel.updateCollectedAmount(it)
+                        },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (isExpense) R.string.core_receivable_short
+                                    else R.string.core_collected_short
+                                )
+                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(
+                            topStart = 4.dp,
+                            topEnd = 4.dp,
+                            bottomStart = 16.dp,
+                            bottomEnd = 16.dp
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(Spacing.xs))
+            }
+
+            // Tags Selector in edit mode
+            var showNewTagDialog by remember { mutableStateOf(false) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.core_tags_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val availableTags = detailState.tags.values.filter { !it.archived || it.id in transaction.tagIds }
+                    availableTags.forEach { tag ->
+                        FilterChip(
+                            selected = tag.id in transaction.tagIds,
+                            onClick = { viewModel.toggleTag(tag.id) },
+                            label = { Text(tag.name) }
+                        )
+                    }
+                    AssistChip(
+                        onClick = { showNewTagDialog = true },
+                        label = { Text(stringResource(R.string.core_tags_add)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    )
+                }
+            }
+            if (showNewTagDialog) {
+                var newTagName by remember { mutableStateOf("") }
+                AlertDialog(
+                    onDismissRequest = { showNewTagDialog = false },
+                    title = { Text(stringResource(R.string.core_tags_add)) },
+                    text = {
+                        TextField(
+                            value = newTagName,
+                            onValueChange = { newTagName = it },
+                            label = { Text(stringResource(R.string.core_tags_name)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.createTag(newTagName, "#6366F1")
+                                showNewTagDialog = false
+                            },
+                            enabled = newTagName.isNotBlank()
+                        ) {
+                            Text(stringResource(R.string.action_save))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showNewTagDialog = false }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(Spacing.xs))
 
@@ -1934,6 +2076,7 @@ private fun TransactionReceipt(
     availableAccounts: List<Account>,
     categories: List<Category>,
     subcategoriesMap: Map<String, List<Subcategory>>,
+    tags: Map<String, dev.hootkit.core.Tag> = emptyMap(),
     linkedSubscription: Subscription? = null,
     attachmentStore: CoreAttachmentStore,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -2197,7 +2340,27 @@ private fun TransactionReceipt(
                         }
                     )
 
+                    if (transaction.receivable != null && transaction.receivable!! > BigDecimal.ZERO) {
+                        ReceiptInfoRow(
+                            label = stringResource(R.string.core_receivable_short),
+                            value = CoreMoneyPresentation.formatCurrency(transaction.receivable!!, transaction.currency)
+                        )
+                    } else if (transaction.collected != null && transaction.collected!! > BigDecimal.ZERO) {
+                        ReceiptInfoRow(
+                            label = stringResource(R.string.core_collected_short),
+                            value = CoreMoneyPresentation.formatCurrency(transaction.collected!!, transaction.currency)
+                        )
+                    }
 
+                    val txTags = remember(transaction.tagIds, tags) {
+                        transaction.tagIds.mapNotNull(tags::get)
+                    }
+                    if (txTags.isNotEmpty()) {
+                        ReceiptInfoRow(
+                            label = stringResource(R.string.core_tags_title),
+                            value = txTags.joinToString(", ") { it.name }
+                        )
+                    }
 
                     if ((transaction.subscriptionId != null) && linkedSubscription?.nextDue != null) {
                         ReceiptInfoRow(

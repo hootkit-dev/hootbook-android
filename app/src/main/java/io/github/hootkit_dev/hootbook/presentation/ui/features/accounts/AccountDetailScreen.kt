@@ -129,7 +129,7 @@ fun SharedTransitionScope.AccountDetailScreen(
     accountId: String,
     onNavigateBack: () -> Unit,
     onTransaction: (String) -> Unit,
-    onBrokerage: (Long, String) -> Unit,
+    onBrokerage: (String, String) -> Unit,
     accountDetailViewModel: AccountDetailViewModel = hiltViewModel(),
     manageViewModel: ManageAccountsViewModel = hiltViewModel(),
     animatedContentScope: AnimatedVisibilityScope? = null,
@@ -306,7 +306,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                             }
                             account.broker?.let { broker ->
                                 OutlinedButton(onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) }, shapes = ButtonDefaults.shapes()) {
-                                    Text(stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText())
+                                    Text(stringResource(R.string.overview_investments) + (broker.asOf?.let { " · " + it.coreDateText() }.orEmpty()))
                                 }
                             }
                         }
@@ -540,6 +540,9 @@ fun SharedTransitionScope.AccountDetailScreen(
                                     expenses = summary.expense,
                                     netBalance = summary.net,
                                     currency = summary.currency,
+                                    receivable = summary.receivable,
+                                    collected = summary.collected,
+                                    outstanding = summary.outstanding,
                                     title = selectedDateRange.getLocalizedLabel(),
                                     isEstimated = !summary.complete,
                                     isLoading = uiState.isLoading,

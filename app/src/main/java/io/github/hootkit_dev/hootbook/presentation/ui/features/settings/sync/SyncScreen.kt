@@ -231,6 +231,10 @@ internal fun SyncSetupSection(
                     onEdit = viewModel::clearWrongPassphrase,
                     onSubmit = { viewModel.submitPassphrase(it) }
                 )
+                SyncPhase.NEEDS_FIRST_SYNC_CHOICE -> FirstSyncChoiceSection(
+                    state = state,
+                    onChoose = viewModel::chooseFirstSync,
+                )
                 SyncPhase.NEEDS_ACCOUNT_CHOICE -> SyncRow(
                     icon = Icons.Rounded.ErrorOutline,
                     title = stringResource(R.string.sync_problem_title),
@@ -255,6 +259,64 @@ internal fun SyncSetupSection(
                 })
             },
             dismissButton = { DialogDismissButton(stringResource(R.string.cancel), onClick = { confirmSignOut = false }) }
+        )
+    }
+}
+
+@Composable
+private fun FirstSyncChoiceSection(
+    state: SyncUiState,
+    onChoose: (FirstSyncChoice) -> Unit,
+) {
+    var confirmReplaceLocal by rememberSaveable { mutableStateOf(false) }
+    SectionHeader(
+        title = stringResource(R.string.sync_first_sync_choice_title),
+        modifier = Modifier.padding(start = Spacing.md),
+    )
+    Text(
+        text = stringResource(R.string.sync_first_sync_choice_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = Spacing.md),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(1.5.dp)) {
+        SyncRow(
+            icon = Icons.Rounded.Merge,
+            title = stringResource(R.string.sync_first_sync_merge),
+            supporting = stringResource(R.string.sync_first_sync_merge_body),
+            position = ListItemPosition.Top,
+            onClick = if (state.busy) null else ({ onChoose(FirstSyncChoice.MERGE) }),
+        )
+        SyncRow(
+            icon = Icons.Rounded.CloudDownload,
+            title = stringResource(R.string.sync_first_sync_replace),
+            supporting = stringResource(R.string.sync_first_sync_replace_body),
+            position = ListItemPosition.Bottom,
+            onClick = if (state.busy) null else ({ confirmReplaceLocal = true }),
+        )
+    }
+    if (confirmReplaceLocal) {
+        AlertDialog(
+            onDismissRequest = { confirmReplaceLocal = false },
+            containerColor = HootbookDialogDefaults.containerColor,
+            title = { Text(stringResource(R.string.sync_first_sync_replace_confirm_title)) },
+            text = { Text(stringResource(R.string.sync_first_sync_replace_confirm_body)) },
+            confirmButton = {
+                DialogConfirmButton(
+                    stringResource(R.string.sync_first_sync_replace),
+                    destructive = true,
+                    onClick = {
+                        confirmReplaceLocal = false
+                        onChoose(FirstSyncChoice.REPLACE_LOCAL)
+                    },
+                )
+            },
+            dismissButton = {
+                DialogDismissButton(
+                    stringResource(R.string.cancel),
+                    onClick = { confirmReplaceLocal = false },
+                )
+            },
         )
     }
 }
@@ -443,6 +505,7 @@ private fun problemText(problem: SyncErrorKind): Int = when (problem) {
     SyncErrorKind.REMOTE -> R.string.sync_problem_permission
     SyncErrorKind.CORRUPT, SyncErrorKind.WRONG_PASSPHRASE -> R.string.sync_problem_unreadable
     SyncErrorKind.UPGRADE_REQUIRED -> R.string.sync_problem_newer
+    SyncErrorKind.NEEDS_FIRST_SYNC_CHOICE -> R.string.sync_first_sync_choice_body
     else -> R.string.sync_problem_other
 }
 

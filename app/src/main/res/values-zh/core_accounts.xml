@@ -40,4 +40,10 @@
     <string name="account_calibrate">校准余额</string>
     <string name="account_balance_trend">余额走势</string>
     <string name="account_calibrations">校准记录</string>
+    <string name="account_net_worth_trend">净资产走势</string>
+    <string name="account_net_worth_step_daily">按日</string>
+    <string name="account_net_worth_step_weekly">按周</string>
+    <string name="account_net_worth_step_monthly">按月</string>
+    <string name="account_net_worth_securities_missing">部分日期缺少未缓存的券商持仓市值或汇率。</string>
+    <string name="account_net_worth_securities_since">券商持仓市值自 %1$s 起计入</string>
 </resources>

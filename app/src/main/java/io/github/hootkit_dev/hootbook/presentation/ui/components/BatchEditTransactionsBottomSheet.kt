@@ -75,12 +75,13 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun BatchEditTransactionsBottomSheet(
     selectedIdsCount: Int,
     categories: Map<String, Category>,
     subcategoriesMap: Map<String, List<Subcategory>>,
+    tags: List<dev.hootkit.core.Tag> = emptyList(),
     onDismiss: () -> Unit,
     onApply: (
         newDate: LocalDate?,
@@ -88,7 +89,9 @@ fun BatchEditTransactionsBottomSheet(
         newCategory: String?,
         newSubcategory: String?,
         newAmount: BigDecimal?,
-        newNote: String?
+        newNote: String?,
+        addTagIds: List<String>,
+        removeTagIds: List<String>
     ) -> Unit,
     blurEffects: Boolean = false,
     hazeState: HazeState = remember { HazeState() }
@@ -115,7 +118,11 @@ fun BatchEditTransactionsBottomSheet(
     var updateNote by remember { mutableStateOf(false) }
     var noteText by remember { mutableStateOf("") }
 
-    val hasAnySelection = updateDate || updateTime || updateCategory || updateAmount || updateNote
+    var updateTags by remember { mutableStateOf(false) }
+    var addTagIds by remember { mutableStateOf(setOf<String>()) }
+    var removeTagIds by remember { mutableStateOf(setOf<String>()) }
+
+    val hasAnySelection = updateDate || updateTime || updateCategory || updateAmount || updateNote || (updateTags && (addTagIds.isNotEmpty() || removeTagIds.isNotEmpty()))
     val lazyListState = rememberLazyListState()
 
     HootbookModalBottomSheet(
@@ -354,6 +361,71 @@ fun BatchEditTransactionsBottomSheet(
                     }
                 }
 
+                // Tags Card
+                if (tags.isNotEmpty()) {
+                    item {
+                        BatchEditOptionCard(
+                            title = stringResource(R.string.core_tags_title),
+                            icon = Iconax.Folder2,
+                            checked = updateTags,
+                            onCheckedChange = { updateTags = it }
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                                Text(
+                                    text = stringResource(R.string.core_tags_bulk_add),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                androidx.compose.foundation.layout.FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                ) {
+                                    tags.forEach { tag ->
+                                        val selected = tag.id in addTagIds
+                                        androidx.compose.material3.FilterChip(
+                                            selected = selected,
+                                            onClick = {
+                                                if (selected) {
+                                                    addTagIds = addTagIds - tag.id
+                                                } else {
+                                                    addTagIds = addTagIds + tag.id
+                                                    removeTagIds = removeTagIds - tag.id
+                                                }
+                                            },
+                                            label = { Text(tag.name) }
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = stringResource(R.string.core_tags_bulk_remove),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                androidx.compose.foundation.layout.FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                ) {
+                                    tags.forEach { tag ->
+                                        val selected = tag.id in removeTagIds
+                                        androidx.compose.material3.FilterChip(
+                                            selected = selected,
+                                            onClick = {
+                                                if (selected) {
+                                                    removeTagIds = removeTagIds - tag.id
+                                                } else {
+                                                    removeTagIds = removeTagIds + tag.id
+                                                    addTagIds = addTagIds - tag.id
+                                                }
+                                            },
+                                            label = { Text(tag.name) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 item {
                     Spacer(modifier = Modifier.height(90.dp))
                 }
@@ -386,7 +458,9 @@ fun BatchEditTransactionsBottomSheet(
                             if (updateCategory) selectedCategory?.id else null,
                             if (updateCategory) selectedSubcategory?.id else null,
                             if (updateAmount) selectedAmount else null,
-                            if (updateNote) noteText else null
+                            if (updateNote) noteText else null,
+                            if (updateTags) addTagIds.toList() else emptyList(),
+                            if (updateTags) removeTagIds.toList() else emptyList()
                         )
                         onDismiss()
                     },

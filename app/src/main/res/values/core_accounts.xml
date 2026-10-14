@@ -40,4 +40,10 @@
     <string name="account_calibrate">Calibrate balance</string>
     <string name="account_balance_trend">Balance trend</string>
     <string name="account_calibrations">Calibrations</string>
+    <string name="account_net_worth_trend">Net worth trend</string>
+    <string name="account_net_worth_step_daily">Daily</string>
+    <string name="account_net_worth_step_weekly">Weekly</string>
+    <string name="account_net_worth_step_monthly">Monthly</string>
+    <string name="account_net_worth_securities_missing">Some dates exclude uncached broker securities or missing exchange rates.</string>
+    <string name="account_net_worth_securities_since">Broker securities included from %1$s</string>
 </resources>

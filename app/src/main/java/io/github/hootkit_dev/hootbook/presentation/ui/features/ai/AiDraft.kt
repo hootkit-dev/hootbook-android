@@ -57,21 +57,24 @@ data class AiDraftForm(
 
 /** No secret in generated settings; key draft never enters SavedState, diagnostics or toString. */
 class AiConfigDraft(
-    val protocol: AiProtocol = AiProtocol.CLAUDE,
+    val protocol: AiApiProtocol = AiApiProtocol.CLAUDE,
     val baseUrl: String = "",
     val model: String = "",
     val apiKey: String = "",
     val removeKey: Boolean = false,
+    val reasoning: AiReasoning = AiReasoning.PROVIDER_DEFAULT,
 ) {
     fun copy(
-        protocol: AiProtocol = this.protocol,
+        protocol: AiApiProtocol = this.protocol,
         baseUrl: String = this.baseUrl,
         model: String = this.model,
         apiKey: String = this.apiKey,
         removeKey: Boolean = this.removeKey,
-    ) = AiConfigDraft(protocol, baseUrl, model, apiKey, removeKey)
+        reasoning: AiReasoning = this.reasoning,
+    ) = AiConfigDraft(protocol, baseUrl, model, apiKey, removeKey, reasoning)
 
-    override fun toString() = "AiConfigDraft(protocol=$protocol, model=$model, key=<redacted>)"
+    override fun toString() =
+        "AiConfigDraft(protocol=$protocol, model=$model, reasoning=$reasoning, key=<redacted>)"
 }
 
 internal fun aiFailureText(error: Throwable): String =
@@ -82,6 +85,8 @@ internal fun aiFailureText(error: Throwable): String =
                 AiFailure.REFUSED -> "The provider declined this request."
                 AiFailure.NO_ANSWER -> "The provider returned no answer."
                 AiFailure.TRUNCATED -> "The reply was truncated. Send fewer pages in each request."
+                AiFailure.REASONING_REJECTED ->
+                    "The provider or model rejected the reasoning setting. Switch Reasoning effort to Provider default or None and try again."
             }
         is CoreException.Network ->
             when (error.status) {

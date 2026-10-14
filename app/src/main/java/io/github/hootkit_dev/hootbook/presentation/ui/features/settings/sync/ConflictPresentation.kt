@@ -6,7 +6,7 @@ import dev.hootkit.core.*
 internal fun conflictGroups(conflict: SyncConflict): List<List<ConflictField>> {
     val units = when (conflict.table) {
         Table.ACCOUNTS -> listOf(setOf("name", "last4"), setOf("kind", "credit_limit", "statement_day", "due_day"))
-        Table.TRANSACTIONS -> listOf(setOf("kind", "amount", "currency", "account_id", "to_account_id", "to_currency", "to_amount"), setOf("category_id", "subcategory_id"))
+        Table.TRANSACTIONS -> listOf(setOf("kind", "amount", "currency", "account_id", "to_account_id", "to_currency", "to_amount", "receivable", "collected"), setOf("category_id", "subcategory_id"))
         Table.BUDGETS -> listOf(setOf("kind", "amount", "currency"), setOf("period", "anchor_date", "end_date"))
         Table.SUBSCRIPTIONS -> listOf(setOf("amount", "currency"), setOf("every", "unit", "end_date", "next_due", "last_paid"), setOf("category_id", "subcategory_id"))
         Table.DEBTS -> listOf(setOf("kind", "amount", "currency", "due_date"))

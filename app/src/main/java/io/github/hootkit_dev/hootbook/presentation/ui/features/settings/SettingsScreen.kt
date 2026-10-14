@@ -88,6 +88,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToTags: () -> Unit = {},
+    onNavigateToDuplicates: () -> Unit = {},
     onNavigateToManageAccounts: () -> Unit = {},
     onNavigateToQuickTemplates: () -> Unit = {},
     onNavigateToAiAssistant: () -> Unit = {},
@@ -641,6 +643,96 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { onNavigateToCategories() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Tags
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.core_tags_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.core_tags_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.Box2,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToTags() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Duplicate Detection
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.core_duplicates_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.core_duplicates_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.Status,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToDuplicates() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
                     )

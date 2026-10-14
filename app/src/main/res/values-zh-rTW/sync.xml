@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 設定 → 同步（docs/sync.md） -->
 <resources>
-    <string name="sync_intro">登入同一帳號的裝置會保持同一份帳本。記錄在上傳前就在本機用同步密碼加密，只有你的裝置能讀取。附件、商家圖示、設定、AI 金鑰和券商連線都不會上傳。</string>
+    <string name="sync_intro">登入同一帳號的裝置會保持同一份帳本。記錄在上傳前就在本機用同步密碼加密，只有你的裝置能讀取。附件、商家圖示、設定、AI 金鑰和券商憑據都不會上傳。</string>
     <string name="sync_unavailable_title">此版本不支援同步</string>
     <string name="sync_unavailable_body">同步暫不可用。您仍可在「備份與同步」中用備份檔案搬移資料。</string>
     <string name="sync_sign_in">使用 Google 帳號登入</string>
@@ -51,4 +51,12 @@
     <string name="backup_export_local_body">選擇要包含的資料，再選擇儲存位置</string>
     <string name="backup_restore_from">從%1$s還原</string>
     <string name="backup_restore_local_body">選擇備份檔案</string>
+    <string name="sync_first_sync_choice_title">本機和雲端都有資料</string>
+    <string name="sync_first_sync_choice_body">請選擇合併兩邊的資料，或只保留雲端資料並取代本機資料。</string>
+    <string name="sync_first_sync_merge">合併兩邊資料</string>
+    <string name="sync_first_sync_merge_body">保留本機已有記錄，並與雲端帳本合併。</string>
+    <string name="sync_first_sync_replace">只用雲端資料（取代本機）</string>
+    <string name="sync_first_sync_replace_body">會先在本機建立安全備份，再用雲端資料取代本機記錄（含 AI 設定與券商連線）。</string>
+    <string name="sync_first_sync_replace_confirm_title">用雲端資料取代本機？</string>
+    <string name="sync_first_sync_replace_confirm_body">Core 會先自動建立本機安全備份，然後清空本機帳本記錄、AI 設定與券商連線，並拉取雲端資料。</string>
 </resources>

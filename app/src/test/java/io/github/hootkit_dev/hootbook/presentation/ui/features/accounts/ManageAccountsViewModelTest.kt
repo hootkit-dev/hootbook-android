@@ -32,7 +32,7 @@ class ManageAccountsViewModelTest : CoreViewModelTest() {
         val snapshot = BrokerageAccount("U123", LocalDate(2026, 10u, 11u), emptyList(),
             listOf(CashBalance("USD", BigDecimal("10093"), null)), null,
             listOf(Money(BigDecimal("10093"), "USD")), Money(BigDecimal("77777"), "GBP"), true)
-        val connection = BrokerageConnection(42, "ibkr_flex", "IBKR", core.now, null, listOf(snapshot))
+        val connection = BrokerageConnection("42", "ibkr_flex", "IBKR", core.now, null, true, listOf(snapshot))
         core.connections = listOf(connection)
         val vm = keep(ManageAccountsViewModel(CoreSession(backgroundScope) { core }, changes))
         awaitState { !vm.uiState.value.isLoading }

@@ -42,7 +42,7 @@ const val ACCOUNT_LIST_DETAIL_MIN_WIDTH_DP = 720
 fun AccountDetailPane(
     accountId: String?,
     onTransaction: (String) -> Unit,
-    onBrokerage: (Long, String) -> Unit,
+    onBrokerage: (String, String) -> Unit,
     animatedContentScope: AnimatedVisibilityScope?,
     onClose: () -> Unit,
 ) {

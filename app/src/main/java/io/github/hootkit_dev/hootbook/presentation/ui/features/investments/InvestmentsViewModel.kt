@@ -24,13 +24,14 @@ import kotlinx.coroutines.launch
 
 enum class InvestmentOperationKind {
     CONNECT,
+    SET_CREDENTIALS,
     REFRESH,
     REFRESH_ALL,
     DISCONNECT,
     LINK,
 }
 
-data class InvestmentOperation(val kind: InvestmentOperationKind, val connectionId: Long? = null)
+data class InvestmentOperation(val kind: InvestmentOperationKind, val connectionId: String? = null)
 
 data class InvestmentsUiState(
     val loading: Boolean = true,
@@ -41,12 +42,13 @@ data class InvestmentsUiState(
     val selected: BrokerAccountRef? = null,
     val holding: CoreHoldingKey? = null,
     val connectProvider: String? = null,
+    val credentialsTarget: BrokerageConnection? = null,
     val linkTarget: BrokerAccountRef? = null,
-    val disconnectTarget: Long? = null,
+    val disconnectTarget: String? = null,
     val operation: InvestmentOperation? = null,
     val cancelling: Boolean = false,
     val error: CoreInvestmentFailure? = null,
-    val connectionErrors: Map<Long, CoreInvestmentFailure> = emptyMap(),
+    val connectionErrors: Map<String, CoreInvestmentFailure> = emptyMap(),
     val cancellationNotice: Boolean = false,
     val commandRevision: Long = 0,
 ) {
@@ -113,6 +115,8 @@ private constructor(
                 val tables =
                     setOf(
                         Table.BROKERAGE,
+                        Table.BROKERAGE_CONNECTIONS,
+                        Table.BROKERAGE_LINKS,
                         Table.ACCOUNTS,
                         Table.ACCOUNT_CURRENCIES,
                         Table.BALANCE_ANCHORS,
@@ -163,6 +167,10 @@ private constructor(
                                                     ?.let { linkedAccount(it, data.second) }
                                                     ?.holdings
                                                     ?.any { CoreHoldingKey.of(it) == key } == true
+                                            },
+                                        credentialsTarget =
+                                            old.credentialsTarget?.let { target ->
+                                                data.second.find { it.id == target.id }
                                             },
                                         linkTarget =
                                             old.linkTarget?.takeIf {
@@ -217,6 +225,16 @@ private constructor(
         }
     }
 
+    fun showSetCredentials(id: String?) {
+        if (state.value.busy) return
+        mutable.update {
+            it.copy(
+                credentialsTarget = id?.let { value -> it.connections.find { c -> c.id == value } },
+                error = null,
+            )
+        }
+    }
+
     fun showLink(ref: BrokerAccountRef?) {
         if (state.value.busy) return
         mutable.update {
@@ -226,7 +244,7 @@ private constructor(
         }
     }
 
-    fun showDisconnect(id: Long?) {
+    fun showDisconnect(id: String?) {
         if (state.value.busy) return
         mutable.update {
             it.copy(
@@ -245,6 +263,10 @@ private constructor(
         return when {
             state.value.connectProvider != null -> {
                 showConnect(null)
+                true
+            }
+            state.value.credentialsTarget != null -> {
+                showSetCredentials(null)
                 true
             }
             state.value.linkTarget != null -> {
@@ -280,7 +302,22 @@ private constructor(
         }
     }
 
-    fun refresh(id: Long) =
+    fun setCredentials(id: String, fields: Map<String, String>) {
+        if (state.value.busy) return
+        val submission = InvestmentCredentialSubmission(fields)
+        operate(
+            InvestmentOperation(InvestmentOperationKind.SET_CREDENTIALS, id),
+            onFinally = submission::close,
+        ) { api ->
+            api.setCredentials(id, submission.fields())
+            currentCoroutineContext().ensureActive()
+            mutable.update {
+                it.copy(credentialsTarget = null, connectionErrors = it.connectionErrors - id)
+            }
+        }
+    }
+
+    fun refresh(id: String) =
         operate(InvestmentOperation(InvestmentOperationKind.REFRESH, id)) { api ->
             try {
                 api.refresh(id)
@@ -324,7 +361,7 @@ private constructor(
         }
     }
 
-    fun disconnect(id: Long) =
+    fun disconnect(id: String) =
         operate(InvestmentOperation(InvestmentOperationKind.DISCONNECT, id)) {
             it.disconnect(id)
             currentCoroutineContext().ensureActive()

@@ -39,13 +39,13 @@ class CoreInvestmentPresentationTest {
 
     @Test
     fun brokerAccountNumbersAreScopedToTheirConnections() {
-        val first = investmentConnection(1, "100")
-        val second = investmentConnection(2, "200")
+        val first = investmentConnection("1", "100")
+        val second = investmentConnection("2", "200")
         assertEquals(
             BigDecimal("200"),
-            linkedAccount(BrokerAccountRef(2, "U1"), listOf(first, second))!!.total!!.amount,
+            linkedAccount(BrokerAccountRef("2", "U1"), listOf(first, second))!!.total!!.amount,
         )
-        assertNull(linkedAccount(BrokerAccountRef(3, "U1"), listOf(first, second)))
+        assertNull(linkedAccount(BrokerAccountRef("3", "U1"), listOf(first, second)))
     }
 
     @Test
@@ -54,7 +54,7 @@ class CoreInvestmentPresentationTest {
         val state =
             InvestmentsUiState(
                 connections = listOf(investmentConnection().copy(accounts = listOf(account))),
-                selected = BrokerAccountRef(1, "U1"),
+                selected = BrokerAccountRef("1", "U1"),
             )
         assertNull(state.account!!.total)
         assertFalse(state.account!!.complete)
@@ -100,13 +100,14 @@ class CoreInvestmentPresentationTest {
     }
 }
 
-internal fun investmentConnection(id: Long = 1, total: String = "125.50") =
+internal fun investmentConnection(id: String = "1", total: String = "125.50") =
     BrokerageConnection(
         id,
         "ibkr_flex",
         "Fixture",
         LocalDateTime(2026, 10u, 11u, 9u, 0u, 0u, 0u),
         null,
+        true,
         listOf(
             BrokerageAccount(
                 "U1",

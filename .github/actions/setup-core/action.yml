@@ -12,17 +12,24 @@ runs:
   using: composite
   steps:
     - name: Fetch Core AAR Release
+      id: fetch_aar
       if: inputs.from-source != 'true'
       shell: bash
       env:
         CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
       run: |
         mkdir -p "$GITHUB_WORKSPACE/core-bindings/libs"
-        python3 scripts/core/fetch_release.py --dest "$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar"
-        echo "ORG_GRADLE_PROJECT_hootkitCoreAar=$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar" >> "$GITHUB_ENV"
+        if python3 scripts/core/fetch_release.py --dest "$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar"; then
+          echo "ORG_GRADLE_PROJECT_hootkitCoreAar=$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar" >> "$GITHUB_ENV"
+          echo "fetched=true" >> "$GITHUB_OUTPUT"
+        else
+          rm -f "$GITHUB_WORKSPACE/core-bindings/libs/hootkit-core-android.aar"
+          echo "Prebuilt AAR release not available; falling back to building from pinned source commit."
+          echo "fetched=false" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Source checkout and native toolchain setup (fallback)
-      if: inputs.from-source == 'true'
+      if: inputs.from-source == 'true' || steps.fetch_aar.outputs.fetched == 'false'
       shell: bash
       env:
         CORE_REPO_READ_TOKEN: ${{ inputs.core-token }}
@@ -33,7 +40,7 @@ runs:
         fi
 
     - name: Read Core build lock
-      if: inputs.from-source == 'true'
+      if: inputs.from-source == 'true' || steps.fetch_aar.outputs.fetched == 'false'
       id: lock
       shell: bash
       run: |
@@ -46,7 +53,7 @@ runs:
         PY
 
     - uses: actions/checkout@v4
-      if: inputs.from-source == 'true'
+      if: inputs.from-source == 'true' || steps.fetch_aar.outputs.fetched == 'false'
       with:
         repository: hootkit-dev/hootkit-core
         ref: ${{ steps.lock.outputs.commit }}
@@ -55,16 +62,16 @@ runs:
         persist-credentials: false
 
     - uses: dtolnay/rust-toolchain@stable
-      if: inputs.from-source == 'true'
+      if: inputs.from-source == 'true' || steps.fetch_aar.outputs.fetched == 'false'
       with:
         toolchain: ${{ steps.lock.outputs.rust }}
         targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
     - name: Install locked Android NDK and expose source path
-      if: inputs.from-source == 'true'
+      if: inputs.from-source == 'true' || steps.fetch_aar.outputs.fetched == 'false'
       shell: bash
       env:
-        CORE_NDK: ${{ steps.lock.outputs.ndk }}
+        CORE_NDK: ${{ inputs.from-source == 'true' && steps.lock.outputs.ndk || steps.lock.outputs.ndk }}
       run: |
         sdkmanager "ndk;$CORE_NDK"
         echo "ORG_GRADLE_PROJECT_hootkitCoreDir=$GITHUB_WORKSPACE/.core-source" >> "$GITHUB_ENV"

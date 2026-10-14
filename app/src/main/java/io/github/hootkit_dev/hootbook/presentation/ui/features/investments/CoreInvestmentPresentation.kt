@@ -5,7 +5,7 @@ import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
 import java.math.BigDecimal
 
 /** Selection identity follows Core's per-connection / per-account / per-model uniqueness. */
-data class BrokerAccountRef(val connectionId: Long, val brokerAccountId: String)
+data class BrokerAccountRef(val connectionId: String, val brokerAccountId: String)
 
 data class CoreHoldingKey(val instrumentId: String, val currency: String, val model: String) {
     companion object {
