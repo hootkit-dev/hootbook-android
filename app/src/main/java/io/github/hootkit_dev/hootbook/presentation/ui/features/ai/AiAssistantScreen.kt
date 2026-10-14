@@ -823,6 +823,7 @@ private fun ProviderForm(
             }
         }
     }
+    val fieldContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest
     // Claude keeps its address editable for a proxy or relay
     if (preset != AiPreset.OPENROUTER) {
         TextField(
@@ -848,7 +849,7 @@ private fun ProviderForm(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             shape = RoundedCornerShape(12.dp),
-            colors = hootbookTextFieldColors(),
+            colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -867,7 +868,7 @@ private fun ProviderForm(
                     label = { Text(stringResource(R.string.ai_api_key)) },
                     visualTransformation = PasswordVisualTransformation(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = hootbookTextFieldColors(),
+                    colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedButton(
@@ -909,7 +910,7 @@ private fun ProviderForm(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 shape = RoundedCornerShape(12.dp),
-                colors = hootbookTextFieldColors(),
+                colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
                 modifier = Modifier.weight(1f),
             )
             if (matchesSavedProvider) {
@@ -1085,7 +1086,7 @@ private fun ModelField(
     Surface(
         onClick = onClick,
         enabled = enabled,
-        shape = MaterialTheme.shapes.small,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier = Modifier.fillMaxWidth(),
     ) {
