@@ -79,4 +79,8 @@
     <string name="core_invest_save_credentials">保存凭据</string>
     <string name="core_invest_missing_credentials_hint">已从其他设备同步连接，请在本机填写 Token 与 Query ID 后读取报表。</string>
     <string name="core_invest_needs_first_refresh_hint">凭据已保存，请刷新以拉取最新券商报表。</string>
+    <string name="core_invest_daily_auto_sync_title">每日自动拉取持仓</string>
+    <string name="core_invest_daily_auto_sync_subtitle">每天首次打开或后台联网时自动拉取最新券商报表</string>
+    <string name="core_invest_synced_badge">已同步</string>
+    <string name="core_invest_fetch_first_report">立即拉取报表</string>
 </resources>

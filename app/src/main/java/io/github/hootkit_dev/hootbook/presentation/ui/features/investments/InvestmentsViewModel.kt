@@ -40,6 +40,8 @@ data class InvestmentsUiState(
     val connections: List<BrokerageConnection> = emptyList(),
     val overview: AccountsOverview? = null,
     val selected: BrokerAccountRef? = null,
+    val selectedConnectionId: String? = null,
+    val dailyAutoSyncEnabled: Boolean = true,
     val holding: CoreHoldingKey? = null,
     val connectProvider: String? = null,
     val credentialsTarget: BrokerageConnection? = null,
@@ -58,6 +60,11 @@ data class InvestmentsUiState(
     val account: BrokerageAccount?
         get() = selected?.let { linkedAccount(it, connections) }
 
+    val selectedConnection: BrokerageConnection?
+        get() =
+            connections.find { it.id == (selected?.connectionId ?: selectedConnectionId) }
+                ?: connections.firstOrNull()
+
     val selectedHolding: Holding?
         get() = account?.holdings?.find { CoreHoldingKey.of(it) == holding }
 
@@ -74,12 +81,22 @@ class InvestmentsViewModel
 private constructor(
     private val session: CoreSession?,
     private val changes: ChangeBus,
+    private val dailySyncManager: BrokerDailySyncManager?,
     private val testBrokerage: (suspend () -> BrokerageInterface)?,
     private val testAccounts: (suspend () -> AccountsOverview)?,
     private val testCatalog: (() -> List<Institution>)?,
 ) : ViewModel() {
     @Inject
-    constructor(session: CoreSession, changes: ChangeBus) : this(session, changes, null, null, null)
+    constructor(
+        session: CoreSession,
+        changes: ChangeBus,
+        dailySyncManager: BrokerDailySyncManager,
+    ) : this(session, changes, dailySyncManager, null, null, null)
+
+    internal constructor(
+        session: CoreSession,
+        changes: ChangeBus,
+    ) : this(session, changes, null, null, null, null)
 
     internal constructor(
         changes: ChangeBus,
@@ -88,9 +105,11 @@ private constructor(
             AccountsOverview(emptyList(), Money(java.math.BigDecimal.ZERO, "CNY"), true, null, null)
         },
         catalog: () -> List<Institution> = { emptyList() },
-    ) : this(null, changes, brokerage, accounts, catalog)
+    ) : this(null, changes, null, brokerage, accounts, catalog)
 
-    private val mutable = MutableStateFlow(InvestmentsUiState())
+    private val mutable = MutableStateFlow(
+        InvestmentsUiState(dailyAutoSyncEnabled = dailySyncManager?.enabled?.value ?: true)
+    )
     val state = mutable.asStateFlow()
     private var query: Job? = null
     private var queryRevision = 0L
@@ -102,7 +121,33 @@ private constructor(
     }
 
     init {
+        dailySyncManager?.let { manager ->
+            viewModelScope.launch {
+                manager.enabled.collect { enabled ->
+                    mutable.update { it.copy(dailyAutoSyncEnabled = enabled) }
+                }
+            }
+        }
         reload()
+    }
+
+    fun setDailyAutoSync(enabled: Boolean) {
+        dailySyncManager?.setEnabled(enabled)
+        mutable.update { it.copy(dailyAutoSyncEnabled = enabled) }
+        if (enabled) maybeAutoRefresh(state.value.connections)
+    }
+
+    private fun maybeAutoRefresh(connections: List<BrokerageConnection>) {
+        val manager = dailySyncManager ?: return
+        if (state.value.busy) return
+        val prioritized = buildList {
+            val currentId = state.value.selected?.connectionId ?: state.value.selectedConnectionId
+            connections.find { it.id == currentId }?.let(::add)
+            addAll(connections.filter { it.id != currentId })
+        }
+        val due = prioritized.firstOrNull { manager.shouldAutoRefreshNow(it) } ?: return
+        manager.markAttempted(due.id)
+        refresh(due.id)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -149,39 +194,54 @@ private constructor(
                     if (revision == queryRevision)
                         result.fold(
                             onSuccess = { (data, overview, institutions) ->
+                                val connections = data.second
                                 mutable.update { old ->
-                                    val selected =
-                                        old.selected?.takeIf {
-                                            linkedAccount(it, data.second) != null
+                                    val validConnectionId =
+                                        old.selectedConnectionId?.takeIf { id ->
+                                            connections.any { it.id == id }
                                         }
+                                    val existingSelected =
+                                        old.selected?.takeIf {
+                                            linkedAccount(it, connections) != null
+                                        }
+                                    val autoSelectedFromConnection =
+                                        if (existingSelected == null && validConnectionId != null) {
+                                            val conn = connections.find { it.id == validConnectionId }
+                                            conn?.accounts?.firstOrNull()?.let {
+                                                BrokerAccountRef(conn.id, it.accountId)
+                                            }
+                                        } else null
+                                    val selected = existingSelected ?: autoSelectedFromConnection
                                     old.copy(
                                         loading = false,
                                         providers = data.first,
-                                        connections = data.second,
+                                        connections = connections,
                                         overview = overview,
                                         institutions = institutions,
                                         selected = selected,
+                                        selectedConnectionId = selected?.connectionId ?: validConnectionId,
                                         holding =
                                             old.holding?.takeIf { key ->
                                                 selected
-                                                    ?.let { linkedAccount(it, data.second) }
+                                                    ?.let { linkedAccount(it, connections) }
                                                     ?.holdings
                                                     ?.any { CoreHoldingKey.of(it) == key } == true
                                             },
                                         credentialsTarget =
                                             old.credentialsTarget?.let { target ->
-                                                data.second.find { it.id == target.id }
+                                                connections.find { it.id == target.id }
                                             },
                                         linkTarget =
                                             old.linkTarget?.takeIf {
-                                                linkedAccount(it, data.second) != null
+                                                linkedAccount(it, connections) != null
                                             },
                                         disconnectTarget =
                                             old.disconnectTarget?.takeIf { id ->
-                                                data.second.any { it.id == id }
+                                                connections.any { it.id == id }
                                             },
                                     )
                                 }
+                                maybeAutoRefresh(connections)
                             },
                             onFailure = { failure ->
                                 mutable.update {
@@ -195,11 +255,30 @@ private constructor(
 
     fun selectAccount(ref: BrokerAccountRef?) {
         if (state.value.busy) return
+        val connId = ref?.connectionId?.takeIf { id -> state.value.connections.any { it.id == id } }
         mutable.update {
             it.copy(
                 selected = ref?.takeIf { value -> linkedAccount(value, it.connections) != null },
+                selectedConnectionId = connId,
                 holding = null,
             )
+        }
+        maybeAutoRefresh(state.value.connections)
+    }
+
+    fun selectConnection(connectionId: String?) {
+        if (state.value.busy) return
+        val conn = connectionId?.let { id -> state.value.connections.find { it.id == id } }
+        val firstAccount = conn?.accounts?.firstOrNull()?.let { BrokerAccountRef(conn.id, it.accountId) }
+        mutable.update {
+            it.copy(
+                selected = firstAccount,
+                selectedConnectionId = conn?.id,
+                holding = null,
+            )
+        }
+        if (conn != null) {
+            maybeAutoRefresh(listOf(conn))
         }
     }
 

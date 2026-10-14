@@ -31,6 +31,7 @@ enum class AiPhase {
 data class AiAssistantUiState(
     val loading: Boolean = true,
     val settings: AiSettings? = null,
+    val syncActive: Boolean = false,
     val config: AiConfigDraft = AiConfigDraft(),
     val configDirty: Boolean = false,
     val configBusy: Boolean = false,
@@ -156,6 +157,7 @@ private constructor(
                 val tables =
                     setOf(
                         Table.AI_SETTINGS,
+                        Table.SYNC_STATE,
                         Table.SETTINGS,
                         Table.ACCOUNTS,
                         Table.CATEGORIES,
@@ -174,11 +176,22 @@ private constructor(
                                             ai.reasoningLevels(s.protocol, s.baseUrl),
                                         )
                                     }
+                                val syncActive =
+                                    runCatching {
+                                        root.sync().use { sync ->
+                                            val st = sync.status()
+                                            st.lastSuccess != null ||
+                                                st.cursor != null ||
+                                                st.conflictCount > 0u ||
+                                                st.outboxCount > 0u
+                                        }
+                                    }.getOrDefault(false)
                                 val accounts = root.accounts().use { it.overview().accounts }
                                 root.categories().use { categories ->
                                     val all = categories.list(null, true)
                                     AiAssistantUiState(
                                         settings = settings,
+                                        syncActive = syncActive,
                                         pendingReview = pending,
                                         reasoningLevels = levels,
                                         accounts = accounts.associateBy { it.id },
@@ -220,6 +233,7 @@ private constructor(
                                     it.copy(
                                         loading = false,
                                         settings = config,
+                                        syncActive = loaded.syncActive,
                                         pendingReview = loaded.pendingReview,
                                         reasoningLevels = loaded.reasoningLevels,
                                         config =
@@ -306,21 +320,29 @@ private constructor(
                         // Separate Core commands; if settings succeeds and key fails, the error is
                         // explicit.
                         ai.setSettings(draft.protocol, draft.baseUrl, draft.model)
-                        ai.setReasoning(draft.reasoning)
-                        if (draft.removeKey || draft.apiKey.isNotBlank())
-                            ai.setApiKey(if (draft.removeKey) null else draft.apiKey)
                         val actual = ai.settings()
                         val levels = ai.reasoningLevels(actual.protocol, actual.baseUrl)
+                        val validReasoning =
+                            if (
+                                draft.reasoning == AiReasoning.PROVIDER_DEFAULT ||
+                                    draft.reasoning in levels
+                            )
+                                draft.reasoning
+                            else AiReasoning.PROVIDER_DEFAULT
+                        ai.setReasoning(validReasoning)
+                        if (draft.removeKey || draft.apiKey.isNotBlank())
+                            ai.setApiKey(if (draft.removeKey) null else draft.apiKey)
+                        val saved = ai.settings()
                         mutable.update {
                             it.copy(
-                                settings = actual,
+                                settings = saved,
                                 reasoningLevels = levels,
                                 config =
                                     AiConfigDraft(
-                                        actual.protocol,
-                                        actual.baseUrl,
-                                        actual.model,
-                                        reasoning = actual.reasoning,
+                                        saved.protocol,
+                                        saved.baseUrl,
+                                        saved.model,
+                                        reasoning = saved.reasoning,
                                     ),
                                 configDirty = false,
                             )
@@ -338,13 +360,26 @@ private constructor(
         }
     }
 
-    fun loadModels() {
+    fun clearModels() {
+        if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
+            return
+        ++modelsRevision
+        modelsJob?.cancel()
+        mutable.update {
+            it.copy(
+                modelLoading = false,
+                models = emptyList(),
+                modelError = null,
+            )
+        }
+    }
+
+    fun loadModels(draft: AiConfigDraft = state.value.config) {
         if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
             return
         val revision = ++modelsRevision
         modelsJob?.cancel()
-        val draft = state.value.config
-        mutable.update { it.copy(modelLoading = true, error = null, modelError = null) }
+        mutable.update { it.copy(modelLoading = true, modelError = null) }
         modelsJob =
             viewModelScope.launch {
                 try {
@@ -364,7 +399,6 @@ private constructor(
                         mutable.update {
                             it.copy(
                                 modelLoading = false,
-                                error = failureText(error),
                                 modelError = failureText(error),
                             )
                         }
@@ -655,7 +689,12 @@ private constructor(
                             )
                         }
                 } finally {
-                    if (!handedToReview) native?.let { releaseNative(it) }
+                    if (!handedToReview) {
+                        native?.let {
+                            releaseNative(it)
+                            runCatching { withAi { ai -> ai.discardPending() } }
+                        }
+                    }
                 }
             }
     }
@@ -678,6 +717,7 @@ private constructor(
         mutable.update {
             it.copy(
                 phase = AiPhase.COMPOSE,
+                pendingReview = null,
                 steps = emptyList(),
                 items = emptyList(),
                 review = null,
@@ -765,12 +805,20 @@ private constructor(
 
     fun restart() {
         if (state.value.saving || state.value.configBusy || state.value.fileBusy) return
+        val shouldDiscardPending =
+            state.value.phase == AiPhase.REVIEW || state.value.pendingReview != null
         cancel()
         releaseSession()
+        if (shouldDiscardPending) {
+            sessionCleanup.launch {
+                runCatching { withAi { it.discardPending() } }
+            }
+        }
         passwords.clear()
         mutable.update {
             it.copy(
                 phase = AiPhase.COMPOSE,
+                pendingReview = null,
                 request = "",
                 review = null,
                 items = emptyList(),

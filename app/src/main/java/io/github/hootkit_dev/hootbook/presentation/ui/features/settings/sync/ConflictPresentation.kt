@@ -11,6 +11,8 @@ internal fun conflictGroups(conflict: SyncConflict): List<List<ConflictField>> {
         Table.SUBSCRIPTIONS -> listOf(setOf("amount", "currency"), setOf("every", "unit", "end_date", "next_due", "last_paid"), setOf("category_id", "subcategory_id"))
         Table.DEBTS -> listOf(setOf("kind", "amount", "currency", "due_date"))
         Table.QUICK_TEMPLATES -> listOf(setOf("kind", "category_id", "subcategory_id"), setOf("amount", "prefill_amount"), setOf("account_id", "currency"))
+        Table.AI_SETTINGS -> listOf(setOf("protocol", "base_url", "model", "reasoning", "key_hash"))
+        Table.BROKERAGE_CONNECTIONS -> listOf(setOf("provider_id", "cred_hash"))
         else -> emptyList()
     }
     val result = mutableListOf<List<ConflictField>>(); val used = mutableSetOf<String>()

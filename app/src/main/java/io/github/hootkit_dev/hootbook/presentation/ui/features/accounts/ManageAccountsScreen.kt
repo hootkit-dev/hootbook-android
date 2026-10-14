@@ -115,6 +115,9 @@ import java.math.BigDecimal
 import dev.hootkit.core.*
 import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation
 import io.github.hootkit_dev.hootbook.presentation.format.coreDateText
+import io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerConnectForm
+import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.InvestmentsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -125,8 +128,10 @@ fun ManageAccountsScreen(
     onBrokerage: (String, String) -> Unit,
     category: AccountCategory? = null,
     manageAccountsViewModel: ManageAccountsViewModel = hiltViewModel(),
+    investmentsViewModel: InvestmentsViewModel = hiltViewModel(),
 ) {
     val uiState by manageAccountsViewModel.uiState.collectAsStateWithLifecycle()
+    val investmentsState by investmentsViewModel.state.collectAsStateWithLifecycle()
     val accounts = uiState.overview?.accounts.orEmpty().filter { category == null || it.category() == category }
     val connections = uiState.connections.takeIf { category == null || category == AccountCategory.INVESTMENTS }.orEmpty()
     val sections = remember(accounts) { accounts.accountSections() }
@@ -182,8 +187,13 @@ fun ManageAccountsScreen(
                         uiState.netWorthHistory?.takeIf { it.points.isNotEmpty() }?.let { history ->
                             item(key = "net_worth_history") {
                                 NetWorthHistoryCard(
+                                    netWorth = uiState.overview?.netWorth,
                                     history = history,
+                                    period = uiState.netWorthPeriod,
+                                    customRange = uiState.netWorthCustomRange,
                                     step = uiState.netWorthStep,
+                                    onSelectPeriod = manageAccountsViewModel::selectNetWorthPeriod,
+                                    onSelectCustomRange = manageAccountsViewModel::setNetWorthCustomRange,
                                     onSelectStep = manageAccountsViewModel::selectNetWorthStep,
                                 )
                             }
@@ -243,9 +253,50 @@ fun ManageAccountsScreen(
                                             io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
                                                 headline = { Text(connection.label) },
                                                 supporting = subtitle?.let { { Text(it) } },
-                                                onClick = { onBrokerage(connection.id, "") }
+                                                leading = {
+                                                    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            Icons.Rounded.Link,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        )
+                                                    }
+                                                },
+                                                trailing = {
+                                                    if (!connection.hasCredentials) {
+                                                        TextButton(
+                                                            onClick = { investmentsViewModel.showSetCredentials(connection.id) },
+                                                            enabled = !investmentsState.busy,
+                                                            shapes = ButtonDefaults.shapes(),
+                                                        ) {
+                                                            Text(stringResource(R.string.core_invest_set_credentials))
+                                                        }
+                                                    } else {
+                                                        TextButton(
+                                                            onClick = { investmentsViewModel.refresh(connection.id) },
+                                                            enabled = !investmentsState.busy,
+                                                            shapes = ButtonDefaults.shapes(),
+                                                        ) {
+                                                            Text(stringResource(R.string.core_invest_refresh))
+                                                        }
+                                                    }
+                                                },
+                                                onClick = { onBrokerage(connection.id, "") },
+                                                padding = PaddingValues(0.dp),
                                             )
                                         }
+                                    }
+                                }
+                                if (connections.isNotEmpty()) {
+                                    item(key = "investments_daily_auto_sync") {
+                                        PreferenceSwitch(
+                                            title = stringResource(R.string.core_invest_daily_auto_sync_title),
+                                            subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+                                            checked = investmentsState.dailyAutoSyncEnabled,
+                                            onCheckedChange = investmentsViewModel::setDailyAutoSync,
+                                            padding = PaddingValues(0.dp),
+                                            isSingle = true,
+                                        )
                                     }
                                 }
                                 item(key = "investments_add_broker") {
@@ -276,15 +327,41 @@ fun ManageAccountsScreen(
             }
         }
     }
+    investmentsState.credentialsTarget?.let { connection ->
+        BrokerConnectForm(
+            providerId = connection.providerId,
+            busy = investmentsState.busy,
+            error = investmentsState.error,
+            onDismiss = {
+                if (investmentsState.busy) investmentsViewModel.cancelOperation()
+                else investmentsViewModel.showSetCredentials(null)
+                investmentsViewModel.clearError()
+            },
+            onConnect = { _, fields -> investmentsViewModel.setCredentials(connection.id, fields) },
+        )
+    }
 }
 
 @Composable
 private fun NetWorthHistoryCard(
+    netWorth: Money?,
     history: NetWorthHistory,
+    period: io.github.hootkit_dev.hootbook.presentation.common.TimePeriod,
+    customRange: Pair<java.time.LocalDate, java.time.LocalDate>?,
     step: HistoryStep,
+    onSelectPeriod: (io.github.hootkit_dev.hootbook.presentation.common.TimePeriod) -> Unit,
+    onSelectCustomRange: (java.time.LocalDate, java.time.LocalDate) -> Unit,
     onSelectStep: (HistoryStep) -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+    val blurEffects = LocalBlurEffects.current
+    val latestAmount = netWorth?.amount ?: history.points.lastOrNull()?.netWorth
+    val currency = netWorth?.currency ?: history.currency
+    val timePeriods = remember { io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.entries }
+    val customRangeLabel = remember(customRange) {
+        io.github.hootkit_dev.hootbook.utils.DateRangeUtils.formatDateRange(customRange)
+    }
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         shape = MaterialTheme.shapes.large,
@@ -299,18 +376,18 @@ private fun NetWorthHistoryCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        stringResource(R.string.account_net_worth_trend),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium,
+                        stringResource(R.string.net_worth_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    history.points.lastOrNull()?.let { latest ->
+                    latestAmount?.let { amount ->
                         Text(
-                            CoreMoneyPresentation.formatCurrency(latest.netWorth, history.currency) +
-                                " · " + latest.date.coreDateText(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            CoreMoneyPresentation.formatCurrency(amount, currency),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -320,53 +397,112 @@ private fun NetWorthHistoryCard(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (history.points.any { !it.complete }) {
-                Text(
-                    stringResource(R.string.account_net_worth_securities_missing),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            if (expanded) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(
-                        HistoryStep.DAILY to R.string.account_net_worth_step_daily,
-                        HistoryStep.MONTHLY to R.string.account_net_worth_step_monthly,
-                    ).forEach { (s, labelRes) ->
-                        androidx.compose.material3.FilterChip(
-                            selected = step == s,
-                            onClick = { onSelectStep(s) },
-                            label = { Text(stringResource(labelRes)) },
-                        )
-                    }
-                }
-                history.points.takeLast(8).reversed().forEach { point ->
-                    Row(
+            androidx.compose.animation.AnimatedVisibility(
+                visible = expanded,
+                enter = androidx.compose.animation.expandVertically(),
+                exit = androidx.compose.animation.shrinkVertically(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            point.date.coreDateText() + (if (!point.complete) " *" else ""),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                CoreMoneyPresentation.formatCurrency(point.netWorth, history.currency),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            Text(
-                                "+${CoreMoneyPresentation.formatCurrency(point.assets, history.currency)} / -${CoreMoneyPresentation.formatCurrency(point.liabilities, history.currency)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        items(timePeriods) { item ->
+                            val isSelected =
+                                if (item == io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.CUSTOM) {
+                                    period == item && customRange != null
+                                } else {
+                                    period == item
+                                }
+                            androidx.compose.material3.FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (item == io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.CUSTOM) {
+                                        showDateRangePicker = true
+                                    } else {
+                                        onSelectPeriod(item)
+                                    }
+                                },
+                                label = {
+                                    Text(
+                                        if (item == io.github.hootkit_dev.hootbook.presentation.common.TimePeriod.CUSTOM && customRangeLabel != null) {
+                                            customRangeLabel
+                                        } else {
+                                            stringResource(item.labelRes)
+                                        }
+                                    )
+                                },
+                                colors =
+                                    androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                                border =
+                                    androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                                        borderWidth = 0.dp,
+                                        selected = isSelected,
+                                        enabled = true,
+                                    ),
                             )
                         }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        listOf(
+                            HistoryStep.DAILY to R.string.account_net_worth_step_daily,
+                            HistoryStep.MONTHLY to R.string.account_net_worth_step_monthly,
+                        ).forEach { (s, labelRes) ->
+                            val isSelected = step == s
+                            androidx.compose.material3.FilterChip(
+                                selected = isSelected,
+                                onClick = { onSelectStep(s) },
+                                label = { Text(stringResource(labelRes)) },
+                                colors =
+                                    androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                                border =
+                                    androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                                        borderWidth = 0.dp,
+                                        selected = isSelected,
+                                        enabled = true,
+                                    ),
+                            )
+                        }
+                    }
+                    io.github.hootkit_dev.hootbook.presentation.ui.features.analytics.NetWorthLineChart(
+                        points = history.points,
+                        currency = history.currency,
+                    )
+                    if (history.points.any { !it.complete }) {
+                        Text(
+                            stringResource(R.string.account_net_worth_securities_missing),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
         }
+    }
+    if (showDateRangePicker) {
+        io.github.hootkit_dev.hootbook.presentation.ui.components.DateRangePickerDialog(
+            onDismiss = { showDateRangePicker = false },
+            onConfirm = { startDate, endDate ->
+                onSelectCustomRange(startDate, endDate)
+                showDateRangePicker = false
+            },
+            initialStartDate = customRange?.first,
+            initialEndDate = customRange?.second,
+            blurEffects = blurEffects,
+        )
     }
 }
 

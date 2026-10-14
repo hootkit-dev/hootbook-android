@@ -140,6 +140,8 @@ fun HootbookNavHost(
             Table.SUBSCRIPTIONS -> Subscriptions(id)
             Table.PEOPLE -> PersonDetail(id)
             Table.TAGS -> Transactions(tagId = id)
+            Table.AI_SETTINGS -> AiAssistant
+            Table.BROKERAGE_CONNECTIONS -> Investments(connectionId = id)
             else -> {
                 recordHint = "$table · $id"
                 when (table) {
@@ -533,12 +535,17 @@ fun HootbookNavHost(
                                             if (!connection.isNullOrBlank() && !account.isNullOrBlank()) {
                                                 opened = true
                                                 vm.selectAccount(BrokerAccountRef(connection, account))
+                                            } else if (!connection.isNullOrBlank()) {
+                                                opened = true
+                                                vm.selectConnection(connection)
                                             } else if (state.connections.isNotEmpty()) {
                                                 val firstConn = state.connections.first()
                                                 val firstAccount = firstConn.accounts.firstOrNull()?.accountId
+                                                opened = true
                                                 if (firstAccount != null) {
-                                                    opened = true
                                                     vm.selectAccount(BrokerAccountRef(firstConn.id, firstAccount))
+                                                } else {
+                                                    vm.selectConnection(firstConn.id)
                                                 }
                                             }
                                         }
@@ -608,7 +615,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    SyncScreen(back)
+                                    SyncScreen(back, onOpenRecord = ::record)
                                 }
                             }
                             composable<Profile>(

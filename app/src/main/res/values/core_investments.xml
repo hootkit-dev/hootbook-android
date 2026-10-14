@@ -79,4 +79,8 @@
     <string name="core_invest_save_credentials">Save credentials</string>
     <string name="core_invest_missing_credentials_hint">Synced from another device. Enter your Token and Query ID on this device to fetch reports.</string>
     <string name="core_invest_needs_first_refresh_hint">Credentials saved. Refresh to fetch the latest broker report.</string>
+    <string name="core_invest_daily_auto_sync_title">Daily auto-refresh</string>
+    <string name="core_invest_daily_auto_sync_subtitle">Automatically fetch the latest broker report once a day</string>
+    <string name="core_invest_synced_badge">Synced</string>
+    <string name="core_invest_fetch_first_report">Fetch report now</string>
 </resources>

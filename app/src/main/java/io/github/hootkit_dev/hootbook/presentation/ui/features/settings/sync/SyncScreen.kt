@@ -105,14 +105,28 @@ import java.time.Instant
 import java.time.ZoneId
 
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import org.json.JSONObject
+
 /**
  * Backup & sync → Firebase sync: Google sign-in, the on/off switch, the sync passphrase, the
- * first-sync choice and a collapsed status and debug section (docs/sync.md). Core supplies the current setup phase.
+ * first-sync choice, conflict resolution, deletion notices, conflict policy, and a collapsed status
+ * and debug section (docs/sync.md). Core supplies the current setup phase.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SyncScreen(
     onNavigateBack: () -> Unit,
+    onOpenRecord: (Table, String) -> Unit = { _, _ -> },
     viewModel: SyncViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -121,6 +135,8 @@ fun SyncScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scrollBehaviorSmall = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = remember { HazeState() }
+    var reviewingConflictId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val reviewingConflict = state.conflicts.find { it.id == reviewingConflictId }
     SyncMessagesEffect(viewModel, snackbar)
 
     Scaffold(
@@ -160,11 +176,47 @@ fun SyncScreen(
                 SyncSetupSection(state, wrongPassphrase, viewModel) {
                     EnabledSection(state, onEnabledChange = viewModel::setEnabled)
                 }
+                if (state.conflicts.isNotEmpty()) {
+                    ConflictsSection(
+                        conflicts = state.conflicts,
+                        busy = state.busy,
+                        onReview = { reviewingConflictId = it.id },
+                        onOpenRecord = onOpenRecord,
+                        onDismiss = viewModel::dismissConflicts,
+                    )
+                }
+                if (state.notices.isNotEmpty()) {
+                    NoticesSection(
+                        notices = state.notices,
+                        busy = state.busy,
+                        onOpenRecord = onOpenRecord,
+                        onDismiss = viewModel::dismissNotices,
+                    )
+                }
+                state.policy?.let { policy ->
+                    ConflictPolicySection(
+                        policy = policy,
+                        busy = state.busy,
+                        onPolicyChange = viewModel::setPolicy,
+                    )
+                }
                 if (state.status != null && state.status?.phase != SyncPhase.UNAVAILABLE) {
                     DebugSection(state, onSyncNow = { viewModel.syncNow() })
                 }
             }
         }
+    }
+
+    reviewingConflict?.let { conflict ->
+        ConflictResolutionDialog(
+            conflict = conflict,
+            enabled = !state.busy,
+            onDismiss = { reviewingConflictId = null },
+            onResolve = { choice ->
+                viewModel.resolveConflict(conflict.id, choice)
+                reviewingConflictId = null
+            },
+        )
     }
 }
 
@@ -559,6 +611,551 @@ private fun RowIcon(icon: ImageVector, error: Boolean = false) {
             tint = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ConflictsSection(
+    conflicts: List<SyncConflict>,
+    busy: Boolean,
+    onReview: (SyncConflict) -> Unit,
+    onOpenRecord: (Table, String) -> Unit,
+    onDismiss: (List<Long>) -> Unit,
+) {
+    val autoResolvedIds = conflicts.filter { !it.pending }.map { it.id }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "${stringResource(R.string.sync_conflicts_title)} · ${conflicts.size}",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (autoResolvedIds.isNotEmpty()) {
+            TextButton(
+                onClick = { onDismiss(autoResolvedIds) },
+                enabled = !busy,
+                shapes = ButtonDefaults.shapes(),
+            ) {
+                Text(stringResource(R.string.sync_conflict_dismiss_all))
+            }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        conflicts.forEach { item ->
+            val summary = remember(item.mine, item.theirs, item.recordId) { conflictRecordSummary(item) }
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (item.pending) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().testTag("sync_conflict_${item.id}"),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "${syncTableLabel(item.table)} · $summary",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Surface(
+                            color = if (item.pending) MaterialTheme.colorScheme.errorContainer
+                            else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (item.pending) MaterialTheme.colorScheme.onErrorContainer
+                            else MaterialTheme.colorScheme.onSecondaryContainer,
+                            shape = RoundedCornerShape(8.dp),
+                        ) {
+                            Text(
+                                text = when {
+                                    item.pending -> stringResource(R.string.sync_conflicts_pending_badge)
+                                    item.applied == ConflictSide.MINE -> stringResource(R.string.sync_conflicts_auto_mine_badge)
+                                    else -> stringResource(R.string.sync_conflicts_auto_theirs_badge)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        text = "${conflictKindLabel(item.kind)} · ${item.at.coreDateText()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (item.fields.isNotEmpty()) {
+                        val secretLabel = stringResource(R.string.sync_conflict_secret_value)
+                        item.fields.take(3).forEach { field ->
+                            val mineVal = formatConflictFieldValue(field.column, field.mine, secretLabel)
+                            val theirsVal = formatConflictFieldValue(field.column, field.theirs, secretLabel)
+                            Text(
+                                text = "${field.column}: $mineVal ↔ $theirsVal",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.End),
+                    ) {
+                        if (!item.pending) {
+                            TextButton(
+                                onClick = { onDismiss(listOf(item.id)) },
+                                enabled = !busy,
+                                shapes = ButtonDefaults.shapes(),
+                            ) {
+                                Text(stringResource(R.string.sync_conflict_dismiss))
+                            }
+                        }
+                        TextButton(
+                            onClick = { onOpenRecord(item.table, item.recordId) },
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.sync_conflict_open_record))
+                        }
+                        FilledTonalButton(
+                            onClick = { onReview(item) },
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                            modifier = Modifier.testTag("sync_conflict_review_${item.id}"),
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (item.pending) R.string.sync_conflict_review
+                                    else R.string.sync_conflict_review_done
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NoticesSection(
+    notices: List<SyncNotice>,
+    busy: Boolean,
+    onOpenRecord: (Table, String) -> Unit,
+    onDismiss: (List<Long>) -> Unit,
+) {
+    SectionHeader(
+        title = "${stringResource(R.string.sync_notices_title)} · ${notices.size}",
+        modifier = Modifier.padding(start = Spacing.md),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        notices.forEach { notice ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().testTag("sync_notice_${notice.id}"),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    val header = listOfNotNull(
+                        notice.name.takeIf { it.isNotBlank() },
+                        notice.last4?.takeIf { it.isNotBlank() }?.let { "•••• $it" },
+                        notice.currency?.takeIf { it.isNotBlank() },
+                    ).joinToString(" · ")
+                    Text(
+                        text = header,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_notice_deleted_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    notice.references.forEach { refs ->
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            refs.ids.forEach { id ->
+                                AssistChip(
+                                    onClick = { onOpenRecord(refs.table, id) },
+                                    enabled = !busy,
+                                    label = { Text("${syncTableLabel(refs.table)} · ${id.take(8)}") },
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(
+                            onClick = { onDismiss(listOf(notice.id)) },
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.sync_conflict_dismiss))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ConflictPolicySection(
+    policy: ConflictPolicy,
+    busy: Boolean,
+    onPolicyChange: (ConflictPolicy) -> Unit,
+) {
+    SectionHeader(
+        title = stringResource(R.string.sync_policy_title),
+        modifier = Modifier.padding(start = Spacing.md),
+    )
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.sync_policy_both_edited),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                BothEditedPolicy.entries.forEach { option ->
+                    FilterChip(
+                        selected = policy.bothEdited == option,
+                        onClick = { if (policy.bothEdited != option) onPolicyChange(policy.copy(bothEdited = option)) },
+                        enabled = !busy,
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (option) {
+                                        BothEditedPolicy.MINE -> R.string.sync_policy_option_mine
+                                        BothEditedPolicy.THEIRS -> R.string.sync_policy_option_theirs
+                                        BothEditedPolicy.ASK -> R.string.sync_policy_option_ask
+                                    }
+                                )
+                            )
+                        },
+                    )
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Text(
+                text = stringResource(R.string.sync_policy_delete_vs_edit),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                DeletePolicy.entries.forEach { option ->
+                    FilterChip(
+                        selected = policy.deleteVsEdit == option,
+                        onClick = { if (policy.deleteVsEdit != option) onPolicyChange(policy.copy(deleteVsEdit = option)) },
+                        enabled = !busy,
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (option) {
+                                        DeletePolicy.DELETE -> R.string.sync_policy_option_delete
+                                        DeletePolicy.ASK -> R.string.sync_policy_option_ask
+                                    }
+                                )
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ConflictResolutionDialog(
+    conflict: SyncConflict,
+    enabled: Boolean,
+    onDismiss: () -> Unit,
+    onResolve: (ConflictChoice) -> Unit,
+) {
+    val groups = remember(conflict) { conflictGroups(conflict) }
+    var sides by remember(conflict) {
+        mutableStateOf(
+            conflict.fields.associate {
+                it.column to (conflict.applied ?: ConflictSide.MINE)
+            }
+        )
+    }
+    val summary = remember(conflict.mine, conflict.theirs, conflict.recordId) { conflictRecordSummary(conflict) }
+    val secretLabel = stringResource(R.string.sync_conflict_secret_value)
+    val deletedLabel = stringResource(R.string.sync_conflict_deleted_value)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = HootbookDialogDefaults.containerColor,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.sync_conflict_dialog_title))
+                Text(
+                    text = "${syncTableLabel(conflict.table)} · $summary",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Text(
+                    text = "${conflictKindLabel(conflict.kind)} · ${conflict.at.coreDateText()}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (conflict.kind == ConflictKind.BOTH_EDITED && groups.isNotEmpty()) {
+                    groups.forEach { fields ->
+                        val unitSide = sides[fields.first().column] ?: ConflictSide.MINE
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.sm),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            ) {
+                                Text(
+                                    text = fields.joinToString(" / ") { it.column },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                fields.forEach { field ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        if (fields.size > 1) {
+                                            Text(
+                                                text = field.column,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                        field.base?.let { base ->
+                                            Text(
+                                                text = "${stringResource(R.string.sync_conflict_base)}: ${formatConflictFieldValue(field.column, base, secretLabel)}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Text(
+                                            text = "${stringResource(R.string.sync_conflict_mine)}: ${formatConflictFieldValue(field.column, field.mine, secretLabel)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (unitSide == ConflictSide.MINE) FontWeight.SemiBold else FontWeight.Normal,
+                                        )
+                                        Text(
+                                            text = "${stringResource(R.string.sync_conflict_theirs)}: ${formatConflictFieldValue(field.column, field.theirs, secretLabel)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (unitSide == ConflictSide.THEIRS) FontWeight.SemiBold else FontWeight.Normal,
+                                        )
+                                    }
+                                }
+                                if (groups.size > 1) {
+                                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                                        FilterChip(
+                                            selected = unitSide == ConflictSide.MINE,
+                                            onClick = {
+                                                sides = sides + fields.associate { it.column to ConflictSide.MINE }
+                                            },
+                                            enabled = enabled,
+                                            label = { Text(stringResource(R.string.sync_conflict_keep_mine)) },
+                                        )
+                                        FilterChip(
+                                            selected = unitSide == ConflictSide.THEIRS,
+                                            onClick = {
+                                                sides = sides + fields.associate { it.column to ConflictSide.THEIRS }
+                                            },
+                                            enabled = enabled,
+                                            label = { Text(stringResource(R.string.sync_conflict_keep_theirs)) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(Spacing.sm),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.sync_conflict_mine),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = conflict.mine?.let { summarizeJsonRow(it) } ?: deletedLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            HorizontalDivider()
+                            Text(
+                                text = stringResource(R.string.sync_conflict_theirs),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = conflict.theirs?.let { summarizeJsonRow(it) } ?: deletedLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.End),
+                ) {
+                    OutlinedButton(
+                        onClick = { onResolve(ConflictChoice.Mine) },
+                        enabled = enabled,
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        Text(stringResource(R.string.sync_conflict_keep_mine))
+                    }
+                    OutlinedButton(
+                        onClick = { onResolve(ConflictChoice.Theirs) },
+                        enabled = enabled,
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        Text(stringResource(R.string.sync_conflict_keep_theirs))
+                    }
+                }
+                if (conflict.kind == ConflictKind.BOTH_EDITED && groups.size > 1) {
+                    Button(
+                        onClick = { onResolve(ConflictChoice.PerField(sides)) },
+                        enabled = enabled,
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        Text(stringResource(R.string.sync_conflict_apply_per_field))
+                    }
+                }
+            }
+        },
+        dismissButton = {
+            DialogDismissButton(stringResource(R.string.cancel), onClick = onDismiss)
+        },
+    )
+}
+
+@Composable
+private fun syncTableLabel(table: Table): String = stringResource(
+    when (table) {
+        Table.TRANSACTIONS -> R.string.sync_table_transactions
+        Table.ACCOUNTS -> R.string.sync_table_accounts
+        Table.BUDGETS -> R.string.sync_table_budgets
+        Table.SUBSCRIPTIONS -> R.string.sync_table_subscriptions
+        Table.DEBTS -> R.string.sync_table_debts
+        Table.PEOPLE -> R.string.sync_table_people
+        Table.CATEGORIES -> R.string.sync_table_categories
+        Table.SUBCATEGORIES -> R.string.sync_table_subcategories
+        Table.TAGS -> R.string.sync_table_tags
+        Table.QUICK_TEMPLATES -> R.string.sync_table_quick_templates
+        Table.AI_SETTINGS -> R.string.sync_table_ai_settings
+        Table.BROKERAGE_CONNECTIONS -> R.string.sync_table_brokerage_connections
+        Table.SETTINGS -> R.string.sync_table_settings
+        else -> R.string.sync_firebase_title
+    }
+)
+
+@Composable
+private fun conflictKindLabel(kind: ConflictKind): String = stringResource(
+    when (kind) {
+        ConflictKind.BOTH_EDITED -> R.string.sync_conflict_kind_both_edited
+        ConflictKind.EDITED_DELETED -> R.string.sync_conflict_kind_edited_deleted
+        ConflictKind.DELETED_EDITED -> R.string.sync_conflict_kind_deleted_edited
+    }
+)
+
+private fun conflictRecordSummary(conflict: SyncConflict): String {
+    val source = conflict.mine ?: conflict.theirs
+    if (source != null) {
+        try {
+            val obj = JSONObject(source)
+            val label = obj.optString("name").ifBlank {
+                obj.optString("label").ifBlank {
+                    obj.optString("note").ifBlank {
+                        obj.optString("model")
+                    }
+                }
+            }
+            val amount = obj.optString("amount")
+            val currency = obj.optString("currency")
+            val parts = buildList {
+                if (label.isNotBlank()) add(label)
+                if (amount.isNotBlank()) add(if (currency.isNotBlank()) "$amount $currency" else amount)
+            }
+            if (parts.isNotEmpty()) return parts.joinToString(" · ")
+        } catch (_: Exception) {
+        }
+    }
+    return conflict.recordId.take(12)
+}
+
+private fun summarizeJsonRow(raw: String): String = try {
+    val obj = JSONObject(raw)
+    val keys = obj.keys().asSequence().toList()
+        .filterNot { it in setOf("id", "created_at", "updated_at") }
+    keys.joinToString("\n") { key -> "$key: ${obj.opt(key)}" }.ifBlank { raw }
+} catch (_: Exception) {
+    raw
+}
+
+private fun formatConflictFieldValue(column: String, value: String?, secretLabel: String): String {
+    if (value.isNullOrBlank()) return "—"
+    if (column == "key_hash" || column == "cred_hash") {
+        return "$secretLabel (${value.take(8)}…)"
+    }
+    return value
 }
 
 /** Credential Manager shows its sheet over an Activity. */

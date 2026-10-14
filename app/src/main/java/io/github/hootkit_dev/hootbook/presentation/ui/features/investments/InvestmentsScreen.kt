@@ -88,6 +88,7 @@ import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation 
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SearchBarBox
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
 import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
@@ -130,8 +131,8 @@ fun InvestmentsScreen(
             pendingDisconnect = true
         }
     }
-    LaunchedEffect(pendingDisconnect, state.busy, state.selected) {
-        if (pendingDisconnect && !state.busy && state.selected == null) {
+    LaunchedEffect(pendingDisconnect, state.busy, state.selected, state.selectedConnection) {
+        if (pendingDisconnect && !state.busy && state.selected == null && state.selectedConnection == null) {
             onNavigateBack()
         }
     }
@@ -140,6 +141,7 @@ fun InvestmentsScreen(
         state.busy ||
             state.holding != null ||
             state.connectProvider != null ||
+            state.credentialsTarget != null ||
             state.linkTarget != null ||
             state.disconnectTarget != null
     ) {
@@ -147,6 +149,8 @@ fun InvestmentsScreen(
             viewModel.selectHolding(null)
         } else if (state.connectProvider != null) {
             viewModel.showConnect(null)
+        } else if (state.credentialsTarget != null) {
+            viewModel.showSetCredentials(null)
         } else if (state.linkTarget != null) {
             viewModel.showLink(null)
         } else if (state.disconnectTarget != null) {
@@ -162,6 +166,8 @@ fun InvestmentsScreen(
                 viewModel.selectHolding(null)
             } else if (state.connectProvider != null) {
                 viewModel.showConnect(null)
+            } else if (state.credentialsTarget != null) {
+                viewModel.showSetCredentials(null)
             } else if (state.linkTarget != null) {
                 viewModel.showLink(null)
             } else if (state.disconnectTarget != null) {
@@ -175,6 +181,8 @@ fun InvestmentsScreen(
         onCancel = viewModel::cancelOperation,
         onClearError = viewModel::clearError,
         onConnect = viewModel::showConnect,
+        onSetCredentials = viewModel::showSetCredentials,
+        onSetDailyAutoSync = viewModel::setDailyAutoSync,
         onSelect = viewModel::selectAccount,
         onHolding = viewModel::selectHolding,
         onLink = viewModel::showLink,
@@ -203,6 +211,20 @@ fun InvestmentsScreen(
                 onConnect = { label, fields -> viewModel.connect(id, label, fields) },
             )
         }
+    }
+
+    // Set credentials dialog for an existing (e.g. cloud-synced) connection
+    state.credentialsTarget?.let { connection ->
+        BrokerConnectForm(
+            providerId = connection.providerId,
+            busy = state.busy,
+            error = state.error,
+            onDismiss = {
+                if (state.busy) viewModel.cancelOperation() else viewModel.showSetCredentials(null)
+                viewModel.clearError()
+            },
+            onConnect = { _, fields -> viewModel.setCredentials(connection.id, fields) },
+        )
     }
 
     // Link dialog
@@ -290,6 +312,8 @@ internal fun InvestmentsContent(
     onCancel: () -> Unit,
     onClearError: () -> Unit,
     onConnect: (String?) -> Unit,
+    onSetCredentials: (String?) -> Unit = {},
+    onSetDailyAutoSync: (Boolean) -> Unit = {},
     onSelect: (BrokerAccountRef?) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
@@ -305,6 +329,7 @@ internal fun InvestmentsContent(
 
     val holding = state.selectedHolding
     val account = state.account
+    val pendingConnection = state.selectedConnection
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -314,6 +339,7 @@ internal fun InvestmentsContent(
                     when {
                         holding != null -> holding.symbol
                         account != null -> account.accountId
+                        pendingConnection != null -> pendingConnection.label
                         else -> stringResource(R.string.core_invest_title)
                     },
                 scrollBehaviorSmall = scrollBehaviorSmall,
@@ -342,7 +368,7 @@ internal fun InvestmentsContent(
             isRefreshing = state.busy,
             onRefresh = {
                 if (!state.busy) {
-                    val connectionId = state.selected?.connectionId
+                    val connectionId = state.selected?.connectionId ?: pendingConnection?.id
                     if (connectionId != null) onRefresh(connectionId) else onRefreshAll()
                 }
             },
@@ -406,10 +432,26 @@ internal fun InvestmentsContent(
                             state = state,
                             enabled = !state.busy,
                             onRefresh = onRefresh,
+                            onSetCredentials = onSetCredentials,
+                            onSetDailyAutoSync = onSetDailyAutoSync,
                             onLink = onLink,
                             onAccountHistory = onAccountHistory,
                             onHolding = onHolding,
                         )
+                    }
+                    pendingConnection != null -> {
+                        item(key = "pending_connection") {
+                            PendingConnectionCard(
+                                connection = pendingConnection,
+                                providerName = providerName(pendingConnection.providerId),
+                                busy = state.busy,
+                                dailyAutoSyncEnabled = state.dailyAutoSyncEnabled,
+                                onRefresh = { onRefresh(pendingConnection.id) },
+                                onSetCredentials = { onSetCredentials(pendingConnection.id) },
+                                onDisconnect = { onDisconnect(pendingConnection.id) },
+                                onSetDailyAutoSync = onSetDailyAutoSync,
+                            )
+                        }
                     }
                     state.loading -> {
                         item(key = "loading") {
@@ -446,6 +488,107 @@ internal fun InvestmentsContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PendingConnectionCard(
+    connection: BrokerageConnection,
+    providerName: String,
+    busy: Boolean,
+    dailyAutoSyncEnabled: Boolean,
+    onRefresh: () -> Unit,
+    onSetCredentials: () -> Unit,
+    onDisconnect: () -> Unit,
+    onSetDailyAutoSync: (Boolean) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.largeIncreased,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = providerName,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = connection.label,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text =
+                        when {
+                            !connection.hasCredentials ->
+                                stringResource(R.string.core_invest_missing_credentials_hint)
+                            connection.syncedAt == null ->
+                                stringResource(R.string.core_invest_needs_first_refresh_hint)
+                            else -> stringResource(R.string.core_invest_no_holdings)
+                        },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (!connection.hasCredentials) {
+                        Button(
+                            onClick = onSetCredentials,
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.core_invest_set_credentials))
+                        }
+                    } else {
+                        Button(
+                            onClick = onRefresh,
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                            )
+                            Text(
+                                text = stringResource(R.string.core_invest_refresh),
+                                modifier = Modifier.padding(start = 6.dp),
+                            )
+                        }
+                        AssistChip(
+                            onClick = onSetCredentials,
+                            enabled = !busy,
+                            label = { Text(stringResource(R.string.core_invest_set_credentials)) },
+                        )
+                    }
+                    TextButton(
+                        onClick = onDisconnect,
+                        enabled = !busy,
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.core_invest_disconnect),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+        }
+        PreferenceSwitch(
+            title = stringResource(R.string.core_invest_daily_auto_sync_title),
+            subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+            checked = dailyAutoSyncEnabled,
+            onCheckedChange = onSetDailyAutoSync,
+            padding = PaddingValues(0.dp),
+            isSingle = true,
+        )
     }
 }
 
@@ -528,6 +671,8 @@ private fun LazyListScope.brokerAccountItems(
     state: InvestmentsUiState,
     enabled: Boolean,
     onRefresh: (String) -> Unit,
+    onSetCredentials: (String?) -> Unit,
+    onSetDailyAutoSync: (Boolean) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
     onAccountHistory: (String) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
@@ -553,6 +698,11 @@ private fun LazyListScope.brokerAccountItems(
                         Icon(Icons.Rounded.Link, null, Modifier.size(AssistChipDefaults.IconSize))
                     },
                 )
+                AssistChip(
+                    onClick = { onSetCredentials(ref.connectionId) },
+                    enabled = enabled,
+                    label = { Text(stringResource(R.string.core_invest_set_credentials)) },
+                )
                 account.linkedAccountId?.let { id ->
                     AssistChip(
                         onClick = { onAccountHistory(id) },
@@ -568,6 +718,14 @@ private fun LazyListScope.brokerAccountItems(
                     )
                 }
             }
+            PreferenceSwitch(
+                title = stringResource(R.string.core_invest_daily_auto_sync_title),
+                subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+                checked = state.dailyAutoSyncEnabled,
+                onCheckedChange = onSetDailyAutoSync,
+                padding = PaddingValues(0.dp),
+                isSingle = true,
+            )
         }
     }
 

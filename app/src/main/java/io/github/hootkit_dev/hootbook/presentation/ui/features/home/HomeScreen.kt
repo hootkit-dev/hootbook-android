@@ -40,6 +40,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -169,7 +173,10 @@ fun SharedTransitionScope.HomeScreen(
 
 
     val operationFailed = stringResource(R.string.onboarding_operation_failed)
-    LaunchedEffect(Unit) { homeViewModel.refreshDate() }
+    LaunchedEffect(Unit) {
+        homeViewModel.refreshDate()
+        homeViewModel.refresh()
+    }
     LaunchedEffect(uiState.error) {
         uiState.error?.let { snackbarHostState.showSnackbar(operationFailed) }
     }
@@ -416,6 +423,43 @@ fun SharedTransitionScope.HomeScreen(
                 }
 
             }
+            LaunchedEffect(uiState.pendingConflictCount > 0, uiState.pendingAiReview != null) {
+                if ((uiState.pendingConflictCount > 0 || uiState.pendingAiReview != null) && lazyListState.firstVisibleItemIndex <= 2) {
+                    lazyListState.scrollToItem(0)
+                }
+            }
+            val statusBanners: LazyListScope.() -> Unit = {
+                if (uiState.pendingConflictCount > 0 || uiState.pendingAiReview != null) {
+                    item(key = "status_banners") {
+                        Column(
+                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                        ) {
+                            if (uiState.pendingConflictCount > 0) {
+                                HomeNotificationBanner(
+                                    title = stringResource(R.string.home_sync_conflict_banner_title, uiState.pendingConflictCount),
+                                    subtitle = stringResource(R.string.home_sync_conflict_banner_subtitle),
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                    icon = androidx.compose.material.icons.Icons.Rounded.SyncProblem,
+                                    onClick = { navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.CloudSync) },
+                                )
+                            }
+                            uiState.pendingAiReview?.let { pending ->
+                                HomeNotificationBanner(
+                                    title = stringResource(R.string.home_ai_pending_banner_title, pending.review.changes.size),
+                                    subtitle = pending.review.summary?.takeIf { it.isNotBlank() }
+                                        ?: stringResource(R.string.home_ai_pending_banner_subtitle),
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    icon = androidx.compose.material.icons.Icons.Rounded.AutoAwesome,
+                                    onClick = { navController.safeNavigate(AiAssistant) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             val contentPadding = PaddingValues(
                 top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
                 bottom = 0.dp
@@ -427,6 +471,7 @@ fun SharedTransitionScope.HomeScreen(
                     contentPadding = contentPadding,
                     verticalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
+                    statusBanners()
                     widgetItems(homeWidgets)
                     item { CustomizeHomeButton { showEditWidgetsSheet = true } }
                     item {
@@ -446,6 +491,7 @@ fun SharedTransitionScope.HomeScreen(
                             contentPadding = contentPadding,
                             verticalArrangement = Arrangement.spacedBy(Spacing.md)
                         ) {
+                            if (state === lazyListState) statusBanners()
                             widgetItems(column)
                             if (state === activityListState) item { CustomizeHomeButton { showEditWidgetsSheet = true } }
                             item { Spacer(Modifier.height(120.dp)) }
@@ -621,6 +667,69 @@ private fun CustomizeHomeButton(onClick: () -> Unit) {
             Icon(Iconax.Convertshape2, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.home_customize))
+        }
+    }
+}
+
+@Composable
+private fun HomeNotificationBanner(
+    title: String,
+    subtitle: String,
+    containerColor: Color,
+    contentColor: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimensions.Radius.xl),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+        onClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = contentColor.copy(alpha = 0.14f),
+                modifier = Modifier.size(40.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = 0.85f),
+                )
+            }
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = contentColor,
+            )
         }
     }
 }

@@ -854,6 +854,25 @@ class AiAssistantViewModelTest {
         assertTrue(inbox.files.value.isEmpty())
     }
 
+    @Test
+    fun restartFromReviewDiscardsPendingReviewInCore() = runModel { store ->
+        val ai =
+            FakeAi().apply {
+                pending =
+                    AiPendingReview(
+                        LocalDateTime(2026, 10u, 14u, 12u, 0u, 0u, 0u),
+                        native.review,
+                    )
+            }
+        val vm = model(store, ai = ai)
+        review(vm)
+        assertNotNull(ai.pending)
+        vm.restart()
+        runCurrent()
+        assertNull(ai.pending)
+        assertNull(vm.state.value.pendingReview)
+    }
+
     private fun TestScope.drainUntil(done: () -> Boolean) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
         while (!done() && System.nanoTime() < deadline) {

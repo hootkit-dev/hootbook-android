@@ -45,6 +45,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.components.DialogDismissBu
 import io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookDialogDefaults
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch
 import io.github.hootkit_dev.hootbook.presentation.ui.components.toShape
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Spacing
 import io.github.hootkit_dev.hootbook.utils.IconResolutionUtils
@@ -75,12 +76,14 @@ fun BrokerAutoSyncSection(
         connections = connections,
         busy = busy,
         showTitle = showTitle,
+        dailyAutoSyncEnabled = state.dailyAutoSyncEnabled,
         // A failed connection shows in its form; other failures (disconnect) show here
         error = error.takeIf { connecting == null && settingCredentials == null },
         onConnect = viewModel::showConnect,
         onSetCredentials = { viewModel.showSetCredentials(it.id) },
         onRefresh = { viewModel.refresh(it.id) },
         onDisconnect = { viewModel.showDisconnect(it.id) },
+        onSetDailyAutoSync = viewModel::setDailyAutoSync,
         onOpenConnection = { connection ->
             when {
                 !connection.hasCredentials -> viewModel.showSetCredentials(connection.id)
@@ -149,8 +152,10 @@ internal fun BrokerAutoSyncContent(
     onDisconnect: (BrokerageConnection) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
+    dailyAutoSyncEnabled: Boolean = true,
     onSetCredentials: (BrokerageConnection) -> Unit = {},
     onRefresh: (BrokerageConnection) -> Unit = {},
+    onSetDailyAutoSync: (Boolean) -> Unit = {},
     onOpenConnection: (BrokerageConnection) -> Unit = {},
 ) {
     val language = LocalConfiguration.current.locales[0].language
@@ -262,27 +267,26 @@ internal fun BrokerAutoSyncContent(
                                 androidx.compose.foundation.layout.Row(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    when {
-                                        !row.hasCredentials ->
-                                            TextButton(
-                                                onClick = { onSetCredentials(row) },
-                                                enabled = !busy,
-                                                shapes = ButtonDefaults.shapes(),
-                                            ) {
-                                                Text(
-                                                    stringResource(
-                                                        R.string.core_invest_set_credentials
-                                                    )
+                                    if (!row.hasCredentials) {
+                                        TextButton(
+                                            onClick = { onSetCredentials(row) },
+                                            enabled = !busy,
+                                            shapes = ButtonDefaults.shapes(),
+                                        ) {
+                                            Text(
+                                                stringResource(
+                                                    R.string.core_invest_set_credentials
                                                 )
-                                            }
-                                        row.syncedAt == null ->
-                                            TextButton(
-                                                onClick = { onRefresh(row) },
-                                                enabled = !busy,
-                                                shapes = ButtonDefaults.shapes(),
-                                            ) {
-                                                Text(stringResource(R.string.core_invest_refresh))
-                                            }
+                                            )
+                                        }
+                                    } else {
+                                        TextButton(
+                                            onClick = { onRefresh(row) },
+                                            enabled = !busy,
+                                            shapes = ButtonDefaults.shapes(),
+                                        ) {
+                                            Text(stringResource(R.string.core_invest_refresh))
+                                        }
                                     }
                                     TextButton(
                                         onClick = { onDisconnect(row) },
@@ -298,6 +302,16 @@ internal fun BrokerAutoSyncContent(
                         )
                 }
             }
+        }
+        if (connections.isNotEmpty()) {
+            PreferenceSwitch(
+                title = stringResource(R.string.core_invest_daily_auto_sync_title),
+                subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+                checked = dailyAutoSyncEnabled,
+                onCheckedChange = onSetDailyAutoSync,
+                padding = PaddingValues(0.dp),
+                isSingle = true,
+            )
         }
         if (error != null) InvestmentError(error)
     }
