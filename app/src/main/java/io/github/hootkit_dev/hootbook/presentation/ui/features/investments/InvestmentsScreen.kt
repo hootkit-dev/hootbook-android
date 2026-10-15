@@ -186,6 +186,7 @@ fun InvestmentsScreen(
         onSelect = viewModel::selectAccount,
         onHolding = viewModel::selectHolding,
         onLink = viewModel::showLink,
+        onCreateAndLink = viewModel::createAndLink,
         onDisconnect = viewModel::showDisconnect,
         onManageAccounts = { if (!state.busy) onManageManualAccounts() },
         onAccountHistory = { if (!state.busy) onAccountHistory(it) },
@@ -229,6 +230,9 @@ fun InvestmentsScreen(
 
     // Link dialog
     state.linkTarget?.let { ref ->
+        val currentLinkedId = linkedAccount(ref, state.connections)?.linkedAccountId
+        val currentLinkedAccount =
+            currentLinkedId?.let { id -> state.overview?.accounts?.find { it.id == id } }
         AlertDialog(
             onDismissRequest = { viewModel.showLink(null) },
             title = { Text(stringResource(R.string.core_invest_link_title)) },
@@ -238,8 +242,28 @@ fun InvestmentsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(stringResource(R.string.core_invest_link_warning))
+                    if (currentLinkedId != null) {
+                        Text(
+                            text =
+                                stringResource(
+                                    R.string.core_invest_linked_account,
+                                    currentLinkedAccount?.name ?: currentLinkedId,
+                                ),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        Button(
+                            enabled = !state.busy,
+                            onClick = { viewModel.createAndLink(ref) },
+                            modifier = Modifier.fillMaxWidth().testTag("create_and_link_account"),
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.core_invest_create_and_link))
+                        }
+                    }
                     val candidates = availableLinkAccounts(ref, state.overview?.accounts.orEmpty())
-                    if (candidates.isEmpty()) {
+                    if (candidates.isEmpty() && currentLinkedId != null) {
                         Text(stringResource(R.string.core_invest_no_link_accounts))
                     }
                     candidates.forEach { account ->
@@ -251,7 +275,7 @@ fun InvestmentsScreen(
                             Text("${account.name} · ${account.mainCurrency}")
                         }
                     }
-                    if (linkedAccount(ref, state.connections)?.linkedAccountId != null) {
+                    if (currentLinkedId != null) {
                         TextButton(
                             enabled = !state.busy,
                             onClick = { viewModel.link(ref, null) },
@@ -317,6 +341,7 @@ internal fun InvestmentsContent(
     onSelect: (BrokerAccountRef?) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
+    onCreateAndLink: (BrokerAccountRef) -> Unit = {},
     onDisconnect: (String?) -> Unit,
     onManageAccounts: () -> Unit,
     onAccountHistory: (String) -> Unit,
@@ -435,6 +460,7 @@ internal fun InvestmentsContent(
                             onSetCredentials = onSetCredentials,
                             onSetDailyAutoSync = onSetDailyAutoSync,
                             onLink = onLink,
+                            onCreateAndLink = onCreateAndLink,
                             onAccountHistory = onAccountHistory,
                             onHolding = onHolding,
                         )
@@ -674,13 +700,50 @@ private fun LazyListScope.brokerAccountItems(
     onSetCredentials: (String?) -> Unit,
     onSetDailyAutoSync: (Boolean) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
+    onCreateAndLink: (BrokerAccountRef) -> Unit,
     onAccountHistory: (String) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
 ) {
     val ref = state.selected ?: return
+    val linkedLedgerAccount =
+        account.linkedAccountId?.let { id -> state.overview?.accounts?.find { it.id == id } }
     item("snapshot") {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SnapshotCard(account)
+            SnapshotCard(account, linkedAccountName = linkedLedgerAccount?.name)
+            if (account.linkedAccountId == null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.core_invest_unlinked_transfer_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { onCreateAndLink(ref) },
+                                enabled = enabled,
+                                shapes = ButtonDefaults.shapes(),
+                            ) {
+                                Text(stringResource(R.string.core_invest_create_and_link))
+                            }
+                            TextButton(
+                                onClick = { onLink(ref) },
+                                enabled = enabled,
+                                shapes = ButtonDefaults.shapes(),
+                            ) {
+                                Text(stringResource(R.string.core_invest_link_title))
+                            }
+                        }
+                    }
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(
                     onClick = { onRefresh(ref.connectionId) },
@@ -693,7 +756,16 @@ private fun LazyListScope.brokerAccountItems(
                 AssistChip(
                     onClick = { onLink(ref) },
                     enabled = enabled,
-                    label = { Text(stringResource(R.string.core_invest_link_title)) },
+                    label = {
+                        Text(
+                            if (linkedLedgerAccount != null)
+                                stringResource(
+                                    R.string.core_invest_linked_account,
+                                    linkedLedgerAccount.name,
+                                )
+                            else stringResource(R.string.core_invest_link_title)
+                        )
+                    },
                     leadingIcon = {
                         Icon(Icons.Rounded.Link, null, Modifier.size(AssistChipDefaults.IconSize))
                     },
@@ -772,7 +844,7 @@ private fun LazyListScope.brokerAccountItems(
 }
 
 @Composable
-private fun SnapshotCard(account: BrokerageAccount) {
+private fun SnapshotCard(account: BrokerageAccount, linkedAccountName: String? = null) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.largeIncreased,
@@ -810,6 +882,14 @@ private fun SnapshotCard(account: BrokerageAccount) {
                         ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            val linkedLabel = linkedAccountName ?: account.linkedAccountId
+            if (linkedLabel != null) {
+                Text(
+                    text = stringResource(R.string.core_invest_linked_account, linkedLabel),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

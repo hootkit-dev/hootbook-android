@@ -298,6 +298,66 @@ class InvestmentsViewModelTest {
         runCurrent()
         assertNull(model.state.value.selected)
     }
+
+    @Test
+    fun connectAndCreateAndLinkAutoCreatesInvestmentLedgerAccount() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = ViewModelStore()
+        try {
+            val api = TestBroker()
+            val createdDrafts = mutableListOf<NewAccount>()
+            val linked = mutableListOf<Triple<String, String, String?>>()
+            api.link = { id, broker, ledger -> linked += Triple(id, broker, ledger) }
+            val bus = ChangeBus()
+            val model =
+                InvestmentsViewModel(
+                    changes = bus,
+                    brokerage = { api },
+                    catalog = {
+                        listOf(
+                            Institution(
+                                "ibkr",
+                                "Interactive Brokers",
+                                "盈透证券",
+                                emptyList(),
+                                InstitutionKind.BROKER,
+                                "US",
+                                "USD",
+                                "ic_institution_ibkr",
+                                "#D81E05",
+                            )
+                        )
+                    },
+                    createAccount = { draft ->
+                        createdDrafts += draft
+                        "created-${createdDrafts.size}"
+                    },
+                )
+            store.put("fixture", model)
+            runCurrent()
+            model.connect("ibkr_flex", "IBKR", mapOf("token" to "987654321", "queryId" to "1"))
+            runCurrent()
+            assertEquals(1, createdDrafts.size)
+            assertEquals("Fixture", createdDrafts.single().name)
+            assertEquals(AccountKind.INVESTMENT, createdDrafts.single().kind)
+            assertEquals("USD", createdDrafts.single().mainCurrency)
+            assertEquals("ibkr", createdDrafts.single().institutionKey)
+            assertEquals(listOf(Triple("1", "U1", "created-1")), linked)
+
+            model.showLink(BrokerAccountRef("1", "U1"))
+            model.createAndLink(BrokerAccountRef("1", "U1"))
+            runCurrent()
+            assertEquals(2, createdDrafts.size)
+            assertEquals(
+                listOf(Triple("1", "U1", "created-1"), Triple("1", "U1", "created-2")),
+                linked,
+            )
+            assertNull(model.state.value.linkTarget)
+        } finally {
+            store.clear()
+            Dispatchers.resetMain()
+        }
+    }
 }
 
 private class TestBroker : BrokerageInterface {

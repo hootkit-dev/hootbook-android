@@ -726,5 +726,5 @@
     <string name="broker_interactive_brokers">Interactive Brokers</string>
     <string name="broker_mode_auto_sync">Auto sync</string>
     <string name="broker_mode_manual">Manual</string>
-    <string name="broker_auto_sync_hint">Holdings and balances will be imported automatically from your broker connection.</string>
+    <string name="broker_auto_sync_hint">Holdings and cash are fetched from your broker and linked to a ledger investment account for transfers.</string>
 </resources>

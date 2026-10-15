@@ -218,10 +218,17 @@ fun ManageAccountsScreen(
                             }
                         }
                     }
+                    val visibleAccountIds = accounts.filter { !it.archived }.mapTo(hashSetOf()) { it.id }
                     sections.forEach { (kind, members) ->
+                        val standaloneSnapshotCount = if (kind == AccountCategory.INVESTMENTS) {
+                            connections.sumOf { conn ->
+                                if (conn.accounts.isEmpty()) 1
+                                else conn.accounts.count { it.linkedAccountId == null || it.linkedAccountId !in visibleAccountIds }
+                            }
+                        } else 0
                         if (members.isNotEmpty() || (kind == AccountCategory.INVESTMENTS && connections.isNotEmpty())) {
                             item(key = "header_$kind") {
-                                val count = members.size + (if (kind == AccountCategory.INVESTMENTS) connections.size else 0)
+                                val count = members.size + standaloneSnapshotCount
                                 Text(
                                     text = stringResource(category?.titleRes ?: kind.titleRes) + if (count > 0) " · $count" else "",
                                     style = MaterialTheme.typography.titleSmall,
@@ -241,10 +248,16 @@ fun ManageAccountsScreen(
                                     account.broker?.let { broker ->
                                         TextButton(
                                             onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) },
-                                            modifier = Modifier.padding(horizontal = 8.dp)
+                                            modifier = Modifier
+                                                .padding(horizontal = 8.dp)
+                                                .testTag("broker_connection_${broker.connectionId}_${broker.brokerAccountId}")
                                         ) {
                                             Text(
-                                                text = stringResource(R.string.overview_investments) + (broker.asOf?.let { " · " + it.coreDateText() }.orEmpty()),
+                                                text = listOfNotNull(
+                                                    stringResource(R.string.overview_investments),
+                                                    broker.brokerAccountId.takeIf { it.isNotBlank() },
+                                                    broker.asOf?.coreDateText(),
+                                                ).joinToString(" · "),
                                                 style = MaterialTheme.typography.labelMedium
                                             )
                                         }
@@ -253,15 +266,17 @@ fun ManageAccountsScreen(
                             }
                             if (kind == AccountCategory.INVESTMENTS) {
                                 connections.forEach { connection ->
-                                    connection.accounts.forEach { snapshot ->
-                                        item(key = "conn_${connection.id}_${snapshot.accountId}") {
-                                            io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
-                                                connection,
-                                                snapshot,
-                                                onClick = { onBrokerage(connection.id, snapshot.accountId) }
-                                            )
+                                    connection.accounts
+                                        .filter { it.linkedAccountId == null || it.linkedAccountId !in visibleAccountIds }
+                                        .forEach { snapshot ->
+                                            item(key = "conn_${connection.id}_${snapshot.accountId}") {
+                                                io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
+                                                    connection,
+                                                    snapshot,
+                                                    onClick = { onBrokerage(connection.id, snapshot.accountId) }
+                                                )
+                                            }
                                         }
-                                    }
                                     if (connection.accounts.isEmpty()) {
                                         item(key = "conn_${connection.id}") {
                                             val subtitle = when {

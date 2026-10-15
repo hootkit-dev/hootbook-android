@@ -83,4 +83,6 @@
     <string name="core_invest_daily_auto_sync_subtitle">每天首次打开或后台联网时自动拉取最新券商报表</string>
     <string name="core_invest_synced_badge">已同步</string>
     <string name="core_invest_fetch_first_report">立即拉取报表</string>
+    <string name="core_invest_create_and_link">新建同名账本账户并关联</string>
+    <string name="core_invest_unlinked_transfer_hint">尚未关联账本账户。关联后即可在记账时直接从银行卡转账到该券商账户。</string>
 </resources>

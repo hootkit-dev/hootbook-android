@@ -1284,7 +1284,7 @@ fun EditAccountSheet(
                                 onSave(newAccount)
                             }
                         },
-                        enabled = !isSaving && bankName.isNotBlank() && (isWallet || accountLast4.length == 4),
+                        enabled = !isSaving && bankName.isNotBlank() && (isWallet || (isBroker && accountLast4.isEmpty()) || accountLast4.length == 4),
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),

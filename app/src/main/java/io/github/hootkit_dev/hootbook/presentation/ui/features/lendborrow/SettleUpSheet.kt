@@ -70,8 +70,8 @@ import java.math.BigDecimal
 @Composable
 fun SettleUpSheet(
     person: Person,
-    debts: List<DebtEntry> = emptyList(),
     accounts: List<Account> = emptyList(),
+    debts: List<DebtEntry> = emptyList(),
     defaultAccountId: String? = null,
     saving: Boolean = false,
     error: Int? = null,

@@ -85,18 +85,19 @@ private constructor(
     private val testBrokerage: (suspend () -> BrokerageInterface)?,
     private val testAccounts: (suspend () -> AccountsOverview)?,
     private val testCatalog: (() -> List<Institution>)?,
+    private val testCreateAccount: (suspend (NewAccount) -> String)? = null,
 ) : ViewModel() {
     @Inject
     constructor(
         session: CoreSession,
         changes: ChangeBus,
         dailySyncManager: BrokerDailySyncManager,
-    ) : this(session, changes, dailySyncManager, null, null, null)
+    ) : this(session, changes, dailySyncManager, null, null, null, null)
 
     internal constructor(
         session: CoreSession,
         changes: ChangeBus,
-    ) : this(session, changes, null, null, null, null)
+    ) : this(session, changes, null, null, null, null, null)
 
     internal constructor(
         changes: ChangeBus,
@@ -105,7 +106,8 @@ private constructor(
             AccountsOverview(emptyList(), Money(java.math.BigDecimal.ZERO, "CNY"), true, null, null)
         },
         catalog: () -> List<Institution> = { emptyList() },
-    ) : this(null, changes, null, brokerage, accounts, catalog)
+        createAccount: (suspend (NewAccount) -> String)? = null,
+    ) : this(null, changes, null, brokerage, accounts, catalog, createAccount)
 
     private val mutable = MutableStateFlow(
         InvestmentsUiState(dailyAutoSyncEnabled = dailySyncManager?.enabled?.value ?: true)
@@ -375,9 +377,16 @@ private constructor(
             InvestmentOperation(InvestmentOperationKind.CONNECT),
             onFinally = submission::close,
         ) { api ->
-            api.connect(providerId, label, submission.fields())
+            val connection = api.connect(providerId, label, submission.fields())
             currentCoroutineContext().ensureActive()
             mutable.update { it.copy(connectProvider = null) }
+            try {
+                autoLinkBrokerAccounts(api, connection)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Connection succeeded; manual link remains available if auto-link fails.
+            }
         }
     }
 
@@ -455,6 +464,102 @@ private constructor(
             currentCoroutineContext().ensureActive()
             mutable.update { value -> value.copy(linkTarget = null) }
         }
+
+    fun createAndLink(ref: BrokerAccountRef) =
+        operate(InvestmentOperation(InvestmentOperationKind.LINK, ref.connectionId)) { api ->
+            val connection =
+                api.connections().find { it.id == ref.connectionId }
+                    ?: state.value.connections.find { it.id == ref.connectionId }
+                    ?: throw CoreException.NotFound(Entity.BROKERAGE_CONNECTION, ref.connectionId)
+            autoLinkBrokerAccounts(api, connection, ref.brokerAccountId)
+            currentCoroutineContext().ensureActive()
+            mutable.update { value -> value.copy(linkTarget = null) }
+        }
+
+    private suspend fun autoLinkBrokerAccounts(
+        api: BrokerageInterface,
+        connection: BrokerageConnection,
+        targetBrokerAccountId: String? = null,
+    ) {
+        val unlinked =
+            connection.accounts.filter {
+                it.linkedAccountId == null &&
+                    (targetBrokerAccountId == null || it.accountId == targetBrokerAccountId)
+            }
+        if (unlinked.isEmpty()) return
+        val providers = api.providers()
+        val (overview, institutions, createAccount) =
+            if (session != null) {
+                session.withCore { core ->
+                    val ov = core.accounts().use { it.overview() }
+                    val inst = core.catalog().use { it.all() }
+                    val creator: suspend (NewAccount) -> String = { input ->
+                        session.withCore { c -> c.accounts().use { it.create(input) } }
+                    }
+                    Triple(ov, inst, creator)
+                }
+            } else {
+                val creator = testCreateAccount ?: return
+                Triple(
+                    testAccounts?.invoke()
+                        ?: AccountsOverview(
+                            emptyList(),
+                            Money(java.math.BigDecimal.ZERO, "CNY"),
+                            true,
+                            null,
+                            null,
+                        ),
+                    testCatalog?.invoke().orEmpty(),
+                    creator,
+                )
+            }
+        val existing = overview.accounts.toMutableList()
+        for (brokerAccount in unlinked) {
+            currentCoroutineContext().ensureActive()
+            if (
+                existing.any {
+                    it.broker?.connectionId == connection.id &&
+                        it.broker?.brokerAccountId == brokerAccount.accountId
+                }
+            ) {
+                continue
+            }
+            val draft =
+                buildBrokerLedgerAccount(
+                    connection = connection,
+                    brokerAccount = brokerAccount,
+                    providers = providers,
+                    institutions = institutions,
+                    existingAccounts = existing,
+                    defaultCurrency = overview.netWorth.currency,
+                )
+            val createdId = createAccount(draft)
+            api.linkAccount(connection.id, brokerAccount.accountId, createdId)
+            existing +=
+                Account(
+                    id = createdId,
+                    name = draft.name,
+                    last4 = draft.last4,
+                    kind = draft.kind,
+                    mainCurrency = draft.mainCurrency,
+                    pockets = emptyList(),
+                    total = Money(java.math.BigDecimal.ZERO, overview.netWorth.currency),
+                    totalComplete = true,
+                    securities = null,
+                    broker = null,
+                    creditLimit = null,
+                    statementDay = null,
+                    dueDay = null,
+                    institutionKey = draft.institutionKey,
+                    icon = draft.icon ?: "type_finance_chart_increasing",
+                    color = draft.color ?: "#33B5E5",
+                    archived = false,
+                    isDefault = false,
+                    sortOrder = existing.size,
+                    createdAt = LocalDateTime(2026, 1u, 1u, 0u, 0u, 0u, 0u),
+                )
+        }
+    }
 
     fun cancelOperation() {
         if (!state.value.busy) return

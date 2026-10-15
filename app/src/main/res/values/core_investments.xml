@@ -83,4 +83,6 @@
     <string name="core_invest_daily_auto_sync_subtitle">Automatically fetch the latest broker report once a day</string>
     <string name="core_invest_synced_badge">Synced</string>
     <string name="core_invest_fetch_first_report">Fetch report now</string>
+    <string name="core_invest_create_and_link">Create and link ledger account</string>
+    <string name="core_invest_unlinked_transfer_hint">Not linked to a ledger account yet. Link or create one to record transfers between your bank and this broker.</string>
 </resources>

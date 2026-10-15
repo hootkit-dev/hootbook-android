@@ -277,11 +277,14 @@ internal fun AccountCategoryCard(
                                     account.broker?.let { broker ->
                                         TextButton(
                                             onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) },
-                                            modifier = Modifier.padding(top = 4.dp)
+                                            modifier = Modifier
+                                                .padding(top = 4.dp)
+                                                .testTag("broker_connection_${broker.connectionId}_${broker.brokerAccountId}")
                                         ) {
                                             Text(
                                                 text = listOfNotNull(
                                                     stringResource(R.string.overview_investments),
+                                                    broker.brokerAccountId.takeIf { it.isNotBlank() },
                                                     broker.asOf?.coreDateText(),
                                                 ).joinToString(" · "),
                                                 style = MaterialTheme.typography.labelMedium
@@ -293,14 +296,17 @@ internal fun AccountCategoryCard(
                         }
 
                         if (kind == AccountCategory.INVESTMENTS) {
+                            val visibleIds = accounts.mapTo(hashSetOf()) { it.id }
                             connections.forEach { connection ->
-                                connection.accounts.forEach { snapshot ->
-                                    io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
-                                        connection,
-                                        snapshot,
-                                        onClick = { onBrokerage(connection.id, snapshot.accountId) }
-                                    )
-                                }
+                                connection.accounts
+                                    .filter { it.linkedAccountId == null || it.linkedAccountId !in visibleIds }
+                                    .forEach { snapshot ->
+                                        io.github.hootkit_dev.hootbook.presentation.ui.features.investments.BrokerageSnapshotRow(
+                                            connection,
+                                            snapshot,
+                                            onClick = { onBrokerage(connection.id, snapshot.accountId) }
+                                        )
+                                    }
                                 if (connection.accounts.isEmpty()) {
                                     io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem(
                                         headline = { Text(connection.label) },
