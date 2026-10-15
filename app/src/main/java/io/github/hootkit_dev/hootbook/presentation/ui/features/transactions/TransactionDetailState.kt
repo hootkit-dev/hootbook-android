@@ -33,4 +33,5 @@ data class TransactionDetailUiState(
     val customCycleCount: Int = 1,
     val customCycleUnit: String = "month",
     val customCycleEndDate: LocalDate? = null,
+    val showBackdatedAnchorPrompt: Boolean = false,
 )

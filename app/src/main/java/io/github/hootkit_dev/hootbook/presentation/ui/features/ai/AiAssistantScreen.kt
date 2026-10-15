@@ -829,7 +829,11 @@ private fun ProviderForm(
         TextField(
             value = baseUrl,
             onValueChange = {
+                val prevClean = cleanBaseUrl(baseUrl)
                 baseUrl = it
+                if (!cleanBaseUrl(it).equals(prevClean, ignoreCase = true)) {
+                    reasoning = AiReasoning.PROVIDER_DEFAULT
+                }
                 if (
                     hasKey &&
                         !editingKey &&
@@ -983,19 +987,47 @@ private fun ProviderForm(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.fillMaxWidth()) {
                     availableLevels.forEachIndexed { index, level ->
-                        SegmentedButton(
-                            selected = effectiveReasoning == level,
+                        val isSelected = effectiveReasoning == level
+                        val itemWeight = when (level) {
+                            AiReasoning.PROVIDER_DEFAULT -> 1.85f
+                            AiReasoning.OFF -> 1.15f
+                            else -> 0.9f
+                        }
+                        Surface(
                             onClick = { reasoning = level },
                             shape = SegmentedButtonDefaults.itemShape(index, availableLevels.size),
-                            icon = {},
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                androidx.compose.ui.graphics.Color.Transparent
+                            },
+                            contentColor = if (isSelected) {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outline,
+                            ),
+                            modifier = Modifier
+                                .weight(itemWeight)
+                                .heightIn(min = 40.dp),
                         ) {
-                            Text(
-                                reasoningLabel(level),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                            androidx.compose.foundation.layout.Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp),
+                            ) {
+                                Text(
+                                    text = reasoningLabel(level),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
@@ -1052,6 +1084,9 @@ private fun ProviderForm(
             error = modelError,
             onRetry = if (ready) retryLoadModels else null,
             onPick = {
+                if (it != model) {
+                    reasoning = AiReasoning.PROVIDER_DEFAULT
+                }
                 model = it
                 picking = false
             },

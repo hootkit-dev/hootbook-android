@@ -18,7 +18,8 @@ import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
 
 internal val accountTables = setOf(Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.BALANCE_ANCHORS,
     Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE,
-    Table.BROKERAGE_CONNECTIONS, Table.BROKERAGE_LINKS, Table.TAGS, Table.TRANSACTION_TAGS)
+    Table.BROKERAGE_CONNECTIONS, Table.BROKERAGE_LINKS, Table.TAGS, Table.TRANSACTION_TAGS,
+    Table.PEOPLE, Table.DEBTS)
 
 private data class NetWorthQueryConfig(
     val period: TimePeriod = TimePeriod.THIS_MONTH,
@@ -29,6 +30,7 @@ private data class NetWorthQueryConfig(
 data class ManageAccountsUiState(
     val overview: AccountsOverview? = null,
     val netWorthHistory: NetWorthHistory? = null,
+    val debts: DebtSummary? = null,
     val netWorthPeriod: TimePeriod = TimePeriod.THIS_MONTH,
     val netWorthCustomRange: Pair<java.time.LocalDate, java.time.LocalDate>? = null,
     val netWorthStep: HistoryStep = HistoryStep.DAILY,
@@ -81,10 +83,16 @@ class ManageAccountsViewModel @Inject constructor(
                                 cfg.step,
                             )
                         }
-                        val history = if (cfg.period == TimePeriod.ALL && rawHistory.points.size > 2) {
+                        val history = if (rawHistory.points.size > 2) {
                             val earliest = listOfNotNull(rawHistory.dataSince, rawHistory.securitiesSince)
                                 .minByOrNull { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }
-                                ?.let { java.time.LocalDate.of(it.year, it.month.toInt(), 1) }
+                                ?.let {
+                                    if (cfg.step == HistoryStep.MONTHLY) {
+                                        java.time.LocalDate.of(it.year, it.month.toInt(), 1)
+                                    } else {
+                                        java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt())
+                                    }
+                                }
                             if (earliest != null) {
                                 val filtered = rawHistory.points.filter { pt ->
                                     val d = java.time.LocalDate.of(pt.date.year, pt.date.month.toInt(), pt.date.day.toInt())
@@ -97,6 +105,9 @@ class ManageAccountsViewModel @Inject constructor(
                         } else {
                             rawHistory
                         }
+                        val debts = core.plans().use {
+                            it.debtSummary(LocalDate(today.year, today.monthValue.toUByte(), today.dayOfMonth.toUByte()))
+                        }
                         val institutions = core.catalog().use { it.all() }
                         val currency = core.settings().use { it.mainCurrency() }
                         val custom = core.currency().use { it.customCurrencies() }
@@ -104,6 +115,7 @@ class ManageAccountsViewModel @Inject constructor(
                         ManageAccountsUiState(
                             overview = overview,
                             netWorthHistory = history,
+                            debts = debts,
                             netWorthPeriod = cfg.period,
                             netWorthCustomRange = cfg.customRange,
                             netWorthStep = cfg.step,
@@ -122,6 +134,7 @@ class ManageAccountsViewModel @Inject constructor(
                             it.copy(
                                 overview = snapshot.overview,
                                 netWorthHistory = snapshot.netWorthHistory,
+                                debts = snapshot.debts,
                                 netWorthPeriod = snapshot.netWorthPeriod,
                                 netWorthCustomRange = snapshot.netWorthCustomRange,
                                 netWorthStep = snapshot.netWorthStep,

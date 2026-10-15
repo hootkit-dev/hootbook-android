@@ -57,15 +57,20 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.accounts.NumberPa
 import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AmountInput
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DocumentText2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Surface
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Information
 import io.github.hootkit_dev.hootbook.presentation.ui.theme.Dimensions
 import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation as CurrencyFormatter
 import java.math.BigDecimal
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettleUpSheet(
     person: Person,
+    debts: List<DebtEntry> = emptyList(),
     accounts: List<Account> = emptyList(),
     defaultAccountId: String? = null,
     saving: Boolean = false,
@@ -75,7 +80,26 @@ fun SettleUpSheet(
 ) {
     // If person.totals.net > 0, person owes user (User gets -> REPAID_TO_ME).
     // If person.totals.net < 0, user owes person (User pays -> REPAID_BY_ME).
-    val isLentSettlement = person.totals.net > BigDecimal.ZERO
+    val activePerCurrency: List<Money> = remember(debts, person.totals) {
+        debts
+            .groupBy { it.amount.currency }
+            .mapNotNull { (curr, entries) ->
+                val lent = entries.filter { it.kind == DebtKind.LENT }.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount.amount }
+                val repaidToMe = entries.filter { it.kind == DebtKind.REPAID_TO_ME }.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount.amount }
+                val borrowed = entries.filter { it.kind == DebtKind.BORROWED }.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount.amount }
+                val repaidByMe = entries.filter { it.kind == DebtKind.REPAID_BY_ME }.fold(BigDecimal.ZERO) { acc, e -> acc + e.amount.amount }
+                val rec = (lent - repaidToMe).coerceAtLeast(BigDecimal.ZERO)
+                val pay = (borrowed - repaidByMe).coerceAtLeast(BigDecimal.ZERO)
+                val net = rec - pay
+                if (net.signum() != 0) Money(net, curr) else null
+            }
+            .ifEmpty {
+                if (person.totals.net.signum() != 0) listOf(Money(person.totals.net, person.totals.currency)) else emptyList()
+            }
+    }
+    var selectedCurrency by remember(person.id) {
+        mutableStateOf(activePerCurrency.firstOrNull()?.currency ?: person.totals.currency)
+    }
     val suggestedAmount = person.totals.net.abs()
 
     var selectedIndex by remember { mutableStateOf(0) } // 0 = Full, 1 = Partial
@@ -116,7 +140,15 @@ fun SettleUpSheet(
                     selectedIndex = selectedIndex,
                     onIndexChange = { index ->
                         selectedIndex = index
-                        amountText = if (index == 0) suggestedAmount.toPlainString() else "0"
+                        if (index == 0) {
+                            selectedCurrency = person.totals.currency
+                            amountText = suggestedAmount.toPlainString()
+                        } else {
+                            val defaultCurr = activePerCurrency.firstOrNull()?.currency ?: person.totals.currency
+                            selectedCurrency = defaultCurr
+                            val currNet = activePerCurrency.find { it.currency == defaultCurr }?.amount?.abs() ?: BigDecimal.ZERO
+                            amountText = currNet.toPlainString()
+                        }
                     },
                     options = listOf(
                         stringResource(R.string.full_settlement),
@@ -167,6 +199,48 @@ fun SettleUpSheet(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            if (selectedIndex == 0 && activePerCurrency.size > 1) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    activePerCurrency.forEach { item: Money ->
+                                        Surface(
+                                            shape = RoundedCornerShape(999.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                        ) {
+                                            Text(
+                                                text = "${item.currency} ${CurrencyFormatter.formatCurrency(item.amount.abs(), item.currency)}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (selectedIndex == 1 && activePerCurrency.size > 1) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        activePerCurrency.forEach { item: Money ->
+                            FilterChip(
+                                selected = selectedCurrency == item.currency,
+                                onClick = {
+                                    selectedCurrency = item.currency
+                                    amountText = item.amount.abs().toPlainString()
+                                },
+                                label = {
+                                    Text("${item.currency} (${CurrencyFormatter.formatCurrency(item.amount.abs(), item.currency)})")
+                                }
+                            )
                         }
                     }
                 }
@@ -177,7 +251,7 @@ fun SettleUpSheet(
                 AmountInput(
                     amount = if (amountText.isBlank()) "0" else amountText,
                     currencySymbol = CurrencyFormatter.getCurrencySymbol(
-                        person.totals.currency
+                        if (selectedIndex == 0) person.totals.currency else selectedCurrency
                     ),
                     onClick = { showNumberPad = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -246,7 +320,7 @@ fun SettleUpSheet(
                         if (selectedIndex == 1 && (parsedAmount == null || parsedAmount <= BigDecimal.ZERO)) {
                             return@Button
                         }
-                        val amount = if (selectedIndex == 0) null else Money(parsedAmount!!, person.totals.currency)
+                        val amount = if (selectedIndex == 0) null else Money(parsedAmount!!, selectedCurrency)
                         onSettle(SettleDraft(amount, selectedAccount?.id, noteText, java.time.LocalDateTime.now().toCoreDateTime()))
                     },
                     modifier = Modifier

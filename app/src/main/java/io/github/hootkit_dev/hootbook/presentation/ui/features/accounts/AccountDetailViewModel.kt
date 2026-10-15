@@ -74,7 +74,7 @@ class AccountDetailViewModel @Inject constructor(
         val requestedFilter = filter
         mutable.update { it.copy(isLoading = true, loadingMore = false) }
         query = viewModelScope.launch {
-            session.observe(changes, accountTables + setOf(Table.CATEGORIES, Table.SUBCATEGORIES, Table.PEOPLE, Table.DEBTS)) { core ->
+            session.observe(changes, accountTables + setOf(Table.CATEGORIES, Table.SUBCATEGORIES, Table.PEOPLE, Table.DEBTS, Table.TAGS, Table.TRANSACTION_TAGS)) { core ->
                 coreQuery {
                     val account = core.accounts().use { it.get(id) }
                     val currency = requestedCurrency?.takeIf { code -> account.pockets.any { it.currency == code } } ?: account.mainCurrency
@@ -87,6 +87,7 @@ class AccountDetailViewModel @Inject constructor(
                     val summary = core.ledger().use { it.summary(requestedFilter) }
                     val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
                     val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
+                    val tags = core.tags().use { it.list(true).associateBy(Tag::id) }
                     val converted = core.currency().use { api -> page.items.associate { tx ->
                         tx.id to if (tx.currency == summary.currency) null else api.convert(tx.amount, tx.currency, summary.currency)
                     } }
@@ -95,7 +96,7 @@ class AccountDetailViewModel @Inject constructor(
                     AccountDetailUiState(account = account, currency = currency, anchors = accountResults.first,
                         balanceSeries = accountResults.second, cardStatus = accountResults.third,
                         transactions = page.items, total = page.total, accountTransactionCount = accountCount, summary = summary, categories = categories,
-                        accounts = accounts, people = people, debts = debts, convertedAmounts = converted,
+                        accounts = accounts, tags = tags, people = people, debts = debts, convertedAmounts = converted,
                         selectedDateRange = state.selectedDateRange, isLoading = false)
                 }
             }.collect { result ->

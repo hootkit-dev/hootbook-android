@@ -148,14 +148,14 @@ fun LendBorrowRow(
         modifier = modifier.fillMaxWidth().softShadow(shape)
     ) {
         Row(
-            modifier = Modifier.heightIn(min = 56.dp).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            modifier = Modifier.heightIn(min = 48.dp).padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant) {
-                Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.SwapVert, contentDescription = null, modifier = Modifier.size(18.dp))
+                Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.SwapVert, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             }
             Text(
@@ -163,10 +163,14 @@ fun LendBorrowRow(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f)
             )
-            LoanAmountChip(stringResource(R.string.type_lent), summary.receivable, currency,
-                MaterialTheme.colorScheme.primary, Icons.Default.ArrowUpward, onLentClick)
-            LoanAmountChip(stringResource(R.string.type_borrowed), summary.payable, currency,
-                MaterialTheme.colorScheme.secondary, Icons.Default.ArrowDownward, onBorrowedClick)
+            if (summary.receivable.signum() != 0) {
+                LoanAmountChip(stringResource(R.string.type_lent), summary.receivable, currency,
+                    MaterialTheme.colorScheme.primary, Icons.Default.ArrowUpward, onLentClick)
+            }
+            if (summary.payable.signum() != 0) {
+                LoanAmountChip(stringResource(R.string.type_borrowed), summary.payable, currency,
+                    MaterialTheme.colorScheme.secondary, Icons.Default.ArrowDownward, onBorrowedClick)
+            }
         }
     }
 }

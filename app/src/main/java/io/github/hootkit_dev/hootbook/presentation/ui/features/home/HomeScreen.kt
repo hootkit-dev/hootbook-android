@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -192,7 +193,7 @@ fun SharedTransitionScope.HomeScreen(
                 GreetingCard(
                     modifier = Modifier
                         .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 6.dp),
                     userName = prefs.userName,
                     profileImageUri = homeViewModel.assets.resolve(prefs.avatar)?.let { android.net.Uri.fromFile(it) },
                     profileBackgroundColor = Color(prefs.profileBackground),
@@ -268,8 +269,10 @@ fun SharedTransitionScope.HomeScreen(
                                 item(key = "net_worth") {
                                     NetworthSummaryCards(
                                         uiState = uiState,
+                                        showLoans = HomeWidget.LOANS !in prefs.hiddenHomeWidgets,
                                         onCurrencySelected = { homeViewModel.selectCurrency(it) },
                                         onNetWorthClick = { navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.ManageAccounts) },
+                                        onOpenLendBorrow = onNavigateToLendBorrow,
                                         breakdownShown = showAccountBreakdown,
                                         onToggleBreakdown = { showAccountBreakdown = !showAccountBreakdown }
                                     )
@@ -295,25 +298,7 @@ fun SharedTransitionScope.HomeScreen(
 
                                 }
                             }
-                            HomeWidget.LOANS -> {
-                                // One row, and none while nothing is lent or borrowed, so Home's
-                                // key figures fit without scrolling
-                                val loans = uiState.debts
-                                if (loans != null && (loans.receivable.signum() != 0 || loans.payable.signum() != 0)) {
-                                    item(key = "loans") {
-                                        LendBorrowRow(
-                                            summary = loans,
-                                            currency = loans.currency,
-                                            onClick = { onNavigateToLendBorrow(null) },
-                                            onLentClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_GET.name) },
-                                            onBorrowedClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_OWE.name) },
-                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
-                                        )
-                                        if (!loans.complete) Text(stringResource(R.string.core_complete_incomplete),
-                                            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
-                                    }
-                                }
-                            }
+                            HomeWidget.LOANS -> Unit
                             HomeWidget.TRANSACTION_HEATMAP -> {
                                 item(key = "transaction_heatmap") {
                                     HeatmapWidget(
@@ -461,7 +446,7 @@ fun SharedTransitionScope.HomeScreen(
                 }
             }
             val contentPadding = PaddingValues(
-                top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
+                top = 4.dp + paddingValues.calculateTopPadding(),
                 bottom = 0.dp
             )
             if (LocalWindowLayout.current.widthDp < HOME_TWO_COLUMN_MIN_WIDTH_DP) {
@@ -469,7 +454,7 @@ fun SharedTransitionScope.HomeScreen(
                     state = lazyListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPadding,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     statusBanners()
                     widgetItems(homeWidgets)
@@ -489,7 +474,7 @@ fun SharedTransitionScope.HomeScreen(
                             state = state,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             contentPadding = contentPadding,
-                            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             if (state === lazyListState) statusBanners()
                             widgetItems(column)
@@ -539,7 +524,7 @@ private fun UpcomingSubscriptionsCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimensions.Radius.xxl))
+            .clip(RoundedCornerShape(Dimensions.Radius.xl))
             .then(
                 if (blurEffects) Modifier.hazeEffect(
                     state = hazeState,
@@ -555,7 +540,7 @@ private fun UpcomingSubscriptionsCard(
                     }
                 ) else Modifier
             ),
-        shape = RoundedCornerShape(Dimensions.Radius.xxl),
+        shape = RoundedCornerShape(Dimensions.Radius.xl),
         colors = CardDefaults.cardColors(
             containerColor = if (blurEffects) MaterialTheme.colorScheme.surfaceContainerLow.copy(0.5f)
             else MaterialTheme.colorScheme.surfaceContainerLow
@@ -563,23 +548,27 @@ private fun UpcomingSubscriptionsCard(
         onClick = onClick,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(Dimensions.Padding.content),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.padding(start = 12.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(R.string.subscriptions_count_format, subscriptions.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = Dimensions.Alpha.subtitle
-                    )
+                    text = stringResource(R.string.reminder_due_title, subscriptions.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     Text(
@@ -589,32 +578,29 @@ private fun UpcomingSubscriptionsCard(
                                 monthly?.currency ?: summary?.currency.orEmpty(),
                                 customSymbols
                             ).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text =
-                            stringResource(R.string.per_month).uppercase(),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = Dimensions.Alpha.subtitle
-                        ),
+                        text = stringResource(R.string.per_month).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                 }
-                if (summary?.complete == false || monthly?.complete == false) Text(
-                    stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (summary?.complete == false || monthly?.complete == false) {
+                    Text(
+                        stringResource(R.string.core_complete_incomplete),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             SubscriptionIconsStack(
                 subscriptions = subscriptions,
-                iconSize = 38.dp,
-                modifier = Modifier.padding(end = Spacing.sm),
+                iconSize = 30.dp,
                 borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 categoriesMap = categoriesMap,
                 subcategoriesMap = subcategoriesMap
@@ -626,8 +612,10 @@ private fun UpcomingSubscriptionsCard(
 @Composable
 private fun NetworthSummaryCards(
     uiState: HomeUiState,
+    showLoans: Boolean = true,
     onCurrencySelected: (String) -> Unit,
     onNetWorthClick: () -> Unit,
+    onOpenLendBorrow: (String?) -> Unit = {},
     breakdownShown: Boolean,
     onToggleBreakdown: () -> Unit,
 ) {
@@ -655,6 +643,9 @@ private fun NetworthSummaryCards(
         onOpenAccounts = onNetWorthClick,
         breakdownShown = breakdownShown,
         onToggleBreakdown = onToggleBreakdown,
+        debts = uiState.debts.takeIf { showLoans },
+        displayTotals = uiState.displayTotals,
+        onOpenLendBorrow = onOpenLendBorrow,
         modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
     )
 }

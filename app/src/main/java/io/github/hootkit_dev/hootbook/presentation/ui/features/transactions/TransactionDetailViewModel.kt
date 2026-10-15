@@ -15,6 +15,7 @@ import io.github.hootkit_dev.hootbook.presentation.data.observe
 import io.github.hootkit_dev.hootbook.presentation.data.withCore
 import io.github.hootkit_dev.hootbook.presentation.format.entryCycle
 import io.github.hootkit_dev.hootbook.presentation.format.entryCycleKey
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -159,6 +160,7 @@ constructor(
                                     customCycleCount = old.customCycleCount,
                                     customCycleUnit = old.customCycleUnit,
                                     customCycleEndDate = old.customCycleEndDate,
+                                    showBackdatedAnchorPrompt = old.showBackdatedAnchorPrompt,
                                 )
                             }
                     }
@@ -319,9 +321,55 @@ constructor(
         it.copy(customCycleEndDate = value)
     }
 
-    fun saveChanges() {
+    fun dismissBackdatedAnchorPrompt() {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+    }
+
+    fun confirmBackdatedSaveAsIs() {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+        saveChanges(ignoreAnchorCheck = true)
+    }
+
+    fun confirmBackdatedUseNow() {
+        mutableState.update {
+            it.copy(
+                showBackdatedAnchorPrompt = false,
+                editableTransaction =
+                    it.editableTransaction?.copy(
+                        dateTime = java.time.LocalDateTime.now().coreTime()
+                    ),
+            )
+        }
+        saveChanges(ignoreAnchorCheck = true)
+    }
+
+    fun saveChanges(ignoreAnchorCheck: Boolean = false) {
         val snapshot = uiState.value
         val tx = snapshot.editableTransaction ?: return
+        if (!ignoreAnchorCheck) {
+            val txTime = tx.dateTime.toJavaDateTime()
+            val sourceAnchor =
+                snapshot.accounts[tx.accountId]
+                    ?.pockets
+                    ?.find { it.currency == tx.currency }
+                    ?.lastAnchorAt
+                    ?.toJavaDateTime()
+            val targetAnchor =
+                if (tx.kind == TransactionKind.TRANSFER)
+                    snapshot.accounts[tx.toAccountId]
+                        ?.pockets
+                        ?.find { it.currency == (tx.toCurrency ?: tx.currency) }
+                        ?.lastAnchorAt
+                        ?.toJavaDateTime()
+                else null
+            if (
+                (sourceAnchor != null && !txTime.isAfter(sourceAnchor)) ||
+                    (targetAnchor != null && !txTime.isAfter(targetAnchor))
+            ) {
+                mutableState.update { it.copy(showBackdatedAnchorPrompt = true) }
+                return
+            }
+        }
         write {
             attachmentStore.retainForCore(tx.attachments)
             session.withCore { core ->

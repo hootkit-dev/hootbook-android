@@ -82,6 +82,7 @@ fun BatchEditTransactionsBottomSheet(
     categories: Map<String, Category>,
     subcategoriesMap: Map<String, List<Subcategory>>,
     tags: List<dev.hootkit.core.Tag> = emptyList(),
+    removableTags: List<dev.hootkit.core.Tag> = tags,
     onDismiss: () -> Unit,
     onApply: (
         newDate: LocalDate?,
@@ -362,7 +363,7 @@ fun BatchEditTransactionsBottomSheet(
                 }
 
                 // Tags Card
-                if (tags.isNotEmpty()) {
+                if (tags.isNotEmpty() || removableTags.isNotEmpty()) {
                     item {
                         BatchEditOptionCard(
                             title = stringResource(R.string.core_tags_title),
@@ -371,54 +372,58 @@ fun BatchEditTransactionsBottomSheet(
                             onCheckedChange = { updateTags = it }
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                Text(
-                                    text = stringResource(R.string.core_tags_bulk_add),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                androidx.compose.foundation.layout.FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                                ) {
-                                    tags.forEach { tag ->
-                                        val selected = tag.id in addTagIds
-                                        androidx.compose.material3.FilterChip(
-                                            selected = selected,
-                                            onClick = {
-                                                if (selected) {
-                                                    addTagIds = addTagIds - tag.id
-                                                } else {
-                                                    addTagIds = addTagIds + tag.id
-                                                    removeTagIds = removeTagIds - tag.id
-                                                }
-                                            },
-                                            label = { Text(tag.name) }
-                                        )
+                                if (tags.isNotEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.core_tags_bulk_add),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    androidx.compose.foundation.layout.FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        tags.forEach { tag ->
+                                            val selected = tag.id in addTagIds
+                                            androidx.compose.material3.FilterChip(
+                                                selected = selected,
+                                                onClick = {
+                                                    if (selected) {
+                                                        addTagIds = addTagIds - tag.id
+                                                    } else {
+                                                        addTagIds = addTagIds + tag.id
+                                                        removeTagIds = removeTagIds - tag.id
+                                                    }
+                                                },
+                                                label = { Text(tag.name) }
+                                            )
+                                        }
                                     }
                                 }
-                                Text(
-                                    text = stringResource(R.string.core_tags_bulk_remove),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                androidx.compose.foundation.layout.FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                                ) {
-                                    tags.forEach { tag ->
-                                        val selected = tag.id in removeTagIds
-                                        androidx.compose.material3.FilterChip(
-                                            selected = selected,
-                                            onClick = {
-                                                if (selected) {
-                                                    removeTagIds = removeTagIds - tag.id
-                                                } else {
-                                                    removeTagIds = removeTagIds + tag.id
-                                                    addTagIds = addTagIds - tag.id
-                                                }
-                                            },
-                                            label = { Text(tag.name) }
-                                        )
+                                if (removableTags.isNotEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.core_tags_bulk_remove),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    androidx.compose.foundation.layout.FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        removableTags.forEach { tag ->
+                                            val selected = tag.id in removeTagIds
+                                            androidx.compose.material3.FilterChip(
+                                                selected = selected,
+                                                onClick = {
+                                                    if (selected) {
+                                                        removeTagIds = removeTagIds - tag.id
+                                                    } else {
+                                                        removeTagIds = removeTagIds + tag.id
+                                                        addTagIds = addTagIds - tag.id
+                                                    }
+                                                },
+                                                label = { Text(tag.name) }
+                                            )
+                                        }
                                     }
                                 }
                             }

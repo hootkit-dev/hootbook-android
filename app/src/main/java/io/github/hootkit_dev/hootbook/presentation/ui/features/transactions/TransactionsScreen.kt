@@ -318,17 +318,25 @@ fun TransactionsScreen(
             .nestedScroll(scrollBehaviorLarge.nestedScrollConnection)
 ,
         topBar = {
+            val hasDrillDownBack = initialFilter != null || initialTag != null || initialCategory != null || initialAccount != null || initialMerchant != null
+            val singleTagTitle = tagFilter.singleOrNull()?.let { id -> uiState.tags[id]?.name?.let { "# $it" } }
             CustomTitleTopAppBar(
-                title = if (selectionMode) stringResource(R.string.items_selected_format, selectedTransactionIds.size) else stringResource(R.string.transactions),
+                title = when {
+                    selectionMode -> stringResource(R.string.items_selected_format, selectedTransactionIds.size)
+                    singleTagTitle != null -> singleTagTitle
+                    else -> stringResource(R.string.transactions)
+                },
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehaviorLarge,
                 hazeState = hazeState,
-                hasBackButton = selectionMode,
+                hasBackButton = selectionMode || hasDrillDownBack,
                 navigationContent = {
                     if (selectionMode) {
                         NavigationContent {
                             transactionsViewModel.toggleSelectionMode()
                         }
+                    } else if (hasDrillDownBack) {
+                        NavigationContent(onNavigateBack)
                     }
                 },
                 actionContent = {
@@ -651,10 +659,30 @@ fun TransactionsScreen(
                     }
                 }
                 uiState.transactions.isEmpty() -> {
-                    EmptyTransactionsState(
-                        searchQuery = searchQuery,
-                        selectedPeriod = selectedPeriod
-                    )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (tagFilter.isNotEmpty()) {
+                            uiState.summary?.let { summary ->
+                                TransactionTotalsCard(
+                                    income = summary.income,
+                                    expenses = summary.expense,
+                                    netBalance = summary.net,
+                                    receivable = summary.receivable,
+                                    collected = summary.collected,
+                                    outstanding = summary.outstanding,
+                                    currency = baseCurrency,
+                                    isLoading = uiState.isLoading,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = Dimensions.Padding.content)
+                                        .padding(top = Spacing.sm, bottom = Spacing.sm)
+                                )
+                            }
+                        }
+                        EmptyTransactionsState(
+                            searchQuery = searchQuery,
+                            selectedPeriod = selectedPeriod
+                        )
+                    }
                 }
                 else -> {
                     // Benchmarks time the tab tap to this trace section: the first frame
@@ -898,6 +926,7 @@ fun TransactionsScreen(
             categories = categoriesMap,
             subcategoriesMap = allSubcategoriesByCategoryId,
             tags = uiState.tags.values.filter { !it.archived },
+            removableTags = uiState.tags.values.toList(),
             onDismiss = { showBatchEditSheet = false },
             onApply = { newDate, newTime, newCategory, newSubcategory, newAmount, newNote, addTagIds, removeTagIds ->
                 transactionsViewModel.batchUpdateTransactions(

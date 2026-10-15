@@ -330,7 +330,8 @@ fun HootbookNavHost(
                                     onBrokerage = { connection, id -> go(Investments(connection, id)) }) { open ->
                                     ManageAccountsScreen(onNavigateBack = back, onNavigateToAccountDetail = open,
                                         onNavigateToAddAccount = { go(AddAccount(it?.name)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection, id)) })
+                                        onBrokerage = { connection, id -> go(Investments(connection, id)) },
+                                        onNavigateToLendBorrow = { go(LendBorrow(it)) })
                                 }
                             }
                             composable<AccountCategoryRoute>(
@@ -439,6 +440,7 @@ fun HootbookNavHost(
                                     SharedTransitionLayout {
                                         BudgetDetailScreen(budgetId = route.budgetId, startDate = route.startDate, endDate = route.endDate,
                                             onNavigateBack = back, onNavigateToHistory = { go(BudgetHistory(it)) },
+                                            onTransactionClick = { go(TransactionDetail(it)) },
                                             animatedContentScope = this@composable, sharedElementKey = route.sharedElementKey,
                                             blurEffects = prefs.blur)
                                     }

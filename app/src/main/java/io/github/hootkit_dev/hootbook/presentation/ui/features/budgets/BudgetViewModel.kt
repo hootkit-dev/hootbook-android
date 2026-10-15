@@ -31,6 +31,7 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
                         val currency = core.settings().use { it.mainCurrency() }
                         val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
                         val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
+                        val tags = core.tags().use { it.list(true).associateBy(Tag::id) }
                         core.budgets().use { api ->
                             val rows = api.list(budgetToday(), false, currency)
                             val detail = selected?.let { api.get(it.first, it.second ?: budgetToday(), currency) }
@@ -47,6 +48,7 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
                                 transactionsPage = txPage,
                                 accounts = accounts,
                                 categories = categories,
+                                tags = tags,
                                 baseCurrency = currency,
                             )
                         }

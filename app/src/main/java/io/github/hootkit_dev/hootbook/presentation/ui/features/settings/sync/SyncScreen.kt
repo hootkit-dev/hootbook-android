@@ -1070,7 +1070,7 @@ private fun ConflictResolutionDialog(
                         Text(stringResource(R.string.sync_conflict_keep_theirs))
                     }
                 }
-                if (conflict.kind == ConflictKind.BOTH_EDITED && groups.size > 1) {
+                if (conflict.kind == ConflictKind.BOTH_EDITED && conflict.mine != null && conflict.theirs != null && groups.size > 1) {
                     Button(
                         onClick = { onResolve(ConflictChoice.PerField(sides)) },
                         enabled = enabled,

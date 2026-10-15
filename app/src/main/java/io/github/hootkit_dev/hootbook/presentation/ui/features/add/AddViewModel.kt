@@ -800,7 +800,7 @@ constructor(
     fun saveTransaction(ignoreAnchorCheck: Boolean = false, onSuccess: () -> Unit = {}) {
         if (uiState.value.loadingSource || uiState.value.importing || uiState.value.saved) return
         val before = uiState.value
-        if (before.createdTransactionId == null && !ignoreAnchorCheck) {
+        if (!ignoreAnchorCheck) {
             val txTime = before.transaction.dateTime.toJavaDateTime()
             val sourceAnchor =
                 before.accounts[before.transaction.accountId]

@@ -76,6 +76,7 @@ private constructor(
     private val nativeDispatcher: CoroutineDispatcher,
     private val testDuplicates: (suspend (AiReview) -> Map<String, Transaction>)?,
     private val invalidMessage: () -> String,
+    private val reasoningRejectedMessage: (() -> String)? = null,
 ) : ViewModel() {
     @Inject
     constructor(
@@ -94,6 +95,7 @@ private constructor(
         CoreAiNativeDispatcher,
         null,
         { context.getString(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed) },
+        { context.getString(io.github.hootkit_dev.hootbook.R.string.core_ai_reasoning_rejected) },
     )
 
     internal constructor(
@@ -109,10 +111,15 @@ private constructor(
         nativeDispatcher: CoroutineDispatcher = CoreAiNativeDispatcher,
         duplicates: suspend (AiReview) -> Map<String, Transaction> = { emptyMap() },
         ai: suspend () -> AiInterface,
-    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." })
+    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." }, null)
 
     private fun failureText(error: Throwable): String =
-        if (error is CoreException.Invalid) invalidMessage() else aiFailureText(error)
+        when {
+            error is CoreException.Invalid -> invalidMessage()
+            error is CoreException.Ai && error.failure == AiFailure.REASONING_REJECTED && reasoningRejectedMessage != null ->
+                reasoningRejectedMessage.invoke()
+            else -> aiFailureText(error)
+        }
 
     private val mutable = MutableStateFlow(AiAssistantUiState())
     val state = mutable.asStateFlow()
@@ -296,7 +303,12 @@ private constructor(
                 )
                     return@launch
                 configChanged {
-                    it.copy(protocol = protocol, baseUrl = defaults.baseUrl, model = defaults.model)
+                    it.copy(
+                        protocol = protocol,
+                        baseUrl = defaults.baseUrl,
+                        model = defaults.model,
+                        reasoning = AiReasoning.PROVIDER_DEFAULT,
+                    )
                 }
             } catch (error: Throwable) {
                 mutable.update { it.copy(error = failureText(error)) }
@@ -415,7 +427,17 @@ private constructor(
         ++modelsRevision
         modelsJob?.cancel()
         mutable.update {
-            it.copy(config = it.config.copy(model = id), configDirty = true, modelLoading = false)
+            it.copy(
+                config =
+                    it.config.copy(
+                        model = id,
+                        reasoning =
+                            if (id != it.config.model) AiReasoning.PROVIDER_DEFAULT
+                            else it.config.reasoning,
+                    ),
+                configDirty = true,
+                modelLoading = false,
+            )
         }
     }
 

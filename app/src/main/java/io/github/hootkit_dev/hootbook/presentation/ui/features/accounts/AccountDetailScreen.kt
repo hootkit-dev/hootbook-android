@@ -295,6 +295,9 @@ fun SharedTransitionScope.AccountDetailScreen(
                     val category = uiState.categories[transaction.categoryId]
                     val debt = uiState.debts[transaction.debtId]
                     val person = uiState.people[debt?.personId]
+                    val txTags = remember(transaction.tagIds, uiState.tags) {
+                        transaction.tagIds.mapNotNull(uiState.tags::get)
+                    }
                     val totalRows = recentTransactions.size + if (uiState.total > 0u) 1 else 0
                     TransactionItem(
                         transaction = transaction,
@@ -302,6 +305,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                         subcategoryEntity = category?.subcategories?.firstOrNull { it.id == transaction.subcategoryId },
                         accountIconName = uiState.account?.icon,
                         accountColorHex = uiState.account?.color,
+                        tags = txTags,
                         mainCurrency = uiState.summary?.currency,
                         convertedAmount = uiState.convertedAmounts[transaction.id],
                         currentAccountContext = accountId,

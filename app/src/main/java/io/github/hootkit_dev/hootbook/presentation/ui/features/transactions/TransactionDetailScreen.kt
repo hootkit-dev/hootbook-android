@@ -846,6 +846,24 @@ fun SharedTransitionScope.TransactionDetailScreen(
         )
     }
 
+    if (uiState.showBackdatedAnchorPrompt) {
+        AlertDialog(
+            onDismissRequest = transactionDetailViewModel::dismissBackdatedAnchorPrompt,
+            title = { Text(stringResource(R.string.core_anchor_backdated_title)) },
+            text = { Text(stringResource(R.string.core_anchor_backdated_body)) },
+            confirmButton = {
+                TextButton(onClick = transactionDetailViewModel::confirmBackdatedUseNow) {
+                    Text(stringResource(R.string.core_anchor_use_now))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = transactionDetailViewModel::confirmBackdatedSaveAsIs) {
+                    Text(stringResource(R.string.core_anchor_save_as_is))
+                }
+            }
+        )
+    }
+
     if (uiState.showUnmarkLoanConfirm) {
         AlertDialog(
             onDismissRequest = { transactionDetailViewModel.hideUnmarkLoanConfirm() },
@@ -1497,6 +1515,8 @@ private fun EditableExtractedInfoCard(
                     var reimbText by remember(transaction.id, isExpense) {
                         mutableStateOf(currentReimb?.stripTrailingZeros()?.toPlainString().orEmpty())
                     }
+                    val reimbDec = reimbText.toBigDecimalOrNull()
+                    val exceedsTotal = reimbDec != null && reimbDec > transaction.amount
                     TextField(
                         value = reimbText,
                         onValueChange = {
@@ -1512,6 +1532,17 @@ private fun EditableExtractedInfoCard(
                                 )
                             )
                         },
+                        isError = exceedsTotal,
+                        supportingText = if (exceedsTotal) {
+                            {
+                                Text(
+                                    stringResource(
+                                        if (isExpense) R.string.core_receivable_exceeds_amount
+                                        else R.string.core_collected_exceeds_amount
+                                    )
+                                )
+                            }
+                        } else null,
                         singleLine = true,
                         shape = RoundedCornerShape(
                             topStart = 4.dp,
@@ -1522,8 +1553,10 @@ private fun EditableExtractedInfoCard(
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            errorContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            errorIndicatorColor = Color.Transparent,
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )

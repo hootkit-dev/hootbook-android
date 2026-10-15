@@ -15,6 +15,7 @@ data class AccountDetailUiState(
     val summary: LedgerSummary? = null,
     val categories: Map<String, Category> = emptyMap(),
     val accounts: Map<String, Account> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val people: Map<String, Person> = emptyMap(),
     val debts: Map<String, DebtEntry> = emptyMap(),
     val convertedAmounts: Map<String, BigDecimal?> = emptyMap(),

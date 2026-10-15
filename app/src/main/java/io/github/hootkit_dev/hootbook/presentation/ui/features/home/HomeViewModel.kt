@@ -96,11 +96,22 @@ class HomeViewModel @Inject constructor(
             summary.perCurrency.map { it.currency } + lastSummary.perCurrency.map { it.currency } +
             upcoming.map { it.amount.currency } + symbols.keys + overview.netWorth.currency + target).distinct()
         val totals = core.currency().use { api ->
-            listOf("income" to Money(summary.income, summary.currency), "expense" to Money(summary.expense, summary.currency), "net" to Money(summary.net, summary.currency),
-                "lastIncome" to Money(lastSummary.income, lastSummary.currency), "lastExpense" to Money(lastSummary.expense, lastSummary.currency), "lastNet" to Money(lastSummary.net, lastSummary.currency),
-                "monthly" to Money(subscriptions.monthly, subscriptions.currency)).filter { it.second.currency != target }.associate { (key, money) ->
-                    key to queryConvertedMoney(api, money.amount, money.currency, target)
-                }
+            listOf(
+                "income" to Money(summary.income, summary.currency),
+                "expense" to Money(summary.expense, summary.currency),
+                "net" to Money(summary.net, summary.currency),
+                "receivable" to Money(summary.receivable, summary.currency),
+                "collected" to Money(summary.collected, summary.currency),
+                "outstanding" to Money(summary.outstanding, summary.currency),
+                "lastIncome" to Money(lastSummary.income, lastSummary.currency),
+                "lastExpense" to Money(lastSummary.expense, lastSummary.currency),
+                "lastNet" to Money(lastSummary.net, lastSummary.currency),
+                "monthly" to Money(subscriptions.monthly, subscriptions.currency),
+                "debtReceivable" to Money(debts.receivable, debts.currency),
+                "debtPayable" to Money(debts.payable, debts.currency),
+            ).filter { it.second.currency != target }.associate { (key, money) ->
+                key to queryConvertedMoney(api, money.amount, money.currency, target)
+            }
         }
         return HomeUiState(
             overview = overview, connections = connections, summary = summary, lastSummary = lastSummary,

@@ -47,5 +47,6 @@
     <string name="account_net_worth_step_weekly">按周</string>
     <string name="account_net_worth_step_monthly">按月</string>
     <string name="account_net_worth_securities_missing">部分日期缺少未缓存的券商持仓市值或汇率。</string>
-    <string name="account_net_worth_securities_since">券商持仓市值自 %1$s 起计入</string>
+    <string name="account_net_worth_securities_since">券商持仓市值自 %1$s 起计入（此前不含证券）</string>
+    <string name="account_net_worth_current_rates_note">按现在的汇率计算；券商首次同步日前不含证券。</string>
 </resources>

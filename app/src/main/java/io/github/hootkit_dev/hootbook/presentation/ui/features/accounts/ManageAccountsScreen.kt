@@ -126,6 +126,7 @@ fun ManageAccountsScreen(
     onNavigateToAccountDetail: (String) -> Unit,
     onNavigateToAddAccount: (AccountCategory?) -> Unit,
     onBrokerage: (String, String) -> Unit,
+    onNavigateToLendBorrow: (String?) -> Unit = {},
     category: AccountCategory? = null,
     manageAccountsViewModel: ManageAccountsViewModel = hiltViewModel(),
     investmentsViewModel: InvestmentsViewModel = hiltViewModel(),
@@ -181,7 +182,7 @@ fun ManageAccountsScreen(
                 LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = Dimensions.Padding.content, end = Dimensions.Padding.content,
                         top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
-                        bottom = 96.dp + paddingValues.calculateBottomPadding()),
+                        bottom = 116.dp + paddingValues.calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (category == null) {
                         uiState.netWorthHistory?.takeIf { it.points.isNotEmpty() }?.let { history ->
@@ -196,6 +197,24 @@ fun ManageAccountsScreen(
                                     onSelectCustomRange = manageAccountsViewModel::setNetWorthCustomRange,
                                     onSelectStep = manageAccountsViewModel::selectNetWorthStep,
                                 )
+                            }
+                        }
+                        uiState.debts?.takeIf { it.receivable.signum() != 0 || it.payable.signum() != 0 }?.let { loans ->
+                            item(key = "loans") {
+                                io.github.hootkit_dev.hootbook.presentation.ui.components.LendBorrowRow(
+                                    summary = loans,
+                                    currency = loans.currency,
+                                    onClick = { onNavigateToLendBorrow(null) },
+                                    onLentClick = { onNavigateToLendBorrow(io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBorrowFilter.YOU_GET.name) },
+                                    onBorrowedClick = { onNavigateToLendBorrow(io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBorrowFilter.YOU_OWE.name) },
+                                )
+                                if (!loans.complete) {
+                                    Text(
+                                        stringResource(R.string.core_complete_incomplete),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(horizontal = 4.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -380,13 +399,14 @@ private fun NetWorthHistoryCard(
                     Text(
                         stringResource(R.string.net_worth_label),
                         style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     latestAmount?.let { amount ->
                         Text(
                             CoreMoneyPresentation.formatCurrency(amount, currency),
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -481,13 +501,24 @@ private fun NetWorthHistoryCard(
                         points = history.points,
                         currency = history.currency,
                     )
-                    if (history.points.any { !it.complete }) {
+                    history.securitiesSince?.let { secSince ->
                         Text(
-                            stringResource(R.string.account_net_worth_securities_missing),
+                            stringResource(R.string.account_net_worth_securities_since, secSince.coreDateText()),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    Text(
+                        stringResource(
+                            if (history.points.any { !it.complete }) {
+                                R.string.account_net_worth_securities_missing
+                            } else {
+                                R.string.account_net_worth_current_rates_note
+                            }
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

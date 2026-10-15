@@ -77,7 +77,7 @@ private fun amountWithSmallSymbol(amount: BigDecimal?, currency: String, symbolS
         append(formatted)
     } else {
         append(formatted.substring(0, at))
-        withStyle(SpanStyle(fontSize = symbolStyle.fontSize, fontWeight = FontWeight.Normal)) { append(symbol) }
+        withStyle(SpanStyle(fontSize = symbolStyle.fontSize, fontWeight = FontWeight.SemiBold)) { append(symbol) }
         append(formatted.substring(at + symbol.length))
     }
 }
@@ -94,49 +94,126 @@ internal fun NetWorthSection(
     onOpenAccounts: () -> Unit,
     breakdownShown: Boolean,
     onToggleBreakdown: () -> Unit,
+    debts: DebtSummary? = null,
+    displayTotals: Map<String, ConvertedMoney> = emptyMap(),
+    onOpenLendBorrow: (String?) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val locale = locale()
-    val colors = moneyColors
-    Column(modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp)) {
+        Row(
+            modifier = Modifier.heightIn(min = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(
                 modifier = Modifier
                     .weight(1f)
                     .clip(MaterialTheme.shapes.small)
                     .clickable(onClick = onOpenAccounts)
-                    .padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.net_worth_label), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.net_worth_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (canChangeCurrency) {
-                TextButton(onClick = onCurrencyClick, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                    Text(currency, style = MaterialTheme.typography.labelLarge)
-                    Icon(Icons.Rounded.KeyboardArrowDown, null, Modifier.size(18.dp))
+                Row(
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(onClick = onCurrencyClick)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(currency, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Rounded.KeyboardArrowDown, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            TextButton(onClick = onToggleBreakdown, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                Text(stringResource(R.string.home_by_category), style = MaterialTheme.typography.labelLarge)
-                Icon(if (breakdownShown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, null, Modifier.size(18.dp))
+            Row(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable(onClick = onToggleBreakdown)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.home_by_category), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Icon(if (breakdownShown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
-        Text(
-            text = amountWithSmallSymbol(netWorth, currency, MaterialTheme.typography.headlineSmall, customSymbols),
-            style = MaterialTheme.typography.displaySmall.tabular(),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 4.dp).clickable(onClick = onOpenAccounts)
-        )
+        Spacer(Modifier.height(2.dp))
+        val debtRecConv = displayTotals["debtReceivable"]
+        val debtPayConv = displayTotals["debtPayable"]
+        val useConvDebt = (debtRecConv == null || debtRecConv.complete) && (debtPayConv == null || debtPayConv.complete)
+        val debtCurrency = if (useConvDebt && (debtRecConv != null || debtPayConv != null)) currency else debts?.currency.orEmpty()
+        val lentAmount = (if (useConvDebt) debtRecConv?.amount else null) ?: debts?.receivable ?: BigDecimal.ZERO
+        val borrowedAmount = (if (useConvDebt) debtPayConv?.amount else null) ?: debts?.payable ?: BigDecimal.ZERO
+        val hasDebts = debts != null && (lentAmount.signum() != 0 || borrowedAmount.signum() != 0)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = amountWithSmallSymbol(netWorth, currency, MaterialTheme.typography.titleLarge, customSymbols),
+                style = MaterialTheme.typography.headlineLarge.tabular(),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).clickable(onClick = onOpenAccounts)
+            )
+            if (hasDebts) {
+                val debtParts = buildList {
+                    if (lentAmount.signum() != 0) {
+                        add("${stringResource(R.string.type_lent)} ${CurrencyFormatter.format(lentAmount, debtCurrency, customSymbols)}")
+                    }
+                    if (borrowedAmount.signum() != 0) {
+                        add("${stringResource(R.string.type_borrowed)} ${CurrencyFormatter.format(borrowedAmount, debtCurrency, customSymbols)}")
+                    }
+                }.joinToString(" · ")
+                Row(
+                    modifier = Modifier
+                        .padding(start = 8.dp, bottom = 3.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable {
+                            val filter = when {
+                                lentAmount.signum() != 0 && borrowedAmount.signum() == 0 ->
+                                    io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBorrowFilter.YOU_GET.name
+                                borrowedAmount.signum() != 0 && lentAmount.signum() == 0 ->
+                                    io.github.hootkit_dev.hootbook.presentation.ui.features.lendborrow.LendBorrowFilter.YOU_OWE.name
+                                else -> null
+                            }
+                            onOpenLendBorrow(filter)
+                        }
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = debtParts,
+                        style = MaterialTheme.typography.bodySmall.tabular(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Icon(
+                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
         if (!complete) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 /**
- * This month: the net (saved or overspent, said in words) as the largest figure, then income
- * and spending as two bars on one scale, each with a tick at last month's figure.
+ * This month: compact header with net income/spending below the title and an optional outstanding
+ * receivable pill, then income and spending bars with inline collected/receivable notes.
  */
 @Composable
 internal fun MonthCard(
@@ -159,19 +236,26 @@ internal fun MonthCard(
     val inc = ((if (showConverted) display["income"]?.amount else null) ?: summary.income).abs()
     val exp = ((if (showConverted) display["expense"]?.amount else null) ?: summary.expense).abs()
     val net = (if (showConverted) display["net"]?.amount else null) ?: summary.net
+    val receivable = (if (showConverted) display["receivable"]?.amount else null) ?: summary.receivable
+    val collected = (if (showConverted) display["collected"]?.amount else null) ?: summary.collected
+    val outstanding = (if (showConverted) display["outstanding"]?.amount else null) ?: summary.outstanding
     val scale = listOf(inc, exp, lastIncome.abs(), lastExpenses.abs()).maxOf { it }.takeIf { it.signum() > 0 }
-    val empty = inc.signum() == 0 && exp.signum() == 0
+    val empty = inc.signum() == 0 && exp.signum() == 0 && receivable.signum() == 0 && collected.signum() == 0
     fun money(v: BigDecimal) = CurrencyFormatter.format(v, currency, customSymbols)
 
     Surface(onClick = onClick, shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)) {
+        Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.home_month_title, monthName), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.home_month_title, monthName),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
-                stringResource(
+                text = stringResource(
                     when {
                         empty -> R.string.home_month_empty
                         net.signum() > 0 -> R.string.home_net_income
@@ -183,7 +267,7 @@ internal fun MonthCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                amountWithSmallSymbol(net.abs(), currency, MaterialTheme.typography.titleLarge, customSymbols),
+                text = amountWithSmallSymbol(net.abs(), currency, MaterialTheme.typography.titleLarge, customSymbols),
                 style = MaterialTheme.typography.headlineMedium.tabular(),
                 color = when {
                     empty || net.signum() == 0 -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -191,35 +275,50 @@ internal fun MonthCard(
                     else -> colors.expense
                 }
             )
-            if (!summary.complete || lastSummary?.complete == false || converted.values.any { !it.complete }) Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall)
+            if (!summary.complete || lastSummary?.complete == false || converted.values.any { !it.complete }) {
+                Text(stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall)
+            }
             if (!empty) {
-                Spacer(Modifier.height(12.dp))
-                MoneyBar(
-                    icon = Icons.Rounded.SouthWest, label = stringResource(R.string.home_in), amount = money(inc),
-                    fraction = scale?.let { inc.toFloat() / it.toFloat() } ?: 0f,
-                    lastFraction = scale?.let { lastIncome.abs().toFloat() / it.toFloat() },
-                    color = colors.income, container = colors.incomeContainer, onContainer = colors.onIncomeContainer
-                )
                 Spacer(Modifier.height(10.dp))
                 MoneyBar(
-                    icon = Icons.Rounded.NorthEast, label = stringResource(R.string.home_out), amount = money(exp),
+                    icon = Icons.Rounded.SouthWest,
+                    label = stringResource(R.string.home_in),
+                    inlineBadge = if (collected > BigDecimal.ZERO) "${stringResource(R.string.core_collected_short)} ${money(collected)}" else null,
+                    amount = money(inc),
+                    fraction = scale?.let { inc.toFloat() / it.toFloat() } ?: 0f,
+                    lastFraction = scale?.let { lastIncome.abs().toFloat() / it.toFloat() },
+                    color = colors.income,
+                    container = colors.incomeContainer,
+                    onContainer = colors.onIncomeContainer
+                )
+                Spacer(Modifier.height(8.dp))
+                val outInlineBadges = buildList {
+                    if (receivable > BigDecimal.ZERO) add("${stringResource(R.string.core_receivable_short)} ${money(receivable)}")
+                    if (outstanding > BigDecimal.ZERO) add("${stringResource(R.string.core_outstanding_short)} ${money(outstanding)}")
+                }.joinToString(" · ").ifEmpty { null }
+                MoneyBar(
+                    icon = Icons.Rounded.NorthEast,
+                    label = stringResource(R.string.home_out),
+                    inlineBadge = outInlineBadges,
+                    amount = money(exp),
                     fraction = scale?.let { exp.toFloat() / it.toFloat() } ?: 0f,
                     lastFraction = scale?.let { lastExpenses.abs().toFloat() / it.toFloat() },
-                    color = colors.expense, container = colors.expenseContainer, onContainer = colors.onExpenseContainer
+                    color = colors.expense,
+                    container = colors.expenseContainer,
+                    onContainer = colors.onExpenseContainer
                 )
             }
             if (lastIncome.signum() != 0 || lastExpenses.signum() != 0) {
-                HorizontalDivider(Modifier.padding(top = 14.dp, bottom = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(Modifier.padding(top = 10.dp, bottom = 6.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 val lastNet = (if (showConverted) display["lastNet"]?.amount else null) ?: lastSummary!!.net
-                Row(verticalAlignment = Alignment.Top) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     // The same tick as on the bars, as the note's legend
                     Box(
                         Modifier
-                            .padding(top = 3.dp)
-                            .size(width = 3.dp, height = 12.dp)
+                            .size(width = 3.dp, height = 11.dp)
                             .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(1.5.dp))
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         stringResource(
                             R.string.home_last_month_note,
@@ -228,7 +327,9 @@ internal fun MonthCard(
                             else stringResource(R.string.home_last_net_spending, money(lastNet.abs()))
                         ),
                         style = MaterialTheme.typography.bodySmall.tabular(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -240,6 +341,7 @@ internal fun MonthCard(
 private fun MoneyBar(
     icon: ImageVector,
     label: String,
+    inlineBadge: String? = null,
     amount: String,
     fraction: Float,
     lastFraction: Float?,
@@ -247,24 +349,33 @@ private fun MoneyBar(
     container: Color,
     onContainer: Color
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(container), contentAlignment = Alignment.Center) {
-            Icon(icon, null, Modifier.size(18.dp), tint = onContainer)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(container), contentAlignment = Alignment.Center) {
+            Icon(icon, null, Modifier.size(16.dp), tint = onContainer)
         }
         Column(Modifier.weight(1f)) {
-            Row {
-                Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, style = MaterialTheme.typography.bodyMedium)
+                if (inlineBadge != null) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "· $inlineBadge",
+                        style = MaterialTheme.typography.labelSmall.tabular(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.weight(1f))
                 Text(amount, style = MaterialTheme.typography.titleSmall.tabular())
             }
-            Spacer(Modifier.height(6.dp))
-            BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp), contentAlignment = Alignment.CenterStart) {
-                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest))
-                Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(4.dp)).background(color))
+            Spacer(Modifier.height(4.dp))
+            BoxWithConstraints(Modifier.fillMaxWidth().height(12.dp), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest))
+                Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp)).background(color))
                 lastFraction?.takeIf { it > 0f }?.let { last ->
                     Box(
                         Modifier
                             .offset(x = (maxWidth - 2.dp) * last.coerceIn(0f, 1f))
-                            .size(width = 2.dp, height = 16.dp)
+                            .size(width = 2.dp, height = 12.dp)
                             .background(MaterialTheme.colorScheme.onSurfaceVariant)
                     )
                 }
@@ -380,14 +491,22 @@ internal fun RecentTransactionsCard(
     val today = stringResource(R.string.today_lbl)
     val yesterday = stringResource(R.string.yesterday_lbl)
     Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(start = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(R.string.home_recent),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = onViewAll) { Text(stringResource(R.string.home_all)) }
+            Row(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable(onClick = onViewAll)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.home_all), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            }
         }
         Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
             when {
@@ -398,9 +517,9 @@ internal fun RecentTransactionsCard(
                     stringResource(R.string.home_recent_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth().padding(20.dp)
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
-                else -> Column(Modifier.padding(bottom = 8.dp)) {
+                else -> Column(Modifier.padding(bottom = 6.dp)) {
                     val now = LocalDate.now()
                     transactions.groupBy { java.time.LocalDate.of(it.dateTime.year, it.dateTime.month.toInt(), it.dateTime.day.toInt()) }.forEach { (day, rows) ->
                         Text(
@@ -411,7 +530,7 @@ internal fun RecentTransactionsCard(
                             },
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 2.dp)
                         )
                         rows.forEach { transaction ->
                             val account = accounts[transaction.accountId]

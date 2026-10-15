@@ -1002,6 +1002,9 @@ fun TransactionTabContent(
                             HootbookSwitch(checked = checked, onCheckedChange = null)
                         }
                         if (checked) {
+                            val totalDec = state.amount.toBigDecimalOrNull()
+                            val reimbDec = state.reimbursementAmount.toBigDecimalOrNull()
+                            val exceedsTotal = totalDec != null && reimbDec != null && reimbDec > totalDec
                             TextField(
                                 value = state.reimbursementAmount,
                                 onValueChange = viewModel::updateReimbursementAmount,
@@ -1014,14 +1017,27 @@ fun TransactionTabContent(
                                     )
                                 },
                                 placeholder = { Text(state.amount.ifEmpty { "0.00" }) },
+                                isError = exceedsTotal,
+                                supportingText = if (exceedsTotal) {
+                                    {
+                                        Text(
+                                            stringResource(
+                                                if (isExpense) R.string.core_receivable_exceeds_amount
+                                                else R.string.core_collected_exceeds_amount
+                                            )
+                                        )
+                                    }
+                                } else null,
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = TextFieldDefaults.colors(
                                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    errorContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
                                     focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    errorIndicatorColor = Color.Transparent,
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             )

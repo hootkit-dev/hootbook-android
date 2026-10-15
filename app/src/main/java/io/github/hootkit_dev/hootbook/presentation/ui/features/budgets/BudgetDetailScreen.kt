@@ -82,6 +82,7 @@ fun SharedTransitionScope.BudgetDetailScreen(
     endDate: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToHistory: (String) -> Unit = {},
+    onTransactionClick: (String) -> Unit = {},
     budgetViewModel: BudgetViewModel = hiltViewModel(),
     animatedContentScope: AnimatedContentScope? = null,
     sharedElementKey: String? = null,
@@ -281,9 +282,15 @@ fun SharedTransitionScope.BudgetDetailScreen(
 
                     if (budgetWithSpending.current.byCategory.isNotEmpty()) {
                         item {
-                            BudgetCategoryPieChart(budgetWithSpending.current.byCategory,
-                                uiState.categories, budgetWithSpending.amount.currency, budgetWithSpending.current.spent,
-                                modifier = Modifier.padding(end = Spacing.sm))
+                            BudgetCategoryPieChart(
+                                categories = budgetWithSpending.current.byCategory,
+                                lookup = uiState.categories,
+                                currency = budgetWithSpending.amount.currency,
+                                totalSpent = budgetWithSpending.current.spent,
+                                selectedCategoryId = uiState.selectedCategoryId,
+                                onCategoryClick = budgetViewModel::selectCategoryFilter,
+                                modifier = Modifier.padding(end = Spacing.sm)
+                            )
                             Spacer(modifier = Modifier.height(Spacing.xl))
                         }
                     }
@@ -333,11 +340,18 @@ fun SharedTransitionScope.BudgetDetailScreen(
                     }
 
                     val txItems = uiState.transactionsPage?.items.orEmpty()
+                    val budgetCurrency = budgetWithSpending.amount.currency
                     itemsIndexed(txItems, key = { _, item -> "btx_${item.transaction.id}" }) { index, item ->
                         val tx = item.transaction
                         val cat = tx.categoryId?.let { uiState.categories[it] }
                         val subcat = cat?.subcategories?.firstOrNull { it.id == tx.subcategoryId }
                         val acc = uiState.accounts[tx.accountId]
+                        val txTags = remember(tx.tagIds, uiState.tags) {
+                            tx.tagIds.mapNotNull(uiState.tags::get)
+                        }
+                        val isForeignOrAdjusted =
+                            !tx.currency.equals(budgetCurrency, ignoreCase = true) ||
+                                item.amount.compareTo(tx.amount) != 0
                         Box(modifier = Modifier.padding(horizontal = Spacing.md)) {
                             TransactionItem(
                                 transaction = tx,
@@ -345,9 +359,21 @@ fun SharedTransitionScope.BudgetDetailScreen(
                                 subcategoryEntity = subcat,
                                 accountIconName = acc?.icon,
                                 accountColorHex = acc?.color,
+                                tags = txTags,
                                 shape = ListItemPosition.from(index, txItems.size).toShape(),
-                                convertedAmount = item.amount,
-                                mainCurrency = budgetWithSpending.amount.currency,
+                                amountOverride =
+                                    io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation.formatCurrency(
+                                        item.amount,
+                                        budgetCurrency
+                                    ),
+                                secondaryAmountText =
+                                    if (isForeignOrAdjusted)
+                                        io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation.formatCurrency(
+                                            tx.amount,
+                                            tx.currency
+                                        )
+                                    else null,
+                                onClick = { onTransactionClick(tx.id) },
                                 rateLoading = false,
                             )
                         }

@@ -61,10 +61,14 @@
     <string name="core_tags_bulk_remove">移除标签</string>
     <string name="core_tags_view_transactions">查看相关交易</string>
     <string name="core_tags_delete_confirm">确定删除标签「%1$s」？该标签会从所有关联交易中移除。</string>
-    <string name="core_anchor_backdated_title">早于最近一次余额校准</string>
-    <string name="core_anchor_backdated_body">该交易时间（%1$s）不晚于账户最近一次余额校准时间（%2$s）。按原时间保存将不会改变当前已校准的账户余额。</string>
+    <string name="core_anchor_backdated_title">早于填写或校准余额时间</string>
+    <string name="core_anchor_backdated_body">这笔早于你填写或校准余额的时间，不会改变当前余额。</string>
     <string name="core_anchor_save_as_is">按所选时间保存</string>
     <string name="core_anchor_use_now">改为当前时间</string>
+    <string name="core_tags_error_exists">已存在同名标签</string>
+    <string name="core_receivable_exceeds_amount">其中代付金额不能超过交易总金额</string>
+    <string name="core_collected_exceeds_amount">其中收回代付金额不能超过交易总金额</string>
+    <string name="core_conflict_per_field_deleted">该记录已被删除，无法按字段合并，请选择保留本机或保留云端</string>
     <string name="core_duplicates_title">重复记录清理</string>
     <string name="core_duplicates_subtitle">扫描并合并重复的交易或账本记录</string>
     <string name="core_duplicates_empty">未发现重复记录</string>
@@ -73,4 +77,12 @@
     <string name="core_duplicates_remove_count">移除 %1$d 条重复项</string>
     <string name="core_duplicates_clean_selected">清理所选（%1$d 组）</string>
     <string name="core_duplicates_cleaned">已清理 %1$d 条重复记录</string>
+    <string name="core_duplicates_confirm_title">确认清理所选重复记录？</string>
+    <string name="core_duplicates_confirm_body">将为所选 %2$d 组各保留 1 条记录，并移除其余 %1$d 条重复项（相关关联将自动归并到保留记录）。</string>
+    <string name="core_duplicates_select_all">全选</string>
+    <string name="core_duplicates_deselect_all">取消全选</string>
+    <string name="core_duplicates_guide">以下每组记录的内容完全相同（金额、时间、账户一致）。勾选需要清理的分组后，点击底部按钮即可为每组保留 1 条、移除多余副本；若实际发生了多笔相同交易，取消勾选即可全部保留。</string>
+    <string name="core_duplicates_group_badge">共 %1$d 条相同</string>
+    <string name="core_duplicates_action_selected">✓ 保留 1 条记录，清理时移除其余 %1$d 条重复副本</string>
+    <string name="core_duplicates_action_skipped">已取消勾选：保留全部 %1$d 条记录，不作清理</string>
 </resources>

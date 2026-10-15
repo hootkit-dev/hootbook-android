@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Settings → Backup & sync, and its Firebase sync page (docs/sync.md) -->
 <resources>
-    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage credentials are not uploaded.</string>
+    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Ledger records, AI settings (including keys), and brokerage connections (including credentials) are encrypted on this device with your sync passphrase before upload, so only your devices can read them. Attachments, merchant icons, and local UI preferences are not uploaded.</string>
     <string name="sync_unavailable_title">Not available in this build</string>
     <string name="sync_unavailable_body">Sync is currently unavailable. You can still move data with a backup file under Backup &amp; Sync.</string>
     <string name="sync_sign_in">Sign in with Google</string>

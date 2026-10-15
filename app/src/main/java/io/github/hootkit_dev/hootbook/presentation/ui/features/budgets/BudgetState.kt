@@ -13,6 +13,7 @@ data class BudgetUiState(
     val transactionsPage: BudgetTransactionPage? = null,
     val accounts: Map<String, Account> = emptyMap(),
     val categories: Map<String, Category> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val baseCurrency: String = "CNY",
     val saving: Boolean = false,
     val error: Int? = null,
