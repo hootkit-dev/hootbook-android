@@ -56,19 +56,48 @@ fun MacrobenchmarkScope.seedData() {
     if ("Error" in out) fail("SeedActivity failed to start: $out")
     val deadline = System.currentTimeMillis() + SEED_TIMEOUT_MS
     // Written by SeedActivity once the data set and onboarding flags are committed.
-    val marker = "/sdcard/Android/data/$packageName/files/benchmark-seeded"
-    while ("benchmark-seeded" !in device.executeShellCommand("ls $marker")) {
+    val dir = "/sdcard/Android/data/$packageName/files"
+    while (true) {
+        val files = device.executeShellCommand("ls $dir")
+        if ("benchmark-seeded" in files) break
+        if ("benchmark-seed-failed" in files) fail("SeedActivity reported benchmark-seed-failed")
         if (System.currentTimeMillis() > deadline) fail("Seeding did not finish")
         Thread.sleep(250)
     }
 }
 
-/** Home is usable once the bottom bar and the add button are on screen. */
+private val PROFILE_DESC = Pattern.compile("Profile Image|个人资料图片|個人資料圖片|core-home-profile")
+
+private val TAB_PATTERNS = mapOf(
+    "Home" to Pattern.compile("Home|主页|首頁"),
+    "Analytics" to Pattern.compile("Analytics|分析"),
+    "Transactions" to Pattern.compile("Transactions|交易"),
+)
+
+/** Home is usable once the Home screen route tag (or legacy core-screen-home) is on screen. */
 fun MacrobenchmarkScope.waitForHome() {
     val deadline = System.currentTimeMillis() + TIMEOUT_MS
-    while (!device.wait(Until.hasObject(By.desc("core-screen-home")), 1_000)) {
+    while (
+        !device.wait(Until.hasObject(By.res("hootbook-screen-Home")), 1_000) &&
+        !device.hasObject(By.desc("core-screen-home"))
+    ) {
         if (dismissSystemAnr()) continue
         if (System.currentTimeMillis() > deadline) fail("Home did not appear")
+    }
+}
+
+/** Opens Settings from the Home top-bar avatar button and waits for navigation. */
+fun MacrobenchmarkScope.openSettingsFromHome() {
+    step("openSettingsFromHome")
+    if (!device.wait(Until.hasObject(By.desc(PROFILE_DESC)), TIMEOUT_MS)) {
+        fail("Profile button not found on Home")
+    }
+    device.findObject(By.desc(PROFILE_DESC)).click()
+    if (
+        !device.wait(Until.hasObject(By.res("hootbook-screen-Settings")), 10_000) &&
+        !device.wait(Until.gone(By.res("hootbook-screen-Home")), 2_000)
+    ) {
+        fail("Settings did not open")
     }
 }
 
@@ -80,8 +109,9 @@ fun MacrobenchmarkScope.settle() {
 /** Bottom-bar labels share text with screen titles, so take the lowest match on screen. */
 fun MacrobenchmarkScope.clickTab(label: String) {
     step("clickTab $label")
-    if (!device.wait(Until.hasObject(By.text(label)), TIMEOUT_MS)) fail("Tab $label not found")
-    device.findObjects(By.text(label)).maxBy { it.visibleBounds.top }.click()
+    val pattern = TAB_PATTERNS[label] ?: Pattern.compile(Pattern.quote(label))
+    if (!device.wait(Until.hasObject(By.text(pattern)), TIMEOUT_MS)) fail("Tab $label not found")
+    device.findObjects(By.text(pattern)).maxBy { it.visibleBounds.top }.click()
 }
 
 fun MacrobenchmarkScope.openTab(label: String) {
@@ -95,7 +125,8 @@ fun MacrobenchmarkScope.waitForSeededRows() {
 }
 
 private val SEEDED_MERCHANT = Pattern.compile(
-    "Meituan|Ele\\.me|Starbucks|Luckin Coffee|FamilyMart|Hema|JD\\.com|Taobao|Pinduoduo|Didi|Metro|" +
+    "Fixture grocery|Fixture transport|Fixture salary|Fixture subscription|" +
+        "Meituan|Ele\\.me|Starbucks|Luckin Coffee|FamilyMart|Hema|JD\\.com|Taobao|Pinduoduo|Didi|Metro|" +
         "China Railway|Wanda Cinema|Haidilao|Xiaomi Store|Apple|Uniqlo|IKEA|China Mobile|State Grid|" +
         "Pharmacy|Gym|Bookstore|Salary"
 )

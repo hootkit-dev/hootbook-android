@@ -41,14 +41,10 @@ class BaselineProfileGenerator {
 
         openTab("Home")
         waitForHome()
-        device.findObject(By.desc("core-home-profile"))?.let { profile ->
-            profile.click()
-            if (device.wait(Until.gone(By.desc("core-screen-home")), 10_000)) {
-                device.waitForIdle(1_000)
-                flingDownAndUp(times = 1, dpPerSecond = FLING_NORMAL_DP_PER_S)
-                device.pressBack()
-                waitForHome()
-            }
-        }
+        openSettingsFromHome()
+        device.waitForIdle(1_000)
+        flingDownAndUp(times = 1, dpPerSecond = FLING_NORMAL_DP_PER_S)
+        device.pressBack()
+        waitForHome()
     }
 }

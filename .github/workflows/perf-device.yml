@@ -1,29 +1,17 @@
 name: Performance (device)
 
-# Macrobenchmark on a physical phone in Google Cloud's Developer Device Platform (Device
-# Run, `gcloud beta device-run`), which replaces Firebase Test Lab. Both builds are
-# installed side by side and measured alternately in one run (base, candidate, candidate,
-# base) on the same phone; compare.py turns that into an A/B table with 95% intervals and
-# verdicts, which goes to the job summary and to a comment on the branch's pull request.
-# The job fails on a regression (see RULES in scripts/benchmark/compare.py).
+# Macrobenchmark and Baseline Profile generation on a physical phone in Google Cloud's
+# Developer Device Platform (Device Run, `gcloud beta device-run`).
 #
-# Needs the DEVICE_RUN_SERVICE_ACCOUNT secret: the JSON key of a service account in a Google
-# Cloud project with billing and the Device Run, Device Streaming and Cloud Testing APIs
-# (devicerun, devicestreaming, testing.googleapis.com) enabled. The account needs the roles
-# the Device Run quickstart lists (Viewer, Device Run Admin, Device Streaming Admin,
-# Service Usage Consumer) and Storage Admin: the CLI uploads the APKs to
-# gs://<project>-devicerun, creating the bucket on the first run, and the results are
-# read back from there.
+# In `benchmark` mode, both builds (baseline and candidate) are installed side by side and
+# measured alternately in one instrumentation session (`base+candidate+candidate+base`) on
+# the same physical device; `scripts/benchmark/compare.py` turns that into an A/B table
+# with 95% confidence intervals and verdicts, written to the job summary and PR comment.
 #
-# Runs only when started by hand: Actions → Performance (device) → Run workflow, on the
-# branch to measure (physical-device time is billed). "mode" picks what to do:
-#   benchmark  A/B of the branch against base_ref (default main), all of ScreenBenchmark
-#              unless "tests" names methods
-#   profile    record a Baseline Profile (BaselineProfileGenerator on the unminified
-#              profiling build) and upload it as the baseline-profile artifact; copy its
-#              baseline-prof.txt over app/src/main/baseline-prof.txt
-#   apks       only build: apk-base and apk-candidate hold benchmark builds that install
-#              side by side (apk-candidate also has the test APK)
+# Required secrets:
+#   - DEVICE_RUN_SERVICE_ACCOUNT: JSON key for a GCP service account with Device Run,
+#     Device Streaming, Cloud Testing, and Storage Admin permissions.
+#   - CORE_REPO_READ_TOKEN: read token for resolving pinned HootKit Core releases/sources.
 on:
   workflow_dispatch:
     inputs:
@@ -33,7 +21,7 @@ on:
         options: [benchmark, profile, apks]
         default: benchmark
       base_ref:
-        description: "Baseline branch or SHA"
+        description: "Baseline branch or SHA (benchmark / apks mode)"
         required: false
         default: main
       tests:
@@ -52,28 +40,23 @@ on:
 env:
   # Pixel 10 Pro, Android 16.
   DEFAULT_DEVICE: blazer-36
+  GCLOUD_VERSION: 588.0.0
   # Measuring order of the two builds; compare.py maps test indexes back with it.
   ORDER: base+candidate+candidate+base
   TEST_CLASS: io.github.hootkit_dev.hootbook.benchmark.ScreenBenchmark
-  # Where Macrobenchmark writes its results by default: the media directory of the test APK
-  # (it instruments itself), which the shell can read and so pull. Device Run hands test
-  # options to `am instrument` only as -e arguments, so the no-isolated-storage switch that
-  # let Test Lab runs write to /sdcard/Download is not available.
+  PROFILE_CLASS: io.github.hootkit_dev.hootbook.benchmark.BaselineProfileGenerator
+  # Macrobenchmark writes results to the media directory of the self-instrumenting test APK.
   OUTPUT_DIR: /sdcard/Android/media/io.github.hootkit_dev.hootbook.benchmark.tests
-  # BuildConfig carries the commit SHA and count (app/build.gradle.kts). Fixed values here
-  # keep it identical across commits, so Gradle's build cache can reuse the app's
-  # compilation and R8 output when only other files changed.
+  # Fixed BuildConfig values keep compilation and R8 outputs cacheable across commits.
   ORG_GRADLE_PROJECT_gitSha: benchmark
   ORG_GRADLE_PROJECT_gitCommitCount: "0"
+  ORG_GRADLE_PROJECT_kotlin.daemon.jvmargs: "-Xmx4096M"
 
 jobs:
-  # The two builds run in parallel; the device job starts once both are done.
   candidate:
-    if: inputs.mode != 'profile'
-    name: Build candidate
-    # A new run on the same branch replaces one in flight.
+    name: Build candidate (${{ inputs.mode == 'profile' && 'profiling' || 'benchmark' }})
     concurrency:
-      group: perf-candidate-${{ github.ref }}
+      group: perf-candidate-${{ github.ref }}-${{ inputs.mode }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -95,32 +78,36 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml', 'core-bindings/core.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
       - uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
+          key: gradle-build-cache-candidate-${{ inputs.mode }}-${{ github.sha }}
           restore-keys: |
-            gradle-build-cache-${{ github.job }}-
+            gradle-build-cache-candidate-${{ inputs.mode }}-
+            gradle-build-cache-candidate-
             gradle-build-cache-
-      - name: Build candidate and tests
+      - name: Build candidate app and benchmark test APKs
         env:
+          MODE: ${{ inputs.mode }}
           GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache
         run: |
           chmod +x gradlew
-          ./gradlew :app:assembleStandardBenchmark :benchmark:assembleStandardBenchmark --no-configuration-cache --stacktrace
+          if [ "$MODE" = "profile" ]; then
+            APP_TASK=":app:assembleStandardProfiling"
+            APP_APK="app/build/outputs/apk/standard/profiling/app-standard-arm64-v8a-profiling.apk"
+          else
+            APP_TASK=":app:assembleStandardBenchmark"
+            APP_APK="app/build/outputs/apk/standard/benchmark/app-standard-arm64-v8a-benchmark.apk"
+          fi
+          ./gradlew "$APP_TASK" :benchmark:assembleStandardBenchmark --no-configuration-cache --stacktrace
           mkdir -p apks
-          cp app/build/outputs/apk/standard/benchmark/app-standard-arm64-v8a-benchmark.apk apks/candidate.apk
+          cp "$APP_APK" apks/candidate.apk
           cp benchmark/build/outputs/apk/standard/benchmark/benchmark-standard-benchmark.apk apks/tests.apk
-          # Gradle does not mark entries it reads, so bound the saved cache by age instead: an
-          # entry dropped here is simply rebuilt and stored again by the next miss.
-          find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete
-          du -sh "$GRADLE_BUILD_CACHE_DIR"
+          find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete 2>/dev/null || true
+          du -sh "$GRADLE_BUILD_CACHE_DIR" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         with:
           name: apk-candidate
@@ -142,24 +129,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Resolve baseline
+      - name: Resolve and prepare baseline worktree
         id: ref
         env:
           INPUT_BASE: ${{ inputs.base_ref }}
+          WF_HASH: ${{ hashFiles('.github/workflows/perf-device.yml', '.github/actions/setup-core/action.yml') }}
         run: |
           BASE_REF=${INPUT_BASE:-main}
           REV="$BASE_REF"
           if git rev-parse --verify -q "origin/$BASE_REF" > /dev/null; then REV="origin/$BASE_REF"; fi
           SHA=$(git rev-parse --verify "$REV^{commit}")
           git log -1 --format='Baseline app source sets from %h %s' "$SHA"
-          # The baseline is a complete compatible historical Core application graph, never a source splice from
-          # this branch, so both go into the cache key.
-          SETUP=$(git ls-files -s -- app gradle core-bindings core-platform scripts/core '*.gradle.kts' gradle.properties .github/workflows/perf-device.yml .github/actions/setup-core \
-            | awk -F'\t' '$2 !~ /^app\/src\/(main|standard)\//' | sha256sum | cut -c1-16)
+          # Ensure the baseline commit has a complete compatible historical Core application graph.
+          git show "$SHA:app/build.gradle.kts" | grep -q 'project(":core-platform")' || {
+            echo "::error::No compatible historical Core baseline at $SHA; benchmark baseline is unavailable"
+            exit 1
+          }
+          SETUP=$(git ls-tree -r "$SHA" -- app gradle core-bindings core-platform scripts/core '*.gradle.kts' gradle.properties \
+            | sha256sum | cut -c1-16)
+          # Check out the baseline into a dedicated worktree and align core.lock.json so setup-core
+          # resolves the baseline commit's own pinned Core release (even if candidate bumped Core).
+          git worktree add --detach "$RUNNER_TEMP/core-baseline" "$SHA"
+          if [ -f local.properties ]; then cp local.properties "$RUNNER_TEMP/core-baseline/local.properties"; fi
+          git show "$SHA:core-bindings/core.lock.json" > core-bindings/core.lock.json
           {
             echo "ref=$BASE_REF"
             echo "sha=$SHA"
-            echo "key=perf-base-apk-$SHA-$SETUP"
+            echo "key=perf-base-apk-$SHA-$SETUP-${WF_HASH:0:8}"
           } >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
         id: apk
@@ -186,44 +182,33 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          key: ${{ runner.os }}-gradle-base-${{ steps.ref.outputs.sha }}
           restore-keys: |
+            ${{ runner.os }}-gradle-base-
             ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
       - uses: actions/cache@v4
         if: steps.apk.outputs.cache-hit != 'true'
         with:
           path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
+          key: gradle-build-cache-base-${{ steps.ref.outputs.sha }}
           restore-keys: |
-            gradle-build-cache-${{ github.job }}-
+            gradle-build-cache-base-
             gradle-build-cache-
-      - name: Build baseline
+      - name: Build baseline APK
         if: steps.apk.outputs.cache-hit != 'true'
         env:
-          SHA: ${{ steps.ref.outputs.sha }}
           GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache
         run: |
-          chmod +x gradlew
-          # Build a COMPLETE compatible historical graph in a separate worktree. Never splice
-          # old Room source sets into the current Core application dependency graph.
-          git show "$SHA:app/build.gradle.kts" | grep -q 'project(":core-platform")' || { echo "No compatible historical Core baseline at $SHA; benchmark baseline is unavailable"; exit 1; }
-          git worktree add --detach "$RUNNER_TEMP/core-baseline" "$SHA"
-          if [ -f local.properties ]; then cp local.properties "$RUNNER_TEMP/core-baseline/local.properties"; fi
-          git show "$SHA:core-bindings/core.lock.json" | cmp - core-bindings/core.lock.json || { echo "Historical Core pin differs; comparable baseline unavailable"; exit 1; }
           cd "$RUNNER_TEMP/core-baseline"
-          # Under its own applicationId, so it installs next to the candidate.
+          chmod +x gradlew
+          # Built under its own applicationId (.benchmark.base) so it installs alongside candidate.
           ./gradlew :app:assembleStandardBenchmark -PbenchmarkIdSuffix=.benchmark.base --no-configuration-cache --stacktrace
           mkdir -p "$GITHUB_WORKSPACE/apks"
           cp app/build/outputs/apk/standard/benchmark/app-standard-arm64-v8a-benchmark.apk "$GITHUB_WORKSPACE/apks/base.apk"
           cd "$GITHUB_WORKSPACE"
-          git worktree remove "$RUNNER_TEMP/core-baseline"
-          # Gradle does not mark entries it reads, so bound the saved cache by age instead: an
-          # entry dropped here is simply rebuilt and stored again by the next miss.
-          find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete
-          du -sh "$GRADLE_BUILD_CACHE_DIR"
+          git worktree remove --force "$RUNNER_TEMP/core-baseline"
+          find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete 2>/dev/null || true
+          du -sh "$GRADLE_BUILD_CACHE_DIR" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         with:
           name: apk-base
@@ -232,10 +217,14 @@ jobs:
 
   device:
     needs: [candidate, base]
-    if: inputs.mode == 'benchmark'
-    name: Device Run
+    if: >-
+      always() &&
+      inputs.mode != 'apks' &&
+      needs.candidate.result == 'success' &&
+      (inputs.mode == 'profile' || needs.base.result == 'success')
+    name: Device Run (${{ inputs.mode }})
     concurrency:
-      group: perf-device-${{ github.ref }}
+      group: perf-device-${{ github.ref }}-${{ inputs.mode }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -252,41 +241,42 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.DEVICE_RUN_SERVICE_ACCOUNT }}
-      # An exact version: "latest" resolves through the action's own version list, which
-      # lags (568.0.0 as of October 2026) and predates `gcloud beta device-run`.
       - uses: google-github-actions/setup-gcloud@v2
         with:
-          version: 588.0.0
+          version: ${{ env.GCLOUD_VERSION }}
           install_components: beta
-      - name: Run on Device Run
+      - name: Submit instrumentation session on Device Run
         env:
+          MODE: ${{ inputs.mode }}
           DEVICE: ${{ inputs.device || env.DEFAULT_DEVICE }}
           INPUT_TESTS: ${{ inputs.tests }}
           COMPOSE_TRACE: ${{ inputs.compose_trace }}
         run: |
           set -o pipefail
-          # "a, b" -> one --test-targets per method; empty -> the whole class.
-          TARGETS=(--test-targets "class=$TEST_CLASS")
-          METHODS=$(printf '%s' "$INPUT_TESTS" | tr ', +' '\n\n\n' | sed '/^$/d')
-          if [ -n "$METHODS" ]; then
-            TARGETS=()
-            while read -r METHOD; do TARGETS+=(--test-targets "class=$TEST_CLASS#$METHOD"); done <<< "$METHODS"
+          EXTRA_ARGS=()
+          if [ "$MODE" = "profile" ]; then
+            APPS="apks/candidate.apk"
+            TARGETS=(--test-targets "class=$PROFILE_CLASS")
+          else
+            APPS="apks/base.apk,apks/candidate.apk"
+            TARGETS=(--test-targets "class=$TEST_CLASS")
+            METHODS=$(printf '%s' "$INPUT_TESTS" | tr ', +' '\n\n\n' | sed '/^$/d')
+            if [ -n "$METHODS" ]; then
+              TARGETS=()
+              while read -r METHOD; do TARGETS+=(--test-targets "class=$TEST_CLASS#$METHOD"); done <<< "$METHODS"
+            fi
+            OPTIONS="variants=$ORDER"
+            if [ "$COMPOSE_TRACE" = "true" ]; then
+              OPTIONS="$OPTIONS,androidx.benchmark.fullTracing.enable=true"
+            fi
+            EXTRA_ARGS+=(--additional-test-options "$OPTIONS")
           fi
-          # Instrumentation arguments: variants sets the measuring order.
-          OPTIONS="variants=$ORDER"
-          # Composable names in traces (runtime-tracing, benchmark builds only).
-          if [ "$COMPOSE_TRACE" = "true" ]; then
-            OPTIONS="$OPTIONS,androidx.benchmark.fullTracing.enable=true"
-          fi
-          # The test APK instruments itself; the two builds under test are installed
-          # before it. The command waits for the session but exits 0 whatever its
-          # result, so the result line is checked below.
           gcloud beta device-run sessions submit instrumentation \
             --device "$DEVICE" \
             --test apks/tests.apk \
-            --apps apks/base.apk,apks/candidate.apk \
+            --apps "$APPS" \
             "${TARGETS[@]}" \
-            --additional-test-options "$OPTIONS" \
+            "${EXTRA_ARGS[@]}" \
             --paths-to-pull "$OUTPUT_DIR" \
             --instrumentation-timeout 40m \
             2>&1 | tee device-run.txt
@@ -295,27 +285,24 @@ jobs:
             echo "::error::Device Run session ${RESULT:-did not finish}"
             exit 1
           fi
-      # A cancelled job (e.g. replaced by a newer run) would otherwise leave the session
-      # running on the phone, and billed, until its timeout.
-      - name: Cancel the session
+      - name: Cancel session on job cancellation
         if: cancelled()
         run: |
           SESSION=$(grep -o 'Creating session \[[^]]*' device-run.txt 2>/dev/null | head -n 1 | cut -d[ -f2)
           [ -z "$SESSION" ] || gcloud beta device-run sessions cancel "$SESSION"
-      - name: List physical devices
+      - name: List physical devices on failure
         if: failure()
         run: gcloud beta device-run devices list --filter=hardwareType=PHYSICAL || true
-      - name: Download results
+      - name: Download session results from Cloud Storage
         if: always()
         run: |
-          # "Result files will be stored at [https://console.cloud.google.com/storage/browser/<bucket>/automation/sessions/<session>/]."
           DIR=$(grep -o 'storage/browser/[^]]*' device-run.txt 2>/dev/null | head -n 1 | cut -d/ -f3-)
           if [ -z "$DIR" ]; then echo "No Device Run results to fetch"; exit 0; fi
           mkdir -p out
           gcloud storage cp -r "gs://${DIR%/}/*" out/ || true
           find out -type f | head -n 50
-      - name: Compare
-        if: always()
+      - name: Compare A/B benchmark results
+        if: always() && inputs.mode == 'benchmark'
         env:
           BASE_REF: ${{ needs.base.outputs.ref }}
           BASE_SHA: ${{ needs.base.outputs.sha }}
@@ -323,14 +310,12 @@ jobs:
         run: |
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           HEADER="base \`$BASE_REF\` (${BASE_SHA:0:7}) · candidate \`${GITHUB_SHA:0:7}\` · $DEVICE · [运行记录]($RUN_URL)"
-          # Exits 1 on a regression or when no results came back (e.g. the test targets
-          # matched no test); the report is written either way.
           STATUS=0
           python3 scripts/benchmark/compare.py out --order "$ORDER" --markdown report.md --header "$HEADER" || STATUS=$?
           cat report.md >> "$GITHUB_STEP_SUMMARY"
           exit "$STATUS"
-      - name: Comment on the pull request
-        if: always()
+      - name: Comment on pull request
+        if: always() && inputs.mode == 'benchmark'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -339,7 +324,6 @@ jobs:
           [ -f report.md ] || exit 0
           PR=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
           if [ -z "$PR" ]; then echo "No open pull request for $BRANCH"; exit 0; fi
-          # One comment per pull request, updated by every run.
           ID=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
             --jq '.[] | select(.body | startswith("<!-- hootbook-perf -->")) | .id' | tail -n 1)
           if [ -n "$ID" ]; then
@@ -347,8 +331,21 @@ jobs:
           else
             gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file report.md
           fi
+      - name: Extract Baseline Profile rules
+        if: always() && inputs.mode == 'profile'
+        run: |
+          RAW=$(find out -name '*-prof.txt' ! -name '*-20*' 2>/dev/null | head -n 1)
+          if [ -z "$RAW" ]; then
+            echo "::error::No profile found in Device Run output"
+            exit 1
+          fi
+          mkdir -p profile
+          cp "$RAW" profile/raw-prof.txt
+          grep -v 'io/github/hootkit_dev/hootbook/benchmark/\|SeedActivity' "$RAW" \
+            | sed 's/\$app_standardProfiling/$app_standardRelease/g' > profile/baseline-prof.txt
+          echo "### Baseline Profile: $(wc -l < profile/baseline-prof.txt) rules" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && inputs.mode == 'benchmark'
         with:
           name: macrobenchmark-device
           path: |
@@ -356,107 +353,8 @@ jobs:
             device-run.txt
             report.md
           retention-days: 14
-
-  profile:
-    if: inputs.mode == 'profile'
-    name: Baseline Profile (Device Run)
-    concurrency:
-      group: perf-profile-${{ github.ref }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: temurin
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - name: Set up pinned Core source and toolchain
-        uses: ./.github/actions/setup-core
-        with:
-          core-token: ${{ secrets.CORE_REPO_READ_TOKEN }}
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-      # Gradle's build cache (org.gradle.caching) outside ~/.gradle/caches: that cache's key
-      # only changes with the build files, so it would never save new task outputs. This
-      # one is saved after every run and restores the latest.
-      - uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/gradle-build-cache
-          key: gradle-build-cache-${{ github.job }}-${{ github.sha }}
-          restore-keys: |
-            gradle-build-cache-${{ github.job }}-
-            gradle-build-cache-
-      - name: Build profiling app and tests
-        env:
-          GRADLE_BUILD_CACHE_DIR: ${{ runner.temp }}/gradle-build-cache
-        run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleStandardProfiling :benchmark:assembleStandardBenchmark --no-configuration-cache --stacktrace
-          mkdir -p apks
-          cp app/build/outputs/apk/standard/profiling/app-standard-arm64-v8a-profiling.apk apks/app.apk
-          cp benchmark/build/outputs/apk/standard/benchmark/benchmark-standard-benchmark.apk apks/tests.apk
-          # Gradle does not mark entries it reads, so bound the saved cache by age instead: an
-          # entry dropped here is simply rebuilt and stored again by the next miss.
-          find "$GRADLE_BUILD_CACHE_DIR" -type f -mtime +3 -delete
-          du -sh "$GRADLE_BUILD_CACHE_DIR"
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.DEVICE_RUN_SERVICE_ACCOUNT }}
-      # An exact version, as in the device job.
-      - uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: 588.0.0
-          install_components: beta
-      - name: Record the profile on Device Run
-        run: |
-          set -o pipefail
-          gcloud beta device-run sessions submit instrumentation \
-            --device "$DEFAULT_DEVICE" \
-            --test apks/tests.apk \
-            --apps apks/app.apk \
-            --test-targets "class=io.github.hootkit_dev.hootbook.benchmark.BaselineProfileGenerator" \
-            --paths-to-pull "$OUTPUT_DIR" \
-            --instrumentation-timeout 40m \
-            2>&1 | tee device-run.txt
-          RESULT=$(grep -o 'finished with result \[[A-Z_]*\]' device-run.txt | tail -n 1 || true)
-          if [ "$RESULT" != "finished with result [PASSED]" ]; then
-            echo "::error::Device Run session ${RESULT:-did not finish}"
-            exit 1
-          fi
-      - name: Cancel the session
-        if: cancelled()
-        run: |
-          SESSION=$(grep -o 'Creating session \[[^]]*' device-run.txt 2>/dev/null | head -n 1 | cut -d[ -f2)
-          [ -z "$SESSION" ] || gcloud beta device-run sessions cancel "$SESSION"
-      - name: Download the profile
-        if: always()
-        run: |
-          DIR=$(grep -o 'storage/browser/[^]]*' device-run.txt 2>/dev/null | head -n 1 | cut -d/ -f3-)
-          if [ -z "$DIR" ]; then echo "No Device Run results to fetch"; exit 1; fi
-          mkdir -p out profile
-          gcloud storage cp -r "gs://${DIR%/}/*" out/ || true
-          # With includeInStartupProfile the rule writes only *-startup-prof.txt, which holds
-          # every rule. Keep the untimestamped one.
-          RAW=$(find out -name '*-prof.txt' ! -name '*-20*' | head -n 1)
-          if [ -z "$RAW" ]; then echo "::error::No profile in the Device Run output"; exit 1; fi
-          cp "$RAW" profile/raw-prof.txt
-          # Drop the benchmark-only classes, and rename Kotlin internal members' module
-          # suffix from the profiling build to the standard release build.
-          grep -v 'io/github/hootkit_dev/hootbook/benchmark/\|SeedActivity' "$RAW" \
-            | sed 's/\$app_standardProfiling/$app_standardRelease/g' > profile/baseline-prof.txt
-          echo "### Baseline Profile: $(wc -l < profile/baseline-prof.txt) rules" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && inputs.mode == 'profile'
         with:
           name: baseline-profile
           path: |
