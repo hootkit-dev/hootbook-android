@@ -32,7 +32,6 @@
     <string name="sync_done">同步完成</string>
     <string name="sync_failed">同步失败，联网后会自动重试。</string>
     <!-- Backup & sync page -->
-    <string name="sync_firebase_title">Firebase 同步</string>
     <string name="sync_enabled">同步</string>
     <string name="sync_enabled_body">此设备上的更改会自动同步</string>
     <string name="sync_paused_body">已暂停。账户和密钥会保留，重新打开即可继续。</string>

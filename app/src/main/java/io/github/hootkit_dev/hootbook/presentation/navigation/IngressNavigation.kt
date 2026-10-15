@@ -38,6 +38,6 @@ internal fun coreScreenDestination(route: String): Any = when (route) {
     "app-lock" -> AppLockSettings
     "notifications" -> NotificationSettings
     "about" -> About
-    "backup" -> DataPrivacy
+    "backup" -> BackupRestore
     else -> error("Unknown Core screen destination: $route")
 }

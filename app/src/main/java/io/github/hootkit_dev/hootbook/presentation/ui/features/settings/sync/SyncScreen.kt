@@ -118,7 +118,7 @@ import androidx.compose.ui.text.font.FontWeight
 import org.json.JSONObject
 
 /**
- * Backup & sync → Firebase sync: Google sign-in, the on/off switch, the sync passphrase, the
+ * Ledger sync: Google sign-in, the on/off switch, the sync passphrase, the
  * first-sync choice, conflict resolution, deletion notices, conflict policy, and a collapsed status
  * and debug section (docs/sync.md). Core supplies the current setup phase.
  */
@@ -144,7 +144,7 @@ fun SyncScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             CustomTitleTopAppBar(
-                title = stringResource(R.string.sync_firebase_title),
+                title = stringResource(R.string.core_shell_sync),
                 scrollBehaviorSmall = scrollBehaviorSmall,
                 scrollBehaviorLarge = scrollBehavior,
                 hazeState = hazeState,
@@ -1103,7 +1103,7 @@ private fun syncTableLabel(table: Table): String = stringResource(
         Table.AI_SETTINGS -> R.string.sync_table_ai_settings
         Table.BROKERAGE_CONNECTIONS -> R.string.sync_table_brokerage_connections
         Table.SETTINGS -> R.string.sync_table_settings
-        else -> R.string.sync_firebase_title
+        else -> R.string.core_shell_sync
     }
 )
 
