@@ -14,11 +14,14 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.SouthWest
+import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -572,24 +575,161 @@ internal fun buildCreditCardReminders(
 }
 
 @Composable
-internal fun CreditCardRemindersCard(
-    reminders: List<CreditCardReminder>,
+internal fun UrgentNotificationsSection(
+    pendingConflictCount: Int,
+    pendingAiReview: AiPendingReview?,
+    cardReminders: List<CreditCardReminder>,
+    upcomingSubscriptions: List<Subscription>,
+    subscriptionSummary: SubscriptionSummary?,
+    monthlySubscriptions: ConvertedMoney?,
     customSymbols: Map<String, String>,
+    categoriesMap: Map<String, Category>,
+    subcategoriesMap: Map<String, Subcategory>,
+    onConflictClick: () -> Unit,
+    onAiReviewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onSubscriptionsClick: () -> Unit,
+    subscriptionsModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
 ) {
-    if (reminders.isEmpty()) return
+    val hasConflict = pendingConflictCount > 0
+    val hasAiReview = pendingAiReview != null
+    val hasSubscriptions = upcomingSubscriptions.isNotEmpty()
+    val totalCount = (if (hasConflict) 1 else 0) +
+        (if (hasAiReview) 1 else 0) +
+        cardReminders.size +
+        (if (hasSubscriptions) 1 else 0)
+    if (totalCount == 0) return
+
     val locale = locale()
     val dateFormat = remember(locale) {
         DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)
     }
+
+    fun shapeFor(index: Int): RoundedCornerShape {
+        val top = if (index == 0) 24.dp else 6.dp
+        val bottom = if (index == totalCount - 1) 24.dp else 6.dp
+        return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    }
+
+    var currentIndex = 0
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        reminders.forEachIndexed { index, reminder ->
-            val top = if (index == 0) 24.dp else 6.dp
-            val bottom = if (index == reminders.lastIndex) 24.dp else 6.dp
+        if (hasConflict) {
+            val shape = shapeFor(currentIndex++)
+            Surface(
+                onClick = onConflictClick,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.errorContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.SyncProblem,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.home_sync_conflict_banner_title, pendingConflictCount),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = stringResource(R.string.home_sync_conflict_banner_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        pendingAiReview?.let { pending ->
+            val shape = shapeFor(currentIndex++)
+            Surface(
+                onClick = onAiReviewClick,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.tertiaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.home_ai_pending_banner_title, pending.review.changes.size),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = pending.review.summary?.takeIf { it.isNotBlank() }
+                                ?: stringResource(R.string.home_ai_pending_banner_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        cardReminders.forEach { reminder ->
+            val shape = shapeFor(currentIndex++)
             val isOverdue = reminder.kind == CreditCardReminderKind.OVERDUE
             val dateText = reminder.targetDate.format(dateFormat)
             val subtitle = when (reminder.kind) {
@@ -605,15 +745,10 @@ internal fun CreditCardRemindersCard(
                     else "${stringResource(R.string.card_statement_on, dateText)} · ${stringResource(R.string.card_due_in, reminder.daysDiff)}"
                 }
             }
-            val amountLabel = when (reminder.kind) {
-                CreditCardReminderKind.OVERDUE, CreditCardReminderKind.PAYMENT_DUE ->
-                    stringResource(R.string.card_remaining, CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols))
-                CreditCardReminderKind.STATEMENT_SOON ->
-                    stringResource(R.string.card_unbilled_amount, CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols))
-            }
+            val formattedAmount = CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols)
             Surface(
                 onClick = { onAccountClick(reminder.account.id) },
-                shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom),
+                shape = shape,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
@@ -660,12 +795,90 @@ internal fun CreditCardRemindersCard(
                         )
                     }
                     Text(
-                        text = amountLabel,
+                        text = formattedAmount,
                         style = MaterialTheme.typography.labelLarge.tabular(),
                         fontWeight = FontWeight.SemiBold,
                         color = if (isOverdue) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        if (hasSubscriptions) {
+            val shape = shapeFor(currentIndex++)
+            val monthlyAmount = CurrencyFormatter.format(
+                monthlySubscriptions?.amount ?: subscriptionSummary?.monthly.takeIf { monthlySubscriptions == null },
+                monthlySubscriptions?.currency ?: subscriptionSummary?.currency.orEmpty(),
+                customSymbols,
+            )
+            val incomplete = subscriptionSummary?.complete == false || monthlySubscriptions?.complete == false
+            val subtitleText = buildString {
+                append(monthlyAmount)
+                append(" ")
+                append(stringResource(R.string.per_month))
+                if (incomplete) {
+                    append(" ")
+                    append(stringResource(R.string.core_complete_incomplete))
+                }
+            }
+            Surface(
+                onClick = onSubscriptionsClick,
+                modifier = subscriptionsModifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.EventRepeat,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.reminder_due_title, upcomingSubscriptions.size),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = subtitleText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    io.github.hootkit_dev.hootbook.presentation.ui.components.SubscriptionIconsStack(
+                        subscriptions = upcomingSubscriptions,
+                        iconSize = 28.dp,
+                        borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        categoriesMap = categoriesMap,
+                        subcategoriesMap = subcategoriesMap,
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,

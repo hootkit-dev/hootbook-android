@@ -291,16 +291,56 @@ fun SharedTransitionScope.HomeScreen(
                                     accounts = uiState.overview?.accounts.orEmpty(),
                                     cardStatuses = uiState.cardStatuses,
                                 )
-                                if (cardReminders.isNotEmpty()) {
-                                    item(key = "credit_card_reminders") {
-                                        CreditCardRemindersCard(
-                                            reminders = cardReminders,
+                                val visibleUpcoming = if (HomeWidget.UPCOMING_SUBSCRIPTIONS !in prefs.hiddenHomeWidgets) {
+                                    uiState.upcoming
+                                } else {
+                                    emptyList()
+                                }
+                                val hasUrgentNotifications = uiState.pendingConflictCount > 0 ||
+                                    uiState.pendingAiReview != null ||
+                                    cardReminders.isNotEmpty() ||
+                                    visibleUpcoming.isNotEmpty()
+                                if (hasUrgentNotifications) {
+                                    item(key = "urgent_notifications") {
+                                        val subscriptionsModifier = if (animatedContentScope != null) {
+                                            Modifier.sharedBounds(
+                                                rememberSharedContentState(key = "upcoming_subscriptions_card"),
+                                                animatedVisibilityScope = animatedContentScope,
+                                                boundsTransform = { _, _ ->
+                                                    tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
+                                                },
+                                                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
+                                                    contentScale = ContentScale.Fit,
+                                                    alignment = Alignment.Center
+                                                ),
+                                                renderInOverlayDuringTransition = false
+                                            ).skipToLookaheadSize()
+                                        } else {
+                                            Modifier
+                                        }
+                                        UrgentNotificationsSection(
+                                            pendingConflictCount = uiState.pendingConflictCount,
+                                            pendingAiReview = uiState.pendingAiReview,
+                                            cardReminders = cardReminders,
+                                            upcomingSubscriptions = visibleUpcoming,
+                                            subscriptionSummary = uiState.subscriptions,
+                                            monthlySubscriptions = uiState.displayTotals["monthly"],
                                             customSymbols = uiState.customSymbols,
+                                            categoriesMap = categoriesMap,
+                                            subcategoriesMap = subcategoriesMap,
+                                            onConflictClick = {
+                                                navController.safeNavigate(
+                                                    io.github.hootkit_dev.hootbook.presentation.navigation.CloudSync
+                                                )
+                                            },
+                                            onAiReviewClick = { navController.safeNavigate(AiAssistant) },
                                             onAccountClick = { id ->
                                                 navController.safeNavigate(
                                                     io.github.hootkit_dev.hootbook.presentation.navigation.AccountDetail(id)
                                                 )
                                             },
+                                            onSubscriptionsClick = onNavigateToSubscriptions,
+                                            subscriptionsModifier = subscriptionsModifier,
                                             modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem(),
                                         )
                                     }
@@ -355,56 +395,8 @@ fun SharedTransitionScope.HomeScreen(
                             }
                             // Shown under the net worth, from its 分类 button
                             HomeWidget.ACCOUNT_CAROUSEL -> Unit
-                            HomeWidget.UPCOMING_SUBSCRIPTIONS -> {
-                                if (uiState.upcoming.isNotEmpty()) {
-                                    item(key = "upcoming_subscriptions") {
-                                        val cardModifier = Modifier.padding(
-                                            start = Dimensions.Padding.content,
-                                            end = Dimensions.Padding.content,
-                                        )
-
-                                        if (animatedContentScope != null) {
-                                            UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcoming,
-                                                summary = uiState.subscriptions,
-                                                monthly = uiState.displayTotals["monthly"],
-                                                customSymbols = uiState.customSymbols,
-                                                categoriesMap = categoriesMap,
-                                                subcategoriesMap = subcategoriesMap,
-                                                onClick = onNavigateToSubscriptions,
-                                                blurEffects = blurEffects && prefs.showBanner,
-                                                hazeState = hazeStateBanner,
-                                                modifier = cardModifier.sharedBounds(
-                                                    rememberSharedContentState(key = "upcoming_subscriptions_card"),
-                                                    animatedVisibilityScope = animatedContentScope,
-                                                    boundsTransform = { _, _ ->
-                                                        tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
-                                                    },
-                                                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
-                                                        contentScale = ContentScale.Fit,
-                                                        alignment = Alignment.Center
-                                                    ),
-                                                    renderInOverlayDuringTransition = false
-                                                )
-                                                    .skipToLookaheadSize()
-                                            )
-                                        } else {
-                                            UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcoming,
-                                                summary = uiState.subscriptions,
-                                                monthly = uiState.displayTotals["monthly"],
-                                                customSymbols = uiState.customSymbols,
-                                                categoriesMap = categoriesMap,
-                                                subcategoriesMap = subcategoriesMap,
-                                                onClick = onNavigateToSubscriptions,
-                                                blurEffects = blurEffects && prefs.showBanner,
-                                                hazeState = hazeStateBanner,
-                                                modifier = cardModifier
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            // Rendered inside the urgent_notifications section above MonthCard
+                            HomeWidget.UPCOMING_SUBSCRIPTIONS -> Unit
                             HomeWidget.RECENT_TRANSACTIONS -> {
                                 item(key = "recent_transactions") {
                                     RecentTransactionsCard(
@@ -427,43 +419,6 @@ fun SharedTransitionScope.HomeScreen(
                 }
 
             }
-            LaunchedEffect(uiState.pendingConflictCount > 0, uiState.pendingAiReview != null) {
-                if ((uiState.pendingConflictCount > 0 || uiState.pendingAiReview != null) && lazyListState.firstVisibleItemIndex <= 2) {
-                    lazyListState.scrollToItem(0)
-                }
-            }
-            val statusBanners: LazyListScope.() -> Unit = {
-                if (uiState.pendingConflictCount > 0 || uiState.pendingAiReview != null) {
-                    item(key = "status_banners") {
-                        Column(
-                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                        ) {
-                            if (uiState.pendingConflictCount > 0) {
-                                HomeNotificationBanner(
-                                    title = stringResource(R.string.home_sync_conflict_banner_title, uiState.pendingConflictCount),
-                                    subtitle = stringResource(R.string.home_sync_conflict_banner_subtitle),
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                    icon = androidx.compose.material.icons.Icons.Rounded.SyncProblem,
-                                    onClick = { navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.CloudSync) },
-                                )
-                            }
-                            uiState.pendingAiReview?.let { pending ->
-                                HomeNotificationBanner(
-                                    title = stringResource(R.string.home_ai_pending_banner_title, pending.review.changes.size),
-                                    subtitle = pending.review.summary?.takeIf { it.isNotBlank() }
-                                        ?: stringResource(R.string.home_ai_pending_banner_subtitle),
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    icon = androidx.compose.material.icons.Icons.Rounded.AutoAwesome,
-                                    onClick = { navController.safeNavigate(AiAssistant) },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             val contentPadding = PaddingValues(
                 top = 4.dp + paddingValues.calculateTopPadding(),
                 bottom = 0.dp
@@ -475,7 +430,6 @@ fun SharedTransitionScope.HomeScreen(
                     contentPadding = contentPadding,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    statusBanners()
                     widgetItems(homeWidgets)
                     item { CustomizeHomeButton { showEditWidgetsSheet = true } }
                     item {
@@ -495,7 +449,6 @@ fun SharedTransitionScope.HomeScreen(
                             contentPadding = contentPadding,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            if (state === lazyListState) statusBanners()
                             widgetItems(column)
                             if (state === activityListState) item { CustomizeHomeButton { showEditWidgetsSheet = true } }
                             item { Spacer(Modifier.height(120.dp)) }
@@ -524,109 +477,6 @@ fun SharedTransitionScope.HomeScreen(
 
 
 
-
-@Composable
-private fun UpcomingSubscriptionsCard(
-    modifier: Modifier = Modifier,
-    subscriptions: List<Subscription>,
-    summary: SubscriptionSummary?,
-    monthly: ConvertedMoney?,
-    customSymbols: Map<String, String>,
-    categoriesMap: Map<String, Category> = emptyMap(),
-    subcategoriesMap: Map<String, Subcategory> = emptyMap(),
-    onClick: () -> Unit = {},
-    blurEffects: Boolean,
-    hazeState: HazeState = remember { HazeState() }
-) {
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimensions.Radius.xl))
-            .then(
-                if (blurEffects) Modifier.hazeEffect(
-                    state = hazeState,
-                    block = fun HazeEffectScope.() {
-                        inputScale = HazeInputScale.Auto
-                        style = HazeDefaults.style(
-                            backgroundColor = Color.Transparent,
-                            tint = HazeDefaults.tint(containerColor),
-                            blurRadius = 20.dp,
-                            noiseFactor = -1f,
-                        )
-                        blurredEdgeTreatment = BlurredEdgeTreatment.Unbounded
-                    }
-                ) else Modifier
-            ),
-        shape = RoundedCornerShape(Dimensions.Radius.xl),
-        colors = CardDefaults.cardColors(
-            containerColor = if (blurEffects) MaterialTheme.colorScheme.surfaceContainerLow.copy(0.5f)
-            else MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = stringResource(R.string.reminder_due_title, subscriptions.size),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text =
-                            CurrencyFormatter.format(
-                                monthly?.amount ?: summary?.monthly.takeIf { monthly == null },
-                                monthly?.currency ?: summary?.currency.orEmpty(),
-                                customSymbols
-                            ).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.per_month).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
-                }
-                if (summary?.complete == false || monthly?.complete == false) {
-                    Text(
-                        stringResource(R.string.core_complete_incomplete),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            SubscriptionIconsStack(
-                subscriptions = subscriptions,
-                iconSize = 30.dp,
-                borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                categoriesMap = categoriesMap,
-                subcategoriesMap = subcategoriesMap
-            )
-        }
-    }
-}
 
 @Composable
 private fun NetworthSummaryCards(
@@ -677,69 +527,6 @@ private fun CustomizeHomeButton(onClick: () -> Unit) {
             Icon(Iconax.Convertshape2, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.home_customize))
-        }
-    }
-}
-
-@Composable
-private fun HomeNotificationBanner(
-    title: String,
-    subtitle: String,
-    containerColor: Color,
-    contentColor: Color,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(Dimensions.Radius.xl),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-        ),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = contentColor.copy(alpha = 0.14f),
-                modifier = Modifier.size(40.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = contentColor,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor.copy(alpha = 0.85f),
-                )
-            }
-            Icon(
-                imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = contentColor,
-            )
         }
     }
 }
