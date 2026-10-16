@@ -1055,109 +1055,27 @@ private fun TransactionDetailContent(
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
             exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
         ) {
-            val categoryEntity = categories.find { it.id == transaction.categoryId }
-            val subcategoryEntity = if (categoryEntity != null && transaction.subcategoryId != null) {
-                subcategoriesMap[categoryEntity.id]?.find { it.id == transaction.subcategoryId }
-            } else null
-
+            val detailTags by viewModel.uiState.collectAsStateWithLifecycle()
             Column {
-                Box{
+                TransactionReceipt(
+                    transaction = transaction,
+                    primaryCurrency = accountPrimaryCurrency,
+                    convertedAmount = convertedAmount,
+                    availableAccounts = availableAccounts,
+                    categories = categories,
+                    subcategoriesMap = subcategoriesMap,
+                    tags = detailTags.tags,
+                    linkedSubscription = linkedSubscription,
+                    attachmentStore = viewModel.attachmentStore,
+                    animatedContentScope = animatedContentScope,
+                    sharedTransitionScope = sharedTransitionScope,
+                    linkedLendBorrow = linkedLendBorrow,
+                    linkedLoanPersonName = linkedLoanPersonName,
+                    linkedLoanPersonColor = linkedLoanPersonColor,
+                    linkedLoanPersonAvatar = linkedLoanPersonAvatar
+                )
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .shadow(
-                                2.dp,
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(
-                                color = Color.Black,
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .align(Alignment.TopCenter),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(
-                                color =  receiptContainerColor.copy(0.5f),
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            .align(Alignment.TopCenter),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(16.dp)
-                                .padding(horizontal = 8.dp)
-                                .background(
-                                    color = Color.Black,
-                                    shape = RoundedCornerShape(24.dp)
-                                )
-                                .border(
-                                    2.dp,
-                                    color = if(isDarkTheme) MaterialTheme.colorScheme.surface else Color.DarkGray,
-                                    shape = RoundedCornerShape(24.dp)
-                                )
-                                .align(Alignment.Center)
-                        )
-                    }
-                    val detailTags by viewModel.uiState.collectAsStateWithLifecycle()
-                    TransactionReceipt(
-                        transaction = transaction,
-                        primaryCurrency = accountPrimaryCurrency,
-                        convertedAmount = convertedAmount,
-                        availableAccounts = availableAccounts,
-                        categories = categories,
-                        subcategoriesMap = subcategoriesMap,
-                        tags = detailTags.tags,
-                        linkedSubscription = linkedSubscription,
-                        attachmentStore = viewModel.attachmentStore,
-                        animatedContentScope = animatedContentScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                        linkedLendBorrow = linkedLendBorrow,
-                        linkedLoanPersonName = linkedLoanPersonName,
-                        linkedLoanPersonColor = linkedLoanPersonColor,
-                        linkedLoanPersonAvatar = linkedLoanPersonAvatar
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .align(Alignment.TopCenter),
-                        contentAlignment = Alignment.Center
-                    ){
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(10.dp)
-                                .padding(horizontal = 10.dp)
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Black,
-                                            Color.Black,
-                                            Color.Transparent,
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(
-                                        bottomEnd = 0.dp,
-                                        bottomStart = 0.dp,
-                                        topStart = 24.dp,
-                                        topEnd = 24.dp
-                                    )
-                                )
-                                .align(Alignment.Center)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(300.dp)) // for better scroll
+                Spacer(modifier = Modifier.height(160.dp))
             }
         }
     }
@@ -2122,390 +2040,92 @@ private fun TransactionReceipt(
     linkedLoanPersonAvatar: String? = null,
     isCapture: Boolean = false
 ) {
-    // The icon picker for this merchant, opened from the merchant badge
     var showIconSheet by remember { mutableStateOf(false) }
-    val density = LocalDensity.current
-    var cutoutOffsetPx by remember { mutableFloatStateOf(with(density) { 420.dp.toPx() }) }
-    val cutoutRadius = 10.dp
-    val cutoutRadiusPx = with(density) { cutoutRadius.toPx() }
-    val scallopRadiusPx = with(density) { 8.dp.toPx() }
 
-    val receiptShape = remember(cutoutRadiusPx, cutoutOffsetPx, scallopRadiusPx) {
-        ReceiptShape(cutoutRadiusPx, cutoutOffsetPx, scallopRadiusPx)
-    }
+    val categoryEntity = categories.find { it.id == transaction.categoryId }
+    val subcategoryEntity = if (categoryEntity != null && transaction.subcategoryId != null) {
+        subcategoriesMap[categoryEntity.id]?.find { it.id == transaction.subcategoryId }
+    } else null
 
-    Box(
+    val hasNotes = !transaction.notes.isNullOrBlank()
+    val attachments = remember(transaction.attachments) { transaction.attachments }
+    val hasAttachments = showAttachments && attachments.isNotEmpty()
+
+    val heroShape = RoundedCornerShape(
+        topStart = 24.dp,
+        topEnd = 24.dp,
+        bottomStart = 6.dp,
+        bottomEnd = 6.dp
+    )
+    val detailsShape = RoundedCornerShape(
+        topStart = 6.dp,
+        topEnd = 6.dp,
+        bottomStart = if (!hasNotes && !hasAttachments) 24.dp else 6.dp,
+        bottomEnd = if (!hasNotes && !hasAttachments) 24.dp else 6.dp
+    )
+    val notesShape = RoundedCornerShape(
+        topStart = 6.dp,
+        topEnd = 6.dp,
+        bottomStart = if (!hasAttachments) 24.dp else 6.dp,
+        bottomEnd = if (!hasAttachments) 24.dp else 6.dp
+    )
+    val attachmentsShape = RoundedCornerShape(
+        topStart = 6.dp,
+        topEnd = 6.dp,
+        bottomStart = 24.dp,
+        bottomEnd = 24.dp
+    )
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 36.dp)
-            .padding(horizontal = 12.dp)
+            .then(
+                if (isCapture) {
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(16.dp)
+                } else {
+                    Modifier
+                }
+            ),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        // Main Receipt Card
+        // 1. Hero Card: Icon, Merchant, Prominent Amount
         Surface(
-            modifier = Modifier
-                .shadow(
-                    elevation = 4.dp,
-                    shape = receiptShape,
-                    clip = false
-                )
-                .animateContentSize(
-                    animationSpec = tween(durationMillis = 300)
-                )
-                .fillMaxWidth(),
-            shape = receiptShape,
+            modifier = Modifier.fillMaxWidth(),
+            shape = heroShape,
             color = containerColor
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 24.dp), // Extra top padding for badge clearance
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val categoryEntity = categories.find { it.id == transaction.categoryId }
-                val subcategoryEntity = if (categoryEntity != null && transaction.subcategoryId != null) {
-                    subcategoriesMap[categoryEntity.id]?.find { it.id == transaction.subcategoryId }
-                } else null
-
-                //pill shape merchant
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    DashedLine(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
-
-                    ReceiptBadge(
+                ReceiptBadge(
+                    merchantName = transaction.merchant,
+                    categoryEntity = categoryEntity,
+                    subcategoryEntity = subcategoryEntity,
+                    category = categoryEntity?.displayName.orEmpty(),
+                    subcategory = subcategoryEntity?.displayName.orEmpty(),
+                    transactionId = transaction.id,
+                    animatedContentScope = animatedContentScope,
+                    sharedTransitionScope = sharedTransitionScope,
+                    linkedLendBorrow = linkedLendBorrow,
+                    personName = linkedLoanPersonName,
+                    personColor = linkedLoanPersonColor,
+                    personAvatar = linkedLoanPersonAvatar,
+                    isCapture = isCapture,
+                    onIconClick = if (isCapture) null else { { showIconSheet = true } }
+                )
+                if (showIconSheet) {
+                    MerchantIconSheet(
                         merchantName = transaction.merchant,
-                        categoryEntity = categoryEntity,
-                        subcategoryEntity = subcategoryEntity,
-                        category = categoryEntity?.displayName.orEmpty(),
-                        subcategory = subcategoryEntity?.displayName.orEmpty(),
-                        transactionId = transaction.id,
-                        animatedContentScope = animatedContentScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                        linkedLendBorrow = linkedLendBorrow,
-                        personName = linkedLoanPersonName,
-                        personColor = linkedLoanPersonColor,
-                        personAvatar = linkedLoanPersonAvatar,
-                        isCapture = isCapture,
-                        onIconClick = if (isCapture) null else { { showIconSheet = true } }
-                    )
-                    if (showIconSheet) {
-                        MerchantIconSheet(merchantName = transaction.merchant, onDismiss = { showIconSheet = false })
-                    }
-                    DashedLine(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        onDismiss = { showIconSheet = false }
                     )
                 }
 
-
-                // Transaction Details Columns
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Dimensions.Padding.content),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Date Section
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.date),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                text = transaction.dateTime.toJavaDateTime().format(
-                                    localizedDateFormatter()
-                                ),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        // Time Section
-                        val dateTime = transaction.dateTime
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                val hour = dateTime.hour
-                                val minute = dateTime.minute
-                                Box(modifier = Modifier
-                                    .padding(5.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary.copy(0.2f),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                ) {
-                                    Text(
-                                        text = coreClockPart(hour),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        lineHeight = 16.sp,
-                                        modifier = Modifier.padding(5.dp)
-                                    )
-                                }
-
-                                Text(
-                                    text = ":",
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-
-                                Box(
-                                    modifier = Modifier
-                                        .padding(5.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                ) {
-                                    Text(
-                                        text = coreClockPart(minute),
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        lineHeight = 16.sp,
-                                        modifier = Modifier.padding(5.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    ReceiptInfoRow(
-                        label = stringResource(R.string.type),
-                        value = stringResource(transaction.kind.transactionKindLabelRes()),
-                        linkedLendBorrow = linkedLendBorrow
-                    )
-
-                    val subcategoryValue = subcategoryEntity?.displayName
-                    ReceiptInfoRow(
-                        label = stringResource(R.string.category),
-                        value = categoryEntity?.displayName.orEmpty(),
-                        subValue = subcategoryValue,
-                        icon = {
-                            CategoryIcon(
-                                category = categoryEntity?.displayName.orEmpty(),
-                                size = 20.dp,
-                                tint = null, // Original colors
-                                iconResId = 0,
-                                iconName = categoryEntity?.icon
-                            )
-                        },
-                        subIcon = {
-                            if(transaction.subcategoryId != null) {
-                                CategoryIcon(
-                                    category = subcategoryEntity?.displayName.orEmpty(),
-                                    size = 20.dp,
-                                    tint = null, // Original colors
-                                    iconResId = 0,
-                                    iconName = subcategoryEntity?.icon
-                                )
-                            }
-                        },
-                        subcategoryColor = run {
-                             if (subcategoryEntity != null) {
-                                  try {
-                                      Color(subcategoryEntity.color.toColorInt()).copy(alpha = 0.2f)
-                                  } catch (_: Exception) {
-                                      null
-                                  }
-                             } else null
-                        }
-                    )
-
-                    val isTransfer = transaction.kind == TransactionKind.TRANSFER
-                    val fromAccountEntity = availableAccounts.find { it.id == transaction.accountId }
-                    val toAccountEntity = availableAccounts.find { it.id == transaction.toAccountId }
-                    val fromBankName = withLast4(fromAccountEntity?.name, fromAccountEntity?.last4) ?: stringResource(R.string.account)
-                    val toBankName = toAccountEntity?.let { withLast4(it.name, it.last4) }
-
-                    ReceiptInfoRow(
-                        label = stringResource(R.string.account),
-                        // Transfers name both accounts instead of showing their last four digits.
-                        value = fromBankName,
-                        subValue = toBankName,
-                        bankName = fromBankName,
-                        subBankName = toBankName,
-                        isTransfer = isTransfer,
-                        icon = {
-                            BrandIcon(
-                                merchantName = fromBankName,
-                                size = 26.dp,
-                                showBackground = false,
-                                accountIconResId = 0,
-                                accountIconName = fromAccountEntity?.icon,
-                                accountColorHex = fromAccountEntity?.color
-                            )
-                        },
-                        subIcon = {
-                            if (toBankName != null) {
-                                BrandIcon(
-                                    merchantName = toBankName,
-                                    size = 26.dp,
-                                    showBackground = false,
-                                    accountIconResId = 0,
-                                    accountIconName = toAccountEntity?.icon,
-                                    accountColorHex = toAccountEntity?.color
-                                )
-                            }
-                        }
-                    )
-
-                    if (transaction.receivable != null && transaction.receivable!! > BigDecimal.ZERO) {
-                        ReceiptInfoRow(
-                            label = stringResource(R.string.core_receivable_short),
-                            value = CoreMoneyPresentation.formatCurrency(transaction.receivable!!, transaction.currency)
-                        )
-                    } else if (transaction.collected != null && transaction.collected!! > BigDecimal.ZERO) {
-                        ReceiptInfoRow(
-                            label = stringResource(R.string.core_collected_short),
-                            value = CoreMoneyPresentation.formatCurrency(transaction.collected!!, transaction.currency)
-                        )
-                    }
-
-                    val txTags = remember(transaction.tagIds, tags) {
-                        transaction.tagIds.mapNotNull(tags::get)
-                    }
-                    if (txTags.isNotEmpty()) {
-                        ReceiptInfoRow(
-                            label = stringResource(R.string.core_tags_title),
-                            value = txTags.joinToString(", ") { it.name }
-                        )
-                    }
-
-                    if ((transaction.subscriptionId != null) && linkedSubscription?.nextDue != null) {
-                        ReceiptInfoRow(
-                            label = stringResource(R.string.next_billing),
-                            value = linkedSubscription.nextDue?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }?.format(
-                                localizedDateFormatter()
-                            ).orEmpty(),
-                            icon = {
-                                Icon(
-                                    imageVector = Iconax.VideoTime,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        )
-                    }
-                }
-
-                // Expandable Description
-                if (!transaction.notes.isNullOrBlank()) {
-                    var isDescriptionExpanded by remember { mutableStateOf(false) }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Dimensions.Padding.content)
-                            .padding(top = Spacing.md)
-                            .animateContentSize(
-                                MaterialTheme.motionScheme.fastSpatialSpec()
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(),
-                                onClick = { isDescriptionExpanded = !isDescriptionExpanded }
-                            ),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                            ){
-                                Icon(
-                                    imageVector = Iconax.DocumentText2,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                                Text(
-                                    text = stringResource(R.string.description),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                            Icon(
-                                imageVector = if (isDescriptionExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-
-                        BlurredAnimatedVisibility(
-                            visible = isDescriptionExpanded,
-                            enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
-                            exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = transaction.notes.orEmpty(),
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontFamily = FontFamily.Monospace,
-                                        lineHeight = 16.sp
-                                    ),
-                                    modifier = Modifier.padding(Spacing.sm)
-                                )
-                            }
-                        }
-                    }
-                }
-
-
-                Spacer(modifier = Modifier.height(40.dp)) // Slightly reduced spacer
-
-                // Dashed Line
-                DashedLine(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .onGloballyPositioned { coordinates ->
-                            cutoutOffsetPx = coordinates.positionInParent().y + (coordinates.size.height / 2f)
-                        },
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                )
-
-                Spacer(modifier = Modifier.height(Spacing.lg))
-
-                // Amount
-                Text(
-                    text = stringResource(R.string.amount),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                Spacer(modifier = Modifier.height(14.dp))
 
                 val amountColor = transactionTypeColor(transaction.kind)
                 val sign = when (transaction.kind) {
@@ -2520,55 +2140,412 @@ private fun TransactionReceipt(
 
                 Text(
                     text = "$sign${transaction.formatAmount()}",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
-                    color = amountColor
+                    color = amountColor,
+                    textAlign = TextAlign.Center
                 )
 
-                if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
-                    Spacer(modifier = Modifier.height(Spacing.xs))
+                if (
+                    transaction.currency.isNotEmpty() &&
+                    !transaction.currency.equals(primaryCurrency, ignoreCase = true) &&
+                    convertedAmount != null
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "≈ ${CoreMoneyPresentation.formatCurrency(convertedAmount, primaryCurrency)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Medium
                     )
                 }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(Spacing.lg))
+        // 2. Details Card: Structured Key-Value Rows
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(animationSpec = tween(durationMillis = 300)),
+            shape = detailsShape,
+            color = containerColor
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Date & Time Row
+                val dateTime = transaction.dateTime
+                val formattedDate = dateTime.toJavaDateTime().format(localizedDateFormatter())
+                val formattedTime = "${coreClockPart(dateTime.hour)}:${coreClockPart(dateTime.minute)}"
 
-
-                if (showAttachments) {
-                    // Attachments
-                    val attachments = remember(transaction.attachments) {
-                        transaction.attachments
-                    }
-                    val context = LocalContext.current
-
-                    if (attachments.isNotEmpty()) {
-                        DashedLine(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                DetailKeyValueRow(label = stringResource(R.string.date)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(Spacing.md),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
                         ) {
-                            AttachmentSection(
-                                attachments = attachments,
-                                attachmentStore = attachmentStore,
-                                onAddAttachment = {},
-                                onRemoveAttachment = {},
-
-                                isEditable = false
+                            Text(
+                                text = formattedTime,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                     }
                 }
+
+                DetailRowDivider()
+
+                // Type Row
+                val typeDisplayValue = if (linkedLendBorrow != null) {
+                    when (linkedLendBorrow.kind) {
+                        DebtKind.LENT -> stringResource(R.string.loan_type_lent)
+                        DebtKind.BORROWED -> stringResource(R.string.loan_type_borrowed)
+                        DebtKind.REPAID_TO_ME -> stringResource(R.string.settlement_received)
+                        DebtKind.REPAID_BY_ME -> stringResource(R.string.settlement_paid)
+                        DebtKind.UNKNOWN -> stringResource(R.string.core_kind_unknown)
+                    }
+                } else {
+                    stringResource(transaction.kind.transactionKindLabelRes())
+                }
+
+                DetailKeyValueRow(label = stringResource(R.string.type)) {
+                    DetailValuePill(
+                        text = typeDisplayValue,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+
+                // Category Row (when applicable)
+                val categoryName = categoryEntity?.displayName.orEmpty()
+                val subcategoryName = subcategoryEntity?.displayName
+                if (categoryName.isNotEmpty() || !subcategoryName.isNullOrEmpty()) {
+                    DetailRowDivider()
+                    val categoryColor = CategoryMapping.categories[categoryName]?.color?.copy(alpha = 0.18f)
+                        ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    val resolvedSubcategoryColor = run {
+                        if (subcategoryEntity != null) {
+                            try {
+                                Color(subcategoryEntity.color.toColorInt()).copy(alpha = 0.18f)
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else null
+                    } ?: categoryColor
+
+                    DetailKeyValueRow(label = stringResource(R.string.category)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (categoryName.isNotEmpty()) {
+                                DetailValuePill(
+                                    text = categoryName,
+                                    backgroundColor = categoryColor,
+                                    icon = {
+                                        CategoryIcon(
+                                            category = categoryName,
+                                            size = 18.dp,
+                                            tint = null,
+                                            iconResId = 0,
+                                            iconName = categoryEntity?.icon
+                                        )
+                                    }
+                                )
+                            }
+                            if (!subcategoryName.isNullOrEmpty()) {
+                                DetailValuePill(
+                                    text = subcategoryName,
+                                    backgroundColor = resolvedSubcategoryColor,
+                                    icon = {
+                                        CategoryIcon(
+                                            category = subcategoryName,
+                                            size = 18.dp,
+                                            tint = null,
+                                            iconResId = 0,
+                                            iconName = subcategoryEntity?.icon
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                DetailRowDivider()
+
+                // Account Row(s)
+                val isTransfer = transaction.kind == TransactionKind.TRANSFER
+                val fromAccountEntity = availableAccounts.find { it.id == transaction.accountId }
+                val toAccountEntity = availableAccounts.find { it.id == transaction.toAccountId }
+                val fromBankName = withLast4(fromAccountEntity?.name, fromAccountEntity?.last4)
+                    ?: stringResource(R.string.account)
+                val toBankName = toAccountEntity?.let { withLast4(it.name, it.last4) }
+
+                val fromColor = fromBankName.let { BrandIcons.getBrandColor(it) }
+                    ?.let { runCatching { Color(it.toColorInt()).copy(alpha = 0.18f) }.getOrNull() }
+                    ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+
+                if (isTransfer) {
+                    DetailKeyValueRow(label = stringResource(R.string.from)) {
+                        DetailValuePill(
+                            text = fromBankName,
+                            backgroundColor = fromColor,
+                            icon = {
+                                BrandIcon(
+                                    merchantName = fromBankName,
+                                    size = 20.dp,
+                                    showBackground = false,
+                                    accountIconResId = 0,
+                                    accountIconName = fromAccountEntity?.icon,
+                                    accountColorHex = fromAccountEntity?.color
+                                )
+                            }
+                        )
+                    }
+                    if (toBankName != null) {
+                        DetailRowDivider()
+                        val toColor = BrandIcons.getBrandColor(toBankName)
+                            ?.let { runCatching { Color(it.toColorInt()).copy(alpha = 0.18f) }.getOrNull() }
+                            ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        DetailKeyValueRow(label = stringResource(R.string.to_destination)) {
+                            DetailValuePill(
+                                text = toBankName,
+                                backgroundColor = toColor,
+                                icon = {
+                                    BrandIcon(
+                                        merchantName = toBankName,
+                                        size = 20.dp,
+                                        showBackground = false,
+                                        accountIconResId = 0,
+                                        accountIconName = toAccountEntity?.icon,
+                                        accountColorHex = toAccountEntity?.color
+                                    )
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    DetailKeyValueRow(label = stringResource(R.string.account)) {
+                        DetailValuePill(
+                            text = fromBankName,
+                            backgroundColor = fromColor,
+                            icon = {
+                                BrandIcon(
+                                    merchantName = fromBankName,
+                                    size = 20.dp,
+                                    showBackground = false,
+                                    accountIconResId = 0,
+                                    accountIconName = fromAccountEntity?.icon,
+                                    accountColorHex = fromAccountEntity?.color
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // Receivable / Collected Row
+                if (transaction.receivable != null && transaction.receivable!! > BigDecimal.ZERO) {
+                    DetailRowDivider()
+                    DetailKeyValueRow(label = stringResource(R.string.core_receivable_short)) {
+                        DetailValuePill(
+                            text = CoreMoneyPresentation.formatCurrency(transaction.receivable!!, transaction.currency),
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                        )
+                    }
+                } else if (transaction.collected != null && transaction.collected!! > BigDecimal.ZERO) {
+                    DetailRowDivider()
+                    DetailKeyValueRow(label = stringResource(R.string.core_collected_short)) {
+                        DetailValuePill(
+                            text = CoreMoneyPresentation.formatCurrency(transaction.collected!!, transaction.currency),
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                // Tags Row
+                val txTags = remember(transaction.tagIds, tags) {
+                    transaction.tagIds.mapNotNull(tags::get)
+                }
+                if (txTags.isNotEmpty()) {
+                    DetailRowDivider()
+                    DetailKeyValueRow(label = stringResource(R.string.core_tags_title)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            txTags.forEach { tag ->
+                                DetailValuePill(
+                                    text = "#${tag.name}",
+                                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Linked Subscription Next Billing Row
+                if (transaction.subscriptionId != null && linkedSubscription?.nextDue != null) {
+                    DetailRowDivider()
+                    val nextDueText = linkedSubscription.nextDue
+                        ?.let { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }
+                        ?.format(localizedDateFormatter())
+                        .orEmpty()
+                    DetailKeyValueRow(label = stringResource(R.string.next_billing)) {
+                        DetailValuePill(
+                            text = nextDueText,
+                            backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            icon = {
+                                Icon(
+                                    imageVector = Iconax.VideoTime,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        )
+                    }
+                }
             }
+        }
+
+        // 3. Notes / Description Card
+        if (hasNotes) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = notesShape,
+                color = containerColor
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Iconax.DocumentText2,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.description),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text(
+                        text = transaction.notes.orEmpty(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+
+        // 4. Attachments Card
+        if (hasAttachments) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = attachmentsShape,
+                color = containerColor
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    AttachmentSection(
+                        attachments = attachments,
+                        attachmentStore = attachmentStore,
+                        onAddAttachment = {},
+                        onRemoveAttachment = {},
+                        isEditable = false
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRowDivider() {
+    HorizontalDivider(
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    )
+}
+
+@Composable
+private fun DetailKeyValueRow(
+    label: String,
+    valueContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 12.dp)
+        )
+        Box(
+            modifier = Modifier.weight(1f, fill = false),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            valueContent()
+        }
+    }
+}
+
+@Composable
+private fun DetailValuePill(
+    text: String,
+    backgroundColor: Color,
+    icon: (@Composable () -> Unit)? = null
+) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = backgroundColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (icon != null) {
+                icon()
+            }
+            Text(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 200.dp),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -2591,526 +2568,101 @@ private fun ReceiptBadge(
     isCapture: Boolean = false,
     onIconClick: (() -> Unit)? = null
 ) {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shadowElevation = 2.dp,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)),
-        modifier = Modifier.wrapContentSize()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        val brandIconModifier = if (
+            sharedTransitionScope != null &&
+            animatedContentScope != null &&
+            transactionId != null
         ) {
-            val brandIconModifier = if (
-                sharedTransitionScope != null &&
-                animatedContentScope != null &&
-                transactionId != null
+            with(sharedTransitionScope) {
+                Modifier.sharedElement(
+                    rememberSharedContentState(key = "brand_icon_$transactionId"),
+                    animatedVisibilityScope = animatedContentScope
+                )
+            }
+        } else Modifier
+
+        if (linkedLendBorrow != null) {
+            val displayName = personName ?: merchantName
+            val backgroundColor = remember(personColor) {
+                try {
+                    Color(personColor?.toColorInt() ?: 0xFF4CAF50.toInt())
+                } catch (_: Exception) {
+                    Color(0xFF4CAF50)
+                }
+            }
+            Box(
+                modifier = brandIconModifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(backgroundColor),
+                contentAlignment = Alignment.Center
             ) {
-                with(sharedTransitionScope) {
-                    Modifier.sharedElement(
-                        rememberSharedContentState(key = "brand_icon_$transactionId"),
-                        animatedVisibilityScope = animatedContentScope
+                if (!personAvatar.isNullOrBlank()) {
+                    val avatarModel: Any = if (isCapture) {
+                        ImageRequest.Builder(LocalPlatformContext.current)
+                            .data(personAvatar)
+                            .allowHardware(false)
+                            .build()
+                    } else personAvatar
+                    AsyncImage(
+                        model = avatarModel,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = displayName.firstOrNull()?.uppercase()?.toString() ?: "?",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            } else Modifier
-
-            if (linkedLendBorrow != null) {
-                val displayName = personName ?: merchantName
-                val backgroundColor = remember(personColor) {
-                    try {
-                        Color(personColor?.toColorInt() ?: 0xFF4CAF50.toInt())
-                    } catch (_: Exception) {
-                        Color(0xFF4CAF50)
-                    }
-                }
-                Box(
-                    modifier = brandIconModifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(backgroundColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (!personAvatar.isNullOrBlank()) {
-                        val avatarModel: Any = if (isCapture) {
-                            ImageRequest.Builder(LocalPlatformContext.current)
-                                .data(personAvatar)
-                                .allowHardware(false)
-                                .build()
-                        } else personAvatar
-                        AsyncImage(
-                            model = avatarModel,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Text(
-                            text = displayName.firstOrNull()?.uppercase()?.toString() ?: "?",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+            }
+            if (displayName.isNotBlank()) {
                 Text(
                     text = displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
                 )
-            } else {
-                BrandIcon(
-                    merchantName = merchantName,
-                    size = 34.dp,
-                    showBackground = true,
-                    categoryEntity = categoryEntity,
-                    subcategoryEntity = subcategoryEntity,
-                    category = category,
-                    subcategory = subcategory,
-                    accountIconName = null, // Not an account icon in this context
-                    modifier = brandIconModifier.then(
-                        if (onIconClick != null) {
-                            Modifier
-                                .clip(CircleShape)
-                                .clickable(onClickLabel = stringResource(R.string.merchant_icon_title), onClick = onIconClick)
-                        } else Modifier
-                    )
+            }
+        } else {
+            BrandIcon(
+                merchantName = merchantName,
+                size = 52.dp,
+                showBackground = true,
+                categoryEntity = categoryEntity,
+                subcategoryEntity = subcategoryEntity,
+                category = category,
+                subcategory = subcategory,
+                accountIconName = null,
+                modifier = brandIconModifier.then(
+                    if (onIconClick != null) {
+                        Modifier
+                            .clip(CircleShape)
+                            .clickable(
+                                onClickLabel = stringResource(R.string.merchant_icon_title),
+                                onClick = onIconClick
+                            )
+                    } else Modifier
                 )
+            )
+            if (merchantName.isNotBlank()) {
                 Text(
                     text = merchantName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ReceiptInfoRow(
-    label: String,
-    value: String,
-    isTransfer: Boolean = false,
-    subValue: String? = null,
-    bankName: String? = null,
-    subBankName: String? = null,
-    icon: (@Composable () -> Unit)? = null,
-    subIcon: (@Composable () -> Unit)? = null,
-    subcategoryColor: Color? = null,
-    linkedLendBorrow: DebtEntry? = null
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        when (label) {
-            stringResource(R.string.type), stringResource(R.string.balance), stringResource(R.string.next_billing) -> {
-                val displayValue = if (label == stringResource(R.string.type) && linkedLendBorrow != null) {
-                    when (linkedLendBorrow.kind) {
-                        DebtKind.LENT -> stringResource(R.string.loan_type_lent)
-                        DebtKind.BORROWED -> stringResource(R.string.loan_type_borrowed)
-                        DebtKind.REPAID_TO_ME -> stringResource(R.string.settlement_received)
-                        DebtKind.REPAID_BY_ME -> stringResource(R.string.settlement_paid)
-                        DebtKind.UNKNOWN -> stringResource(R.string.core_kind_unknown)
-                    }
-                } else value
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = label.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    DashedLine(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(0.5f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        Row {
-                            if (icon != null) {
-                                icon()
-                            }
-                            Spacer(modifier = Modifier.width(Spacing.xs))
-                            Text(
-                                text = displayValue,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
-                }
-            }
-
-            stringResource(R.string.category) -> {
-                if (subValue != null) {
-                    Text(
-                        text = label.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        val categoryColor = CategoryMapping.categories[value]?.color?.copy(0.2f) ?: MaterialTheme.colorScheme.surfaceVariant
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .background(
-                                    color = categoryColor,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                            ) {
-                                if (icon != null) {
-                                    icon()
-                                }
-                                Text(
-                                    text = value,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 130.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        val resolvedSubcategoryColor = subcategoryColor ?: CategoryMapping.categories[value]?.color?.copy(0.2f) ?: MaterialTheme.colorScheme.surfaceVariant
-                        if (subValue != null) {
-                            DashedLine(
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp)
-                                    .background(
-                                        color = resolvedSubcategoryColor,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                                ) {
-                                    if (subIcon != null) {
-                                        subIcon()
-                                    }
-                                    Text(
-                                        text = subValue,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.widthIn(max = 130.dp),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else{
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = label.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        DashedLine(
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        )
-                        val categoryColor = CategoryMapping.categories[value]?.color?.copy(0.2f) ?: MaterialTheme.colorScheme.surfaceVariant
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .background(
-                                    color = categoryColor,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                            ) {
-                                if (icon != null) {
-                                    icon()
-                                }
-                                Text(
-                                    text = value,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 200.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            stringResource(R.string.account) -> {
-                if (isTransfer) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement =Arrangement.spacedBy(Spacing.sm) ,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        val fromColorStr = bankName?.let { BrandIcons.getBrandColor(it) }
-                        val fromColor = fromColorStr?.let { Color(it.toColorInt()).copy(0.2f) } ?: MaterialTheme.colorScheme.surfaceVariant
-                        val toColorStr = subBankName?.let { BrandIcons.getBrandColor(it) }
-                        val toColor = toColorStr?.let { Color(it.toColorInt()).copy(0.2f) } ?: MaterialTheme.colorScheme.surfaceVariant
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ){
-                            Text(
-                                text = stringResource(R.string.from),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.fillMaxWidth().weight(1f)
-                            )
-                            Text(
-                                text = stringResource(R.string.to_destination),
-                                style = MaterialTheme.typography.labelMedium,
-                                textAlign = TextAlign.End,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.fillMaxWidth().weight(1f)
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp)
-                                    .background(
-                                        color = fromColor,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                                ) {
-                                    if (icon != null) {
-                                        icon()
-                                    }
-                                    Text(
-                                        text = value, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(Spacing.xs))
-                            DashedLine(
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                            )
-                            Spacer(modifier = Modifier.width(Spacing.xs))
-                            Box(
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp)
-                                    .background(
-                                        color = toColor,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                                ) {
-                                    if (subIcon != null) {
-                                        subIcon()
-                                    }
-                                    if (subValue != null) {
-                                        Text(
-                                            text = subValue, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else{
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = label.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        DashedLine(
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        )
-                        val bankColorStr = bankName?.let { BrandIcons.getBrandColor(it) }
-                        val bankColor = bankColorStr?.let { Color(it.toColorInt()).copy(0.2f) } ?: MaterialTheme.colorScheme.surfaceVariant
-
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .background(
-                                    color = bankColor,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                            ) {
-                                if (icon != null) {
-                                    icon()
-                                }
-                                Text(
-                                    text = value,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 200.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            else -> {
-                Text(
-                    text = label.uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (icon != null) {
-                        icon()
-                    }
-                    Text(
-                        text = value,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-private class ReceiptShape(
-    private val cutoutRadius: Float,
-    private val cutoutTopOffset: Float,
-    private val scallopRadius: Float
-) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        val path = Path().apply {
-            val scallopDiameter = scallopRadius * 2
-            val scallopCount = (size.width / scallopDiameter).toInt().coerceAtLeast(1)
-            val actualScallopWidth = size.width / scallopCount
-
-            // Start from bottom-left (after the last scallop)
-            moveTo(0f, size.height - scallopRadius)
-
-            // Left edge with cutout
-            lineTo(0f, cutoutTopOffset + cutoutRadius)
-            arcTo(
-                rect = Rect(-cutoutRadius, cutoutTopOffset - cutoutRadius, cutoutRadius, cutoutTopOffset + cutoutRadius),
-                startAngleDegrees = 90f,
-                sweepAngleDegrees = -180f,
-                forceMoveTo = false
-            )
-            lineTo(0f, scallopRadius)
-
-            // Top edge with scallops (left to right)
-            for (i in 0 until scallopCount) {
-                val x = i * actualScallopWidth
-                arcTo(
-                    rect = Rect(x, 0f, x + actualScallopWidth, actualScallopWidth),
-                    startAngleDegrees = 180f,
-                    sweepAngleDegrees = 180f,
-                    forceMoveTo = false
-                )
-            }
-
-            // Right edge with cutout
-            lineTo(size.width, cutoutTopOffset - cutoutRadius)
-            arcTo(
-                rect = Rect(size.width - cutoutRadius, cutoutTopOffset - cutoutRadius, size.width + cutoutRadius, cutoutTopOffset + cutoutRadius),
-                startAngleDegrees = 270f,
-                sweepAngleDegrees = -180f,
-                forceMoveTo = false
-            )
-            lineTo(size.width, size.height - scallopRadius)
-
-            // Bottom edge with scallops (right to left)
-            for (i in 0 until scallopCount) {
-                val x = size.width - (i * actualScallopWidth)
-                arcTo(
-                    rect = Rect(x - actualScallopWidth, size.height - actualScallopWidth, x, size.height),
-                    startAngleDegrees = 0f,
-                    sweepAngleDegrees = 180f,
-                    forceMoveTo = false
-                )
-            }
-
-            close()
-        }
-        return Outline.Generic(path)
     }
 }
 
