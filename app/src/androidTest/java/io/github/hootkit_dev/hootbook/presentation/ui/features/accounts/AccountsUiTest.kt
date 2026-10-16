@@ -26,13 +26,15 @@ class AccountsUiTest {
     private val amount = BigDecimal("-1234567.89")
     private fun render(fontScale: Float = 1f, onAccount: (String) -> Unit = {}) {
         val account = Account(id, "Core wallet", null, AccountKind.WALLET, "CNY",
-            listOf(Pocket("CNY", amount, null, null)), Money(amount, "CNY"), false,
+            listOf(Pocket("CNY", amount, null, null, null)), Money(amount, "CNY"), false,
             null, null, null, null, null, null, "type_finance_bank", "#001122", false, false, 0,
             LocalDateTime(2026, 10u, 11u, 12u, 0u, 0u, 0u))
         val core = object : HootKitCore(NoPointer) {
             override fun accounts() = object : Accounts(NoPointer) {
                 override suspend fun overview() = AccountsOverview(listOf(account), Money(amount, "CNY"), false, null, null)
+                override suspend fun netWorthHistory(from: LocalDate, to: LocalDate, step: HistoryStep) = NetWorthHistory("CNY", emptyList(), emptyList(), null, null)
             }
+            override fun brokerage() = object : Brokerage(NoPointer) { override suspend fun connections() = emptyList<BrokerageConnection>() }
             override fun settings() = object : Settings(NoPointer) { override suspend fun mainCurrency() = "CNY" }
             override fun catalog() = object : Catalog(NoPointer) { override fun all() = emptyList<Institution>() }
             override fun currency() = object : Currency(NoPointer) { override suspend fun customCurrencies() = emptyList<CustomCurrency>() }

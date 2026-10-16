@@ -82,6 +82,7 @@ fun SharedTransitionScope.BudgetDetailScreen(
     endDate: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToHistory: (String) -> Unit = {},
+    onTransactionClick: (String) -> Unit = {},
     budgetViewModel: BudgetViewModel = hiltViewModel(),
     animatedContentScope: AnimatedContentScope? = null,
     sharedElementKey: String? = null,
@@ -281,10 +282,100 @@ fun SharedTransitionScope.BudgetDetailScreen(
 
                     if (budgetWithSpending.current.byCategory.isNotEmpty()) {
                         item {
-                            BudgetCategoryPieChart(budgetWithSpending.current.byCategory,
-                                uiState.categories, budgetWithSpending.amount.currency, budgetWithSpending.current.spent,
-                                modifier = Modifier.padding(end = Spacing.sm))
+                            BudgetCategoryPieChart(
+                                categories = budgetWithSpending.current.byCategory,
+                                lookup = uiState.categories,
+                                currency = budgetWithSpending.amount.currency,
+                                totalSpent = budgetWithSpending.current.spent,
+                                selectedCategoryId = uiState.selectedCategoryId,
+                                onCategoryClick = budgetViewModel::selectCategoryFilter,
+                                modifier = Modifier.padding(end = Spacing.sm)
+                            )
                             Spacer(modifier = Modifier.height(Spacing.xl))
+                        }
+                    }
+
+                    item(key = "budget_transactions_header") {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            SectionHeader(title = stringResource(R.string.core_budgets_transactions_title))
+                            if (budgetWithSpending.current.byCategory.isNotEmpty()) {
+                                androidx.compose.foundation.layout.FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                ) {
+                                    androidx.compose.material3.FilterChip(
+                                        selected = uiState.selectedCategoryId == null,
+                                        onClick = { budgetViewModel.selectCategoryFilter(null) },
+                                        label = { Text(stringResource(R.string.core_budgets_transactions_all_categories)) },
+                                    )
+                                    budgetWithSpending.current.byCategory.forEach { catSpend ->
+                                        val catName = uiState.categories[catSpend.categoryId]?.displayName ?: catSpend.categoryId
+                                        androidx.compose.material3.FilterChip(
+                                            selected = uiState.selectedCategoryId == catSpend.categoryId,
+                                            onClick = { budgetViewModel.selectCategoryFilter(catSpend.categoryId) },
+                                            label = { Text(catName) },
+                                        )
+                                    }
+                                }
+                            }
+                            if (uiState.transactionsPage?.complete == false) {
+                                Text(
+                                    text = stringResource(R.string.core_budgets_transactions_incomplete),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            if (uiState.transactionsPage?.items.isNullOrEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.core_budgets_transactions_empty),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = Spacing.sm),
+                                )
+                            }
+                        }
+                    }
+
+                    val txItems = uiState.transactionsPage?.items.orEmpty()
+                    val budgetCurrency = budgetWithSpending.amount.currency
+                    itemsIndexed(txItems, key = { _, item -> "btx_${item.transaction.id}" }) { index, item ->
+                        val tx = item.transaction
+                        val cat = tx.categoryId?.let { uiState.categories[it] }
+                        val subcat = cat?.subcategories?.firstOrNull { it.id == tx.subcategoryId }
+                        val acc = uiState.accounts[tx.accountId]
+                        val txTags = remember(tx.tagIds, uiState.tags) {
+                            tx.tagIds.mapNotNull(uiState.tags::get)
+                        }
+                        val isForeignOrAdjusted =
+                            !tx.currency.equals(budgetCurrency, ignoreCase = true) ||
+                                item.amount.compareTo(tx.amount) != 0
+                        Box(modifier = Modifier.padding(horizontal = Spacing.md)) {
+                            TransactionItem(
+                                transaction = tx,
+                                categoryEntity = cat,
+                                subcategoryEntity = subcat,
+                                accountIconName = acc?.icon,
+                                accountColorHex = acc?.color,
+                                tags = txTags,
+                                shape = ListItemPosition.from(index, txItems.size).toShape(),
+                                amountOverride =
+                                    io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation.formatCurrency(
+                                        item.amount,
+                                        budgetCurrency
+                                    ),
+                                secondaryAmountText =
+                                    if (isForeignOrAdjusted)
+                                        io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation.formatCurrency(
+                                            tx.amount,
+                                            tx.currency
+                                        )
+                                    else null,
+                                onClick = { onTransactionClick(tx.id) },
+                                rateLoading = false,
+                            )
                         }
                     }
                 }

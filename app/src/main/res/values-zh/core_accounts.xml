@@ -22,9 +22,11 @@
     <string name="core_accounts_59">保存</string>
     <string name="account_move_up">上移</string>
     <string name="account_move_down">下移</string>
-    <string name="account_archive">归档</string>
+    <string name="account_archive">归档账户</string>
+    <string name="account_archive_subtitle">在记账选户列表中隐藏，保留历史交易与净资产</string>
     <string name="account_unarchive">取消归档</string>
     <string name="account_set_default">设为默认账户</string>
+    <string name="account_set_default_subtitle">记账时自动预选此账户，并在列表中置顶</string>
     <string name="account_clear_default">取消默认账户</string>
     <string name="account_delete">删除账户</string>
     <string name="account_delete_title">删除 %1$s？</string>
@@ -40,4 +42,11 @@
     <string name="account_calibrate">校准余额</string>
     <string name="account_balance_trend">余额走势</string>
     <string name="account_calibrations">校准记录</string>
+    <string name="account_net_worth_trend">净资产走势</string>
+    <string name="account_net_worth_step_daily">按日</string>
+    <string name="account_net_worth_step_weekly">按周</string>
+    <string name="account_net_worth_step_monthly">按月</string>
+    <string name="account_net_worth_securities_missing">部分日期缺少未缓存的券商持仓市值或汇率。</string>
+    <string name="account_net_worth_securities_since">券商持仓市值自 %1$s 起计入（此前不含证券）</string>
+    <string name="account_net_worth_current_rates_note">按现在的汇率计算；券商首次同步日前不含证券。</string>
 </resources>

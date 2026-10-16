@@ -71,4 +71,45 @@ class AccountDetailViewModelTest : CoreViewModelTest() {
         assertEquals(listOf(0u, 50u, 0u), requests.map { it.offset })
         assertEquals(65u, requests.last().limit)
     }
+    @Test fun markStatementPaidAnchorsStatementEndToZeroWhilePreservingCurrentBalance() = runTest {
+        val core = FakeAccountsCore()
+        core.account = core.account.copy(
+            kind = AccountKind.CREDIT_CARD,
+            mainCurrency = "USD",
+            pockets = listOf(Pocket("USD", BigDecimal("294.94"), null, null, null)),
+            statementDay = 31u,
+            dueDay = 15u,
+        )
+        core.cardStatus = CardStatus(
+            accountId = core.account.id,
+            currency = "USD",
+            statementDate = LocalDate(2026, 9u, 30u),
+            dueDate = LocalDate(2026, 10u, 15u),
+            statementAmount = BigDecimal("489.09"),
+            repaidSince = BigDecimal.ZERO,
+            outstanding = BigDecimal("489.09"),
+            overdue = true,
+        )
+        // Case 1: Anchor already exists after statement end (2026-10-11 > 2026-09-30T23:59:59)
+        val vm = keep(AccountDetailViewModel(CoreSession(backgroundScope) { core }, ChangeBus(), SavedStateHandle(mapOf("accountId" to core.account.id))))
+        awaitState { !vm.uiState.value.isLoading }
+        vm.markStatementPaid()
+        awaitState { !vm.uiState.value.saving }
+        assertEquals(
+            listOf(BigDecimal.ZERO to LocalDateTime(2026, 9u, 30u, 23u, 59u, 59u, 0u)),
+            core.recordedCalibrations,
+        )
+        // Case 2: No anchor after statement end -> preserves current balance first, then zeros statement end
+        core.recordedCalibrations.clear()
+        core.anchors = emptyList()
+        vm.markStatementPaid()
+        awaitState { !vm.uiState.value.saving }
+        assertEquals(
+            listOf(
+                BigDecimal("294.94") to null,
+                BigDecimal.ZERO to LocalDateTime(2026, 9u, 30u, 23u, 59u, 59u, 0u),
+            ),
+            core.recordedCalibrations,
+        )
+    }
 }

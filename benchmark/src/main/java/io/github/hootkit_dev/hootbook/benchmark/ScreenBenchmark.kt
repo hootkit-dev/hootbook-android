@@ -145,13 +145,10 @@ class ScreenBenchmark(private val variant: Variant) {
         }
     }
 
-    /** Home → Core profile, scroll it, then back. */
+    /** Home → Settings, scroll it, then back. */
     @Test
     fun profileOpenAndScroll() = measure {
-        device.findObject(By.desc("core-home-profile")).click()
-        if (!device.wait(Until.gone(By.desc("core-screen-home")), 10_000)) {
-            fail("Settings did not open")
-        }
+        openSettingsFromHome()
         device.waitForIdle(1_000)
         flingDownAndUp(times = 2)
         device.pressBack()

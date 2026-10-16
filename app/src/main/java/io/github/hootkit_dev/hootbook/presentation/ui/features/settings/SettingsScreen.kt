@@ -70,6 +70,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.categories.Naviga
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.ArchiveBook
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Box2
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.DollarCircle
+import io.github.hootkit_dev.hootbook.presentation.ui.icons.DirectboxSend
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Fireworks7
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.Iconax
 import io.github.hootkit_dev.hootbook.presentation.ui.icons.NotificationBing
@@ -88,6 +89,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToTags: () -> Unit = {},
+    onNavigateToDuplicates: () -> Unit = {},
     onNavigateToManageAccounts: () -> Unit = {},
     onNavigateToQuickTemplates: () -> Unit = {},
     onNavigateToAiAssistant: () -> Unit = {},
@@ -98,7 +101,8 @@ fun SettingsScreen(
     onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToLendBorrow: () -> Unit = {},
     onNavigateToDataPrivacy: () -> Unit = {},
-    onNavigateToCloudBackup: () -> Unit = {},
+    onNavigateToBackup: () -> Unit = {},
+    onNavigateToSync: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     onNavigateToCurrency: () -> Unit = {},
     settingsViewModel: SettingsViewModel = hiltViewModel(),
@@ -645,6 +649,96 @@ fun SettingsScreen(
                         padding = PaddingValues(0.dp)
                     )
 
+                    // Tags
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.core_tags_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.core_tags_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.Box2,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToTags() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Duplicate Detection
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.core_duplicates_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.core_duplicates_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Iconax.Status,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToDuplicates() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
                     // Quick templates
                     ListItem(
                         headline = {
@@ -780,18 +874,48 @@ fun SettingsScreen(
                         padding = PaddingValues(0.dp)
                     )
 
-                    // Backup & Sync
+                    // Local backup and restore
+                    ListItem(
+                        headline = {
+                            Text(stringResource(R.string.core_shell_backup),
+                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                        },
+                        supporting = {
+                            Text(stringResource(R.string.core_shell_backup_subtitle),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier.size(48.dp).background(
+                                    MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Iconax.DirectboxSend, contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            }
+                        },
+                        trailing = {
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        },
+                        onClick = onNavigateToBackup,
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp),
+                    )
+
+                    // Ledger sync
                     ListItem(
                         headline = {
                             Text(
-                                text = stringResource(R.string.backup_sync_title),
+                                text = stringResource(R.string.core_shell_sync),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
                         },
                         supporting = {
                             Text(
-                                text = stringResource(R.string.backup_sync_subtitle),
+                                text = stringResource(R.string.core_shell_sync_subtitle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -820,7 +944,7 @@ fun SettingsScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
-                        onClick = { onNavigateToCloudBackup() },
+                        onClick = { onNavigateToSync() },
                         shape = ListItemPosition.Bottom.toShape(),
                         padding = PaddingValues(0.dp)
                     )

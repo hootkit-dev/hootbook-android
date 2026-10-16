@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.SyncProblem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -169,7 +174,10 @@ fun SharedTransitionScope.HomeScreen(
 
 
     val operationFailed = stringResource(R.string.onboarding_operation_failed)
-    LaunchedEffect(Unit) { homeViewModel.refreshDate() }
+    LaunchedEffect(Unit) {
+        homeViewModel.refreshDate()
+        homeViewModel.refresh()
+    }
     LaunchedEffect(uiState.error) {
         uiState.error?.let { snackbarHostState.showSnackbar(operationFailed) }
     }
@@ -185,7 +193,7 @@ fun SharedTransitionScope.HomeScreen(
                 GreetingCard(
                     modifier = Modifier
                         .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 6.dp),
                     userName = prefs.userName,
                     profileImageUri = homeViewModel.assets.resolve(prefs.avatar)?.let { android.net.Uri.fromFile(it) },
                     profileBackgroundColor = Color(prefs.profileBackground),
@@ -261,8 +269,10 @@ fun SharedTransitionScope.HomeScreen(
                                 item(key = "net_worth") {
                                     NetworthSummaryCards(
                                         uiState = uiState,
+                                        showLoans = HomeWidget.LOANS !in prefs.hiddenHomeWidgets,
                                         onCurrencySelected = { homeViewModel.selectCurrency(it) },
                                         onNetWorthClick = { navController.safeNavigate(io.github.hootkit_dev.hootbook.presentation.navigation.ManageAccounts) },
+                                        onOpenLendBorrow = onNavigateToLendBorrow,
                                         breakdownShown = showAccountBreakdown,
                                         onToggleBreakdown = { showAccountBreakdown = !showAccountBreakdown }
                                     )
@@ -272,7 +282,66 @@ fun SharedTransitionScope.HomeScreen(
                                     item(key = "account_overview") {
                                         AccountCategoryList(
                                             uiState.overview, openCategory, connections = uiState.connections,
+                                            cardStatuses = uiState.cardStatuses,
                                             modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem()
+                                        )
+                                    }
+                                }
+                                val cardReminders = buildCreditCardReminders(
+                                    accounts = uiState.overview?.accounts.orEmpty(),
+                                    cardStatuses = uiState.cardStatuses,
+                                )
+                                val visibleUpcoming = if (HomeWidget.UPCOMING_SUBSCRIPTIONS !in prefs.hiddenHomeWidgets) {
+                                    uiState.upcoming
+                                } else {
+                                    emptyList()
+                                }
+                                val hasUrgentNotifications = uiState.pendingConflictCount > 0 ||
+                                    uiState.pendingAiReview != null ||
+                                    cardReminders.isNotEmpty() ||
+                                    visibleUpcoming.isNotEmpty()
+                                if (hasUrgentNotifications) {
+                                    item(key = "urgent_notifications") {
+                                        val subscriptionsModifier = if (animatedContentScope != null) {
+                                            Modifier.sharedBounds(
+                                                rememberSharedContentState(key = "upcoming_subscriptions_card"),
+                                                animatedVisibilityScope = animatedContentScope,
+                                                boundsTransform = { _, _ ->
+                                                    tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
+                                                },
+                                                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
+                                                    contentScale = ContentScale.Fit,
+                                                    alignment = Alignment.Center
+                                                ),
+                                                renderInOverlayDuringTransition = false
+                                            ).skipToLookaheadSize()
+                                        } else {
+                                            Modifier
+                                        }
+                                        UrgentNotificationsSection(
+                                            pendingConflictCount = uiState.pendingConflictCount,
+                                            pendingAiReview = uiState.pendingAiReview,
+                                            cardReminders = cardReminders,
+                                            upcomingSubscriptions = visibleUpcoming,
+                                            subscriptionSummary = uiState.subscriptions,
+                                            monthlySubscriptions = uiState.displayTotals["monthly"],
+                                            customSymbols = uiState.customSymbols,
+                                            categoriesMap = categoriesMap,
+                                            subcategoriesMap = subcategoriesMap,
+                                            onConflictClick = {
+                                                navController.safeNavigate(
+                                                    io.github.hootkit_dev.hootbook.presentation.navigation.CloudSync
+                                                )
+                                            },
+                                            onAiReviewClick = { navController.safeNavigate(AiAssistant) },
+                                            onAccountClick = { id ->
+                                                navController.safeNavigate(
+                                                    io.github.hootkit_dev.hootbook.presentation.navigation.AccountDetail(id)
+                                                )
+                                            },
+                                            onSubscriptionsClick = onNavigateToSubscriptions,
+                                            subscriptionsModifier = subscriptionsModifier,
+                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem(),
                                         )
                                     }
                                 }
@@ -288,25 +357,7 @@ fun SharedTransitionScope.HomeScreen(
 
                                 }
                             }
-                            HomeWidget.LOANS -> {
-                                // One row, and none while nothing is lent or borrowed, so Home's
-                                // key figures fit without scrolling
-                                val loans = uiState.debts
-                                if (loans != null && (loans.receivable.signum() != 0 || loans.payable.signum() != 0)) {
-                                    item(key = "loans") {
-                                        LendBorrowRow(
-                                            summary = loans,
-                                            currency = loans.currency,
-                                            onClick = { onNavigateToLendBorrow(null) },
-                                            onLentClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_GET.name) },
-                                            onBorrowedClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_OWE.name) },
-                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
-                                        )
-                                        if (!loans.complete) Text(stringResource(R.string.core_complete_incomplete),
-                                            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
-                                    }
-                                }
-                            }
+                            HomeWidget.LOANS -> Unit
                             HomeWidget.TRANSACTION_HEATMAP -> {
                                 item(key = "transaction_heatmap") {
                                     HeatmapWidget(
@@ -344,56 +395,8 @@ fun SharedTransitionScope.HomeScreen(
                             }
                             // Shown under the net worth, from its 分类 button
                             HomeWidget.ACCOUNT_CAROUSEL -> Unit
-                            HomeWidget.UPCOMING_SUBSCRIPTIONS -> {
-                                if (uiState.upcoming.isNotEmpty()) {
-                                    item(key = "upcoming_subscriptions") {
-                                        val cardModifier = Modifier.padding(
-                                            start = Dimensions.Padding.content,
-                                            end = Dimensions.Padding.content,
-                                        )
-
-                                        if (animatedContentScope != null) {
-                                            UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcoming,
-                                                summary = uiState.subscriptions,
-                                                monthly = uiState.displayTotals["monthly"],
-                                                customSymbols = uiState.customSymbols,
-                                                categoriesMap = categoriesMap,
-                                                subcategoriesMap = subcategoriesMap,
-                                                onClick = onNavigateToSubscriptions,
-                                                blurEffects = blurEffects && prefs.showBanner,
-                                                hazeState = hazeStateBanner,
-                                                modifier = cardModifier.sharedBounds(
-                                                    rememberSharedContentState(key = "upcoming_subscriptions_card"),
-                                                    animatedVisibilityScope = animatedContentScope,
-                                                    boundsTransform = { _, _ ->
-                                                        tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing)
-                                                    },
-                                                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
-                                                        contentScale = ContentScale.Fit,
-                                                        alignment = Alignment.Center
-                                                    ),
-                                                    renderInOverlayDuringTransition = false
-                                                )
-                                                    .skipToLookaheadSize()
-                                            )
-                                        } else {
-                                            UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcoming,
-                                                summary = uiState.subscriptions,
-                                                monthly = uiState.displayTotals["monthly"],
-                                                customSymbols = uiState.customSymbols,
-                                                categoriesMap = categoriesMap,
-                                                subcategoriesMap = subcategoriesMap,
-                                                onClick = onNavigateToSubscriptions,
-                                                blurEffects = blurEffects && prefs.showBanner,
-                                                hazeState = hazeStateBanner,
-                                                modifier = cardModifier
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            // Rendered inside the urgent_notifications section above MonthCard
+                            HomeWidget.UPCOMING_SUBSCRIPTIONS -> Unit
                             HomeWidget.RECENT_TRANSACTIONS -> {
                                 item(key = "recent_transactions") {
                                     RecentTransactionsCard(
@@ -417,7 +420,7 @@ fun SharedTransitionScope.HomeScreen(
 
             }
             val contentPadding = PaddingValues(
-                top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
+                top = 4.dp + paddingValues.calculateTopPadding(),
                 bottom = 0.dp
             )
             if (LocalWindowLayout.current.widthDp < HOME_TWO_COLUMN_MIN_WIDTH_DP) {
@@ -425,7 +428,7 @@ fun SharedTransitionScope.HomeScreen(
                     state = lazyListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPadding,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     widgetItems(homeWidgets)
                     item { CustomizeHomeButton { showEditWidgetsSheet = true } }
@@ -444,7 +447,7 @@ fun SharedTransitionScope.HomeScreen(
                             state = state,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                             contentPadding = contentPadding,
-                            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             widgetItems(column)
                             if (state === activityListState) item { CustomizeHomeButton { showEditWidgetsSheet = true } }
@@ -476,112 +479,12 @@ fun SharedTransitionScope.HomeScreen(
 
 
 @Composable
-private fun UpcomingSubscriptionsCard(
-    modifier: Modifier = Modifier,
-    subscriptions: List<Subscription>,
-    summary: SubscriptionSummary?,
-    monthly: ConvertedMoney?,
-    customSymbols: Map<String, String>,
-    categoriesMap: Map<String, Category> = emptyMap(),
-    subcategoriesMap: Map<String, Subcategory> = emptyMap(),
-    onClick: () -> Unit = {},
-    blurEffects: Boolean,
-    hazeState: HazeState = remember { HazeState() }
-) {
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimensions.Radius.xxl))
-            .then(
-                if (blurEffects) Modifier.hazeEffect(
-                    state = hazeState,
-                    block = fun HazeEffectScope.() {
-                        inputScale = HazeInputScale.Auto
-                        style = HazeDefaults.style(
-                            backgroundColor = Color.Transparent,
-                            tint = HazeDefaults.tint(containerColor),
-                            blurRadius = 20.dp,
-                            noiseFactor = -1f,
-                        )
-                        blurredEdgeTreatment = BlurredEdgeTreatment.Unbounded
-                    }
-                ) else Modifier
-            ),
-        shape = RoundedCornerShape(Dimensions.Radius.xxl),
-        colors = CardDefaults.cardColors(
-            containerColor = if (blurEffects) MaterialTheme.colorScheme.surfaceContainerLow.copy(0.5f)
-            else MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(Dimensions.Padding.content),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 12.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.subscriptions_count_format, subscriptions.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = Dimensions.Alpha.subtitle
-                    )
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text =
-                            CurrencyFormatter.format(
-                                monthly?.amount ?: summary?.monthly.takeIf { monthly == null },
-                                monthly?.currency ?: summary?.currency.orEmpty(),
-                                customSymbols
-                            ).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text =
-                            stringResource(R.string.per_month).uppercase(),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = Dimensions.Alpha.subtitle
-                        ),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
-                }
-                if (summary?.complete == false || monthly?.complete == false) Text(
-                    stringResource(R.string.core_complete_incomplete), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            SubscriptionIconsStack(
-                subscriptions = subscriptions,
-                iconSize = 38.dp,
-                modifier = Modifier.padding(end = Spacing.sm),
-                borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                categoriesMap = categoriesMap,
-                subcategoriesMap = subcategoriesMap
-            )
-        }
-    }
-}
-
-@Composable
 private fun NetworthSummaryCards(
     uiState: HomeUiState,
+    showLoans: Boolean = true,
     onCurrencySelected: (String) -> Unit,
     onNetWorthClick: () -> Unit,
+    onOpenLendBorrow: (String?) -> Unit = {},
     breakdownShown: Boolean,
     onToggleBreakdown: () -> Unit,
 ) {
@@ -609,6 +512,9 @@ private fun NetworthSummaryCards(
         onOpenAccounts = onNetWorthClick,
         breakdownShown = breakdownShown,
         onToggleBreakdown = onToggleBreakdown,
+        debts = uiState.debts.takeIf { showLoans },
+        displayTotals = uiState.displayTotals,
+        onOpenLendBorrow = onOpenLendBorrow,
         modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
     )
 }

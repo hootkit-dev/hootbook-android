@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -75,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -133,7 +135,8 @@ fun AiAssistantScreen(
     val unsavedReview = state.phase == AiPhase.REVIEW && state.items.isNotEmpty()
     val leave = {
         if (viewModel.back()) Unit
-        else if (unsavedReview) confirmDiscard = onNavigateBack else onNavigateBack()
+        else if (unsavedReview) confirmDiscard = { viewModel.restart(); onNavigateBack() }
+        else onNavigateBack()
     }
 
     // Back from a review or a running request returns to the request first
@@ -238,18 +241,29 @@ fun AiAssistantScreen(
             }
             when (val phase = state.phase) {
                 AiPhase.COMPOSE -> {
+                    state.pendingReview?.let { pending ->
+                        item(key = "pending_review") {
+                            PendingReviewCard(
+                                pending = pending,
+                                busy = state.saving,
+                                onResume = viewModel::resumePendingReview,
+                                onDiscard = viewModel::discardPendingReview,
+                            )
+                        }
+                    }
                     item(key = "provider") {
                         ProviderCard(
                             state.config,
                             state.models,
                             state.modelLoading,
                             state.modelError,
+                            state.reasoningLevels,
                             state.settings?.configured == true,
+                            state.settings?.hasKey == true,
+                            state.syncActive,
                             busy = state.configBusy,
-                            onLoadModels = { draft ->
-                                viewModel.configChanged { draft }
-                                viewModel.loadModels()
-                            },
+                            onClearModels = viewModel::clearModels,
+                            onLoadModels = viewModel::loadModels,
                             onSave = { draft ->
                                 viewModel.configChanged { draft }
                                 viewModel.saveConfig()
@@ -434,15 +448,83 @@ private fun AiBottomBar(
     }
 }
 
+@Composable
+private fun PendingReviewCard(
+    pending: AiPendingReview,
+    busy: Boolean,
+    onResume: () -> Unit,
+    onDiscard: () -> Unit,
+) {
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.sm + Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                stringResource(R.string.core_ai_pending_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            val createdAtText =
+                "%04d-%02d-%02d %02d:%02d".format(
+                    pending.createdAt.year,
+                    pending.createdAt.month.toInt(),
+                    pending.createdAt.day.toInt(),
+                    pending.createdAt.hour.toInt(),
+                    pending.createdAt.minute.toInt(),
+                )
+            Text(
+                stringResource(
+                    R.string.core_ai_pending_body,
+                    createdAtText,
+                    pending.review.summary ?: "${pending.review.changes.size}",
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End),
+            ) {
+                TextButton(
+                    onClick = onDiscard,
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_pending_discard))
+                }
+                Button(
+                    onClick = onResume,
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_pending_resume))
+                }
+            }
+        }
+    }
+}
+
 /** The provider in one line once it is set up; the form until then, or when changing it. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ProviderCard(
     config: AiConfigDraft,
     models: List<AiModel>,
     modelLoading: Boolean,
     modelError: String?,
+    reasoningLevels: List<AiReasoning>,
     configured: Boolean,
+    hasKey: Boolean,
+    syncActive: Boolean,
     busy: Boolean,
+    onClearModels: () -> Unit,
     onLoadModels: (AiConfigDraft) -> Unit,
     onSave: (AiConfigDraft) -> Unit,
 ) {
@@ -456,7 +538,10 @@ private fun ProviderCard(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
                         stringResource(R.string.ai_provider),
                         style = MaterialTheme.typography.titleSmall,
@@ -464,13 +549,45 @@ private fun ProviderCard(
                     )
                     Text(
                         text =
-                            if (configured) "${config.model} · ${host(config.baseUrl)}"
+                            if (configured || config.model.isNotBlank())
+                                "${config.model} · ${host(config.baseUrl)}"
                             else stringResource(R.string.ai_not_configured),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (hasKey) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                shape = RoundedCornerShape(6.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.core_ai_key_saved_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                )
+                            }
+                            if (syncActive) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    shape = RoundedCornerShape(6.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.core_ai_key_synced_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 if (configured && !editing) {
                     TextButton(shapes = ButtonDefaults.shapes(), onClick = { editing = true }) {
@@ -478,15 +595,33 @@ private fun ProviderCard(
                     }
                 }
             }
+            if (config.model.isNotBlank() && !hasKey) {
+                Text(
+                    text = stringResource(R.string.core_ai_synced_missing_key),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
             if (!configured || editing) {
                 ProviderForm(
-                    config,
-                    models,
-                    modelLoading,
-                    modelError,
-                    configured,
-                    busy,
-                    onLoadModels,
+                    config = config,
+                    models = models,
+                    modelLoading = modelLoading,
+                    modelError = modelError,
+                    reasoningLevels = reasoningLevels,
+                    configured = configured,
+                    hasKey = hasKey,
+                    syncActive = syncActive,
+                    busy = busy,
+                    onClearModels = onClearModels,
+                    onLoadModels = onLoadModels,
+                    onCancel =
+                        if (configured) {
+                            {
+                                editing = false
+                                onClearModels()
+                            }
+                        } else null,
                 ) {
                     onSave(it)
                     editing = false
@@ -497,61 +632,113 @@ private fun ProviderCard(
 }
 
 /** Shortcuts for the provider form: each fills the protocol and address. */
-private enum class AiPreset(val labelRes: Int, val protocol: AiProtocol, val baseUrl: String) {
-    CLAUDE(R.string.ai_preset_claude, AiProtocol.CLAUDE, "https://api.anthropic.com"),
+private enum class AiPreset(val labelRes: Int, val protocol: AiApiProtocol, val baseUrl: String) {
+    CLAUDE(R.string.ai_preset_claude, AiApiProtocol.CLAUDE, "https://api.anthropic.com"),
     // One key for Claude, Gemini, GPT, DeepSeek, Qwen…
     OPENROUTER(
         R.string.ai_preset_openrouter,
-        AiProtocol.OPEN_AI_COMPATIBLE,
+        AiApiProtocol.OPEN_AI_COMPATIBLE,
         "https://openrouter.ai/api/v1",
     ),
-    CUSTOM(R.string.ai_preset_custom, AiProtocol.OPEN_AI_COMPATIBLE, "");
+    CUSTOM(R.string.ai_preset_custom, AiApiProtocol.OPEN_AI_COMPATIBLE, "");
 
     companion object {
         fun of(config: AiConfigDraft): AiPreset =
             when {
-                config.protocol == AiProtocol.CLAUDE -> CLAUDE
+                config.protocol == AiApiProtocol.CLAUDE -> CLAUDE
                 host(config.baseUrl) == "openrouter.ai" -> OPENROUTER
                 else -> CUSTOM
             }
     }
 }
 
+private enum class AiCustomEndpoint(val labelRes: Int, val baseUrl: String) {
+    DEEPSEEK(R.string.core_ai_endpoint_deepseek, "https://api.deepseek.com/v1"),
+    OPENAI(R.string.core_ai_endpoint_openai, "https://api.openai.com/v1"),
+    GEMINI(
+        R.string.core_ai_endpoint_gemini,
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+    ),
+    QWEN(R.string.core_ai_endpoint_qwen, "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+    SILICONFLOW(R.string.core_ai_endpoint_siliconflow, "https://api.siliconflow.cn/v1"),
+    KIMI(R.string.core_ai_endpoint_kimi, "https://api.moonshot.cn/v1"),
+    GLM(R.string.core_ai_endpoint_glm, "https://open.bigmodel.cn/api/paas/v4"),
+    VOLCENGINE(R.string.core_ai_endpoint_volcengine, "https://ark.cn-beijing.volces.com/api/v3"),
+    XAI(R.string.core_ai_endpoint_xai, "https://api.x.ai/v1"),
+    GROQ(R.string.core_ai_endpoint_groq, "https://api.groq.com/openai/v1"),
+}
+
 /**
- * Provider, key, then model: once the key is in, the provider's models load and the picker opens,
- * so the model is chosen from what the key can actually use.
+ * Provider, key, then model: once the key and address are ready, the provider's models load in the
+ * background, and the picker also allows entering any model ID directly.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ProviderForm(
     config: AiConfigDraft,
     models: List<AiModel>,
     modelLoading: Boolean,
     modelError: String?,
+    reasoningLevels: List<AiReasoning>,
     configured: Boolean,
+    hasKey: Boolean,
+    syncActive: Boolean,
     busy: Boolean,
+    onClearModels: () -> Unit,
     onLoadModels: (AiConfigDraft) -> Unit,
+    onCancel: (() -> Unit)? = null,
     onSave: (AiConfigDraft) -> Unit,
 ) {
-    var preset by rememberSaveable { mutableStateOf(AiPreset.of(config)) }
-    var baseUrl by rememberSaveable { mutableStateOf(config.baseUrl) }
-    var model by rememberSaveable { mutableStateOf(config.model) }
+    val savedPreset = remember(config.protocol, config.baseUrl) { AiPreset.of(config) }
+    val savedHost = remember(config.baseUrl) { host(cleanBaseUrl(config.baseUrl)) }
+    var preset by
+        rememberSaveable(config.protocol, config.baseUrl) { mutableStateOf(AiPreset.of(config)) }
+    var baseUrl by
+        rememberSaveable(config.protocol, config.baseUrl) { mutableStateOf(config.baseUrl) }
+    var model by
+        rememberSaveable(config.protocol, config.baseUrl, config.model) {
+            mutableStateOf(config.model)
+        }
+    var reasoning by
+        rememberSaveable(config.protocol, config.baseUrl, config.model, config.reasoning) {
+            mutableStateOf(config.reasoning)
+        }
     // Not saveable: the key must not land in the saved-state bundle
-    var apiKey by remember { mutableStateOf(config.apiKey) }
+    var apiKey by remember(config.protocol, config.baseUrl) { mutableStateOf(config.apiKey) }
+    var editingKey by
+        remember(hasKey, config.protocol, config.baseUrl) { mutableStateOf(!hasKey) }
     var picking by remember { mutableStateOf(false) }
-    val ready = (apiKey.isNotBlank() || configured) && baseUrl.isNotBlank()
 
-    // List what the key can use once typing pauses; open the picker if nothing usable is chosen
-    LaunchedEffect(preset, baseUrl, apiKey) {
+    val cleanedUrl = cleanBaseUrl(baseUrl)
+    val currentHost = host(cleanedUrl)
+    val matchesSavedProvider =
+        hasKey &&
+            preset == savedPreset &&
+            currentHost.isNotEmpty() &&
+            currentHost.equals(savedHost, ignoreCase = true)
+    val usingSavedKey = hasKey && !editingKey && matchesSavedProvider
+    val effectiveKey = if (usingSavedKey) "" else cleanApiKey(apiKey)
+    val hasUsableKey = usingSavedKey || effectiveKey.isNotEmpty()
+    val ready = hasUsableKey && isReadyHttpsUrl(cleanedUrl)
+
+    // List what the key can use once typing pauses
+    LaunchedEffect(preset, cleanedUrl, effectiveKey, usingSavedKey) {
         if (!ready) return@LaunchedEffect
-        delay(600)
-        onLoadModels(AiConfigDraft(preset.protocol, baseUrl.trim().trimEnd('/'), "", apiKey.trim()))
+        delay(800)
+        onLoadModels(
+            AiConfigDraft(
+                preset.protocol,
+                cleanedUrl,
+                "",
+                effectiveKey,
+                reasoning = reasoning,
+            )
+        )
     }
-    // On first setup, or when the chosen model is not on the list, open the picker once per list
-    var offered by rememberSaveable { mutableStateOf(configured) }
     LaunchedEffect(models) {
-        if (models.isEmpty()) return@LaunchedEffect
-        if (!offered || models.none { it.id == model }) picking = true
-        offered = true
+        if (models.size == 1 && model.isBlank()) {
+            model = models.first().id
+        }
     }
 
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -561,8 +748,18 @@ private fun ProviderForm(
                 onClick = {
                     if (preset != p) {
                         preset = p
-                        baseUrl = p.baseUrl
-                        model = ""
+                        if (p == savedPreset && config.baseUrl.isNotBlank()) {
+                            baseUrl = config.baseUrl
+                            model = config.model
+                            reasoning = config.reasoning
+                            if (hasKey && apiKey.isBlank()) editingKey = false
+                        } else {
+                            baseUrl = p.baseUrl
+                            model = ""
+                            reasoning = AiReasoning.PROVIDER_DEFAULT
+                            if (hasKey) editingKey = true
+                        }
+                        onClearModels()
                     }
                 },
                 shape = SegmentedButtonDefaults.itemShape(index, AiPreset.entries.size),
@@ -573,11 +770,79 @@ private fun ProviderForm(
             }
         }
     }
+    if (preset == AiPreset.CUSTOM) {
+        val matchedEndpoint =
+            AiCustomEndpoint.entries.firstOrNull {
+                cleanedUrl.equals(it.baseUrl, ignoreCase = true)
+            }
+        androidx.compose.foundation.lazy.LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            item(key = "custom_endpoint") {
+                val isCustomSelected = matchedEndpoint == null
+                androidx.compose.material3.FilterChip(
+                    selected = isCustomSelected,
+                    onClick = {
+                        if (!isCustomSelected) {
+                            baseUrl = ""
+                            model = ""
+                            reasoning = AiReasoning.PROVIDER_DEFAULT
+                            if (hasKey) editingKey = true
+                            onClearModels()
+                        }
+                    },
+                    label = { Text(stringResource(R.string.core_ai_endpoint_custom), maxLines = 1) },
+                )
+            }
+            items(AiCustomEndpoint.entries) { endpoint ->
+                val selected = matchedEndpoint == endpoint
+                androidx.compose.material3.FilterChip(
+                    selected = selected,
+                    onClick = {
+                        if (!selected) {
+                            baseUrl = endpoint.baseUrl
+                            val matchesSaved =
+                                hasKey &&
+                                    savedPreset == AiPreset.CUSTOM &&
+                                    host(endpoint.baseUrl).equals(savedHost, ignoreCase = true)
+                            if (matchesSaved && config.baseUrl.isNotBlank()) {
+                                model = config.model
+                                reasoning = config.reasoning
+                                if (apiKey.isBlank()) editingKey = false
+                            } else {
+                                model = ""
+                                reasoning = AiReasoning.PROVIDER_DEFAULT
+                                if (hasKey) editingKey = true
+                            }
+                            onClearModels()
+                        }
+                    },
+                    label = { Text(stringResource(endpoint.labelRes), maxLines = 1) },
+                )
+            }
+        }
+    }
+    val fieldContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest
     // Claude keeps its address editable for a proxy or relay
     if (preset != AiPreset.OPENROUTER) {
         TextField(
             value = baseUrl,
-            onValueChange = { baseUrl = it },
+            onValueChange = {
+                val prevClean = cleanBaseUrl(baseUrl)
+                baseUrl = it
+                if (!cleanBaseUrl(it).equals(prevClean, ignoreCase = true)) {
+                    reasoning = AiReasoning.PROVIDER_DEFAULT
+                }
+                if (
+                    hasKey &&
+                        !editingKey &&
+                        !host(cleanBaseUrl(it)).equals(savedHost, ignoreCase = true)
+                ) {
+                    editingKey = true
+                }
+                onClearModels()
+            },
             singleLine = true,
             label = { Text(stringResource(R.string.ai_base_url)) },
             placeholder = {
@@ -588,40 +853,224 @@ private fun ProviderForm(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             shape = RoundedCornerShape(12.dp),
-            colors = hootbookTextFieldColors(),
+            colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
             modifier = Modifier.fillMaxWidth(),
         )
     }
-    TextField(
-        value = apiKey,
-        onValueChange = { apiKey = it },
-        singleLine = true,
-        label = { Text(stringResource(R.string.ai_api_key)) },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        shape = RoundedCornerShape(12.dp),
-        colors = hootbookTextFieldColors(),
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (ready) {
-        ModelField(
-            model = model,
-            models = models,
-            loading = modelLoading,
-            error = modelError,
-            onClick = { picking = true },
-            onRetry = {
-                onLoadModels(
-                    AiConfigDraft(preset.protocol, baseUrl.trim().trimEnd('/'), "", apiKey.trim())
+    if (usingSavedKey) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextField(
+                    value = "••••••••••••••••",
+                    onValueChange = {},
+                    enabled = false,
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.ai_api_key)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
+                    modifier = Modifier.weight(1f),
                 )
-            },
-        )
+                OutlinedButton(
+                    onClick = {
+                        editingKey = true
+                        apiKey = ""
+                        onClearModels()
+                    },
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_key_modify))
+                }
+            }
+            Text(
+                text = stringResource(
+                    if (syncActive) R.string.core_ai_key_masked_synced_hint
+                    else R.string.core_ai_key_masked_hint
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextField(
+                value = apiKey,
+                onValueChange = {
+                    apiKey = it
+                    onClearModels()
+                },
+                singleLine = true,
+                label = { Text(stringResource(R.string.ai_api_key)) },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                shape = RoundedCornerShape(12.dp),
+                colors = hootbookTextFieldColors(containerColor = fieldContainerColor),
+                modifier = Modifier.weight(1f),
+            )
+            if (matchesSavedProvider) {
+                TextButton(
+                    onClick = {
+                        editingKey = false
+                        apiKey = ""
+                        onClearModels()
+                    },
+                    enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    Text(stringResource(R.string.core_ai_key_cancel_modify))
+                }
+            }
+        }
     }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    val retryLoadModels = {
+        if (ready) {
+            onLoadModels(
+                AiConfigDraft(
+                    preset.protocol,
+                    cleanedUrl,
+                    "",
+                    effectiveKey,
+                    reasoning = reasoning,
+                )
+            )
+        }
+    }
+    ModelField(
+        model = model,
+        models = models,
+        loading = modelLoading,
+        error = modelError,
+        enabled = !busy,
+        onClick = {
+            picking = true
+            if (ready && models.isEmpty() && !modelLoading) {
+                retryLoadModels()
+            }
+        },
+        onRetry = retryLoadModels,
+    )
+    if (model.isNotBlank()) {
+        val chosenModel = models.firstOrNull { it.id == model }
+        val modelReasoning = chosenModel?.reasoning
+        val endpointLevels =
+            if (matchesSavedProvider && reasoningLevels.isNotEmpty()) {
+                reasoningLevels
+            } else {
+                endpointReasoningLevels(preset.protocol, cleanedUrl)
+            }
+        val availableLevels =
+            if (modelReasoning?.known == true) {
+                if (modelReasoning.levels.isEmpty()) emptyList()
+                else
+                    listOf(AiReasoning.PROVIDER_DEFAULT) +
+                        modelReasoning.levels.filter { it != AiReasoning.PROVIDER_DEFAULT }
+            } else {
+                listOf(AiReasoning.PROVIDER_DEFAULT) +
+                    endpointLevels.filter { it != AiReasoning.PROVIDER_DEFAULT }
+            }
+        if (availableLevels.isNotEmpty()) {
+            val effectiveReasoning =
+                if (reasoning in availableLevels) reasoning else AiReasoning.PROVIDER_DEFAULT
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    stringResource(R.string.core_ai_reasoning),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    availableLevels.forEachIndexed { index, level ->
+                        val isSelected = effectiveReasoning == level
+                        val itemWeight = when (level) {
+                            AiReasoning.PROVIDER_DEFAULT -> 1.85f
+                            AiReasoning.OFF -> 1.15f
+                            else -> 0.9f
+                        }
+                        Surface(
+                            onClick = { reasoning = level },
+                            shape = SegmentedButtonDefaults.itemShape(index, availableLevels.size),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                androidx.compose.ui.graphics.Color.Transparent
+                            },
+                            contentColor = if (isSelected) {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outline,
+                            ),
+                            modifier = Modifier
+                                .weight(itemWeight)
+                                .heightIn(min = 40.dp),
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp),
+                            ) {
+                                Text(
+                                    text = reasoningLabel(level),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                }
+                if (
+                    modelReasoning?.known != true &&
+                        effectiveReasoning != AiReasoning.PROVIDER_DEFAULT
+                ) {
+                    Text(
+                        stringResource(R.string.core_ai_reasoning_custom_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End),
+    ) {
+        if (onCancel != null) {
+            TextButton(
+                shapes = ButtonDefaults.shapes(),
+                onClick = onCancel,
+                enabled = !busy,
+            ) {
+                Text(stringResource(R.string.ai_cancel))
+            }
+        }
         Button(
             shapes = ButtonDefaults.shapes(),
-            onClick = { onSave(AiConfigDraft(preset.protocol, baseUrl, model, apiKey)) },
-            enabled = !busy && ready && model.isNotBlank(),
+            onClick = {
+                onSave(
+                    AiConfigDraft(
+                        preset.protocol,
+                        cleanedUrl,
+                        model.trim(),
+                        effectiveKey,
+                        reasoning = reasoning,
+                    )
+                )
+            },
+            enabled = !busy && hasUsableKey && cleanedUrl.isNotBlank() && model.isNotBlank(),
         ) {
             Text(stringResource(R.string.ai_save))
         }
@@ -631,7 +1080,13 @@ private fun ProviderForm(
         ModelPicker(
             models = models,
             selected = model,
+            loading = modelLoading,
+            error = modelError,
+            onRetry = if (ready) retryLoadModels else null,
             onPick = {
+                if (it != model) {
+                    reasoning = AiReasoning.PROVIDER_DEFAULT
+                }
                 model = it
                 picking = false
             },
@@ -639,6 +1094,16 @@ private fun ProviderForm(
         )
     }
 }
+
+@Composable
+private fun reasoningLabel(level: AiReasoning): String =
+    when (level) {
+        AiReasoning.PROVIDER_DEFAULT, AiReasoning.UNKNOWN -> stringResource(R.string.core_ai_reasoning_default)
+        AiReasoning.OFF -> stringResource(R.string.core_ai_reasoning_none)
+        AiReasoning.LOW -> stringResource(R.string.core_ai_reasoning_low)
+        AiReasoning.MEDIUM -> stringResource(R.string.core_ai_reasoning_medium)
+        AiReasoning.HIGH -> stringResource(R.string.core_ai_reasoning_high)
+    }
 
 /** The chosen model as a row that opens the picker, with loading and error states. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -648,14 +1113,15 @@ private fun ModelField(
     models: List<AiModel>,
     loading: Boolean,
     error: String?,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val chosen = models.firstOrNull { it.id == model }
     Surface(
         onClick = onClick,
-        enabled = !loading,
-        shape = MaterialTheme.shapes.small,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -675,9 +1141,9 @@ private fun ModelField(
                 Text(
                     text =
                         when {
-                            loading -> stringResource(R.string.ai_models_loading)
                             chosen != null -> chosen.displayName
                             model.isNotBlank() -> model
+                            loading -> stringResource(R.string.ai_models_loading)
                             else -> stringResource(R.string.ai_choose_model)
                         },
                     style = MaterialTheme.typography.bodyLarge,
@@ -687,6 +1153,7 @@ private fun ModelField(
                 val detail =
                     when {
                         error != null -> error
+                        loading && model.isNotBlank() -> stringResource(R.string.ai_models_loading)
                         chosen != null && chosen.displayName != chosen.id -> chosen.id
                         models.isNotEmpty() && chosen == null ->
                             stringResource(R.string.ai_models_count, models.size)
@@ -717,18 +1184,22 @@ private fun ModelField(
 }
 
 /** The provider's models, searchable by name or id; those that read images are marked. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ModelPicker(
     models: List<AiModel>,
     selected: String,
+    loading: Boolean = false,
+    error: String? = null,
+    onRetry: (() -> Unit)? = null,
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
+    val typed = query.trim()
     val shown =
         remember(models, query) {
-            val q = query.trim().lowercase()
+            val q = typed.lowercase()
             if (q.isEmpty()) models
             else models.filter { q in it.displayName.lowercase() || q in it.id.lowercase() }
         }
@@ -742,13 +1213,21 @@ private fun ModelPicker(
             singleLine = true,
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             placeholder = { Text(stringResource(R.string.ai_search_models)) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions =
+                KeyboardActions(
+                    onDone = {
+                        if (typed.isNotEmpty()) {
+                            onPick(typed)
+                        }
+                    }
+                ),
             shape = RoundedCornerShape(12.dp),
             colors = hootbookTextFieldColors(),
             modifier = Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
         )
         LazyColumn(contentPadding = PaddingValues(vertical = Spacing.sm)) {
             // An id the list does not have (a provider without a model list, a brand-new model)
-            val typed = query.trim()
             if (typed.isNotEmpty() && models.none { it.id == typed }) {
                 item(key = "typed") {
                     Text(
@@ -763,6 +1242,52 @@ private fun ModelPicker(
                                     vertical = Spacing.md,
                                 ),
                     )
+                }
+            }
+            if (loading && models.isEmpty()) {
+                item(key = "loading") {
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(
+                                    horizontal = Dimensions.Padding.content,
+                                    vertical = Spacing.md,
+                                ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        LoadingIndicator(modifier = Modifier.size(24.dp))
+                        Text(
+                            stringResource(R.string.ai_models_loading),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else if (error != null && models.isEmpty()) {
+                item(key = "error") {
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(
+                                    horizontal = Dimensions.Padding.content,
+                                    vertical = Spacing.sm,
+                                ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        Text(
+                            error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (onRetry != null) {
+                            TextButton(shapes = ButtonDefaults.shapes(), onClick = onRetry) {
+                                Text(stringResource(R.string.ai_retry))
+                            }
+                        }
+                    }
                 }
             }
             items(shown, key = { it.id }) { m ->
@@ -913,5 +1438,46 @@ private fun PasswordDialog(name: String, onResult: (String?) -> Unit) {
         },
     )
 }
+
+private fun cleanBaseUrl(raw: String): String {
+    val trimmed = raw.trim().trimEnd('/')
+    if (trimmed.isEmpty()) return ""
+    return if (
+        trimmed.startsWith("https://", ignoreCase = true) ||
+            trimmed.startsWith("http://", ignoreCase = true)
+    ) {
+        trimmed
+    } else {
+        "https://$trimmed"
+    }
+}
+
+private fun cleanApiKey(raw: String): String {
+    val trimmed = raw.trim()
+    return if (trimmed.startsWith("Bearer ", ignoreCase = true)) {
+        trimmed.substring(7).trim()
+    } else {
+        trimmed
+    }
+}
+
+private fun isReadyHttpsUrl(url: String): Boolean =
+    runCatching {
+        val u = URI(url)
+        val h = u.host ?: return false
+        u.scheme.equals("https", ignoreCase = true) &&
+            (h.equals("localhost", ignoreCase = true) ||
+                ('.' in h && !h.startsWith('.') && !h.endsWith('.') && h.substringAfterLast('.').length >= 2))
+    }.getOrDefault(false)
+
+private fun endpointReasoningLevels(protocol: AiApiProtocol, baseUrl: String): List<AiReasoning> =
+    if (
+        protocol == AiApiProtocol.CLAUDE ||
+            host(baseUrl).equals("openrouter.ai", ignoreCase = true)
+    ) {
+        listOf(AiReasoning.OFF, AiReasoning.LOW, AiReasoning.MEDIUM, AiReasoning.HIGH)
+    } else {
+        listOf(AiReasoning.LOW, AiReasoning.MEDIUM, AiReasoning.HIGH)
+    }
 
 private fun host(url: String): String = runCatching { URI(url).host }.getOrNull() ?: url

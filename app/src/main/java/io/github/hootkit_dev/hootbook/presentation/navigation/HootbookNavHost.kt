@@ -67,6 +67,7 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.investments.Inves
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.appearance.AppearanceScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.applock.AppLockSettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.dataprivacy.DataPrivacyScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.backup.BackupScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.currency.CurrencySettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.app.LocaleGate
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.notifications.NotificationScreen
@@ -75,6 +76,8 @@ import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.MerchantI
 import io.github.hootkit_dev.hootbook.presentation.ui.features.profile.ProfileScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.SettingsScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.settings.sync.SyncScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.tags.DuplicateDetectionScreen
+import io.github.hootkit_dev.hootbook.presentation.ui.features.tags.TagsManagementScreen
 import io.github.hootkit_dev.hootbook.presentation.ui.features.transactions.*
 import io.github.hootkit_dev.hootbook.presentation.ui.features.add.AddScreen
 import androidx.activity.compose.BackHandler
@@ -137,6 +140,9 @@ fun HootbookNavHost(
             Table.BUDGETS -> BudgetDetail(id)
             Table.SUBSCRIPTIONS -> Subscriptions(id)
             Table.PEOPLE -> PersonDetail(id)
+            Table.TAGS -> Transactions(tagId = id)
+            Table.AI_SETTINGS -> AiAssistant
+            Table.BROKERAGE_CONNECTIONS -> Investments(connectionId = id)
             else -> {
                 recordHint = "$table · $id"
                 when (table) {
@@ -233,6 +239,7 @@ fun HootbookNavHost(
                                     if (route == Transactions()) null else emptyTransactionFilter().copy(
                                         accountIds = listOfNotNull(route.accountId),
                                         categoryIds = listOfNotNull(route.categoryId),
+                                        tagIds = listOfNotNull(route.tagId),
                                         currency = route.currency,
                                         kinds = route.kinds?.split(",")?.map(TransactionKind::valueOf).orEmpty(),
                                         from = route.from?.let { java.time.LocalDate.parse(it).atStartOfDay().coreTime() },
@@ -321,10 +328,11 @@ fun HootbookNavHost(
                             ) { entry ->
                                 AccountsListDetail(animatedContentScope = this@composable,
                                     onOpen = { go(AccountDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
-                                    onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) }) { open ->
+                                    onBrokerage = { connection, id -> go(Investments(connection, id)) }) { open ->
                                     ManageAccountsScreen(onNavigateBack = back, onNavigateToAccountDetail = open,
                                         onNavigateToAddAccount = { go(AddAccount(it?.name)) },
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
+                                        onBrokerage = { connection, id -> go(Investments(connection, id)) },
+                                        onNavigateToLendBorrow = { go(LendBorrow(it)) })
                                 }
                             }
                             composable<AccountCategoryRoute>(
@@ -337,10 +345,10 @@ fun HootbookNavHost(
                                 val category = AccountCategory.entries.firstOrNull { it.name == route.category }
                                 AccountsListDetail(animatedContentScope = this@composable,
                                     onOpen = { go(AccountDetail(it)) }, onTransaction = { go(TransactionDetail(it)) },
-                                    onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) }) { open ->
+                                    onBrokerage = { connection, id -> go(Investments(connection, id)) }) { open ->
                                     ManageAccountsScreen(onNavigateBack = back, onNavigateToAccountDetail = open,
                                         onNavigateToAddAccount = { go(AddAccount(it?.name)) }, category = category,
-                                        onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) })
+                                        onBrokerage = { connection, id -> go(Investments(connection, id)) })
                                 }
                             }
                             composable<AccountDetail>(
@@ -355,7 +363,7 @@ fun HootbookNavHost(
                                         AccountDetailScreen(accountId = route.accountId, initialHistory = route.history,
                                             animatedContentScope = this@composable, onNavigateBack = back,
                                             onTransaction = { go(TransactionDetail(it)) },
-                                            onBrokerage = { connection, id -> go(Investments(connection.toString(), id)) },
+                                            onBrokerage = { connection, id -> go(Investments(connection, id)) },
                                             onAllTransactions = { go(Transactions(accountId = route.accountId)) })
                                     }
                                 }
@@ -369,7 +377,7 @@ fun HootbookNavHost(
                                 val route = entry.toRoute<AddAccount>()
                                 ReadableWidth {
                                     AddAccountWithBrokerAutoSync(onNavigateBack = back,
-                                        onOpenConnection = { connection -> go(Investments(connection.id.toString(), connection.accounts.firstOrNull()?.accountId)) },
+                                        onOpenConnection = { connection -> go(Investments(connection.id, connection.accounts.firstOrNull()?.accountId)) },
                                         initialCategory = AccountCategory.entries.firstOrNull { it.name == route.category })
                                 }
                             }
@@ -381,6 +389,29 @@ fun HootbookNavHost(
                             ) { entry ->
                                 ReadableWidth {
                                     CategoriesScreen(onNavigateBack = back, blurEffects = prefs.blur)
+                                }
+                            }
+                            composable<TagsManagement>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) {
+                                ReadableWidth {
+                                    TagsManagementScreen(
+                                        onBack = back,
+                                        onOpenTagTransactions = { tagId -> go(Transactions(tagId = tagId)) },
+                                    )
+                                }
+                            }
+                            composable<DuplicateDetection>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) {
+                                ReadableWidth {
+                                    DuplicateDetectionScreen(onBack = back)
                                 }
                             }
                             composable<Budgets>(
@@ -410,6 +441,7 @@ fun HootbookNavHost(
                                     SharedTransitionLayout {
                                         BudgetDetailScreen(budgetId = route.budgetId, startDate = route.startDate, endDate = route.endDate,
                                             onNavigateBack = back, onNavigateToHistory = { go(BudgetHistory(it)) },
+                                            onTransactionClick = { go(TransactionDetail(it)) },
                                             animatedContentScope = this@composable, sharedElementKey = route.sharedElementKey,
                                             blurEffects = prefs.blur)
                                     }
@@ -500,18 +532,23 @@ fun HootbookNavHost(
                                     val state by vm.state.collectAsStateWithLifecycle()
                                     var opened by rememberSaveable { mutableStateOf(false) }
                                     LaunchedEffect(route, state.loading, state.connections) {
-                                        val connection = route.connectionId?.toLongOrNull()
+                                        val connection = route.connectionId
                                         val account = route.accountId
                                         if (!state.loading && !opened) {
-                                            if (connection != null && connection > 0L && !account.isNullOrBlank()) {
+                                            if (!connection.isNullOrBlank() && !account.isNullOrBlank()) {
                                                 opened = true
                                                 vm.selectAccount(BrokerAccountRef(connection, account))
+                                            } else if (!connection.isNullOrBlank()) {
+                                                opened = true
+                                                vm.selectConnection(connection)
                                             } else if (state.connections.isNotEmpty()) {
                                                 val firstConn = state.connections.first()
                                                 val firstAccount = firstConn.accounts.firstOrNull()?.accountId
+                                                opened = true
                                                 if (firstAccount != null) {
-                                                    opened = true
                                                     vm.selectAccount(BrokerAccountRef(firstConn.id, firstAccount))
+                                                } else {
+                                                    vm.selectConnection(firstConn.id)
                                                 }
                                             }
                                         }
@@ -543,12 +580,15 @@ fun HootbookNavHost(
                             ) { entry ->
                                 ReadableWidth {
                                     SettingsScreen(onNavigateBack = back, onNavigateToCategories = { go(Categories) },
+                                        onNavigateToTags = { go(TagsManagement) },
+                                        onNavigateToDuplicates = { go(DuplicateDetection) },
                                         onNavigateToManageAccounts = { go(ManageAccounts) }, onNavigateToQuickTemplates = { go(QuickTemplates) },
                                         onNavigateToAiAssistant = { go(AiAssistant) }, onNavigateToAppearance = { go(Appearance) },
                                         onNavigateToProfile = { go(Profile) }, onNavigateToNotifications = { go(NotificationSettings) },
                                         onNavigateToBudgets = { go(Budgets()) }, onNavigateToSubscriptions = { go(Subscriptions()) },
                                         onNavigateToLendBorrow = { go(LendBorrow()) },
-                                        onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToCloudBackup = { go(DataPrivacy) },
+                                        onNavigateToDataPrivacy = { go(DataPrivacy) }, onNavigateToBackup = { go(BackupRestore) },
+                                        onNavigateToSync = { go(CloudSync) },
                                         onNavigateToAbout = { go(About) }, onNavigateToCurrency = { go(CurrencySettings()) }, blurEffects = prefs.blur)
                                 }
                             }
@@ -569,7 +609,17 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    DataPrivacyScreen(back, onNavigateToAccounts = { go(ManageAccounts) }, onNavigateToSync = { go(CloudSync) }, blurEffects = prefs.blur)
+                                    DataPrivacyScreen(back)
+                                }
+                            }
+                            composable<BackupRestore>(
+                                enterTransition = HootbookTransitions.horizontalSlideEnter,
+                                exitTransition = HootbookTransitions.horizontalSlideExit,
+                                popEnterTransition = HootbookTransitions.horizontalSlidePopEnter,
+                                popExitTransition = HootbookTransitions.horizontalSlidePopExit,
+                            ) { entry ->
+                                ReadableWidth {
+                                    BackupScreen(back)
                                 }
                             }
                             composable<CloudSync>(
@@ -579,7 +629,7 @@ fun HootbookNavHost(
                                 popExitTransition = HootbookTransitions.horizontalSlidePopExit,
                             ) { entry ->
                                 ReadableWidth {
-                                    SyncScreen(back)
+                                    SyncScreen(back, onOpenRecord = ::record)
                                 }
                             }
                             composable<Profile>(
@@ -806,7 +856,7 @@ private fun AccountsListDetail(
     animatedContentScope: AnimatedVisibilityScope,
     onOpen: (String) -> Unit,
     onTransaction: (String) -> Unit,
-    onBrokerage: (Long, String) -> Unit,
+    onBrokerage: (String, String) -> Unit,
     list: @Composable (openAccount: (String) -> Unit) -> Unit,
 ) {
     if (LocalWindowLayout.current.widthDp < ACCOUNT_LIST_DETAIL_MIN_WIDTH_DP) {

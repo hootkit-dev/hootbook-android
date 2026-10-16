@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 设置 → 同步（docs/sync.md） -->
 <resources>
-    <string name="sync_intro">登录同一账号的设备会保持同一份账本。记录在上传前就在本机用同步密码加密，只有你的设备能读取。附件、商户图标、设置、AI 密钥和券商连接都不会上传。</string>
+    <string name="sync_intro">登录同一账号的设备会保持同一份账本。账本记录、AI 配置（含密钥）与券商连接（含凭据）在上传前均在本机用同步密码端到端加密，只有你的设备能读取。交易附件、商户图标和本地界面偏好不会上传。</string>
     <string name="sync_unavailable_title">此版本不支持同步</string>
     <string name="sync_unavailable_body">同步暂不可用。您仍可在「备份与同步」中用备份文件迁移数据。</string>
     <string name="sync_sign_in">使用 Google 账号登录</string>
@@ -32,7 +32,6 @@
     <string name="sync_done">同步完成</string>
     <string name="sync_failed">同步失败，联网后会自动重试。</string>
     <!-- Backup & sync page -->
-    <string name="sync_firebase_title">Firebase 同步</string>
     <string name="sync_enabled">同步</string>
     <string name="sync_enabled_body">此设备上的更改会自动同步</string>
     <string name="sync_paused_body">已暂停。账户和密钥会保留，重新打开即可继续。</string>
@@ -51,4 +50,58 @@
     <string name="backup_export_local_body">选择要包含的数据，再选择保存位置</string>
     <string name="backup_restore_from">从%1$s恢复</string>
     <string name="backup_restore_local_body">选择备份文件</string>
+    <string name="sync_first_sync_choice_title">本机和云端都有数据</string>
+    <string name="sync_first_sync_choice_body">请选择合并两边的数据，或只保留云端数据并替换本机数据。</string>
+    <string name="sync_first_sync_merge">合并两边数据</string>
+    <string name="sync_first_sync_merge_body">保留本机已有记录，并与云端账本合并。</string>
+    <string name="sync_first_sync_replace">只用云端数据（替换本机）</string>
+    <string name="sync_first_sync_replace_body">会先在本地生成安全备份，再用云端数据替换本机记录（含 AI 配置与券商连接）。</string>
+    <string name="sync_first_sync_replace_confirm_title">用云端数据替换本机？</string>
+    <string name="sync_first_sync_replace_confirm_body">Core 会先自动创建本地安全备份，然后清空本机账本记录、AI 配置与券商连接，并拉取云端数据。</string>
+    <string name="sync_conflicts_title">同步冲突</string>
+    <string name="sync_conflicts_pending_badge">待处理</string>
+    <string name="sync_conflicts_auto_mine_badge">已自动处理 · 保留本机</string>
+    <string name="sync_conflicts_auto_theirs_badge">已自动处理 · 保留云端</string>
+    <string name="sync_conflict_kind_both_edited">两端同时修改</string>
+    <string name="sync_conflict_kind_edited_deleted">本机修改 · 云端已删除</string>
+    <string name="sync_conflict_kind_deleted_edited">本机已删除 · 云端修改</string>
+    <string name="sync_conflict_review">处理冲突</string>
+    <string name="sync_conflict_review_done">查看详情</string>
+    <string name="sync_conflict_open_record">打开记录</string>
+    <string name="sync_conflict_dismiss">忽略</string>
+    <string name="sync_conflict_dismiss_all">清理已自动处理项</string>
+    <string name="sync_conflict_dialog_title">处理同步冲突</string>
+    <string name="sync_conflict_base">基准版本</string>
+    <string name="sync_conflict_mine">本机版本</string>
+    <string name="sync_conflict_theirs">云端版本</string>
+    <string name="sync_conflict_keep_mine">保留本机</string>
+    <string name="sync_conflict_keep_theirs">保留云端</string>
+    <string name="sync_conflict_apply_per_field">按字段组合并</string>
+    <string name="sync_conflict_deleted_value">（已删除）</string>
+    <string name="sync_conflict_secret_value">••••••（加密密钥/凭据）</string>
+    <string name="sync_policy_title">冲突处理策略</string>
+    <string name="sync_policy_both_edited">两端同时修改同一字段时</string>
+    <string name="sync_policy_delete_vs_edit">一端删除、另一端修改时</string>
+    <string name="sync_policy_option_mine">本机优先</string>
+    <string name="sync_policy_option_theirs">云端优先</string>
+    <string name="sync_policy_option_ask">每次询问</string>
+    <string name="sync_policy_option_delete">删除优先</string>
+    <string name="sync_policy_option_edit">保留修改</string>
+    <string name="sync_notices_title">云端删除提醒</string>
+    <string name="sync_notice_deleted_body">已在其他设备删除，但以下本机记录仍引用它：</string>
+    <string name="sync_table_transactions">交易记录</string>
+    <string name="sync_table_accounts">账户</string>
+    <string name="sync_table_budgets">预算</string>
+    <string name="sync_table_subscriptions">订阅与周期账单</string>
+    <string name="sync_table_debts">借贷记录</string>
+    <string name="sync_table_people">联系人</string>
+    <string name="sync_table_categories">分类</string>
+    <string name="sync_table_subcategories">子分类</string>
+    <string name="sync_table_tags">标签</string>
+    <string name="sync_table_quick_templates">快捷模板</string>
+    <string name="sync_table_ai_settings">AI 服务配置</string>
+    <string name="sync_table_brokerage_connections">券商连接</string>
+    <string name="sync_table_settings">账本设置</string>
+    <string name="home_sync_conflict_banner_title">有 %1$d 项云端同步冲突待处理</string>
+    <string name="home_sync_conflict_banner_subtitle">点击前往云端同步对比并解决冲突</string>
 </resources>

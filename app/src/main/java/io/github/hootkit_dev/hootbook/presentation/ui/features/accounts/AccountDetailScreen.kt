@@ -129,7 +129,7 @@ fun SharedTransitionScope.AccountDetailScreen(
     accountId: String,
     onNavigateBack: () -> Unit,
     onTransaction: (String) -> Unit,
-    onBrokerage: (Long, String) -> Unit,
+    onBrokerage: (String, String) -> Unit,
     accountDetailViewModel: AccountDetailViewModel = hiltViewModel(),
     manageViewModel: ManageAccountsViewModel = hiltViewModel(),
     animatedContentScope: AnimatedVisibilityScope? = null,
@@ -149,8 +149,6 @@ fun SharedTransitionScope.AccountDetailScreen(
     var showCalibration by remember(accountId) { mutableStateOf(false) }
     var showEdit by remember(accountId) { mutableStateOf(false) }
     var showHistory by remember(accountId) { mutableStateOf(initialHistory) }
-    var showAddCurrency by remember(accountId) { mutableStateOf(false) }
-    var showDeleteConfirm by remember(accountId) { mutableStateOf(false) }
     var active by remember { mutableStateOf(true) }
     DisposableEffect(Unit) { active = true; onDispose { active = false } }
     LaunchedEffect(uiState.error, manageState.errorMessage) {
@@ -173,121 +171,8 @@ fun SharedTransitionScope.AccountDetailScreen(
                     hazeState = hazeState, navigationContent = { NavigationContent(onNavigateBack) },
                     actionContent = {
                         if (uiState.account != null) {
-                            val account = uiState.account!!
-                            var showMenu by remember { mutableStateOf(false) }
                             io.github.hootkit_dev.hootbook.presentation.ui.components.TooltipIconButton(
                                 Iconax.Edit2, stringResource(R.string.edit_account_title), { showEdit = true })
-                            Box {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = stringResource(R.string.more_options)
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(
-                                                    if (account.isDefault) R.string.account_clear_default
-                                                    else R.string.account_set_default
-                                                )
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                if (account.isDefault) Icons.Rounded.StarOutline else Icons.Rounded.Star,
-                                                contentDescription = null
-                                            )
-                                        },
-                                        onClick = {
-                                            showMenu = false
-                                            manageViewModel.setDefault(if (account.isDefault) null else account.id)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(
-                                                    if (account.archived) R.string.account_unarchive
-                                                    else R.string.account_archive
-                                                )
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                if (account.archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                                                contentDescription = null
-                                            )
-                                        },
-                                        onClick = {
-                                            showMenu = false
-                                            manageViewModel.archive(account)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.account_move_up)) },
-                                        leadingIcon = { Icon(Icons.Rounded.ArrowUpward, contentDescription = null) },
-                                        onClick = {
-                                            showMenu = false
-                                            val all = manageState.overview?.accounts.orEmpty().filter { it.category() == account.category() }
-                                            val index = all.indexOfFirst { it.id == account.id }
-                                            if (index > 0) {
-                                                val mutable = all.map { it.id }.toMutableList()
-                                                val item = mutable.removeAt(index)
-                                                mutable.add(index - 1, item)
-                                                manageViewModel.reorder(mutable)
-                                            }
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.account_move_down)) },
-                                        leadingIcon = { Icon(Icons.Rounded.ArrowDownward, contentDescription = null) },
-                                        onClick = {
-                                            showMenu = false
-                                            val all = manageState.overview?.accounts.orEmpty().filter { it.category() == account.category() }
-                                            val index = all.indexOfFirst { it.id == account.id }
-                                            if (index >= 0 && index < all.size - 1) {
-                                                val mutable = all.map { it.id }.toMutableList()
-                                                val item = mutable.removeAt(index)
-                                                mutable.add(index + 1, item)
-                                                manageViewModel.reorder(mutable)
-                                            }
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.history)) },
-                                        leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
-                                        onClick = {
-                                            showMenu = false
-                                            showHistory = true
-                                        }
-                                    )
-                                    HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                stringResource(R.string.account_delete),
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Rounded.Delete,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        },
-                                        onClick = {
-                                            showMenu = false
-                                            showDeleteConfirm = true
-                                        }
-                                    )
-                                }
-                            }
                         }
                     })
             }) { padding ->
@@ -299,50 +184,50 @@ fun SharedTransitionScope.AccountDetailScreen(
                 item(key = "header_summary") {
                     uiState.account?.let { account ->
                         Column(Modifier.padding(horizontal = Dimensions.Padding.content), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            AccountCard(account)
-                            if (account.kind == AccountKind.CREDIT_CARD) CardBillPanel(uiState.cardStatus, account.mainCurrency) { showEdit = true }
+                            AccountCard(account, onBalanceClick = { showCalibration = true })
+                            if (account.kind == AccountKind.CREDIT_CARD) {
+                                CardBillPanel(
+                                    status = uiState.cardStatus,
+                                    currency = account.mainCurrency,
+                                    saving = uiState.saving,
+                                    onSetDates = { showEdit = true },
+                                    onMarkPaid = accountDetailViewModel::markStatementPaid,
+                                )
+                            }
                             account.securities?.let { securities ->
                                 Text(stringResource(R.string.core_full_securities, CoreMoneyPresentation.formatCurrency(securities.amount, securities.currency)), style = MaterialTheme.typography.bodyMedium)
                             }
                             account.broker?.let { broker ->
                                 OutlinedButton(onClick = { onBrokerage(broker.connectionId, broker.brokerAccountId) }, shapes = ButtonDefaults.shapes()) {
-                                    Text(stringResource(R.string.overview_investments) + " · " + broker.asOf.coreDateText())
+                                    Text(stringResource(R.string.overview_investments) + (broker.asOf?.let { " · " + it.coreDateText() }.orEmpty()))
                                 }
                             }
                         }
                     }
                 }
 
-                // 2. Currencies Section
-                item(key = "section_currencies") {
-                    uiState.account?.let { account ->
+                // 2. Currencies Section (only shown for multi-currency accounts)
+                val multiCurrencyAccount = uiState.account?.takeIf { it.pockets.size > 1 }
+                if (multiCurrencyAccount != null) {
+                    item(key = "section_currencies") {
+                        val selectedPocketCurrency = uiState.currency ?: multiCurrencyAccount.mainCurrency
                         Column(
                             Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    stringResource(R.string.account_section_currencies),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                IconButton(onClick = { showAddCurrency = true }, modifier = Modifier.size(32.dp)) {
-                                    Icon(
-                                        Icons.Rounded.Add,
-                                        contentDescription = stringResource(R.string.account_currency_add),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            account.pockets.forEach { pocket ->
+                            Text(
+                                stringResource(R.string.account_section_currencies),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            multiCurrencyAccount.pockets.forEach { pocket ->
+                                val isSelected = pocket.currency == selectedPocketCurrency
                                 Card(
                                     onClick = { accountDetailViewModel.selectCurrency(pocket.currency) },
                                     shape = MaterialTheme.shapes.large,
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
@@ -354,14 +239,14 @@ fun SharedTransitionScope.AccountDetailScreen(
                                             modifier = Modifier
                                                 .size(40.dp)
                                                 .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
                                                 text = pocket.currency,
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                         Column(Modifier.weight(1f)) {
@@ -369,7 +254,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                                             val currencyName = runCatching { java.util.Currency.getInstance(pocket.currency).getDisplayName(locale) }.getOrDefault(pocket.currency)
                                             Text(currencyName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                                             Text(
-                                                if (pocket.currency == account.mainCurrency) stringResource(R.string.account_currency_main) else pocket.currency,
+                                                if (pocket.currency == multiCurrencyAccount.mainCurrency) stringResource(R.string.account_currency_main) else pocket.currency,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -418,6 +303,9 @@ fun SharedTransitionScope.AccountDetailScreen(
                     val category = uiState.categories[transaction.categoryId]
                     val debt = uiState.debts[transaction.debtId]
                     val person = uiState.people[debt?.personId]
+                    val txTags = remember(transaction.tagIds, uiState.tags) {
+                        transaction.tagIds.mapNotNull(uiState.tags::get)
+                    }
                     val totalRows = recentTransactions.size + if (uiState.total > 0u) 1 else 0
                     TransactionItem(
                         transaction = transaction,
@@ -425,6 +313,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                         subcategoryEntity = category?.subcategories?.firstOrNull { it.id == transaction.subcategoryId },
                         accountIconName = uiState.account?.icon,
                         accountColorHex = uiState.account?.color,
+                        tags = txTags,
                         mainCurrency = uiState.summary?.currency,
                         convertedAmount = uiState.convertedAmounts[transaction.id],
                         currentAccountContext = accountId,
@@ -468,7 +357,7 @@ fun SharedTransitionScope.AccountDetailScreen(
                     }
                 }
 
-                // 4. Balance Section (holding calibrate / trend / history)
+                // 4. Balance Trend & Period Summary Section
                 item(key = "section_balance") {
                     val currency = uiState.currency ?: uiState.account?.mainCurrency.orEmpty()
                     uiState.account?.let { account ->
@@ -476,53 +365,37 @@ fun SharedTransitionScope.AccountDetailScreen(
                             Modifier.fillMaxWidth().padding(horizontal = Dimensions.Padding.content),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                if (account.pockets.size > 1) stringResource(R.string.account_section_balance_currency, currency)
-                                else stringResource(R.string.account_section_balance),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Card(
-                                onClick = { showCalibration = true },
-                                shape = MaterialTheme.shapes.large,
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Text(
+                                    if (account.pockets.size > 1) stringResource(R.string.account_section_balance_currency, currency)
+                                    else stringResource(R.string.account_section_balance),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.small)
+                                        .clickable { showHistory = true }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(Icons.Rounded.Tune, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        stringResource(if (account.kind == AccountKind.CREDIT_CARD) R.string.update_outstanding_title else R.string.account_calibrate),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.weight(1f)
+                                    Icon(
+                                        Icons.Rounded.History,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            Card(
-                                onClick = { showHistory = true },
-                                shape = MaterialTheme.shapes.large,
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                ) {
-                                    Icon(Icons.Rounded.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    val countSuffix = if (uiState.anchors.isNotEmpty()) " (${uiState.anchors.size})" else ""
                                     Text(
-                                        stringResource(R.string.account_calibrations),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.weight(1f)
+                                        stringResource(R.string.account_calibrations) + countSuffix,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    if (uiState.anchors.isNotEmpty()) {
-                                        Text("${uiState.anchors.size}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                             DateRangeFilter(selectedDateRange, accountDetailViewModel::selectDateRange)
@@ -540,6 +413,9 @@ fun SharedTransitionScope.AccountDetailScreen(
                                     expenses = summary.expense,
                                     netBalance = summary.net,
                                     currency = summary.currency,
+                                    receivable = summary.receivable,
+                                    collected = summary.collected,
+                                    outstanding = summary.outstanding,
                                     title = selectedDateRange.getLocalizedLabel(),
                                     isEstimated = !summary.complete,
                                     isLoading = uiState.isLoading,
@@ -566,46 +442,25 @@ fun SharedTransitionScope.AccountDetailScreen(
         if (showEdit) io.github.hootkit_dev.hootbook.presentation.ui.components.HootbookModalBottomSheet(
             onDismissRequest = { if (!manageState.isSavingAccount) showEdit = false },
             sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            EditAccountSheet(account = account, allAccounts = manageState.overview?.accounts.orEmpty(),
+            EditAccountSheet(
+                account = account,
+                allAccounts = manageState.overview?.accounts.orEmpty(),
                 institutions = manageState.institutions,
-                defaultCurrency = manageState.defaultCurrency, isSaving = manageState.isSavingAccount,
-                saveError = manageState.accountSaveError, onClearSaveError = manageViewModel::clearAccountSaveError,
+                defaultCurrency = manageState.defaultCurrency,
+                isSaving = manageState.isSavingAccount,
+                saveError = manageState.accountSaveError,
+                onClearSaveError = manageViewModel::clearAccountSaveError,
                 onDismiss = { if (!manageState.isSavingAccount) showEdit = false },
-                onDelete = if (uiState.accountTransactionCount == 0u) ({ manageViewModel.deleteAccount(account.id, onDeleted = { if (active) onNavigateBack() }) }) else null,
-                onSave = { input -> manageViewModel.editAccount(account, input) { if (active) showEdit = false } })
-        }
-        if (showAddCurrency) {
-            CurrencyBottomSheet(
-                selectedCurrency = uiState.currency ?: account.mainCurrency,
-                onCurrencySelected = { selected ->
-                    showAddCurrency = false
-                    manageViewModel.addPocket(account.id, selected, java.math.BigDecimal.ZERO)
-                    accountDetailViewModel.selectCurrency(selected)
-                },
-                onDismiss = { showAddCurrency = false }
-            )
-        }
-        if (showDeleteConfirm) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = false },
-                title = { Text(stringResource(R.string.account_delete_title, account.name)) },
-                text = { Text(stringResource(R.string.account_delete_confirm_msg)) },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteConfirm = false
-                            manageViewModel.deleteAccount(account.id, deleteTransactions = true) {
-                                if (active) onNavigateBack()
-                            }
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                onDelete = { manageViewModel.deleteAccount(account.id, deleteTransactions = true) { if (active) onNavigateBack() } },
+                onEditSave = { input, isDefault, archived, calibratedBalances ->
+                    manageViewModel.editAccount(
+                        account = account,
+                        input = input,
+                        isDefault = isDefault,
+                        archived = archived,
+                        calibratedBalances = calibratedBalances
                     ) {
-                        Text(stringResource(R.string.delete))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirm = false }) {
-                        Text(stringResource(R.string.cancel))
+                        if (active) showEdit = false
                     }
                 }
             )
@@ -771,7 +626,13 @@ fun DateRange.getLocalizedLabel(): String {
 }
 
 @Composable
-private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () -> Unit) {
+private fun CardBillPanel(
+    status: CardStatus?,
+    currency: String,
+    saving: Boolean = false,
+    onSetDates: () -> Unit,
+    onMarkPaid: () -> Unit = {},
+) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val dateFormat = remember(locale) {
         java.time.format.DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)
@@ -793,6 +654,7 @@ private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () 
             daysLeft == 0L -> stringResource(R.string.card_due_today)
             else -> stringResource(R.string.card_due_in, daysLeft.toInt())
         }
+        val canMarkPaid = status.statementDate != null && status.outstanding != null && status.outstanding!!.signum() > 0
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -828,6 +690,20 @@ private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () 
                     style = MaterialTheme.typography.bodySmall,
                     color = if (status.overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (canMarkPaid) {
+                    Spacer(Modifier.height(6.dp))
+                    FilledTonalButton(
+                        onClick = onMarkPaid,
+                        enabled = !saving,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(30.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.card_mark_paid),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
             }
         }
     }

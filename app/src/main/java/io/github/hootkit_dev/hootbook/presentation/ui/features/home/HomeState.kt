@@ -24,6 +24,9 @@ data class HomeUiState(
     val error: Int? = null,
     val displayTotals: Map<String, ConvertedMoney> = emptyMap(),
     val customSymbols: Map<String, String> = emptyMap(),
+    val pendingConflictCount: Int = 0,
+    val pendingAiReview: AiPendingReview? = null,
+    val cardStatuses: Map<String, CardStatus> = emptyMap(),
     val submitting: Boolean = false,
 ) {
     val displayCurrency: String get() = displayNetWorth?.currency ?: overview?.netWorth?.currency.orEmpty()

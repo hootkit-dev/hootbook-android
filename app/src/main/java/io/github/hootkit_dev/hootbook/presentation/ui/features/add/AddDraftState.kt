@@ -29,6 +29,10 @@ internal fun saveAddDraft(handle: SavedStateHandle, state: AddUiState) {
             putString("notes", tx.notes)
             putString("subscription", tx.subscriptionId)
             putStringArrayList("attachments", ArrayList(tx.attachments))
+            putStringArrayList("tagIds", ArrayList(tx.tagIds.orEmpty()))
+            putBoolean("receivableEnabled", state.receivableEnabled)
+            putBoolean("collectedEnabled", state.collectedEnabled)
+            putString("reimbursementAmount", state.reimbursementAmount)
             putString("person", state.personId)
             putBoolean("template", state.saveAsTemplate)
             putBoolean("pad", state.amountPadRequested)
@@ -67,6 +71,11 @@ internal fun restoreAddDraft(handle: SavedStateHandle): AddUiState? =
         runCatching {
                 val amount = b.getString("amount").orEmpty()
                 val subAmount = b.getString("subAmount").orEmpty()
+                val receivableEnabled = b.getBoolean("receivableEnabled")
+                val collectedEnabled = b.getBoolean("collectedEnabled")
+                val reimbursementAmount = b.getString("reimbursementAmount").orEmpty()
+                val tagIds = b.getStringArrayList("tagIds")?.toList()
+                val reimbDec = reimbursementAmount.toBigDecimalOrNull() ?: amount.toBigDecimalOrNull()
                 AddUiState(
                     transaction =
                         TransactionDraft(
@@ -84,6 +93,9 @@ internal fun restoreAddDraft(handle: SavedStateHandle): AddUiState? =
                             b.getString("notes"),
                             b.getString("subscription"),
                             b.getStringArrayList("attachments").orEmpty(),
+                            if (receivableEnabled) reimbDec else null,
+                            if (collectedEnabled) reimbDec else null,
+                            tagIds,
                         ),
                     subscription =
                         SubscriptionDraft(
@@ -107,6 +119,9 @@ internal fun restoreAddDraft(handle: SavedStateHandle): AddUiState? =
                     amount = amount,
                     targetAmount = b.getString("toAmount").orEmpty(),
                     subscriptionAmount = subAmount,
+                    receivableEnabled = receivableEnabled,
+                    collectedEnabled = collectedEnabled,
+                    reimbursementAmount = reimbursementAmount,
                     personId = b.getString("person"),
                     saveAsTemplate = b.getBoolean("template"),
                     customCycle = b.getBoolean("custom"),

@@ -96,12 +96,12 @@ class InvestmentsViewModelTest {
             done.await()
             investmentConnection()
         }
-        model.refresh(1)
-        model.refresh(1)
+        model.refresh("1")
+        model.refresh("1")
         runCurrent()
         assertEquals(1, api.refreshCalls)
         model.reload()
-        model.selectAccount(BrokerAccountRef(1, "U1"))
+        model.selectAccount(BrokerAccountRef("1", "U1"))
         runCurrent()
         assertTrue(model.state.value.busy)
         assertTrue(model.back())
@@ -115,7 +115,7 @@ class InvestmentsViewModelTest {
     @Test
     fun cancellationBeforeDispatchClearsBusyAndDoesNotFetch() = fixture { api, model, _ ->
         runCurrent()
-        model.refresh(1)
+        model.refresh("1")
         model.cancelOperation()
         runCurrent()
         assertEquals(0, api.refreshCalls)
@@ -135,14 +135,14 @@ class InvestmentsViewModelTest {
                     investmentConnection()
                 }
             }
-            model.refresh(1)
+            model.refresh("1")
             runCurrent()
             model.cancelOperation()
             runCurrent()
             assertTrue(model.state.value.busy)
             assertTrue(model.state.value.cancelling)
-            model.disconnect(1)
-            model.refresh(1)
+            model.disconnect("1")
+            model.refresh("1")
             runCurrent()
             assertEquals(0, api.disconnectCalls)
             assertEquals(1, api.refreshCalls)
@@ -157,32 +157,32 @@ class InvestmentsViewModelTest {
     fun refreshFailureRetainsCacheAndExposesOnlyTypedFailure() = fixture { api, model, _ ->
         runCurrent()
         api.fetch = { throw CoreException.Brokerage(BrokerageErrorKind.EXPIRED_CREDENTIALS) }
-        model.refresh(1)
+        model.refresh("1")
         runCurrent()
         assertEquals(investmentConnection(), model.state.value.connections.single())
         assertEquals(BrokerageErrorKind.EXPIRED_CREDENTIALS, model.state.value.error!!.kind)
         assertEquals(
             BrokerageErrorKind.EXPIRED_CREDENTIALS,
-            model.state.value.connectionErrors[1]!!.kind,
+            model.state.value.connectionErrors["1"]!!.kind,
         )
         assertFalse(model.state.value.busy)
     }
 
     @Test
     fun refreshAllContinuesAfterOneFailureAndNeverRunsDuplicates() = fixture { api, model, _ ->
-        api.connections = listOf(investmentConnection(1), investmentConnection(2))
+        api.connections = listOf(investmentConnection("1"), investmentConnection("2"))
         runCurrent()
-        val fetched = mutableListOf<Long>()
+        val fetched = mutableListOf<String>()
         api.fetch = { id ->
             fetched += id
-            if (id == 1L) throw CoreException.Brokerage(BrokerageErrorKind.RATE_LIMITED)
+            if (id == "1") throw CoreException.Brokerage(BrokerageErrorKind.RATE_LIMITED)
             else investmentConnection(id)
         }
         model.refreshAll()
         model.refreshAll()
         runCurrent()
-        assertEquals(listOf(1L, 2L), fetched)
-        assertEquals(setOf(1L), model.state.value.connectionErrors.keys)
+        assertEquals(listOf("1", "2"), fetched)
+        assertEquals(setOf("1"), model.state.value.connectionErrors.keys)
         assertEquals(2, api.refreshCalls)
     }
 
@@ -248,18 +248,18 @@ class InvestmentsViewModelTest {
     @Test
     fun linkUnlinkAndDisconnectUseOnlyCoreCommandsWithOriginalIds() = fixture { api, model, _ ->
         runCurrent()
-        val linked = mutableListOf<Triple<Long, String, String?>>()
+        val linked = mutableListOf<Triple<String, String, String?>>()
         api.link = { id, broker, ledger -> linked += Triple(id, broker, ledger) }
-        model.link(BrokerAccountRef(1, "U1"), "ledger/账户?x")
+        model.link(BrokerAccountRef("1", "U1"), "ledger/账户?x")
         runCurrent()
-        model.link(BrokerAccountRef(1, "U1"), null)
+        model.link(BrokerAccountRef("1", "U1"), null)
         runCurrent()
-        assertEquals(listOf(Triple(1L, "U1", "ledger/账户?x"), Triple(1L, "U1", null)), linked)
+        assertEquals(listOf(Triple("1", "U1", "ledger/账户?x"), Triple("1", "U1", null)), linked)
         api.remove = { api.connections = emptyList() }
-        model.selectAccount(BrokerAccountRef(1, "U1"))
-        model.showDisconnect(1)
-        model.disconnect(1)
-        model.disconnect(1)
+        model.selectAccount(BrokerAccountRef("1", "U1"))
+        model.showDisconnect("1")
+        model.disconnect("1")
+        model.disconnect("1")
         runCurrent()
         assertEquals(1, api.disconnectCalls)
         assertTrue(model.state.value.connections.isEmpty())
@@ -270,7 +270,7 @@ class InvestmentsViewModelTest {
     @Test
     fun removedOrChangedHoldingSelectionCannotDisplayStaleDetail() = fixture { api, model, _ ->
         runCurrent()
-        model.selectAccount(BrokerAccountRef(1, "U1"))
+        model.selectAccount(BrokerAccountRef("1", "U1"))
         model.selectHolding(
             CoreHoldingKey.of(investmentConnection().accounts.single().holdings.single())
         )
@@ -298,6 +298,66 @@ class InvestmentsViewModelTest {
         runCurrent()
         assertNull(model.state.value.selected)
     }
+
+    @Test
+    fun connectAndCreateAndLinkAutoCreatesInvestmentLedgerAccount() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val store = ViewModelStore()
+        try {
+            val api = TestBroker()
+            val createdDrafts = mutableListOf<NewAccount>()
+            val linked = mutableListOf<Triple<String, String, String?>>()
+            api.link = { id, broker, ledger -> linked += Triple(id, broker, ledger) }
+            val bus = ChangeBus()
+            val model =
+                InvestmentsViewModel(
+                    changes = bus,
+                    brokerage = { api },
+                    catalog = {
+                        listOf(
+                            Institution(
+                                "ibkr",
+                                "Interactive Brokers",
+                                "盈透证券",
+                                emptyList(),
+                                InstitutionKind.BROKER,
+                                "US",
+                                "USD",
+                                "ic_institution_ibkr",
+                                "#D81E05",
+                            )
+                        )
+                    },
+                    createAccount = { draft ->
+                        createdDrafts += draft
+                        "created-${createdDrafts.size}"
+                    },
+                )
+            store.put("fixture", model)
+            runCurrent()
+            model.connect("ibkr_flex", "IBKR", mapOf("token" to "987654321", "queryId" to "1"))
+            runCurrent()
+            assertEquals(1, createdDrafts.size)
+            assertEquals("Fixture", createdDrafts.single().name)
+            assertEquals(AccountKind.INVESTMENT, createdDrafts.single().kind)
+            assertEquals("USD", createdDrafts.single().mainCurrency)
+            assertEquals("ibkr", createdDrafts.single().institutionKey)
+            assertEquals(listOf(Triple("1", "U1", "created-1")), linked)
+
+            model.showLink(BrokerAccountRef("1", "U1"))
+            model.createAndLink(BrokerAccountRef("1", "U1"))
+            runCurrent()
+            assertEquals(2, createdDrafts.size)
+            assertEquals(
+                listOf(Triple("1", "U1", "created-1"), Triple("1", "U1", "created-2")),
+                linked,
+            )
+            assertNull(model.state.value.linkTarget)
+        } finally {
+            store.clear()
+            Dispatchers.resetMain()
+        }
+    }
 }
 
 private class TestBroker : BrokerageInterface {
@@ -311,9 +371,9 @@ private class TestBroker : BrokerageInterface {
     var create: suspend (String, String, Map<String, String>) -> BrokerageConnection = { _, _, _ ->
         investmentConnection()
     }
-    var fetch: suspend (Long) -> BrokerageConnection = { investmentConnection(it) }
-    var remove: suspend (Long) -> Unit = {}
-    var link: suspend (Long, String, String?) -> Unit = { _, _, _ -> }
+    var fetch: suspend (String) -> BrokerageConnection = { investmentConnection(it) }
+    var remove: suspend (String) -> Unit = {}
+    var link: suspend (String, String, String?) -> Unit = { _, _, _ -> }
 
     override fun providers() =
         listOf(
@@ -339,18 +399,22 @@ private class TestBroker : BrokerageInterface {
         return create(providerId, label, fields)
     }
 
-    override suspend fun refresh(connectionId: Long): BrokerageConnection {
+    override suspend fun setCredentials(connectionId: String, fields: Map<String, String>) {
+        submittedFields = fields
+    }
+
+    override suspend fun refresh(connectionId: String): BrokerageConnection {
         refreshCalls++
         return fetch(connectionId)
     }
 
-    override suspend fun disconnect(connectionId: Long) {
+    override suspend fun disconnect(connectionId: String) {
         disconnectCalls++
         remove(connectionId)
     }
 
     override suspend fun linkAccount(
-        connectionId: Long,
+        connectionId: String,
         brokerAccountId: String,
         accountId: String?,
     ) {

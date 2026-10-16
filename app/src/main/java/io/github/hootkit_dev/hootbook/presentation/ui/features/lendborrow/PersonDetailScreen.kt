@@ -429,6 +429,7 @@ fun SharedTransitionScope.PersonDetailScreen(
         if (uiState.showSettleSheet) {
             SettleUpSheet(
                 person = person,
+                debts = uiState.transactions,
                 accounts = uiState.accounts.values.toList(),
                 saving = uiState.saving, error = uiState.error,
                 defaultAccountId = uiState.transactions.firstOrNull { it.accountId != null }?.accountId,

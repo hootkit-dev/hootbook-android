@@ -22,24 +22,40 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
     private val edit = MutableStateFlow(EditBudgetState())
     val editBudgetState = edit.asStateFlow()
     private val selection = MutableStateFlow<Triple<String, LocalDate?, LocalDate?>?>(null)
+    private val categoryFilter = MutableStateFlow<String?>(null)
     init {
         viewModelScope.launch {
-            selection.flatMapLatest { selected ->
-                session.observe(changes, budgetTables) { core -> coreQuery {
-                    val currency = core.settings().use { it.mainCurrency() }
-                    val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
-                    val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
-                    core.budgets().use { api ->
-                        val rows = api.list(budgetToday(), false, currency)
-                        val detail = selected?.let { api.get(it.first, it.second ?: budgetToday(), currency) }
-                        if (selected?.second != null) require(detail?.current?.start == selected.second)
-                        if (selected?.third != null) require(detail?.current?.end == selected.third)
-                        BudgetUiState(false, rows, detail, accounts, categories, currency)
-                    }
-                } }
-            }.collect { result -> result.fold(
-                onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
-                onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
+            combine(selection, categoryFilter) { selected, catId -> selected to catId }
+                .flatMapLatest { (selected, catId) ->
+                    session.observe(changes, budgetTables) { core -> coreQuery {
+                        val currency = core.settings().use { it.mainCurrency() }
+                        val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
+                        val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
+                        val tags = core.tags().use { it.list(true).associateBy(Tag::id) }
+                        core.budgets().use { api ->
+                            val rows = api.list(budgetToday(), false, currency)
+                            val detail = selected?.let { api.get(it.first, it.second ?: budgetToday(), currency) }
+                            if (selected?.second != null) require(detail?.current?.start == selected.second)
+                            if (selected?.third != null) require(detail?.current?.end == selected.third)
+                            val txPage = selected?.let {
+                                api.transactions(it.first, it.second ?: budgetToday(), catId, PageRequest(0u, 100u))
+                            }
+                            BudgetUiState(
+                                isLoading = false,
+                                budgets = rows,
+                                selectedBudget = detail,
+                                selectedCategoryId = catId,
+                                transactionsPage = txPage,
+                                accounts = accounts,
+                                categories = categories,
+                                tags = tags,
+                                baseCurrency = currency,
+                            )
+                        }
+                    } }
+                }.collect { result -> result.fold(
+                    onSuccess = { snapshot -> mutable.update { snapshot.copy(saving = it.saving) } },
+                    onFailure = { failure -> mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) } }) }
         }
     }
     fun selectBudget(id: String, start: String? = null, end: String? = null) {
@@ -49,10 +65,17 @@ class BudgetViewModel @Inject constructor(private val session: CoreSession, priv
             mutable.update { it.copy(isLoading = false, error = coreFailureText(failure)) }; return
         }
         if (selection.value == next) return
-        mutable.update { it.copy(isLoading = true, selectedBudget = null, error = null) }
+        categoryFilter.value = null
+        mutable.update { it.copy(isLoading = true, selectedBudget = null, selectedCategoryId = null, transactionsPage = null, error = null) }
         selection.value = next
     }
-    fun clearSelectedBudget() { selection.value = null }
+    fun selectCategoryFilter(categoryId: String?) {
+        categoryFilter.value = categoryId
+    }
+    fun clearSelectedBudget() {
+        categoryFilter.value = null
+        selection.value = null
+    }
     fun initNewBudget() { if (!uiState.value.saving) edit.value = EditBudgetState(currency = uiState.value.baseCurrency) }
     fun initEditBudget(row: Budget) { if (!uiState.value.saving) edit.value = EditBudgetState(row.id, row.name,
         row.amount.amount, row.anchor.javaBudgetDate().atStartOfDay(), (row.end ?: row.current.end).javaBudgetDate().atStartOfDay(),

@@ -40,7 +40,8 @@ fun BalanceChart(
     balanceHistory: List<BalanceDay>,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
-    height: Int = 200
+    height: Int = 200,
+    title: String = stringResource(R.string.balance_trend),
 ) {
     if (balanceHistory.isEmpty()) return
 
@@ -89,7 +90,7 @@ fun BalanceChart(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = stringResource(R.string.balance_trend),
+                    text = title,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium

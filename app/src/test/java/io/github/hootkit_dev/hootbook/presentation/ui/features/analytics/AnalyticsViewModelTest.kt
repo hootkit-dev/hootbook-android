@@ -25,9 +25,12 @@ class AnalyticsViewModelTest {
             BigDecimal.ZERO,
             BigDecimal(value),
             BigDecimal(value).negate(),
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
             false,
             listOf("USD"),
-            listOf(CurrencyTotals("USD", BigDecimal.ZERO, BigDecimal("10"))),
+            listOf(CurrencyTotals("USD", BigDecimal.ZERO, BigDecimal("10"), BigDecimal.ZERO, BigDecimal.ZERO)),
             listOf(CategoryTotal("category/string", BigDecimal(value))),
             emptyList(),
         )
@@ -55,7 +58,7 @@ class AnalyticsViewModelTest {
     @Test
     fun mixedSelectionsExposeBothExactCoreTotalsIncludingSelectedCurrency() = fixture { store ->
         val native = summary("45.50").copy(income = BigDecimal("6000"),
-            perCurrency = listOf(CurrencyTotals("USD", BigDecimal("900"), BigDecimal("7"))))
+            perCurrency = listOf(CurrencyTotals("USD", BigDecimal("900"), BigDecimal("7"), BigDecimal.ZERO, BigDecimal.ZERO)))
         val vm = AnalyticsViewModel(ChangeBus(), ledger = {
             api { method, _ -> when (method) {
                 "summary" -> native

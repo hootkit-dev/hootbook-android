@@ -90,290 +90,199 @@ fun AboutScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize()
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = hazeState)
+                .verticalScroll(state = scrollState)
+                .padding(
+                    start = Dimensions.Padding.content,
+                    end = Dimensions.Padding.content,
+                    top = Dimensions.Padding.content + paddingValues.calculateTopPadding(),
+                    bottom = Dimensions.Padding.card
+                )
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            //Banner image
-            Box(
-                modifier = Modifier.fillMaxWidth().height(250.dp)
+            // Hero Identity Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow
             ) {
-                val primary = MaterialTheme.colorScheme.primary
-                val tertiary = MaterialTheme.colorScheme.tertiary
-                val alternatingIcons = remember {
-                    listOf(
-                        IconResource.VectorIcon(Iconax.Hootbook, primary),
-                        IconResource.VectorIcon(Iconax.HootbookOutline, tertiary)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val primary = MaterialTheme.colorScheme.primary
+                    val tertiary = MaterialTheme.colorScheme.tertiary
+                    val alternatingIcons = remember(primary, tertiary) {
+                        listOf(
+                            IconResource.VectorIcon(Iconax.Hootbook, primary),
+                            IconResource.VectorIcon(Iconax.HootbookOutline, tertiary)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(RoundedCornerShape(24.dp))
+                    ) {
+                        TiledScrollingIconBackground(
+                            iconResources = alternatingIcons,
+                            opacity = 0.045f,
+                            iconSize = 48.dp
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(68.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.hootbook_icon_white),
+                                    contentDescription = stringResource(R.string.hootbook_logo_cd),
+                                    modifier = Modifier
+                                        .size(68.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        val versionLabel = coreSchemaVersion?.let {
+                            stringResource(R.string.version_format, BuildConfig.VERSION_NAME, it.toInt())
+                        } ?: BuildConfig.VERSION_NAME
+
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+                        ) {
+                            Text(
+                                text = versionLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = stringResource(R.string.built_with_love),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // Updates Section
+            val showChannelPicker = updateState.selectableChannels.size > 1
+            val updateStatusText = when (updateState.status) {
+                GitHubUpdateStatus.Idle -> stringResource(R.string.update_check_desc)
+                GitHubUpdateStatus.Checking -> stringResource(R.string.update_checking)
+                GitHubUpdateStatus.UpToDate -> stringResource(R.string.update_up_to_date)
+                GitHubUpdateStatus.Available -> stringResource(
+                    R.string.update_available_status,
+                    updateState.available?.title.orEmpty()
+                )
+                GitHubUpdateStatus.Failed -> stringResource(R.string.update_check_failed)
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.5.dp)
+            ) {
+                if (showChannelPicker) {
+                    AboutListItem(
+                        title = stringResource(R.string.update_channel),
+                        subtitle = channelLabel(updateState.selectedChannel),
+                        icon = Iconax.HierarchySquare3,
+                        onClick = { showChannelDialog = true },
+                        position = ListItemPosition.Top
                     )
                 }
-
-                TiledScrollingIconBackground(
-                    iconResources = alternatingIcons,
-                    opacity = 0.05f,
-                    iconSize = 56.dp
+                AboutListItem(
+                    title = stringResource(R.string.check_for_updates),
+                    subtitle = updateStatusText,
+                    icon = Iconax.RefreshCircle,
+                    onClick = { updateViewModel.checkForUpdate(promptIfAvailable = true) },
+                    position = if (showChannelPicker) ListItemPosition.Bottom else ListItemPosition.Single
                 )
             }
 
-            val scrollState = rememberScrollState()
+            // Project & Open Source Section
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(state = hazeState)
-                    .verticalScroll(
-                        state = scrollState,
-                    )
-                    .padding(
-                        start = Dimensions.Padding.content,
-                        end = Dimensions.Padding.content,
-                        top = Dimensions.Padding.content +
-                                paddingValues.calculateTopPadding(),
-                        bottom = 0.dp
-                    ),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.5.dp)
             ) {
-                // App Info Section
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Dimensions.Padding.card),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(90.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.hootbook_icon_white),
-                            contentDescription = stringResource(R.string.hootbook_logo_cd),
-                            modifier = Modifier.size(90.dp).clip(CircleShape)
+                AboutListItem(
+                    title = stringResource(R.string.github),
+                    subtitle = "hootkit-dev/hootbook-android",
+                    icon = Iconax.Github,
+                    isLink = true,
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Constants.Links.GITHUB_URL.toUri())
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(Dimensions.Padding.content))
-
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Text(
-                        text = coreSchemaVersion?.let { stringResource(R.string.version_format, BuildConfig.VERSION_NAME, it.toInt()) } ?: BuildConfig.VERSION_NAME,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
-                    )
-                }
-
-                val showChannelPicker = updateState.selectableChannels.size > 1
-                val updateStatusText = when (updateState.status) {
-                    GitHubUpdateStatus.Idle -> stringResource(R.string.update_check_desc)
-                    GitHubUpdateStatus.Checking -> stringResource(R.string.update_checking)
-                    GitHubUpdateStatus.UpToDate -> stringResource(R.string.update_up_to_date)
-                    GitHubUpdateStatus.Available -> stringResource(
-                        R.string.update_available_status,
-                        updateState.available?.title.orEmpty()
-                    )
-                    GitHubUpdateStatus.Failed -> stringResource(R.string.update_check_failed)
-                }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(1.5.dp)
-                ) {
-                    if (showChannelPicker) {
-                        AboutListItem(
-                            title = stringResource(R.string.update_channel),
-                            subtitle = channelLabel(updateState.selectedChannel),
-                            icon = Iconax.HierarchySquare3,
-                            iconColor = blue_dark,
-                            iconBackground = blue_light,
-                            onClick = { showChannelDialog = true },
-                            position = ListItemPosition.Top
-                        )
-                    }
-                    AboutListItem(
-                        title = stringResource(R.string.check_for_updates),
-                        subtitle = updateStatusText,
-                        icon = Iconax.RefreshCircle,
-                        iconColor = cyan_dark,
-                        iconBackground = cyan_light,
-                        onClick = { updateViewModel.checkForUpdate(promptIfAvailable = true) },
-                        position = if (showChannelPicker) ListItemPosition.Bottom else ListItemPosition.Single
-                    )
-                }
-
-                // Connect Section
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(1.5.dp)
-                ) {
-                    AboutListItem(
-                        title = stringResource(R.string.website),
-                        subtitle = "cashiro.showcase",
-                        icon = Iconax.Shop,
-                        iconColor = orange_dark,
-                        iconBackground = orange_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.WEBSITE_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Top
-                    )
-                    AboutListItem(
-                        title = stringResource(R.string.github),
-                        subtitle = "hootkit-dev/hootbook-android",
-                        icon = Iconax.Github,
-                        iconColor = green_dark,
-                        iconBackground = green_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.GITHUB_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Middle
-                    )
-                    AboutListItem(
-                        title = stringResource(R.string.discord),
-                        subtitle = stringResource(R.string.join_community),
-                        icon = Iconax.Discord,
-                        iconColor = purple_dark,
-                        iconBackground = purple_light,
-                        isLink = true,
-                        onClick = {
-                            val intent =
-                                Intent(Intent.ACTION_VIEW, Constants.Links.DISCORD_URL.toUri())
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Bottom
-                    )
-
-                }
-
-                // Links Section
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(1.5.dp)
-                ) {
-
-                    AboutListItem(
-                        title = stringResource(R.string.faq),
-                        subtitle = stringResource(R.string.faq_desc),
-                        icon = Iconax.MessageQuestion,
-                        iconColor = orange_dark,
-                        iconBackground = orange_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.FAQ_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Top
-                    )
-
-                    AboutListItem(
-                        title = stringResource(R.string.guides),
-                        subtitle = stringResource(R.string.guides_desc),
-                        icon = Iconax.DocumentText2,
-                        iconColor = purple_dark,
-                        iconBackground = purple_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.GUIDE_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Middle
-                    )
-
-                    AboutListItem(
-                        title = stringResource(R.string.report_bug),
-                        subtitle = stringResource(R.string.report_bug_desc),
-                        icon = Iconax.Ghost,
-                        iconColor = red_dark,
-                        iconBackground = red_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.REPORT_BUG_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Middle
-                    )
-
-                    AboutListItem(
-                        title = stringResource(R.string.privacy_policy),
-                        subtitle = stringResource(R.string.privacy_policy_desc),
-                        icon = Iconax.SecuritySafe,
-                        iconColor = green_dark,
-                        iconBackground = green_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.PRIVACY_POLICY_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Middle
-                    )
-
-                    AboutListItem(
-                        title = stringResource(R.string.terms_of_service),
-                        subtitle = stringResource(R.string.terms_of_service_desc),
-                        icon = Iconax.DocumentText2,
-                        iconColor = cyan_dark,
-                        iconBackground = cyan_light,
-                        isLink = true,
-                        onClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Constants.Links.TERMS_OF_SERVICE_URL.toUri()
-                            )
-                            context.startActivity(intent)
-                        },
-                        position = ListItemPosition.Middle
-                    )
-
-                    AboutListItem(
-                        title = stringResource(R.string.licenses),
-                        subtitle = stringResource(R.string.licenses_desc),
-                        icon = Iconax.Status,
-                        iconColor = orange_dark,
-                        iconBackground = orange_light,
-                        onClick = onNavigateToLicenses,
-                        position = ListItemPosition.Middle
-                    )
-
-
-                }
-
-                Spacer(modifier = Modifier.height(Dimensions.Padding.card))
-
-                Text(
-                    text = stringResource(R.string.built_with_love),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(0.5f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                    },
+                    position = ListItemPosition.Top
                 )
 
+                AboutListItem(
+                    title = stringResource(R.string.report_bug),
+                    subtitle = stringResource(R.string.report_bug_desc),
+                    icon = Iconax.Ghost,
+                    isLink = true,
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Constants.Links.REPORT_BUG_URL.toUri())
+                        )
+                    },
+                    position = ListItemPosition.Middle
+                )
+
+                AboutListItem(
+                    title = stringResource(R.string.privacy_policy),
+                    subtitle = stringResource(R.string.privacy_policy_desc),
+                    icon = Iconax.SecuritySafe,
+                    isLink = true,
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Constants.Links.PRIVACY_POLICY_URL.toUri())
+                        )
+                    },
+                    position = ListItemPosition.Middle
+                )
+
+                AboutListItem(
+                    title = stringResource(R.string.licenses),
+                    subtitle = stringResource(R.string.licenses_desc),
+                    icon = Iconax.Status,
+                    onClick = onNavigateToLicenses,
+                    position = ListItemPosition.Bottom
+                )
             }
         }
     }
@@ -482,8 +391,8 @@ fun AboutListItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    iconColor: Color,
-    iconBackground: Color,
+    iconColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+    iconBackground: Color = MaterialTheme.colorScheme.secondaryContainer,
     onClick: () -> Unit,
     isLink: Boolean = false,
     position: ListItemPosition = ListItemPosition.Middle,

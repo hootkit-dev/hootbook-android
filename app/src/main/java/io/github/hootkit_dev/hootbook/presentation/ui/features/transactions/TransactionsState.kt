@@ -24,6 +24,7 @@ data class TransactionsUiState(
     val total: UInt = 0u,
     val summary: LedgerSummary? = null,
     val categories: Map<String, Category> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val accounts: Map<String, Account> = emptyMap(),
     val debts: Map<String, DebtEntry> = emptyMap(),
     val people: Map<String, Person> = emptyMap(),

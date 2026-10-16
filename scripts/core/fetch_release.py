@@ -37,16 +37,8 @@ def download_github_release_asset(repo: str, tag: str, token: str, dest: Path) -
     try:
         with urllib.request.urlopen(req) as resp:
             data = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            # Fallback to latest release if specific tag not found
-            fallback_url = f"https://api.github.com/repos/{repo}/releases/latest"
-            print(f"Tag {tag} not found, trying latest: {fallback_url}")
-            req = urllib.request.Request(fallback_url, headers=headers)
-            with urllib.request.urlopen(req) as resp:
-                data = json.loads(resp.read().decode())
-        else:
-            raise
+    except urllib.error.HTTPError:
+        raise
 
     assets = data.get("assets", [])
     aar_asset = next((a for a in assets if a["name"].endswith(".aar")), None)
@@ -81,7 +73,8 @@ def main():
     args = parser.parse_args()
 
     lock = json.loads(LOCK_FILE.read_text()) if LOCK_FILE.exists() else {}
-    tag = args.tag or lock.get("coreReleaseTag") or f"v{lock.get('coreVersion', '0.1.0')}"
+    version = lock.get("coreVersion", "0.2.0")
+    tag = args.tag or lock.get("coreReleaseTag") or f"v{version}"
     token = args.token or os.environ.get("CORE_REPO_READ_TOKEN") or os.environ.get("GITHUB_TOKEN")
     dest = args.dest.resolve()
 
@@ -96,7 +89,8 @@ def main():
     # 2. Check local sibling repository (for local dev without downloading)
     local_aar = ROOT.parent / "hootkit-core/target/android-release"
     if local_aar.is_dir():
-        candidates = sorted(local_aar.glob("*.aar"), reverse=True)
+        versioned = local_aar / f"hootkit-core-android-{version}.aar"
+        candidates = [versioned] if versioned.is_file() else sorted(local_aar.glob("*.aar"), reverse=True)
         if candidates:
             src = candidates[0]
             print(f"Copying from local core build: {src} -> {dest}")

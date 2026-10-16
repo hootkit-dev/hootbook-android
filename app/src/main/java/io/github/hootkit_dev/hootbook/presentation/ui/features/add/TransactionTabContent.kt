@@ -965,6 +965,161 @@ fun TransactionTabContent(
                     }
                 }
 
+                // Reimbursable (Expense -> Receivable) / Reimbursement (Income -> Collected)
+                if (draft.kind == TransactionKind.EXPENSE || draft.kind == TransactionKind.INCOME) {
+                    val isExpense = draft.kind == TransactionKind.EXPENSE
+                    val checked = if (isExpense) state.receivableEnabled else state.collectedEnabled
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = checked,
+                                    role = Role.Switch,
+                                    onValueChange = {
+                                        if (isExpense) viewModel.toggleReceivable(it)
+                                        else viewModel.toggleCollected(it)
+                                    }
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    if (isExpense) R.string.core_receivable_label
+                                    else R.string.core_collected_label
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            HootbookSwitch(checked = checked, onCheckedChange = null)
+                        }
+                        if (checked) {
+                            val totalDec = state.amount.toBigDecimalOrNull()
+                            val reimbDec = state.reimbursementAmount.toBigDecimalOrNull()
+                            val exceedsTotal = totalDec != null && reimbDec != null && reimbDec > totalDec
+                            TextField(
+                                value = state.reimbursementAmount,
+                                onValueChange = viewModel::updateReimbursementAmount,
+                                label = {
+                                    Text(
+                                        stringResource(
+                                            if (isExpense) R.string.core_receivable_short
+                                            else R.string.core_collected_short
+                                        )
+                                    )
+                                },
+                                placeholder = { Text(state.amount.ifEmpty { "0.00" }) },
+                                isError = exceedsTotal,
+                                supportingText = if (exceedsTotal) {
+                                    {
+                                        Text(
+                                            stringResource(
+                                                if (isExpense) R.string.core_receivable_exceeds_amount
+                                                else R.string.core_collected_exceeds_amount
+                                            )
+                                        )
+                                    }
+                                } else null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    errorContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    errorIndicatorColor = Color.Transparent,
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Tags Selector
+                var showNewTagDialog by remember { mutableStateOf(false) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.core_tags_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val selectedTagIds = draft.tagIds.orEmpty()
+                        state.tags.values.forEach { tag ->
+                            val isSelected = tag.id in selectedTagIds
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.toggleTag(tag.id) },
+                                label = { Text(tag.name) }
+                            )
+                        }
+                        AssistChip(
+                            onClick = { showNewTagDialog = true },
+                            label = { Text(stringResource(R.string.core_tags_add)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+
+                if (showNewTagDialog) {
+                    var newTagName by remember { mutableStateOf("") }
+                    AlertDialog(
+                        onDismissRequest = { showNewTagDialog = false },
+                        title = { Text(stringResource(R.string.core_tags_add)) },
+                        text = {
+                            TextField(
+                                value = newTagName,
+                                onValueChange = { newTagName = it },
+                                label = { Text(stringResource(R.string.core_tags_name)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.createTag(newTagName, "#6366F1")
+                                    showNewTagDialog = false
+                                },
+                                enabled = newTagName.isNotBlank()
+                            ) {
+                                Text(stringResource(R.string.action_save))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showNewTagDialog = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    )
+                }
+
                 // Notes/Description (Optional)
                 TextField(
                     value = draft.notes.orEmpty(),
@@ -1048,7 +1203,23 @@ fun TransactionTabContent(
         }
     }
 
-
+    if (state.showBackdatedAnchorPrompt) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissBackdatedAnchorPrompt,
+            title = { Text(stringResource(R.string.core_anchor_backdated_title)) },
+            text = { Text(stringResource(R.string.core_anchor_backdated_body)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmBackdatedUseNow(onSuccess = onSave) }) {
+                    Text(stringResource(R.string.core_anchor_use_now))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.confirmBackdatedSaveAsIs(onSuccess = onSave) }) {
+                    Text(stringResource(R.string.core_anchor_save_as_is))
+                }
+            }
+        )
+    }
 
     // Date Picker Dialog
     if (showDatePicker) {

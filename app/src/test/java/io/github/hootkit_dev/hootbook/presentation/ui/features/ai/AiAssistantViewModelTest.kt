@@ -82,11 +82,11 @@ class AiAssistantViewModelTest {
         val vm = model(store, ai)
         runCurrent()
         vm.configChanged { it.copy(apiKey = "private-secret") }
-        vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE)
+        vm.protocol(AiApiProtocol.OPEN_AI_COMPATIBLE)
         runCurrent()
         assertEquals("core-default-url", vm.state.value.config.baseUrl)
         assertEquals("core-default-model", vm.state.value.config.model)
-        assertEquals(AiProtocol.OPEN_AI_COMPATIBLE, vm.state.value.config.protocol)
+        assertEquals(AiApiProtocol.OPEN_AI_COMPATIBLE, vm.state.value.config.protocol)
         assertFalse(vm.state.value.toString().contains("private-secret"))
         assertEquals("private-secret", vm.state.value.config.apiKey)
     }
@@ -161,7 +161,7 @@ class AiAssistantViewModelTest {
             FakeAi().apply {
                 onModels = {
                     if (++count == 1) suspendCoroutine { pending = it }
-                    else listOf(AiModel("new", "New", false))
+                    else listOf(AiModel("new", "New", false, AiReasoningSupport(false, emptyList())))
                 }
             }
         val vm = model(store, ai)
@@ -171,7 +171,7 @@ class AiAssistantViewModelTest {
         vm.configChanged { it.copy(baseUrl = "https://new") }
         vm.loadModels()
         runCurrent()
-        pending!!.resume(listOf(AiModel("stale", "Stale", false)))
+        pending!!.resume(listOf(AiModel("stale", "Stale", false, AiReasoningSupport(false, emptyList()))))
         runCurrent()
         assertEquals(listOf("new"), vm.state.value.models.map { it.id })
         assertFalse(vm.state.value.modelLoading)
@@ -195,13 +195,13 @@ class AiAssistantViewModelTest {
             )
         runCurrent()
         wait = true
-        vm.protocol(AiProtocol.CLAUDE)
+        vm.protocol(AiApiProtocol.CLAUDE)
         runCurrent()
-        vm.protocol(AiProtocol.OPEN_AI_COMPATIBLE)
+        vm.protocol(AiApiProtocol.OPEN_AI_COMPATIBLE)
         runCurrent()
         pending!!.resume(ai)
         runCurrent()
-        assertEquals(AiProtocol.OPEN_AI_COMPATIBLE, vm.state.value.config.protocol)
+        assertEquals(AiApiProtocol.OPEN_AI_COMPATIBLE, vm.state.value.config.protocol)
     }
 
     @Test
@@ -377,6 +377,9 @@ class AiAssistantViewModelTest {
                 "Cafe",
                 null,
                 null,
+                null,
+                null,
+                emptyList(),
                 null,
                 emptyList(),
                 false,
@@ -789,6 +792,9 @@ class AiAssistantViewModelTest {
                 null,
                 null,
                 null,
+                null,
+                emptyList(),
+                null,
                 emptyList(),
                 false,
                 time,
@@ -848,6 +854,25 @@ class AiAssistantViewModelTest {
         assertTrue(inbox.files.value.isEmpty())
     }
 
+    @Test
+    fun restartFromReviewDiscardsPendingReviewInCore() = runModel { store ->
+        val ai =
+            FakeAi().apply {
+                pending =
+                    AiPendingReview(
+                        LocalDateTime(2026, 10u, 14u, 12u, 0u, 0u, 0u),
+                        native.review,
+                    )
+            }
+        val vm = model(store, ai = ai)
+        review(vm)
+        assertNotNull(ai.pending)
+        vm.restart()
+        runCurrent()
+        assertNull(ai.pending)
+        assertNull(vm.state.value.pendingReview)
+    }
+
     private fun TestScope.drainUntil(done: () -> Boolean) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
         while (!done() && System.nanoTime() < deadline) {
@@ -879,7 +904,15 @@ class AiAssistantViewModelTest {
     }
 
     private class FakeAi : AiInterface {
-        var settings = AiSettings(AiProtocol.CLAUDE, "https://actual", "actual-model", true, true)
+        var settings =
+            AiSettings(
+                AiApiProtocol.CLAUDE,
+                "https://actual",
+                "actual-model",
+                AiReasoning.PROVIDER_DEFAULT,
+                true,
+                true,
+            )
         val native = FakeSession()
         var starts = 0
         var undos = 0
@@ -891,19 +924,37 @@ class AiAssistantViewModelTest {
         var modelUrl = ""
         var modelKey: String? = null
         var onModels: suspend () -> List<AiModel> = {
-            listOf(AiModel("model-id", "Display name", true))
+            listOf(AiModel("model-id", "Display name", true, AiReasoningSupport(false, emptyList())))
         }
         var onUndo: suspend () -> Unit = {}
         var onStart: suspend () -> AiSession = { native }
+        var pending: AiPendingReview? = null
 
         override suspend fun settings() = settings
 
-        override fun protocolDefaults(protocol: AiProtocol) =
-            AiProtocolDefaults("core-default-url", "core-default-model")
+        override fun protocolDefaults(protocol: AiApiProtocol) =
+            AiApiProtocolDefaults("core-default-url", "core-default-model")
 
-        override suspend fun setSettings(protocol: AiProtocol, baseUrl: String, model: String) {
+        override fun reasoningLevels(protocol: AiApiProtocol, baseUrl: String) =
+            listOf(
+                AiReasoning.PROVIDER_DEFAULT,
+                AiReasoning.OFF,
+                AiReasoning.LOW,
+                AiReasoning.MEDIUM,
+                AiReasoning.HIGH,
+            )
+
+        override suspend fun setSettings(
+            protocol: AiApiProtocol,
+            baseUrl: String,
+            model: String,
+        ) {
             writes += "settings"
             settings = settings.copy(protocol = protocol, baseUrl = baseUrl, model = model)
+        }
+
+        override suspend fun setReasoning(reasoning: AiReasoning) {
+            settings = settings.copy(reasoning = reasoning)
         }
 
         override suspend fun setApiKey(apiKey: String?) {
@@ -914,7 +965,7 @@ class AiAssistantViewModelTest {
         }
 
         override suspend fun listModels(
-            protocol: AiProtocol,
+            protocol: AiApiProtocol,
             baseUrl: String,
             apiKey: String?,
         ): List<AiModel> {
@@ -927,6 +978,14 @@ class AiAssistantViewModelTest {
             starts++
             this.listener = listener
             return onStart()
+        }
+
+        override suspend fun pendingReview() = pending
+
+        override suspend fun resumePending() = onStart()
+
+        override suspend fun discardPending() {
+            pending = null
         }
 
         override suspend fun undo(undoToken: String) {

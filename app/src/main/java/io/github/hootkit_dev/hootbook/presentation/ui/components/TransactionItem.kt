@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -89,6 +90,7 @@ fun TransactionItem(
     onClick: () -> Unit = {},
     subtitleOverride: String? = null,
     amountOverride: String? = null,
+    secondaryAmountText: String? = null,
     amountColorOverride: Color? = null,
     animatedContentScope: AnimatedVisibilityScope? = null,
     sharedElementKey: String? = null,
@@ -107,6 +109,7 @@ fun TransactionItem(
     linkedLoanPersonAvatar: String? = null,
     useHomeStyle: Boolean = false,
     customSymbols: Map<String, String> = emptyMap(),
+    tags: List<dev.hootkit.core.Tag> = emptyList(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val attachmentStore = remember(context) { io.github.hootkit_dev.hootbook.core.attachments.CoreAttachmentStore(context) }
@@ -284,8 +287,8 @@ fun TransactionItem(
             else -> null
         }
         Row(
-            itemModifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 64.dp)
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+            itemModifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 56.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -327,78 +330,96 @@ fun TransactionItem(
                 )
             },
             supporting = {
-                // No marquee here: the tag row is a fixed set of short chips, and basicMarquee
-                // measures its content with unbounded width on every row of the list.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                ) {
-                    var needsSeparator = false
-
-                    @Composable
-                    fun TagSeparator() {
-                        if (needsSeparator) {
+                val neutralChipBg = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+                val neutralChipText = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.88f)
+                @Composable
+                fun NeutralMetaChip(text: String, dotColor: Color? = null) {
+                    androidx.compose.material3.Surface(
+                        color = neutralChipBg,
+                        shape = RoundedCornerShape(6.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (dotColor != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(5.5.dp)
+                                        .clip(CircleShape)
+                                        .background(dotColor)
+                                )
+                            }
                             Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f)
+                                text = text,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = neutralChipText,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
+                }
 
-                    // Date Tag
-                    if (showDate && subtitleOverride == null && defaultSubtitle.isNotEmpty()) {
-                        TagSeparator()
-                        SubtitleTag(
-                            icon = {
-                                Icon(
-                                    imageVector = Iconax.Calendar,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(10.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.85f)
-                                )
-                            },
-                            text = defaultSubtitle,
-                            color = dateTagColor,
-                        )
-                        needsSeparator = true
-                    }
+                val datePart = if (showDate && subtitleOverride == null && defaultSubtitle.isNotEmpty()) defaultSubtitle else null
+                val categoryPart = subcategoryEntity?.displayName ?: categoryEntity?.displayName
+                val plainMeta = subtitleOverride ?: listOfNotNull(datePart, categoryPart).joinToString(" · ")
 
-                    // Category Tag
-                    categoryEntity?.let { category ->
-                        TagSeparator()
-                        SubtitleTag(
-                            text = category.displayName,
-                            color = try {
-                                Color(category.color.toColorInt())
-                            } catch (e: Exception) {
-                                MaterialTheme.colorScheme.primary
-                            }
-                        )
-                        needsSeparator = true
-                    }
-
-                    if (subtitleOverride != null) {
-                        TagSeparator()
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (plainMeta.isNotEmpty()) {
                         Text(
-                            text = subtitleOverride,
+                            text = plainMeta,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        needsSeparator = true
-                    } else {
+                    }
+
+                    if (subtitleOverride == null) {
                         // Recurring Tag
                         if (isRecurring) {
-                            TagSeparator()
-                            SubtitleTag(
-                                text = stringResource(R.string.recurring),
-                                color = Color(0xFF5B54D6)
-                            )
-                            needsSeparator = true
+                            NeutralMetaChip(text = stringResource(R.string.recurring))
                         }
 
+                        // Receivable / Collected Badge
+                        if (transaction?.receivable != null && transaction.receivable!! > BigDecimal.ZERO) {
+                            NeutralMetaChip(
+                                text = stringResource(
+                                    R.string.core_receivable_badge,
+                                    CoreMoneyPresentation.format(transaction.receivable, transaction.currency, customSymbols)
+                                )
+                            )
+                        } else if (transaction?.collected != null && transaction.collected!! > BigDecimal.ZERO) {
+                            NeutralMetaChip(
+                                text = stringResource(
+                                    R.string.core_collected_badge,
+                                    CoreMoneyPresentation.format(transaction.collected, transaction.currency, customSymbols)
+                                )
+                            )
+                        }
+
+                        // User Tags
+                        tags.take(3).forEach { tag ->
+                            val tagColor = try {
+                                Color(tag.color.toColorInt())
+                            } catch (e: Exception) {
+                                MaterialTheme.colorScheme.secondary
+                            }
+                            NeutralMetaChip(
+                                text = tag.name,
+                                dotColor = tagColor
+                            )
+                        }
+                        if (tags.size > 3) {
+                            NeutralMetaChip(text = "+${tags.size - 3}")
+                        }
 
                         // Description Indicator
                         if (transaction?.notes?.isNotBlank() == true) {
@@ -408,7 +429,6 @@ fun TransactionItem(
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f)
                             )
-                            needsSeparator = true
                         }
 
                         // Attachments Indicator
@@ -419,7 +439,6 @@ fun TransactionItem(
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f)
                             )
-                            needsSeparator = true
                         }
                     }
                 }
@@ -499,6 +518,7 @@ fun TransactionItem(
                     // follows in small type once its rate is known.
                     val foreign = mainCurrency != null && transaction?.currency?.equals(mainCurrency, ignoreCase = true) != true
                     val convertedText = when {
+                        secondaryAmountText != null -> secondaryAmountText
                         !foreign -> null
                         convertedAmount != null -> "≈ ${CoreMoneyPresentation.formatCurrency(convertedAmount, mainCurrency!!)}"
                         transaction == null -> null

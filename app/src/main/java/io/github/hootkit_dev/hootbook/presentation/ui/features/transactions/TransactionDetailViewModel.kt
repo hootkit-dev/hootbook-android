@@ -15,6 +15,7 @@ import io.github.hootkit_dev.hootbook.presentation.data.observe
 import io.github.hootkit_dev.hootbook.presentation.data.withCore
 import io.github.hootkit_dev.hootbook.presentation.format.entryCycle
 import io.github.hootkit_dev.hootbook.presentation.format.entryCycleKey
+import io.github.hootkit_dev.hootbook.presentation.format.toJavaDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -35,6 +36,9 @@ internal fun Transaction.draft() =
         notes,
         subscriptionId,
         attachments,
+        receivable,
+        collected,
+        tagIds,
     )
 
 @HiltViewModel
@@ -79,6 +83,10 @@ constructor(
                                 core.categories().use {
                                     it.list(null, true).associateBy(Category::id)
                                 }
+                            val tags =
+                                core.tags().use {
+                                    it.list(true).associateBy(Tag::id)
+                                }
                             val accounts =
                                 core.accounts().use {
                                     it.overview().accounts.associateBy(Account::id)
@@ -113,6 +121,7 @@ constructor(
                             TransactionDetailUiState(
                                 transaction = tx,
                                 categories = categories,
+                                tags = tags,
                                 accounts = accounts,
                                 people = people,
                                 linkedLendBorrow = debt,
@@ -151,6 +160,7 @@ constructor(
                                     customCycleCount = old.customCycleCount,
                                     customCycleUnit = old.customCycleUnit,
                                     customCycleEndDate = old.customCycleEndDate,
+                                    showBackdatedAnchorPrompt = old.showBackdatedAnchorPrompt,
                                 )
                             }
                     }
@@ -215,11 +225,50 @@ constructor(
             toAccountId = null,
             toCurrency = null,
             toAmount = null,
+            receivable = null,
+            collected = null,
             categoryId =
                 if (value in listOf(TransactionKind.EXPENSE, TransactionKind.INCOME)) it.categoryId
                 else null,
             subcategoryId = null,
         )
+    }
+
+    fun toggleReceivable(enabled: Boolean) = edit {
+        it.copy(receivable = if (enabled) it.amount else null, collected = null)
+    }
+
+    fun updateReceivableAmount(value: String) = edit {
+        it.copy(receivable = value.toBigDecimalOrNull() ?: it.amount)
+    }
+
+    fun toggleCollected(enabled: Boolean) = edit {
+        it.copy(collected = if (enabled) it.amount else null, receivable = null)
+    }
+
+    fun updateCollectedAmount(value: String) = edit {
+        it.copy(collected = value.toBigDecimalOrNull() ?: it.amount)
+    }
+
+    fun toggleTag(tagId: String) = edit {
+        val current = it.tagIds
+        it.copy(tagIds = if (tagId in current) current - tagId else current + tagId)
+    }
+
+    fun createTag(name: String, color: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        write {
+            val id = session.withCore { it.tags().use { tags -> tags.create(NewTag(trimmed, color)) } }
+            mutableState.update { state ->
+                state.copy(
+                    editableTransaction =
+                        state.editableTransaction?.let { tx ->
+                            tx.copy(tagIds = if (id in tx.tagIds) tx.tagIds else tx.tagIds + id)
+                        }
+                )
+            }
+        }
     }
 
     fun updateTransactionAccount(value: Account?) = edit { it.copy(accountId = value?.id) }
@@ -272,9 +321,55 @@ constructor(
         it.copy(customCycleEndDate = value)
     }
 
-    fun saveChanges() {
+    fun dismissBackdatedAnchorPrompt() {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+    }
+
+    fun confirmBackdatedSaveAsIs() {
+        mutableState.update { it.copy(showBackdatedAnchorPrompt = false) }
+        saveChanges(ignoreAnchorCheck = true)
+    }
+
+    fun confirmBackdatedUseNow() {
+        mutableState.update {
+            it.copy(
+                showBackdatedAnchorPrompt = false,
+                editableTransaction =
+                    it.editableTransaction?.copy(
+                        dateTime = java.time.LocalDateTime.now().coreTime()
+                    ),
+            )
+        }
+        saveChanges(ignoreAnchorCheck = true)
+    }
+
+    fun saveChanges(ignoreAnchorCheck: Boolean = false) {
         val snapshot = uiState.value
         val tx = snapshot.editableTransaction ?: return
+        if (!ignoreAnchorCheck) {
+            val txTime = tx.dateTime.toJavaDateTime()
+            val sourceAnchor =
+                snapshot.accounts[tx.accountId]
+                    ?.pockets
+                    ?.find { it.currency == tx.currency }
+                    ?.lastAnchorAt
+                    ?.toJavaDateTime()
+            val targetAnchor =
+                if (tx.kind == TransactionKind.TRANSFER)
+                    snapshot.accounts[tx.toAccountId]
+                        ?.pockets
+                        ?.find { it.currency == (tx.toCurrency ?: tx.currency) }
+                        ?.lastAnchorAt
+                        ?.toJavaDateTime()
+                else null
+            if (
+                (sourceAnchor != null && !txTime.isAfter(sourceAnchor)) ||
+                    (targetAnchor != null && !txTime.isAfter(targetAnchor))
+            ) {
+                mutableState.update { it.copy(showBackdatedAnchorPrompt = true) }
+                return
+            }
+        }
         write {
             attachmentStore.retainForCore(tx.attachments)
             session.withCore { core ->

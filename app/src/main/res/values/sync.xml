@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Backup & sync, and its Firebase sync page (docs/sync.md) -->
+<!-- Settings → Ledger sync (docs/sync.md) -->
 <resources>
-    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Records are encrypted on this device with your sync passphrase before they are uploaded, so only your devices can read them. Attachments, merchant icons, settings, AI keys and brokerage connections are not uploaded.</string>
+    <string name="sync_intro">Devices signed in to the same account keep the same ledger. Ledger records, AI settings (including keys), and brokerage connections (including credentials) are encrypted on this device with your sync passphrase before upload, so only your devices can read them. Attachments, merchant icons, and local UI preferences are not uploaded.</string>
     <string name="sync_unavailable_title">Not available in this build</string>
     <string name="sync_unavailable_body">Sync is currently unavailable. You can still move data with a backup file under Backup &amp; Sync.</string>
     <string name="sync_sign_in">Sign in with Google</string>
@@ -32,7 +32,6 @@
     <string name="sync_done">Synced</string>
     <string name="sync_failed">Sync failed. It retries when the device is online.</string>
     <!-- Backup & sync page -->
-    <string name="sync_firebase_title">Firebase sync</string>
     <string name="sync_enabled">Sync</string>
     <string name="sync_enabled_body">Changes on this device sync automatically</string>
     <string name="sync_paused_body">Paused. The account and key are kept; turn it on to resume.</string>
@@ -51,4 +50,58 @@
     <string name="backup_export_local_body">Choose what to include, then where to save the file</string>
     <string name="backup_restore_from">Restore from %1$s</string>
     <string name="backup_restore_local_body">Pick a backup file</string>
+    <string name="sync_first_sync_choice_title">Both this device and the cloud have data</string>
+    <string name="sync_first_sync_choice_body">Choose whether to merge both ledgers or replace this device\'s data with the cloud copy.</string>
+    <string name="sync_first_sync_merge">Merge both ledgers</string>
+    <string name="sync_first_sync_merge_body">Keep records from this device and combine them with the cloud copy.</string>
+    <string name="sync_first_sync_replace">Use cloud data only</string>
+    <string name="sync_first_sync_replace_body">A local safety backup is created first, then local records (including AI settings and broker connections) are replaced by the cloud copy.</string>
+    <string name="sync_first_sync_replace_confirm_title">Replace local data with cloud?</string>
+    <string name="sync_first_sync_replace_confirm_body">Core will create a local safety backup first, then clear local ledger records, AI settings, and broker connections before downloading the cloud copy.</string>
+    <string name="sync_conflicts_title">Sync conflicts</string>
+    <string name="sync_conflicts_pending_badge">Needs resolution</string>
+    <string name="sync_conflicts_auto_mine_badge">Auto-resolved · Kept this device</string>
+    <string name="sync_conflicts_auto_theirs_badge">Auto-resolved · Kept cloud</string>
+    <string name="sync_conflict_kind_both_edited">Edited on both devices</string>
+    <string name="sync_conflict_kind_edited_deleted">Edited here · Deleted in cloud</string>
+    <string name="sync_conflict_kind_deleted_edited">Deleted here · Edited in cloud</string>
+    <string name="sync_conflict_review">Resolve</string>
+    <string name="sync_conflict_review_done">Review</string>
+    <string name="sync_conflict_open_record">Open record</string>
+    <string name="sync_conflict_dismiss">Dismiss</string>
+    <string name="sync_conflict_dismiss_all">Clear auto-resolved</string>
+    <string name="sync_conflict_dialog_title">Resolve sync conflict</string>
+    <string name="sync_conflict_base">Base</string>
+    <string name="sync_conflict_mine">This device</string>
+    <string name="sync_conflict_theirs">Cloud</string>
+    <string name="sync_conflict_keep_mine">Keep this device</string>
+    <string name="sync_conflict_keep_theirs">Keep cloud</string>
+    <string name="sync_conflict_apply_per_field">Apply per-group choices</string>
+    <string name="sync_conflict_deleted_value">(Deleted)</string>
+    <string name="sync_conflict_secret_value">•••••• (Encrypted credential)</string>
+    <string name="sync_policy_title">Conflict resolution policy</string>
+    <string name="sync_policy_both_edited">When both devices edit the same field</string>
+    <string name="sync_policy_delete_vs_edit">When one device deletes and the other edits</string>
+    <string name="sync_policy_option_mine">Keep this device</string>
+    <string name="sync_policy_option_theirs">Keep cloud</string>
+    <string name="sync_policy_option_ask">Ask me</string>
+    <string name="sync_policy_option_delete">Delete wins</string>
+    <string name="sync_policy_option_edit">Keep edit</string>
+    <string name="sync_notices_title">Remote deletion notices</string>
+    <string name="sync_notice_deleted_body">Deleted on another device, but still referenced by local records:</string>
+    <string name="sync_table_transactions">Transaction</string>
+    <string name="sync_table_accounts">Account</string>
+    <string name="sync_table_budgets">Budget</string>
+    <string name="sync_table_subscriptions">Subscription</string>
+    <string name="sync_table_debts">Lend / Borrow</string>
+    <string name="sync_table_people">Contact</string>
+    <string name="sync_table_categories">Category</string>
+    <string name="sync_table_subcategories">Subcategory</string>
+    <string name="sync_table_tags">Tag</string>
+    <string name="sync_table_quick_templates">Quick template</string>
+    <string name="sync_table_ai_settings">AI provider settings</string>
+    <string name="sync_table_brokerage_connections">Brokerage connection</string>
+    <string name="sync_table_settings">Ledger settings</string>
+    <string name="home_sync_conflict_banner_title">%1$d sync conflicts need resolution</string>
+    <string name="home_sync_conflict_banner_subtitle">Tap to compare versions and resolve in Cloud Sync</string>
 </resources>

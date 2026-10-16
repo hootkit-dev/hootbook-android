@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 設定 → 同步（docs/sync.md） -->
 <resources>
-    <string name="sync_intro">登入同一帳號的裝置會保持同一份帳本。記錄在上傳前就在本機用同步密碼加密，只有你的裝置能讀取。附件、商家圖示、設定、AI 金鑰和券商連線都不會上傳。</string>
+    <string name="sync_intro">登入同一帳號的裝置會保持同一份帳本。帳本記錄、AI 設定（含金鑰）與券商連線（含憑據）在上傳前均在本機用同步密碼端到端加密，只有你的裝置能讀取。交易附件、商家圖示和本機介面偏好不會上傳。</string>
     <string name="sync_unavailable_title">此版本不支援同步</string>
     <string name="sync_unavailable_body">同步暫不可用。您仍可在「備份與同步」中用備份檔案搬移資料。</string>
     <string name="sync_sign_in">使用 Google 帳號登入</string>
@@ -32,7 +32,6 @@
     <string name="sync_done">同步完成</string>
     <string name="sync_failed">同步失敗，連網後會自動重試。</string>
     <!-- Backup & sync page -->
-    <string name="sync_firebase_title">Firebase 同步</string>
     <string name="sync_enabled">同步</string>
     <string name="sync_enabled_body">此裝置上的變更會自動同步</string>
     <string name="sync_paused_body">已暫停。帳戶和金鑰會保留，重新開啟即可繼續。</string>
@@ -51,4 +50,58 @@
     <string name="backup_export_local_body">選擇要包含的資料，再選擇儲存位置</string>
     <string name="backup_restore_from">從%1$s還原</string>
     <string name="backup_restore_local_body">選擇備份檔案</string>
+    <string name="sync_first_sync_choice_title">本機和雲端都有資料</string>
+    <string name="sync_first_sync_choice_body">請選擇合併兩邊的資料，或只保留雲端資料並取代本機資料。</string>
+    <string name="sync_first_sync_merge">合併兩邊資料</string>
+    <string name="sync_first_sync_merge_body">保留本機已有記錄，並與雲端帳本合併。</string>
+    <string name="sync_first_sync_replace">只用雲端資料（取代本機）</string>
+    <string name="sync_first_sync_replace_body">會先在本機建立安全備份，再用雲端資料取代本機記錄（含 AI 設定與券商連線）。</string>
+    <string name="sync_first_sync_replace_confirm_title">用雲端資料取代本機？</string>
+    <string name="sync_first_sync_replace_confirm_body">Core 會先自動建立本機安全備份，然後清空本機帳本記錄、AI 設定與券商連線，並拉取雲端資料。</string>
+    <string name="sync_conflicts_title">同步衝突</string>
+    <string name="sync_conflicts_pending_badge">待處理</string>
+    <string name="sync_conflicts_auto_mine_badge">已自動處理 · 保留本機</string>
+    <string name="sync_conflicts_auto_theirs_badge">已自動處理 · 保留雲端</string>
+    <string name="sync_conflict_kind_both_edited">兩端同時修改</string>
+    <string name="sync_conflict_kind_edited_deleted">本機修改 · 雲端已刪除</string>
+    <string name="sync_conflict_kind_deleted_edited">本機已刪除 · 雲端修改</string>
+    <string name="sync_conflict_review">處理衝突</string>
+    <string name="sync_conflict_review_done">查看詳情</string>
+    <string name="sync_conflict_open_record">打開記錄</string>
+    <string name="sync_conflict_dismiss">忽略</string>
+    <string name="sync_conflict_dismiss_all">清理已自動處理項</string>
+    <string name="sync_conflict_dialog_title">處理同步衝突</string>
+    <string name="sync_conflict_base">基準版本</string>
+    <string name="sync_conflict_mine">本機版本</string>
+    <string name="sync_conflict_theirs">雲端版本</string>
+    <string name="sync_conflict_keep_mine">保留本機</string>
+    <string name="sync_conflict_keep_theirs">保留雲端</string>
+    <string name="sync_conflict_apply_per_field">按欄位組合併</string>
+    <string name="sync_conflict_deleted_value">（已刪除）</string>
+    <string name="sync_conflict_secret_value">••••••（加密金鑰/憑據）</string>
+    <string name="sync_policy_title">衝突處理策略</string>
+    <string name="sync_policy_both_edited">兩端同時修改同一欄位時</string>
+    <string name="sync_policy_delete_vs_edit">一端刪除、另一端修改時</string>
+    <string name="sync_policy_option_mine">本機優先</string>
+    <string name="sync_policy_option_theirs">雲端優先</string>
+    <string name="sync_policy_option_ask">每次詢問</string>
+    <string name="sync_policy_option_delete">刪除優先</string>
+    <string name="sync_policy_option_edit">保留修改</string>
+    <string name="sync_notices_title">雲端刪除提醒</string>
+    <string name="sync_notice_deleted_body">已在其他裝置刪除，但以下本機記錄仍引用它：</string>
+    <string name="sync_table_transactions">交易記錄</string>
+    <string name="sync_table_accounts">帳戶</string>
+    <string name="sync_table_budgets">預算</string>
+    <string name="sync_table_subscriptions">訂閱與週期帳單</string>
+    <string name="sync_table_debts">借貸記錄</string>
+    <string name="sync_table_people">聯絡人</string>
+    <string name="sync_table_categories">分類</string>
+    <string name="sync_table_subcategories">子分類</string>
+    <string name="sync_table_tags">標籤</string>
+    <string name="sync_table_quick_templates">捷徑範本</string>
+    <string name="sync_table_ai_settings">AI 服務設定</string>
+    <string name="sync_table_brokerage_connections">券商連線</string>
+    <string name="sync_table_settings">帳本設定</string>
+    <string name="home_sync_conflict_banner_title">有 %1$d 項雲端同步衝突待處理</string>
+    <string name="home_sync_conflict_banner_subtitle">點擊前往雲端同步對比並解決衝突</string>
 </resources>

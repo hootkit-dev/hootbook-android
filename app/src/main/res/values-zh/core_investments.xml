@@ -74,4 +74,15 @@
     <string name="core_invest_error_storage">本地存储操作失败，重试前请重新读取缓存状态。</string>
     <string name="core_invest_error_platform">设备安全存储或平台操作失败。</string>
     <string name="core_invest_error_unknown">操作失败，未显示服务端原始错误；请重新读取后重试。</string>
+    <string name="core_invest_set_credentials">填写凭据</string>
+    <string name="core_invest_set_credentials_title">填写 %1$s 的凭据</string>
+    <string name="core_invest_save_credentials">保存凭据</string>
+    <string name="core_invest_missing_credentials_hint">已从其他设备同步连接，请在本机填写 Token 与 Query ID 后读取报表。</string>
+    <string name="core_invest_needs_first_refresh_hint">凭据已保存，请刷新以拉取最新券商报表。</string>
+    <string name="core_invest_daily_auto_sync_title">每日自动拉取持仓</string>
+    <string name="core_invest_daily_auto_sync_subtitle">每天首次打开或后台联网时自动拉取最新券商报表</string>
+    <string name="core_invest_synced_badge">已同步</string>
+    <string name="core_invest_fetch_first_report">立即拉取报表</string>
+    <string name="core_invest_create_and_link">新建同名账本账户并关联</string>
+    <string name="core_invest_unlinked_transfer_hint">尚未关联账本账户。关联后即可在记账时直接从银行卡转账到该券商账户。</string>
 </resources>

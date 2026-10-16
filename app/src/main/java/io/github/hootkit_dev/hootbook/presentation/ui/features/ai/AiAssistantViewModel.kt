@@ -31,6 +31,7 @@ enum class AiPhase {
 data class AiAssistantUiState(
     val loading: Boolean = true,
     val settings: AiSettings? = null,
+    val syncActive: Boolean = false,
     val config: AiConfigDraft = AiConfigDraft(),
     val configDirty: Boolean = false,
     val configBusy: Boolean = false,
@@ -38,6 +39,8 @@ data class AiAssistantUiState(
     val models: List<AiModel> = emptyList(),
     val modelSearch: String = "",
     val modelError: String? = null,
+    val reasoningLevels: List<AiReasoning> = emptyList(),
+    val pendingReview: AiPendingReview? = null,
     val request: String = "",
     val files: List<CoreAiInboxFile> = emptyList(),
     val fileBusy: Boolean = false,
@@ -73,6 +76,7 @@ private constructor(
     private val nativeDispatcher: CoroutineDispatcher,
     private val testDuplicates: (suspend (AiReview) -> Map<String, Transaction>)?,
     private val invalidMessage: () -> String,
+    private val reasoningRejectedMessage: (() -> String)? = null,
 ) : ViewModel() {
     @Inject
     constructor(
@@ -91,6 +95,7 @@ private constructor(
         CoreAiNativeDispatcher,
         null,
         { context.getString(io.github.hootkit_dev.hootbook.R.string.onboarding_operation_failed) },
+        { context.getString(io.github.hootkit_dev.hootbook.R.string.core_ai_reasoning_rejected) },
     )
 
     internal constructor(
@@ -106,10 +111,15 @@ private constructor(
         nativeDispatcher: CoroutineDispatcher = CoreAiNativeDispatcher,
         duplicates: suspend (AiReview) -> Map<String, Transaction> = { emptyMap() },
         ai: suspend () -> AiInterface,
-    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." })
+    ) : this(null, changes, inbox, prepare, ai, lookups, nativeDispatcher, duplicates, { "Something went wrong. Please try again." }, null)
 
     private fun failureText(error: Throwable): String =
-        if (error is CoreException.Invalid) invalidMessage() else aiFailureText(error)
+        when {
+            error is CoreException.Invalid -> invalidMessage()
+            error is CoreException.Ai && error.failure == AiFailure.REASONING_REJECTED && reasoningRejectedMessage != null ->
+                reasoningRejectedMessage.invoke()
+            else -> aiFailureText(error)
+        }
 
     private val mutable = MutableStateFlow(AiAssistantUiState())
     val state = mutable.asStateFlow()
@@ -152,17 +162,45 @@ private constructor(
         query =
             viewModelScope.launch {
                 val tables =
-                    setOf(Table.SETTINGS, Table.ACCOUNTS, Table.CATEGORIES, Table.SUBCATEGORIES)
+                    setOf(
+                        Table.AI_SETTINGS,
+                        Table.SYNC_STATE,
+                        Table.SETTINGS,
+                        Table.ACCOUNTS,
+                        Table.CATEGORIES,
+                        Table.SUBCATEGORIES,
+                    )
                 val snapshots =
                     if (core != null)
                         core.observe(changes, tables) { root ->
                             coreQuery {
-                                val settings = root.ai().use { it.settings() }
+                                val (settings, pending, levels) =
+                                    root.ai().use { ai ->
+                                        val s = ai.settings()
+                                        Triple(
+                                            s,
+                                            ai.pendingReview(),
+                                            ai.reasoningLevels(s.protocol, s.baseUrl),
+                                        )
+                                    }
+                                val syncActive =
+                                    runCatching {
+                                        root.sync().use { sync ->
+                                            val st = sync.status()
+                                            st.lastSuccess != null ||
+                                                st.cursor != null ||
+                                                st.conflictCount > 0u ||
+                                                st.outboxCount > 0u
+                                        }
+                                    }.getOrDefault(false)
                                 val accounts = root.accounts().use { it.overview().accounts }
                                 root.categories().use { categories ->
                                     val all = categories.list(null, true)
                                     AiAssistantUiState(
                                         settings = settings,
+                                        syncActive = syncActive,
+                                        pendingReview = pending,
+                                        reasoningLevels = levels,
                                         accounts = accounts.associateBy { it.id },
                                         categories = all.associateBy { it.id },
                                         subcategories =
@@ -174,10 +212,20 @@ private constructor(
                     else
                         changes.observe(tables).mapLatest {
                             coreQuery {
-                                val settings = withAi { it.settings() }
+                                val (settings, pending, levels) =
+                                    withAi { ai ->
+                                        val s = ai.settings()
+                                        Triple(
+                                            s,
+                                            ai.pendingReview(),
+                                            ai.reasoningLevels(s.protocol, s.baseUrl),
+                                        )
+                                    }
                                 val refs = testLookups!!.invoke()
                                 AiAssistantUiState(
                                     settings = settings,
+                                    pendingReview = pending,
+                                    reasoningLevels = levels,
                                     accounts = refs.first.associateBy { it.id },
                                     categories = refs.second.associateBy { it.id },
                                 )
@@ -192,6 +240,9 @@ private constructor(
                                     it.copy(
                                         loading = false,
                                         settings = config,
+                                        syncActive = loaded.syncActive,
+                                        pendingReview = loaded.pendingReview,
+                                        reasoningLevels = loaded.reasoningLevels,
                                         config =
                                             if (it.configDirty) it.config
                                             else
@@ -199,6 +250,7 @@ private constructor(
                                                     config.protocol,
                                                     config.baseUrl,
                                                     config.model,
+                                                    reasoning = config.reasoning,
                                                 ),
                                         accounts = loaded.accounts,
                                         categories = loaded.categories,
@@ -236,7 +288,7 @@ private constructor(
         }
     }
 
-    fun protocol(protocol: AiProtocol) {
+    fun protocol(protocol: AiApiProtocol) {
         if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
             return
         val revision = ++modelsRevision
@@ -251,7 +303,12 @@ private constructor(
                 )
                     return@launch
                 configChanged {
-                    it.copy(protocol = protocol, baseUrl = defaults.baseUrl, model = defaults.model)
+                    it.copy(
+                        protocol = protocol,
+                        baseUrl = defaults.baseUrl,
+                        model = defaults.model,
+                        reasoning = AiReasoning.PROVIDER_DEFAULT,
+                    )
                 }
             } catch (error: Throwable) {
                 mutable.update { it.copy(error = failureText(error)) }
@@ -275,14 +332,30 @@ private constructor(
                         // Separate Core commands; if settings succeeds and key fails, the error is
                         // explicit.
                         ai.setSettings(draft.protocol, draft.baseUrl, draft.model)
+                        val actual = ai.settings()
+                        val levels = ai.reasoningLevels(actual.protocol, actual.baseUrl)
+                        val validReasoning =
+                            if (
+                                draft.reasoning == AiReasoning.PROVIDER_DEFAULT ||
+                                    draft.reasoning in levels
+                            )
+                                draft.reasoning
+                            else AiReasoning.PROVIDER_DEFAULT
+                        ai.setReasoning(validReasoning)
                         if (draft.removeKey || draft.apiKey.isNotBlank())
                             ai.setApiKey(if (draft.removeKey) null else draft.apiKey)
-                        val actual = ai.settings()
+                        val saved = ai.settings()
                         mutable.update {
                             it.copy(
-                                settings = actual,
+                                settings = saved,
+                                reasoningLevels = levels,
                                 config =
-                                    AiConfigDraft(actual.protocol, actual.baseUrl, actual.model),
+                                    AiConfigDraft(
+                                        saved.protocol,
+                                        saved.baseUrl,
+                                        saved.model,
+                                        reasoning = saved.reasoning,
+                                    ),
                                 configDirty = false,
                             )
                         }
@@ -299,13 +372,26 @@ private constructor(
         }
     }
 
-    fun loadModels() {
+    fun clearModels() {
+        if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
+            return
+        ++modelsRevision
+        modelsJob?.cancel()
+        mutable.update {
+            it.copy(
+                modelLoading = false,
+                models = emptyList(),
+                modelError = null,
+            )
+        }
+    }
+
+    fun loadModels(draft: AiConfigDraft = state.value.config) {
         if (state.value.configBusy || state.value.saving || state.value.phase != AiPhase.COMPOSE)
             return
         val revision = ++modelsRevision
         modelsJob?.cancel()
-        val draft = state.value.config
-        mutable.update { it.copy(modelLoading = true, error = null, modelError = null) }
+        mutable.update { it.copy(modelLoading = true, modelError = null) }
         modelsJob =
             viewModelScope.launch {
                 try {
@@ -325,7 +411,6 @@ private constructor(
                         mutable.update {
                             it.copy(
                                 modelLoading = false,
-                                error = failureText(error),
                                 modelError = failureText(error),
                             )
                         }
@@ -342,7 +427,17 @@ private constructor(
         ++modelsRevision
         modelsJob?.cancel()
         mutable.update {
-            it.copy(config = it.config.copy(model = id), configDirty = true, modelLoading = false)
+            it.copy(
+                config =
+                    it.config.copy(
+                        model = id,
+                        reasoning =
+                            if (id != it.config.model) AiReasoning.PROVIDER_DEFAULT
+                            else it.config.reasoning,
+                    ),
+                configDirty = true,
+                modelLoading = false,
+            )
         }
     }
 
@@ -393,6 +488,103 @@ private constructor(
         }
     }
 
+    private suspend fun lookupDuplicates(review: AiReview): Map<String, Transaction> =
+        testDuplicates?.invoke(review)
+            ?: core!!.withCore { root ->
+                root.ledger().use { ledger ->
+                    val records = linkedMapOf<String, Transaction>()
+                    review.changes
+                        .mapNotNull {
+                            (it.change as? AiChange.AddTransaction)?.possibleDuplicate
+                        }
+                        .distinct()
+                        .forEach { id ->
+                            try {
+                                records[id] = ledger.get(id)
+                            } catch (_: CoreException.NotFound) {}
+                        }
+                    records
+                }
+            }
+
+    fun resumePendingReview() {
+        val s = state.value
+        val pending = s.pendingReview ?: return
+        if (s.phase != AiPhase.COMPOSE || s.loading || s.configBusy || s.fileBusy || s.saving)
+            return
+        val revision = runRevision.incrementAndGet()
+        val review = pending.review
+        mutable.update { it.copy(saving = true, error = null) }
+        runJob =
+            viewModelScope.launch {
+                var native: AiSession? = null
+                var handedToReview = false
+                try {
+                    val steps =
+                        withContext(nativeDispatcher) {
+                            val session =
+                                withAi {
+                                    it.resumePending().also { allocated -> native = allocated }
+                                }
+                            ensureActive()
+                            session.steps()
+                        }
+                    val duplicates = lookupDuplicates(review)
+                    if (revision != runRevision.get() || cleared) return@launch
+                    synchronized(sessionLock) { activeSession = native }
+                    handedToReview = true
+                    mutable.update {
+                        it.copy(
+                            saving = false,
+                            pendingReview = null,
+                            phase = AiPhase.REVIEW,
+                            review = review,
+                            duplicates = duplicates,
+                            items = review.changes,
+                            decisions =
+                                review.changes.associate { proposal ->
+                                    proposal.index to
+                                        AiDecision(
+                                            proposal.index,
+                                            (proposal.change as? AiChange.AddTransaction)
+                                                ?.possibleDuplicate == null,
+                                            null,
+                                        )
+                                },
+                            steps = steps,
+                            startedAt = SystemClock.elapsedRealtime(),
+                            finishedAt = SystemClock.elapsedRealtime(),
+                        )
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    if (revision == runRevision.get())
+                        mutable.update {
+                            it.copy(saving = false, error = failureText(error))
+                        }
+                } finally {
+                    if (!handedToReview) native?.let { releaseNative(it) }
+                }
+            }
+    }
+
+    fun discardPendingReview() {
+        val s = state.value
+        if (s.phase != AiPhase.COMPOSE || s.saving || s.configBusy) return
+        mutable.update { it.copy(saving = true, error = null) }
+        viewModelScope.launch {
+            try {
+                withAi { it.discardPending() }
+                mutable.update { it.copy(pendingReview = null) }
+            } catch (error: Throwable) {
+                mutable.update { it.copy(error = failureText(error)) }
+            } finally {
+                mutable.update { it.copy(saving = false) }
+            }
+        }
+    }
+
     fun analyze() {
         val s = state.value
         if (
@@ -409,6 +601,7 @@ private constructor(
         mutable.update {
             it.copy(
                 phase = AiPhase.PREPARING,
+                pendingReview = null,
                 error = null,
                 passwordFile = null,
                 steps = emptyList(),
@@ -469,25 +662,7 @@ private constructor(
                             val result = running.run()
                             result to running.steps()
                         }
-                    val duplicates =
-                        testDuplicates?.invoke(review)
-                            ?: core!!.withCore { root ->
-                                root.ledger().use { ledger ->
-                                    val records = linkedMapOf<String, Transaction>()
-                                    review.changes
-                                        .mapNotNull {
-                                            (it.change as? AiChange.AddTransaction)
-                                                ?.possibleDuplicate
-                                        }
-                                        .distinct()
-                                        .forEach { id ->
-                                            try {
-                                                records[id] = ledger.get(id)
-                                            } catch (_: CoreException.NotFound) {}
-                                        }
-                                    records
-                                }
-                            }
+                    val duplicates = lookupDuplicates(review)
                     if (revision != runRevision.get() || cleared) return@launch
                     // Running pointers belong only to this coroutine. Main hands ownership
                     // to review after run has fully unwound; no native call occurs under this lock.
@@ -536,7 +711,12 @@ private constructor(
                             )
                         }
                 } finally {
-                    if (!handedToReview) native?.let { releaseNative(it) }
+                    if (!handedToReview) {
+                        native?.let {
+                            releaseNative(it)
+                            runCatching { withAi { ai -> ai.discardPending() } }
+                        }
+                    }
                 }
             }
     }
@@ -559,6 +739,7 @@ private constructor(
         mutable.update {
             it.copy(
                 phase = AiPhase.COMPOSE,
+                pendingReview = null,
                 steps = emptyList(),
                 items = emptyList(),
                 review = null,
@@ -611,7 +792,9 @@ private constructor(
             try {
                 withContext(NonCancellable + nativeDispatcher) {
                     val applied = native.apply(decisions)
-                    mutable.update { it.copy(phase = AiPhase.SAVED, applied = applied) }
+                    mutable.update {
+                        it.copy(phase = AiPhase.SAVED, applied = applied, pendingReview = null)
+                    }
                 }
             } catch (error: Throwable) {
                 mutable.update { it.copy(error = failureText(error)) }
@@ -644,12 +827,20 @@ private constructor(
 
     fun restart() {
         if (state.value.saving || state.value.configBusy || state.value.fileBusy) return
+        val shouldDiscardPending =
+            state.value.phase == AiPhase.REVIEW || state.value.pendingReview != null
         cancel()
         releaseSession()
+        if (shouldDiscardPending) {
+            sessionCleanup.launch {
+                runCatching { withAi { it.discardPending() } }
+            }
+        }
         passwords.clear()
         mutable.update {
             it.copy(
                 phase = AiPhase.COMPOSE,
+                pendingReview = null,
                 request = "",
                 review = null,
                 items = emptyList(),

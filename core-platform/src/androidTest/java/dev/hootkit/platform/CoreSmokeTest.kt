@@ -24,7 +24,7 @@ class CoreSmokeTest {
             val first = open()
             val accountId: String
             try {
-                assertEquals("1.0", first.version().spec)
+                assertEquals("1.1", first.version().spec)
                 accountId = first.accounts().create(NewAccount("Smoke Wallet", null, AccountKind.WALLET, "CNY",
                     BigDecimal("100.00"), LocalDateTime(2026, 10u, 1u, 0u, 0u, 0u, 0u),
                     null, null, null, null, null, null, emptyList()))

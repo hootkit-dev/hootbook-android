@@ -14,11 +14,26 @@ import javax.inject.Inject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+import io.github.hootkit_dev.hootbook.presentation.common.TimePeriod
+
 internal val accountTables = setOf(Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.BALANCE_ANCHORS,
-    Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE)
+    Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE,
+    Table.BROKERAGE_CONNECTIONS, Table.BROKERAGE_LINKS, Table.TAGS, Table.TRANSACTION_TAGS,
+    Table.PEOPLE, Table.DEBTS)
+
+private data class NetWorthQueryConfig(
+    val period: TimePeriod = TimePeriod.THIS_MONTH,
+    val customRange: Pair<java.time.LocalDate, java.time.LocalDate>? = null,
+    val step: HistoryStep = HistoryStep.DAILY,
+)
 
 data class ManageAccountsUiState(
     val overview: AccountsOverview? = null,
+    val netWorthHistory: NetWorthHistory? = null,
+    val debts: DebtSummary? = null,
+    val netWorthPeriod: TimePeriod = TimePeriod.THIS_MONTH,
+    val netWorthCustomRange: Pair<java.time.LocalDate, java.time.LocalDate>? = null,
+    val netWorthStep: HistoryStep = HistoryStep.DAILY,
     val connections: List<BrokerageConnection> = emptyList(),
     val institutions: List<Institution> = emptyList(),
     val customCurrencies: List<CustomCurrency> = emptyList(),
@@ -30,6 +45,7 @@ data class ManageAccountsUiState(
     val commandRevision: Long = 0,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ManageAccountsViewModel @Inject constructor(
     private val session: CoreSession,
@@ -37,41 +53,160 @@ class ManageAccountsViewModel @Inject constructor(
 ) : ViewModel() {
     private val mutable = MutableStateFlow(ManageAccountsUiState())
     val uiState = mutable.asStateFlow()
+    private val queryConfig = MutableStateFlow(NetWorthQueryConfig())
     init {
         viewModelScope.launch {
-            session.observe(changes, accountTables) { core ->
-                coreQuery {
-                    val overview = core.accounts().use { it.overview() }
-                    val institutions = core.catalog().use { it.all() }
-                    val currency = core.settings().use { it.mainCurrency() }
-                    val custom = core.currency().use { it.customCurrencies() }
-                    val connections = core.brokerage().use { it.connections() }
-                    ManageAccountsUiState(overview = overview, connections = connections, institutions = institutions,
-                        customCurrencies = custom, defaultCurrency = currency, isLoading = false)
+            queryConfig.flatMapLatest { cfg ->
+                session.observe(changes, accountTables) { core ->
+                    coreQuery {
+                        val today = java.time.LocalDate.now()
+                        val (rawFrom, rawTo) = when (cfg.period) {
+                            TimePeriod.THIS_MONTH -> java.time.YearMonth.from(today).atDay(1) to today
+                            TimePeriod.LAST_MONTH -> {
+                                val lastMonth = java.time.YearMonth.from(today).minusMonths(1)
+                                lastMonth.atDay(1) to lastMonth.atEndOfMonth()
+                            }
+                            TimePeriod.CURRENT_FY -> today.withDayOfYear(1) to today
+                            TimePeriod.ALL -> today.minusDays(3650) to today
+                            TimePeriod.CUSTOM -> cfg.customRange ?: (today.minusDays(30) to today)
+                        }
+                        val clampedTo = if (rawTo < rawFrom) rawFrom else rawTo
+                        val clampedFrom = if (java.time.temporal.ChronoUnit.DAYS.between(rawFrom, clampedTo) > 3650) {
+                            clampedTo.minusDays(3650)
+                        } else {
+                            rawFrom
+                        }
+                        val (overview, rawHistory) = core.accounts().use { api ->
+                            api.overview() to api.netWorthHistory(
+                                LocalDate(clampedFrom.year, clampedFrom.monthValue.toUByte(), clampedFrom.dayOfMonth.toUByte()),
+                                LocalDate(clampedTo.year, clampedTo.monthValue.toUByte(), clampedTo.dayOfMonth.toUByte()),
+                                cfg.step,
+                            )
+                        }
+                        val history = if (rawHistory.points.size > 2) {
+                            val earliest = listOfNotNull(rawHistory.dataSince, rawHistory.securitiesSince)
+                                .minByOrNull { java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt()) }
+                                ?.let {
+                                    if (cfg.step == HistoryStep.MONTHLY) {
+                                        java.time.LocalDate.of(it.year, it.month.toInt(), 1)
+                                    } else {
+                                        java.time.LocalDate.of(it.year, it.month.toInt(), it.day.toInt())
+                                    }
+                                }
+                            if (earliest != null) {
+                                val filtered = rawHistory.points.filter { pt ->
+                                    val d = java.time.LocalDate.of(pt.date.year, pt.date.month.toInt(), pt.date.day.toInt())
+                                    !d.isBefore(earliest)
+                                }
+                                rawHistory.copy(points = if (filtered.size >= 2) filtered else rawHistory.points.takeLast(2))
+                            } else {
+                                rawHistory
+                            }
+                        } else {
+                            rawHistory
+                        }
+                        val debts = core.plans().use {
+                            it.debtSummary(LocalDate(today.year, today.monthValue.toUByte(), today.dayOfMonth.toUByte()))
+                        }
+                        val institutions = core.catalog().use { it.all() }
+                        val currency = core.settings().use { it.mainCurrency() }
+                        val custom = core.currency().use { it.customCurrencies() }
+                        val connections = core.brokerage().use { it.connections() }
+                        ManageAccountsUiState(
+                            overview = overview,
+                            netWorthHistory = history,
+                            debts = debts,
+                            netWorthPeriod = cfg.period,
+                            netWorthCustomRange = cfg.customRange,
+                            netWorthStep = cfg.step,
+                            connections = connections,
+                            institutions = institutions,
+                            customCurrencies = custom,
+                            defaultCurrency = currency,
+                            isLoading = false,
+                        )
+                    }
                 }
             }.collect { result ->
                 result.fold(
-                    onSuccess = { snapshot -> mutable.update { it.copy(overview = snapshot.overview, connections = snapshot.connections,
-                        institutions = snapshot.institutions, customCurrencies = snapshot.customCurrencies,
-                        defaultCurrency = snapshot.defaultCurrency, isLoading = false) } },
+                    onSuccess = { snapshot ->
+                        mutable.update {
+                            it.copy(
+                                overview = snapshot.overview,
+                                netWorthHistory = snapshot.netWorthHistory,
+                                debts = snapshot.debts,
+                                netWorthPeriod = snapshot.netWorthPeriod,
+                                netWorthCustomRange = snapshot.netWorthCustomRange,
+                                netWorthStep = snapshot.netWorthStep,
+                                connections = snapshot.connections,
+                                institutions = snapshot.institutions,
+                                customCurrencies = snapshot.customCurrencies,
+                                defaultCurrency = snapshot.defaultCurrency,
+                                isLoading = false,
+                            )
+                        }
+                    },
                     onFailure = { failure -> mutable.update { it.copy(isLoading = false, errorMessage = coreFailureText(failure)) } },
                 )
             }
         }
     }
+    fun selectNetWorthPeriod(period: TimePeriod) {
+        if (period == TimePeriod.CUSTOM && queryConfig.value.customRange == null) return
+        val defaultStep = when (period) {
+            TimePeriod.THIS_MONTH, TimePeriod.LAST_MONTH -> HistoryStep.DAILY
+            TimePeriod.CURRENT_FY, TimePeriod.ALL -> HistoryStep.MONTHLY
+            TimePeriod.CUSTOM -> {
+                val range = queryConfig.value.customRange
+                if (range != null && java.time.temporal.ChronoUnit.DAYS.between(range.first, range.second) > 62) {
+                    HistoryStep.MONTHLY
+                } else {
+                    HistoryStep.DAILY
+                }
+            }
+        }
+        queryConfig.update { it.copy(period = period, step = defaultStep) }
+    }
+    fun setNetWorthCustomRange(start: java.time.LocalDate, end: java.time.LocalDate) {
+        val (from, to) = if (start <= end) start to end else end to start
+        val defaultStep = if (java.time.temporal.ChronoUnit.DAYS.between(from, to) > 62) {
+            HistoryStep.MONTHLY
+        } else {
+            HistoryStep.DAILY
+        }
+        queryConfig.update { it.copy(period = TimePeriod.CUSTOM, customRange = from to to, step = defaultStep) }
+    }
+    fun selectNetWorthStep(step: HistoryStep) {
+        queryConfig.update { it.copy(step = step) }
+    }
     fun addAccount(input: NewAccount, onSaved: () -> Unit = {}) = command(onSaved) { core ->
         core.accounts().use { it.create(input) }
     }
-    fun editAccount(account: Account, input: NewAccount, onSaved: () -> Unit = {}) = command(onSaved) { core ->
+    fun editAccount(
+        account: Account,
+        input: NewAccount,
+        isDefault: Boolean = account.isDefault,
+        archived: Boolean = account.archived,
+        calibratedBalances: Map<String, java.math.BigDecimal> = emptyMap(),
+        onSaved: () -> Unit = {}
+    ) = command(onSaved) { core ->
         core.accounts().use { api ->
-            // Added pockets retain their explicit opening anchors. Editing account metadata never calibrates balances.
             input.extraCurrencies.forEach { api.addCurrency(account.id, it.currency, it.openingBalance, null) }
             api.update(account.id, AccountPatch(name = input.name, last4 = input.last4,
                 clearLast4 = input.last4 == null, kind = input.kind, mainCurrency = input.mainCurrency,
                 institutionKey = input.institutionKey, clearInstitution = input.institutionKey == null,
                 icon = input.icon, color = input.color, creditLimit = input.creditLimit,
                 clearCreditLimit = input.creditLimit == null, statementDay = input.statementDay,
-                dueDay = input.dueDay, clearBillingDays = true))
+                dueDay = input.dueDay, clearBillingDays = true, archived = archived))
+            calibratedBalances.forEach { (currency, newBalance) ->
+                val oldBalance = account.pockets.firstOrNull { it.currency == currency }?.balance
+                if (oldBalance == null || newBalance.compareTo(oldBalance) != 0) {
+                    api.calibrate(account.id, currency, newBalance, null)
+                }
+            }
+        }
+        if (isDefault != account.isDefault) {
+            core.settings().use { it.setDefaultAccount(if (isDefault) account.id else null) }
         }
     }
     fun deleteAccount(accountId: String, deleteTransactions: Boolean = false, onDeleted: () -> Unit = {}) = command(onDeleted) { core ->

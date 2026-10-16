@@ -88,6 +88,7 @@ import io.github.hootkit_dev.hootbook.presentation.format.CoreMoneyPresentation 
 import io.github.hootkit_dev.hootbook.presentation.ui.components.CustomTitleTopAppBar
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItem
 import io.github.hootkit_dev.hootbook.presentation.ui.components.ListItemPosition
+import io.github.hootkit_dev.hootbook.presentation.ui.components.PreferenceSwitch
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SearchBarBox
 import io.github.hootkit_dev.hootbook.presentation.ui.components.SectionHeader
 import io.github.hootkit_dev.hootbook.presentation.ui.components.hootbookTextFieldColors
@@ -130,8 +131,8 @@ fun InvestmentsScreen(
             pendingDisconnect = true
         }
     }
-    LaunchedEffect(pendingDisconnect, state.busy, state.selected) {
-        if (pendingDisconnect && !state.busy && state.selected == null) {
+    LaunchedEffect(pendingDisconnect, state.busy, state.selected, state.selectedConnection) {
+        if (pendingDisconnect && !state.busy && state.selected == null && state.selectedConnection == null) {
             onNavigateBack()
         }
     }
@@ -140,6 +141,7 @@ fun InvestmentsScreen(
         state.busy ||
             state.holding != null ||
             state.connectProvider != null ||
+            state.credentialsTarget != null ||
             state.linkTarget != null ||
             state.disconnectTarget != null
     ) {
@@ -147,6 +149,8 @@ fun InvestmentsScreen(
             viewModel.selectHolding(null)
         } else if (state.connectProvider != null) {
             viewModel.showConnect(null)
+        } else if (state.credentialsTarget != null) {
+            viewModel.showSetCredentials(null)
         } else if (state.linkTarget != null) {
             viewModel.showLink(null)
         } else if (state.disconnectTarget != null) {
@@ -162,6 +166,8 @@ fun InvestmentsScreen(
                 viewModel.selectHolding(null)
             } else if (state.connectProvider != null) {
                 viewModel.showConnect(null)
+            } else if (state.credentialsTarget != null) {
+                viewModel.showSetCredentials(null)
             } else if (state.linkTarget != null) {
                 viewModel.showLink(null)
             } else if (state.disconnectTarget != null) {
@@ -175,9 +181,12 @@ fun InvestmentsScreen(
         onCancel = viewModel::cancelOperation,
         onClearError = viewModel::clearError,
         onConnect = viewModel::showConnect,
+        onSetCredentials = viewModel::showSetCredentials,
+        onSetDailyAutoSync = viewModel::setDailyAutoSync,
         onSelect = viewModel::selectAccount,
         onHolding = viewModel::selectHolding,
         onLink = viewModel::showLink,
+        onCreateAndLink = viewModel::createAndLink,
         onDisconnect = viewModel::showDisconnect,
         onManageAccounts = { if (!state.busy) onManageManualAccounts() },
         onAccountHistory = { if (!state.busy) onAccountHistory(it) },
@@ -205,8 +214,25 @@ fun InvestmentsScreen(
         }
     }
 
+    // Set credentials dialog for an existing (e.g. cloud-synced) connection
+    state.credentialsTarget?.let { connection ->
+        BrokerConnectForm(
+            providerId = connection.providerId,
+            busy = state.busy,
+            error = state.error,
+            onDismiss = {
+                if (state.busy) viewModel.cancelOperation() else viewModel.showSetCredentials(null)
+                viewModel.clearError()
+            },
+            onConnect = { _, fields -> viewModel.setCredentials(connection.id, fields) },
+        )
+    }
+
     // Link dialog
     state.linkTarget?.let { ref ->
+        val currentLinkedId = linkedAccount(ref, state.connections)?.linkedAccountId
+        val currentLinkedAccount =
+            currentLinkedId?.let { id -> state.overview?.accounts?.find { it.id == id } }
         AlertDialog(
             onDismissRequest = { viewModel.showLink(null) },
             title = { Text(stringResource(R.string.core_invest_link_title)) },
@@ -216,8 +242,28 @@ fun InvestmentsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(stringResource(R.string.core_invest_link_warning))
+                    if (currentLinkedId != null) {
+                        Text(
+                            text =
+                                stringResource(
+                                    R.string.core_invest_linked_account,
+                                    currentLinkedAccount?.name ?: currentLinkedId,
+                                ),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        Button(
+                            enabled = !state.busy,
+                            onClick = { viewModel.createAndLink(ref) },
+                            modifier = Modifier.fillMaxWidth().testTag("create_and_link_account"),
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.core_invest_create_and_link))
+                        }
+                    }
                     val candidates = availableLinkAccounts(ref, state.overview?.accounts.orEmpty())
-                    if (candidates.isEmpty()) {
+                    if (candidates.isEmpty() && currentLinkedId != null) {
                         Text(stringResource(R.string.core_invest_no_link_accounts))
                     }
                     candidates.forEach { account ->
@@ -229,7 +275,7 @@ fun InvestmentsScreen(
                             Text("${account.name} · ${account.mainCurrency}")
                         }
                     }
-                    if (linkedAccount(ref, state.connections)?.linkedAccountId != null) {
+                    if (currentLinkedId != null) {
                         TextButton(
                             enabled = !state.busy,
                             onClick = { viewModel.link(ref, null) },
@@ -285,15 +331,18 @@ internal fun InvestmentsContent(
     state: InvestmentsUiState,
     providerName: (String) -> String,
     onBack: () -> Unit,
-    onRefresh: (Long) -> Unit,
+    onRefresh: (String) -> Unit,
     onRefreshAll: () -> Unit,
     onCancel: () -> Unit,
     onClearError: () -> Unit,
     onConnect: (String?) -> Unit,
+    onSetCredentials: (String?) -> Unit = {},
+    onSetDailyAutoSync: (Boolean) -> Unit = {},
     onSelect: (BrokerAccountRef?) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
-    onDisconnect: (Long?) -> Unit,
+    onCreateAndLink: (BrokerAccountRef) -> Unit = {},
+    onDisconnect: (String?) -> Unit,
     onManageAccounts: () -> Unit,
     onAccountHistory: (String) -> Unit,
     onAddInvestment: () -> Unit,
@@ -305,6 +354,7 @@ internal fun InvestmentsContent(
 
     val holding = state.selectedHolding
     val account = state.account
+    val pendingConnection = state.selectedConnection
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -314,6 +364,7 @@ internal fun InvestmentsContent(
                     when {
                         holding != null -> holding.symbol
                         account != null -> account.accountId
+                        pendingConnection != null -> pendingConnection.label
                         else -> stringResource(R.string.core_invest_title)
                     },
                 scrollBehaviorSmall = scrollBehaviorSmall,
@@ -342,7 +393,7 @@ internal fun InvestmentsContent(
             isRefreshing = state.busy,
             onRefresh = {
                 if (!state.busy) {
-                    val connectionId = state.selected?.connectionId
+                    val connectionId = state.selected?.connectionId ?: pendingConnection?.id
                     if (connectionId != null) onRefresh(connectionId) else onRefreshAll()
                 }
             },
@@ -406,10 +457,27 @@ internal fun InvestmentsContent(
                             state = state,
                             enabled = !state.busy,
                             onRefresh = onRefresh,
+                            onSetCredentials = onSetCredentials,
+                            onSetDailyAutoSync = onSetDailyAutoSync,
                             onLink = onLink,
+                            onCreateAndLink = onCreateAndLink,
                             onAccountHistory = onAccountHistory,
                             onHolding = onHolding,
                         )
+                    }
+                    pendingConnection != null -> {
+                        item(key = "pending_connection") {
+                            PendingConnectionCard(
+                                connection = pendingConnection,
+                                providerName = providerName(pendingConnection.providerId),
+                                busy = state.busy,
+                                dailyAutoSyncEnabled = state.dailyAutoSyncEnabled,
+                                onRefresh = { onRefresh(pendingConnection.id) },
+                                onSetCredentials = { onSetCredentials(pendingConnection.id) },
+                                onDisconnect = { onDisconnect(pendingConnection.id) },
+                                onSetDailyAutoSync = onSetDailyAutoSync,
+                            )
+                        }
                     }
                     state.loading -> {
                         item(key = "loading") {
@@ -446,6 +514,107 @@ internal fun InvestmentsContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PendingConnectionCard(
+    connection: BrokerageConnection,
+    providerName: String,
+    busy: Boolean,
+    dailyAutoSyncEnabled: Boolean,
+    onRefresh: () -> Unit,
+    onSetCredentials: () -> Unit,
+    onDisconnect: () -> Unit,
+    onSetDailyAutoSync: (Boolean) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.largeIncreased,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = providerName,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = connection.label,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text =
+                        when {
+                            !connection.hasCredentials ->
+                                stringResource(R.string.core_invest_missing_credentials_hint)
+                            connection.syncedAt == null ->
+                                stringResource(R.string.core_invest_needs_first_refresh_hint)
+                            else -> stringResource(R.string.core_invest_no_holdings)
+                        },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (!connection.hasCredentials) {
+                        Button(
+                            onClick = onSetCredentials,
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Text(stringResource(R.string.core_invest_set_credentials))
+                        }
+                    } else {
+                        Button(
+                            onClick = onRefresh,
+                            enabled = !busy,
+                            shapes = ButtonDefaults.shapes(),
+                        ) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                            )
+                            Text(
+                                text = stringResource(R.string.core_invest_refresh),
+                                modifier = Modifier.padding(start = 6.dp),
+                            )
+                        }
+                        AssistChip(
+                            onClick = onSetCredentials,
+                            enabled = !busy,
+                            label = { Text(stringResource(R.string.core_invest_set_credentials)) },
+                        )
+                    }
+                    TextButton(
+                        onClick = onDisconnect,
+                        enabled = !busy,
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.core_invest_disconnect),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+        }
+        PreferenceSwitch(
+            title = stringResource(R.string.core_invest_daily_auto_sync_title),
+            subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+            checked = dailyAutoSyncEnabled,
+            onCheckedChange = onSetDailyAutoSync,
+            padding = PaddingValues(0.dp),
+            isSingle = true,
+        )
     }
 }
 
@@ -527,15 +696,54 @@ private fun LazyListScope.brokerAccountItems(
     account: BrokerageAccount,
     state: InvestmentsUiState,
     enabled: Boolean,
-    onRefresh: (Long) -> Unit,
+    onRefresh: (String) -> Unit,
+    onSetCredentials: (String?) -> Unit,
+    onSetDailyAutoSync: (Boolean) -> Unit,
     onLink: (BrokerAccountRef?) -> Unit,
+    onCreateAndLink: (BrokerAccountRef) -> Unit,
     onAccountHistory: (String) -> Unit,
     onHolding: (CoreHoldingKey?) -> Unit,
 ) {
     val ref = state.selected ?: return
+    val linkedLedgerAccount =
+        account.linkedAccountId?.let { id -> state.overview?.accounts?.find { it.id == id } }
     item("snapshot") {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SnapshotCard(account)
+            SnapshotCard(account, linkedAccountName = linkedLedgerAccount?.name)
+            if (account.linkedAccountId == null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.core_invest_unlinked_transfer_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { onCreateAndLink(ref) },
+                                enabled = enabled,
+                                shapes = ButtonDefaults.shapes(),
+                            ) {
+                                Text(stringResource(R.string.core_invest_create_and_link))
+                            }
+                            TextButton(
+                                onClick = { onLink(ref) },
+                                enabled = enabled,
+                                shapes = ButtonDefaults.shapes(),
+                            ) {
+                                Text(stringResource(R.string.core_invest_link_title))
+                            }
+                        }
+                    }
+                }
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(
                     onClick = { onRefresh(ref.connectionId) },
@@ -548,10 +756,24 @@ private fun LazyListScope.brokerAccountItems(
                 AssistChip(
                     onClick = { onLink(ref) },
                     enabled = enabled,
-                    label = { Text(stringResource(R.string.core_invest_link_title)) },
+                    label = {
+                        Text(
+                            if (linkedLedgerAccount != null)
+                                stringResource(
+                                    R.string.core_invest_linked_account,
+                                    linkedLedgerAccount.name,
+                                )
+                            else stringResource(R.string.core_invest_link_title)
+                        )
+                    },
                     leadingIcon = {
                         Icon(Icons.Rounded.Link, null, Modifier.size(AssistChipDefaults.IconSize))
                     },
+                )
+                AssistChip(
+                    onClick = { onSetCredentials(ref.connectionId) },
+                    enabled = enabled,
+                    label = { Text(stringResource(R.string.core_invest_set_credentials)) },
                 )
                 account.linkedAccountId?.let { id ->
                     AssistChip(
@@ -568,6 +790,14 @@ private fun LazyListScope.brokerAccountItems(
                     )
                 }
             }
+            PreferenceSwitch(
+                title = stringResource(R.string.core_invest_daily_auto_sync_title),
+                subtitle = stringResource(R.string.core_invest_daily_auto_sync_subtitle),
+                checked = state.dailyAutoSyncEnabled,
+                onCheckedChange = onSetDailyAutoSync,
+                padding = PaddingValues(0.dp),
+                isSingle = true,
+            )
         }
     }
 
@@ -614,7 +844,7 @@ private fun LazyListScope.brokerAccountItems(
 }
 
 @Composable
-private fun SnapshotCard(account: BrokerageAccount) {
+private fun SnapshotCard(account: BrokerageAccount, linkedAccountName: String? = null) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.largeIncreased,
@@ -652,6 +882,14 @@ private fun SnapshotCard(account: BrokerageAccount) {
                         ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            val linkedLabel = linkedAccountName ?: account.linkedAccountId
+            if (linkedLabel != null) {
+                Text(
+                    text = stringResource(R.string.core_invest_linked_account, linkedLabel),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

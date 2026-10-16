@@ -32,7 +32,7 @@ class CoreInvestmentHandleTest {
             val model = InvestmentsViewModel(session, ChangeBus())
             store.put("model", model)
             awaitState { !model.state.value.loading }
-            model.refresh(1)
+            model.refresh("1")
             awaitState {
                 !model.state.value.busy &&
                     !model.state.value.loading &&
@@ -59,7 +59,7 @@ class CoreInvestmentHandleTest {
             store.put("model", model)
             awaitState { !model.state.value.loading }
             core.fetch = { throw CoreException.Brokerage(BrokerageErrorKind.NETWORK) }
-            model.refresh(1)
+            model.refresh("1")
             awaitState {
                 !model.state.value.busy &&
                     !model.state.value.loading &&
@@ -72,7 +72,7 @@ class CoreInvestmentHandleTest {
                 investmentConnection()
             }
             val calls = core.refreshCalls
-            model.refresh(1)
+            model.refresh("1")
             awaitState { core.refreshCalls > calls }
             model.cancelOperation()
             awaitState {
@@ -154,7 +154,7 @@ private class TrackedInvestmentCore : HootKitCore(NoPointer) {
 
             override suspend fun connections() = listOf(investmentConnection())
 
-            override suspend fun refresh(connectionId: Long): BrokerageConnection {
+            override suspend fun refresh(connectionId: String): BrokerageConnection {
                 refreshCalls++
                 return fetch()
             }

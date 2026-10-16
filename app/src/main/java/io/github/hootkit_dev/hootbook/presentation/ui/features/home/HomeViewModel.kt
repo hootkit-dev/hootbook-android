@@ -21,8 +21,9 @@ import kotlinx.coroutines.sync.withLock
 
 internal val HOME_TABLES = setOf(Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.BALANCE_ANCHORS,
     Table.TRANSACTIONS, Table.EXCHANGE_RATES, Table.SETTINGS, Table.BROKERAGE,
+    Table.BROKERAGE_CONNECTIONS, Table.BROKERAGE_LINKS, Table.TAGS, Table.TRANSACTION_TAGS,
     Table.BUDGETS, Table.BUDGET_ACCOUNTS, Table.BUDGET_LIMITS, Table.CATEGORIES, Table.SUBCATEGORIES,
-    Table.SUBSCRIPTIONS, Table.PEOPLE, Table.DEBTS)
+    Table.SUBSCRIPTIONS, Table.PEOPLE, Table.DEBTS, Table.SYNC_STATE, Table.AI_SETTINGS)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -54,8 +55,21 @@ class HomeViewModel @Inject constructor(
     }
 
     private suspend fun query(core: HootKitCoreInterface, today: JavaDate, display: String?, hidden: Set<HomeWidget>): HomeUiState {
-        val overview = core.accounts().use { it.overview() }
+        val (overview, cardStatuses) = core.accounts().use { api ->
+            val ov = api.overview()
+            val statuses = ov.accounts
+                .filter { !it.archived && it.kind == AccountKind.CREDIT_CARD }
+                .mapNotNull { card -> runCatching { api.cardStatus(card.id, today.coreDate()) }.getOrNull()?.let { card.id to it } }
+                .toMap()
+            ov to statuses
+        }
         val connections = core.brokerage().use { it.connections() }
+        val pendingConflictCount = runCatching {
+            core.sync().use { sync -> sync.conflicts().count { it.pending } }
+        }.getOrDefault(0)
+        val pendingAiReview = runCatching {
+            core.ai().use { it.pendingReview() }
+        }.getOrNull()
         val month = today.withDayOfMonth(1)
         fun period(from: JavaDate, to: JavaDate) = emptyTransactionFilter().copy(from = from.atStartOfDay().coreTime(), to = to.atStartOfDay().coreTime())
         val (summary, lastSummary, activity) = core.ledger().use { ledger ->
@@ -89,11 +103,22 @@ class HomeViewModel @Inject constructor(
             summary.perCurrency.map { it.currency } + lastSummary.perCurrency.map { it.currency } +
             upcoming.map { it.amount.currency } + symbols.keys + overview.netWorth.currency + target).distinct()
         val totals = core.currency().use { api ->
-            listOf("income" to Money(summary.income, summary.currency), "expense" to Money(summary.expense, summary.currency), "net" to Money(summary.net, summary.currency),
-                "lastIncome" to Money(lastSummary.income, lastSummary.currency), "lastExpense" to Money(lastSummary.expense, lastSummary.currency), "lastNet" to Money(lastSummary.net, lastSummary.currency),
-                "monthly" to Money(subscriptions.monthly, subscriptions.currency)).filter { it.second.currency != target }.associate { (key, money) ->
-                    key to queryConvertedMoney(api, money.amount, money.currency, target)
-                }
+            listOf(
+                "income" to Money(summary.income, summary.currency),
+                "expense" to Money(summary.expense, summary.currency),
+                "net" to Money(summary.net, summary.currency),
+                "receivable" to Money(summary.receivable, summary.currency),
+                "collected" to Money(summary.collected, summary.currency),
+                "outstanding" to Money(summary.outstanding, summary.currency),
+                "lastIncome" to Money(lastSummary.income, lastSummary.currency),
+                "lastExpense" to Money(lastSummary.expense, lastSummary.currency),
+                "lastNet" to Money(lastSummary.net, lastSummary.currency),
+                "monthly" to Money(subscriptions.monthly, subscriptions.currency),
+                "debtReceivable" to Money(debts.receivable, debts.currency),
+                "debtPayable" to Money(debts.payable, debts.currency),
+            ).filter { it.second.currency != target }.associate { (key, money) ->
+                key to queryConvertedMoney(api, money.amount, money.currency, target)
+            }
         }
         return HomeUiState(
             overview = overview, connections = connections, summary = summary, lastSummary = lastSummary,
@@ -102,6 +127,8 @@ class HomeViewModel @Inject constructor(
             accounts = overview.accounts.associateBy { it.id }, categories = categories, subcategories = subcategories,
             displayNetWorth = netWorth, recentConversions = conversions, availableCurrencies = currencies,
             loading = false, displayTotals = totals, customSymbols = symbols,
+            pendingConflictCount = pendingConflictCount, pendingAiReview = pendingAiReview,
+            cardStatuses = cardStatuses,
         )
     }
 

@@ -70,6 +70,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
+import dev.hootkit.core.NetWorthPoint
+
+data class TrendLineSeries(
+    val label: String,
+    val values: List<Double>,
+    val color: Color,
+)
+
 @Composable
 fun SpendingLineChart(
     data: List<Map.Entry<LocalDate, LedgerSummary>>,
@@ -80,20 +88,119 @@ fun SpendingLineChart(
     val themeColors = MaterialTheme.colorScheme
     val series = trendTypes(typeFilters)
     val seriesLabels = series.associateWith { stringResource(it.labelRes) }
+    TrendLineChart(
+        dates = data.map { it.key },
+        series =
+            series.map { type ->
+                val color =
+                    if (series.size > 1 && type == TransactionTypeFilter.INCOME)
+                        themeColors.tertiary
+                    else themeColors.primary
+                TrendLineSeries(
+                    label = seriesLabels.getValue(type),
+                    values =
+                        data.map {
+                            it.value
+                                .chartAmount(currency, type == TransactionTypeFilter.INCOME)
+                                ?.toDouble() ?: 0.0
+                        },
+                    color = color,
+                )
+            },
+        currency = currency,
+    )
+}
+
+@Composable
+fun NetWorthLineChart(
+    points: List<NetWorthPoint>,
+    currency: String,
+    modifier: Modifier = Modifier,
+) {
+    if (points.isEmpty()) return
+    val themeColors = MaterialTheme.colorScheme
+    val netWorthLabel = stringResource(R.string.net_worth_label)
+    val values = remember(points) { points.map { it.netWorth.toDouble() } }
+    val dates =
+        remember(points) {
+            points.map {
+                LocalDate.of(it.date.year, it.date.month.toInt(), it.date.day.toInt())
+            }
+        }
+    val rawMin = remember(values) { values.minOrNull() ?: 0.0 }
+    val rawMax = remember(values) { values.maxOrNull() ?: 0.0 }
+    val spread = (rawMax - rawMin).coerceAtLeast(abs(rawMax) * 0.05)
+    val chartMin =
+        if (rawMin >= 0.0 && rawMax > 0.0) {
+            (rawMin - spread * 0.25).coerceAtLeast(0.0)
+        } else {
+            minOf(0.0, rawMin - spread * 0.1)
+        }
+    val chartMax =
+        if (rawMax > chartMin) {
+            rawMax + spread * 0.15
+        } else {
+            chartMin + 1.0
+        }
+    TrendLineChart(
+        dates = dates,
+        series =
+            listOf(
+                TrendLineSeries(
+                    label = netWorthLabel,
+                    values = values,
+                    color = themeColors.primary,
+                )
+            ),
+        currency = currency,
+        modifier = modifier,
+        minValue = chartMin,
+        maxValue = chartMax,
+    )
+}
+
+@Composable
+fun TrendLineChart(
+    dates: List<LocalDate>,
+    series: List<TrendLineSeries>,
+    currency: String,
+    modifier: Modifier = Modifier,
+    minValue: Double? = null,
+    maxValue: Double? = null,
+) {
+    if (dates.isEmpty() || series.isEmpty()) return
+    val effectiveDates = if (dates.size == 1) listOf(dates.first(), dates.first()) else dates
+    val effectiveSeries =
+        remember(series, dates.size) {
+            if (dates.size == 1) {
+                series.map {
+                    val v = it.values.firstOrNull() ?: 0.0
+                    it.copy(values = listOf(v, v))
+                }
+            } else {
+                series
+            }
+        }
+    val themeColors = MaterialTheme.colorScheme
     val suffixMillion = stringResource(R.string.suffix_million)
     val suffixThousand = stringResource(R.string.suffix_thousand)
 
     val labels =
-        remember(data, series, currency, themeColors) {
-            val isYearly = data.size > 1 && data.all { it.key.dayOfYear == 1 }
-            val isMonthly = !isYearly && data.all { it.key.dayOfMonth == 1 }
+        remember(effectiveDates, currency, themeColors) {
+            val isYearly = effectiveDates.size > 1 && effectiveDates.all { it.dayOfYear == 1 }
+            val isMonthly =
+                !isYearly &&
+                    (effectiveDates.all { it.dayOfMonth == 1 } ||
+                        (effectiveDates.size > 1 &&
+                            effectiveDates.dropLast(1).all {
+                                it.dayOfMonth == it.lengthOfMonth()
+                            }))
             val spansMultipleYears =
-                if (data.isNotEmpty()) {
-                    data.first().key.year != data.last().key.year
+                if (effectiveDates.isNotEmpty()) {
+                    effectiveDates.first().year != effectiveDates.last().year
                 } else false
 
-            data.map {
-                val date = it.key
+            effectiveDates.map { date ->
                 when {
                     isYearly -> date.format(DateTimeFormatter.ofPattern("yyyy"))
                     isMonthly && spansMultipleYears ->
@@ -104,22 +211,24 @@ fun SpendingLineChart(
             }
         }
 
-    val maxVal = data.maxOfOrNull { point ->
-        series.maxOfOrNull { type -> point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 } ?: 0.0
-    } ?: 0.0
-    val axisStart = indicatorWidth(maxVal, currency, suffixMillion, suffixThousand)
+    val allValues = remember(effectiveSeries) { effectiveSeries.flatMap { it.values } }
+    val rawMax = remember(allValues) { allValues.maxOrNull() ?: 0.0 }
+    val rawMin = remember(allValues) { allValues.minOrNull() ?: 0.0 }
+    val resolvedMin = minValue ?: minOf(0.0, rawMin)
+    val resolvedMax = maxValue ?: maxOf(rawMax, resolvedMin)
+    val maxIndicatorBound = maxOf(abs(resolvedMax), abs(resolvedMin), abs(rawMax))
+    val axisStart = indicatorWidth(maxIndicatorBound, currency, suffixMillion, suffixThousand)
 
-    Column {
+    Column(modifier = modifier) {
         LineChart(
             modifier = Modifier.fillMaxWidth().height(260.dp).padding(top = Spacing.md),
             data =
-                series.map { type ->
-                    val color = if (series.size > 1 && type == TransactionTypeFilter.INCOME) themeColors.tertiary else themeColors.primary
+                effectiveSeries.map { item ->
                     Line(
-                        label = seriesLabels.getValue(type),
-                        values = data.map { it.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.toDouble() ?: 0.0 },
-                        color = SolidColor(color),
-                        firstGradientFillColor = color.copy(alpha = 0.3f),
+                        label = item.label,
+                        values = item.values,
+                        color = SolidColor(item.color),
+                        firstGradientFillColor = item.color.copy(alpha = 0.3f),
                         secondGradientFillColor = Color.Transparent,
                         strokeAnimationSpec = tween(1500, easing = EaseInOutCubic),
                         gradientAnimationDelay = 750,
@@ -128,13 +237,15 @@ fun SpendingLineChart(
                         dotProperties =
                             DotProperties(
                                 enabled = true,
-                                color = SolidColor(color),
+                                color = SolidColor(item.color),
                                 strokeWidth = 3.dp,
                                 radius = 4.dp,
                                 strokeColor = SolidColor(themeColors.surface),
                             ),
                     )
                 },
+            minValue = resolvedMin,
+            maxValue = resolvedMax,
             dividerProperties =
                 DividerProperties(
                     enabled = true,
@@ -151,14 +262,16 @@ fun SpendingLineChart(
                 ),
             indicatorProperties =
                 HorizontalIndicatorProperties(
-                    enabled = data.any { point -> series.any { type -> (point.value.chartAmount(currency, type == TransactionTypeFilter.INCOME)?.signum() ?: 0) != 0 } },
+                    enabled = allValues.any { it != 0.0 },
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
                             color = themeColors.onSurfaceVariant.copy(0.6f),
                             textAlign = TextAlign.Center,
                         ),
                     padding = IndicatorPadding,
-                    contentBuilder = { value -> formatPremiumCurrency(value, currency, suffixMillion, suffixThousand) },
+                    contentBuilder = { value ->
+                        formatPremiumCurrency(value, currency, suffixMillion, suffixThousand)
+                    },
                 ),
             labelHelperProperties =
                 LabelHelperProperties(
@@ -692,7 +805,7 @@ private fun chartPopup(currency: String) = ir.ehsannarmani.compose_charts.models
 
 @Composable
 private fun DateAxis(labels: List<String>, start: androidx.compose.ui.unit.Dp) {
-    val shown = labels.thinned(max = 6)
+    val shown = labels.thinned(max = 5)
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = start, top = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,

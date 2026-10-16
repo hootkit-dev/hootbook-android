@@ -90,6 +90,7 @@ class CoreSessionTest {
         override fun plans(): Plans = error("not queried")
         override fun settings(): Settings = error("not queried")
         override fun sync(): Sync = error("not queried")
-        override fun version() = CoreVersion("test", "1.0", 2u, 1u)
+        override fun tags(): Tags = error("not queried")
+        override fun version() = CoreVersion("test", "1.1", 2u, 1u)
     }
 }

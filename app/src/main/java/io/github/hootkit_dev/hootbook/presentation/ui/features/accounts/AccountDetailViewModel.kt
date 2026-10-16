@@ -74,7 +74,7 @@ class AccountDetailViewModel @Inject constructor(
         val requestedFilter = filter
         mutable.update { it.copy(isLoading = true, loadingMore = false) }
         query = viewModelScope.launch {
-            session.observe(changes, accountTables + setOf(Table.CATEGORIES, Table.SUBCATEGORIES, Table.PEOPLE, Table.DEBTS)) { core ->
+            session.observe(changes, accountTables + setOf(Table.CATEGORIES, Table.SUBCATEGORIES, Table.PEOPLE, Table.DEBTS, Table.TAGS, Table.TRANSACTION_TAGS)) { core ->
                 coreQuery {
                     val account = core.accounts().use { it.get(id) }
                     val currency = requestedCurrency?.takeIf { code -> account.pockets.any { it.currency == code } } ?: account.mainCurrency
@@ -87,6 +87,7 @@ class AccountDetailViewModel @Inject constructor(
                     val summary = core.ledger().use { it.summary(requestedFilter) }
                     val categories = core.categories().use { it.list(null, true).associateBy(Category::id) }
                     val accounts = core.accounts().use { it.overview().accounts.associateBy(Account::id) }
+                    val tags = core.tags().use { it.list(true).associateBy(Tag::id) }
                     val converted = core.currency().use { api -> page.items.associate { tx ->
                         tx.id to if (tx.currency == summary.currency) null else api.convert(tx.amount, tx.currency, summary.currency)
                     } }
@@ -95,7 +96,7 @@ class AccountDetailViewModel @Inject constructor(
                     AccountDetailUiState(account = account, currency = currency, anchors = accountResults.first,
                         balanceSeries = accountResults.second, cardStatus = accountResults.third,
                         transactions = page.items, total = page.total, accountTransactionCount = accountCount, summary = summary, categories = categories,
-                        accounts = accounts, people = people, debts = debts, convertedAmounts = converted,
+                        accounts = accounts, tags = tags, people = people, debts = debts, convertedAmounts = converted,
                         selectedDateRange = state.selectedDateRange, isLoading = false)
                 }
             }.collect { result ->
@@ -135,6 +136,55 @@ class AccountDetailViewModel @Inject constructor(
     fun calibrate(balance: BigDecimal, currency: String, onSaved: () -> Unit = {}) {
         val id = accountId ?: return
         command(onSaved) { it.calibrate(id, currency, balance, null) }
+    }
+    fun markStatementPaid() {
+        val id = accountId ?: return
+        val state = uiState.value
+        val account = state.account ?: return
+        val status = state.cardStatus ?: return
+        val statementDate = status.statementDate ?: return
+        val currency = status.currency
+        val currentBalance = account.pockets.firstOrNull { it.currency == currency }?.balance ?: BigDecimal.ZERO
+        command { api ->
+            val statementEnd = LocalDateTime(
+                year = statementDate.year,
+                month = statementDate.month,
+                day = statementDate.day,
+                hour = 23u,
+                minute = 59u,
+                second = 59u,
+                nanosecond = 0u,
+            )
+            val statementEndJava = java.time.LocalDateTime.of(
+                statementDate.year,
+                statementDate.month.toInt(),
+                statementDate.day.toInt(),
+                23,
+                59,
+                59,
+            )
+            val statementLocalDate = JavaDate.of(
+                statementDate.year,
+                statementDate.month.toInt(),
+                statementDate.day.toInt(),
+            )
+            val anchors = api.anchors(id, currency)
+            val hasAnchorAfterStatement = anchors.any { anchor ->
+                java.time.LocalDateTime.of(
+                    anchor.at.year,
+                    anchor.at.month.toInt(),
+                    anchor.at.day.toInt(),
+                    anchor.at.hour.toInt(),
+                    anchor.at.minute.toInt(),
+                    anchor.at.second.toInt(),
+                    anchor.at.nanosecond.toInt(),
+                ) > statementEndJava
+            }
+            if (!hasAnchorAfterStatement && statementLocalDate < JavaDate.now()) {
+                api.calibrate(id, currency, currentBalance, null)
+            }
+            api.calibrate(id, currency, BigDecimal.ZERO, statementEnd)
+        }
     }
     fun updateAnchor(id: String, balance: BigDecimal) = command { it.updateAnchor(id, AnchorPatch(balance = balance)) }
     fun deleteAnchor(id: String) = command { it.deleteAnchor(id) }

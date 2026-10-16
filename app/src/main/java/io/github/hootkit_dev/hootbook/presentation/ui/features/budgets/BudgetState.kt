@@ -9,8 +9,11 @@ data class BudgetUiState(
     val isLoading: Boolean = true,
     val budgets: List<Budget> = emptyList(),
     val selectedBudget: Budget? = null,
+    val selectedCategoryId: String? = null,
+    val transactionsPage: BudgetTransactionPage? = null,
     val accounts: Map<String, Account> = emptyMap(),
     val categories: Map<String, Category> = emptyMap(),
+    val tags: Map<String, Tag> = emptyMap(),
     val baseCurrency: String = "CNY",
     val saving: Boolean = false,
     val error: Int? = null,
@@ -55,5 +58,5 @@ internal fun java.time.LocalDate.coreBudgetDate() = dev.hootkit.core.LocalDate(y
 internal fun dev.hootkit.core.LocalDate.javaBudgetDate() = java.time.LocalDate.of(year, month.toInt(), day.toInt())
 internal fun budgetToday() = java.time.LocalDate.now().coreBudgetDate()
 internal val budgetTables = setOf(Table.BUDGETS, Table.BUDGET_ACCOUNTS, Table.BUDGET_LIMITS,
-    Table.TRANSACTIONS, Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.CATEGORIES,
+    Table.TRANSACTIONS, Table.TAGS, Table.TRANSACTION_TAGS, Table.ACCOUNTS, Table.ACCOUNT_CURRENCIES, Table.CATEGORIES,
     Table.EXCHANGE_RATES, Table.SETTINGS)

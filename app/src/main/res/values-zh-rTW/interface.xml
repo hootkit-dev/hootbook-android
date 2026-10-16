@@ -209,9 +209,13 @@
     <string name="card_due_in">還有 %1$d 天</string>
     <string name="card_statement_amount">本期帳單</string>
     <string name="card_paid">已還清</string>
+    <string name="card_mark_paid">標為已還清</string>
     <string name="card_remaining">還需還 %1$s</string>
     <string name="card_next_statement">下期帳單日</string>
     <string name="card_due_on">%1$s 還款</string>
+    <string name="card_statement_on">%1$s 出帳</string>
+    <string name="card_statement_today">今天出帳</string>
+    <string name="card_unbilled_amount">未出帳 %1$s</string>
     <string name="home_cards_due">%1$d 個帳戶，%2$s還款</string>
     <string name="cycle_unit_day">天</string>
     <string name="cycle_unit_week">週</string>

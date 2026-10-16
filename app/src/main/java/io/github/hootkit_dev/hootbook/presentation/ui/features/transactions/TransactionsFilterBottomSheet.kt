@@ -228,6 +228,37 @@ fun TransactionsFilterBottomSheet(
                                 }
                             }
                         }
+
+                    // Tags
+                    val availableTags = remember(state.tags, state.filter.tagIds) {
+                        state.tags.values.filter { !it.archived || it.id in state.filter.tagIds }
+                    }
+                    if (availableTags.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        Text(
+                            text = stringResource(R.string.core_tags_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(
+                                horizontal = Dimensions.Padding.content,
+                                vertical = Spacing.sm
+                            ),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        ) {
+                            items(availableTags, key = { it.id }) { tag ->
+                                val isSelected = tag.id in state.filter.tagIds
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { viewModel.toggleTagFilter(tag.id) },
+                                    label = { Text(tag.name) }
+                                )
+                            }
+                        }
+                    }
                     }
                 }
             }

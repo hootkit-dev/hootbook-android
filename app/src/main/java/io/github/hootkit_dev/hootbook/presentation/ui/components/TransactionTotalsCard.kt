@@ -38,6 +38,9 @@ fun TransactionTotalsCard(
     expenses: BigDecimal,
     netBalance: BigDecimal,
     currency: String,
+    receivable: BigDecimal = BigDecimal.ZERO,
+    collected: BigDecimal = BigDecimal.ZERO,
+    outstanding: BigDecimal = BigDecimal.ZERO,
     title: String? = null,
     isEstimated: Boolean = false,
     isLoading: Boolean = false,
@@ -217,6 +220,37 @@ fun TransactionTotalsCard(
                             color = netColor,
                             modifier = Modifier
                                 .alpha(netAlpha)
+                        )
+                    }
+                }
+                if (receivable > BigDecimal.ZERO || collected > BigDecimal.ZERO) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                shape = RoundedCornerShape(Spacing.sm)
+                            )
+                            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${stringResource(R.string.core_receivable_short)}: ${CoreMoneyPresentation.formatCurrency(receivable, currency)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${stringResource(R.string.core_collected_short)}: ${CoreMoneyPresentation.formatCurrency(collected, currency)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${stringResource(R.string.core_outstanding_short)}: ${CoreMoneyPresentation.formatCurrency(outstanding, currency)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

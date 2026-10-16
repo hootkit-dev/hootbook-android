@@ -26,6 +26,8 @@ internal val ledgerTables =
         Table.TRANSACTIONS,
         Table.CATEGORIES,
         Table.SUBCATEGORIES,
+        Table.TAGS,
+        Table.TRANSACTION_TAGS,
         Table.ACCOUNTS,
         Table.ACCOUNT_CURRENCIES,
         Table.SETTINGS,
@@ -105,6 +107,10 @@ constructor(
                                 core.categories().use {
                                     it.list(null, true).associateBy(Category::id)
                                 }
+                            val tags =
+                                core.tags().use {
+                                    it.list(true).associateBy(Tag::id)
+                                }
                             val prefs = preferences.ready()
                             val displayCurrency =
                                 prefs.unifiedDisplayCurrency?.takeIf { prefs.unifiedDisplayEnabled }
@@ -153,6 +159,7 @@ constructor(
                                 summary = summary,
                                 accounts = accounts,
                                 categories = categories,
+                                tags = tags,
                                 filter = filter,
                                 isLoading = false,
                             )
@@ -185,6 +192,7 @@ constructor(
                                     summary = snapshot.summary,
                                     accounts = snapshot.accounts,
                                     categories = snapshot.categories,
+                                    tags = snapshot.tags,
                                     isLoading = false,
                                     loadingMore = false,
                                 )
@@ -296,6 +304,13 @@ constructor(
 
     fun clearCategoryFilter() = applyFilter(uiState.value.filter.copy(categoryIds = emptyList()))
 
+    fun toggleTagFilter(id: String) {
+        val ids = uiState.value.filter.tagIds
+        applyFilter(uiState.value.filter.copy(tagIds = if (id in ids) ids - id else ids + id))
+    }
+
+    fun clearTagFilter() = applyFilter(uiState.value.filter.copy(tagIds = emptyList()))
+
     fun toggleAccountFilter(id: String) {
         val ids = uiState.value.filter.accountIds
         applyFilter(uiState.value.filter.copy(accountIds = if (id in ids) ids - id else ids + id))
@@ -364,6 +379,7 @@ constructor(
         currency: String?,
         type: String?,
         account: String? = null,
+        tag: String? = null,
     ) {
         if (initialized) return
         initialized = true
@@ -378,6 +394,7 @@ constructor(
                         type?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() }
                     ),
                 accountIds = listOfNotNull(account),
+                tagIds = listOfNotNull(tag),
             )
         )
     }
@@ -471,6 +488,8 @@ constructor(
         newSubcategory: String?,
         newAmount: BigDecimal?,
         newNote: String?,
+        addTagIds: List<String> = emptyList(),
+        removeTagIds: List<String> = emptyList(),
     ) = write {
         session.withCore { core ->
             core.ledger().use {
@@ -491,6 +510,8 @@ constructor(
                         subcategoryId = newSubcategory,
                         amount = newAmount,
                         notes = newNote,
+                        addTagIds = addTagIds,
+                        removeTagIds = removeTagIds,
                     ),
                 )
             }

@@ -65,6 +65,10 @@ fun AnalyticsSummaryCard(
     val incomeAmount = original?.income ?: summary.income
     val expenseAmount = original?.expense ?: summary.expense
     val netAmount = if (original != null) original.income - original.expense else summary.net
+    val receivableAmount = original?.receivable ?: summary.receivable
+    val collectedAmount = original?.collected ?: summary.collected
+    val outstandingAmount =
+        if (original != null) original.receivable - original.collected else summary.outstanding
 
     val alpha by
         animateFloatAsState(
@@ -211,6 +215,38 @@ fun AnalyticsSummaryCard(
                 }
             }
 
+            if (receivableAmount > BigDecimal.ZERO || collectedAmount > BigDecimal.ZERO) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.xs)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(Spacing.sm)
+                        )
+                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${stringResource(R.string.core_receivable_short)}: ${CurrencyFormatter.formatCurrency(receivableAmount, currency)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${stringResource(R.string.core_collected_short)}: ${CurrencyFormatter.formatCurrency(collectedAmount, currency)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${stringResource(R.string.core_outstanding_short)}: ${CurrencyFormatter.formatCurrency(outstandingAmount, currency)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
             if (!summary.complete) {
                 Text(
                     stringResource(
@@ -275,6 +311,9 @@ fun AnalyticsSummaryCardPreview() {
                         BigDecimal.ZERO,
                         BigDecimal("9730"),
                         BigDecimal("-9730"),
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
                         true,
                         emptyList(),
                         emptyList(),

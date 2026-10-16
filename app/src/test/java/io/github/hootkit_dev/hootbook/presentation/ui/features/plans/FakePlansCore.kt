@@ -49,6 +49,8 @@ internal class FakePlansCore : FakeAccountsCore() {
             override suspend fun list(today: LocalDate, homeOnly: Boolean, displayCurrency: String?) = onBudgets()
             override suspend fun get(budgetId: String, today: LocalDate, displayCurrency: String?) = onBudget(budgetId, today)
             override suspend fun history(budgetId: String, today: LocalDate, max: UInt): List<BudgetPeriodSummary> { historyRequests += today; return onHistory(today) }
+            override suspend fun transactions(budgetId: String, today: LocalDate, categoryId: String?, page: PageRequest) =
+                BudgetTransactionPage(today, today, emptyList(), 0u, BigDecimal.ZERO, true, emptyList())
             override suspend fun create(input: NewBudget): String { newBudget = input; write(); return "created" }
             override suspend fun update(budgetId: String, patch: BudgetPatch) { budgetPatch = patch; write() }
             override suspend fun setLimit(budgetId: String, categoryId: String, amount: BigDecimal?) { write() }

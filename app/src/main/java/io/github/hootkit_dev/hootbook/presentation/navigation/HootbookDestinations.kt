@@ -129,6 +129,7 @@ data class Transactions(
     val accountId: String? = null,
     val categoryId: String? = null,
     val subscriptionId: String? = null,
+    val tagId: String? = null,
     val from: String? = null,
     val to: String? = null,
     val currency: String? = null,
@@ -139,6 +140,8 @@ data class Transactions(
 @Serializable data class CurrencySettings(val currency: String? = null)
 @Serializable data class Subscriptions(val subscriptionId: String? = null)
 @Serializable object Categories
+@Serializable object TagsManagement
+@Serializable object DuplicateDetection
 
 @Serializable object Analytics
 
@@ -164,7 +167,7 @@ data class Transactions(
 
 @Serializable object Appearance
 
-// Brokerage connections are Core-local numeric handles, transported as text in navigation.
+// Brokerage connections are Core-local string handles, transported as text in navigation.
 @Serializable data class Investments(val connectionId: String? = null, val accountId: String? = null)
 
 @Serializable object ManageAccounts
@@ -178,6 +181,8 @@ data class Transactions(
 
 
 @Serializable object DataPrivacy
+
+@Serializable object BackupRestore
 
 /** Settings → Sync: multi-device sync through Firebase (docs/sync.md) */
 @Serializable object CloudSync

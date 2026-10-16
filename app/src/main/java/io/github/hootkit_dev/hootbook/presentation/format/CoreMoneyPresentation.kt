@@ -164,8 +164,8 @@ object CoreMoneyPresentation {
             val formatter =
                 currencyFormat(
                     currencyCode,
-                    whole = amount.signum() == 0 || amount.stripTrailingZeros().scale() <= 0,
-                ) ?: return "$customSymbol${formatAmount(amount)}"
+                    whole = amount.stripTrailingZeros().scale() <= 0,
+                ) ?: return "$customSymbol${formatAmount(amount, currencyCode)}"
 
             val formatted = formatter.format(amount)
 

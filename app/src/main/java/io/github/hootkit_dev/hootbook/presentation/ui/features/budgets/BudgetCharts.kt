@@ -197,6 +197,8 @@ fun BudgetCategoryPieChart(
     lookup: Map<String, Category>,
     currency: String,
     totalSpent: java.math.BigDecimal,
+    selectedCategoryId: String? = null,
+    onCategoryClick: (String?) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (categories.isEmpty()) return
@@ -206,7 +208,7 @@ fun BudgetCategoryPieChart(
 
     // Categories without a mapped color fall back to the scheme's neutral, not a fixed grey
     val fallbackColor = MaterialTheme.colorScheme.outline
-    val pieData = remember(categories, lookup, fallbackColor) {
+    val pieData = remember(categories, lookup, fallbackColor, selectedCategoryId) {
         categories.map { category ->
             Pie(
                 label = category.categoryId,
@@ -214,7 +216,7 @@ fun BudgetCategoryPieChart(
                 color = lookup[category.categoryId]?.color?.let { runCatching { Color(it.toColorInt()) }.getOrNull() } ?: fallbackColor,
                 selectedColor = (lookup[category.categoryId]?.color?.let { runCatching { Color(it.toColorInt()) }.getOrNull() }
                     ?: fallbackColor).copy(alpha = 0.8f),
-                selected = false,
+                selected = category.categoryId == selectedCategoryId,
                 scaleAnimEnterSpec = tween(durationMillis = MotionDurations.standard, easing = FastOutSlowInEasing),
                 colorAnimEnterSpec = tween(500)
             )
@@ -241,9 +243,10 @@ fun BudgetCategoryPieChart(
                 modifier = Modifier.size(160.dp),
                 data = chartData,
                 onPieClick = { clickedPie ->
-                    val pieIndex = chartData.indexOf(clickedPie)
-                    chartData = chartData.mapIndexed { index, pie ->
-                        pie.copy(selected = index == pieIndex)
+                    val nextCategoryId = clickedPie.label.takeIf { it != selectedCategoryId }
+                    onCategoryClick(nextCategoryId)
+                    chartData = chartData.map { pie ->
+                        pie.copy(selected = pie.label == nextCategoryId)
                     }
                 },
                 selectedScale = 1.1f,
@@ -290,9 +293,10 @@ fun BudgetCategoryPieChart(
                     currency = currency,
                     totalAmount = total,
                     onClick = {
-                        val pieIndex = chartData.indexOf(pie)
-                        chartData = chartData.mapIndexed { index, p ->
-                            p.copy(selected = index == pieIndex)
+                        val nextCategoryId = pie.label.takeIf { it != selectedCategoryId }
+                        onCategoryClick(nextCategoryId)
+                        chartData = chartData.map { p ->
+                            p.copy(selected = p.label == nextCategoryId)
                         }
                     }
                 )
