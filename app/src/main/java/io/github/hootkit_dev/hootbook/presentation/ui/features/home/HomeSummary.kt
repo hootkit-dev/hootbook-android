@@ -607,8 +607,8 @@ internal fun UrgentNotificationsSection(
     }
 
     fun shapeFor(index: Int): RoundedCornerShape {
-        val top = if (index == 0) 24.dp else 6.dp
-        val bottom = if (index == totalCount - 1) 24.dp else 6.dp
+        val top = if (index == 0) 16.dp else 4.dp
+        val bottom = if (index == totalCount - 1) 16.dp else 4.dp
         return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
     }
 
@@ -620,21 +620,23 @@ internal fun UrgentNotificationsSection(
         if (hasConflict) {
             val shape = shapeFor(currentIndex++)
             Surface(
-                onClick = onConflictClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable(onClick = onConflictClick),
                 shape = shape,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.errorContainer),
                         contentAlignment = Alignment.Center,
@@ -642,30 +644,29 @@ internal fun UrgentNotificationsSection(
                         Icon(
                             imageVector = Icons.Rounded.SyncProblem,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = MaterialTheme.colorScheme.onErrorContainer,
                         )
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.home_sync_conflict_banner_title, pendingConflictCount),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = stringResource(R.string.home_sync_conflict_banner_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                                append(stringResource(R.string.home_sync_conflict_banner_title, pendingConflictCount))
+                            }
+                            append(" · ")
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.error)) {
+                                append(stringResource(R.string.home_sync_conflict_banner_subtitle))
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -674,22 +675,26 @@ internal fun UrgentNotificationsSection(
 
         pendingAiReview?.let { pending ->
             val shape = shapeFor(currentIndex++)
+            val subtitle = pending.review.summary?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.home_ai_pending_banner_subtitle)
             Surface(
-                onClick = onAiReviewClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable(onClick = onAiReviewClick),
                 shape = shape,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         contentAlignment = Alignment.Center,
@@ -697,31 +702,29 @@ internal fun UrgentNotificationsSection(
                         Icon(
                             imageVector = Icons.Rounded.AutoAwesome,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = MaterialTheme.colorScheme.onTertiaryContainer,
                         )
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.home_ai_pending_banner_title, pending.review.changes.size),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = pending.review.summary?.takeIf { it.isNotBlank() }
-                                ?: stringResource(R.string.home_ai_pending_banner_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                                append(stringResource(R.string.home_ai_pending_banner_title, pending.review.changes.size))
+                            }
+                            append(" · ")
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                append(subtitle)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -734,34 +737,36 @@ internal fun UrgentNotificationsSection(
             val dateText = reminder.targetDate.format(dateFormat)
             val subtitle = when (reminder.kind) {
                 CreditCardReminderKind.OVERDUE ->
-                    "${stringResource(R.string.card_due_on, dateText)} · ${stringResource(R.string.card_overdue, reminder.daysDiff)}"
+                    stringResource(R.string.card_overdue, reminder.daysDiff)
                 CreditCardReminderKind.PAYMENT_DUE -> {
-                    val leftText = if (reminder.daysDiff == 0) stringResource(R.string.card_due_today)
-                    else stringResource(R.string.card_due_in, reminder.daysDiff)
-                    "${stringResource(R.string.card_due_on, dateText)} · $leftText"
+                    if (reminder.daysDiff == 0) stringResource(R.string.card_due_today)
+                    else stringResource(R.string.card_due_on, dateText)
                 }
                 CreditCardReminderKind.STATEMENT_SOON -> {
                     if (reminder.daysDiff == 0) stringResource(R.string.card_statement_today)
-                    else "${stringResource(R.string.card_statement_on, dateText)} · ${stringResource(R.string.card_due_in, reminder.daysDiff)}"
+                    else stringResource(R.string.card_statement_on, dateText)
                 }
             }
             val formattedAmount = CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols)
+            val statusColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             Surface(
-                onClick = { onAccountClick(reminder.account.id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable { onAccountClick(reminder.account.id) },
                 shape = shape,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(
                                 if (isOverdue) MaterialTheme.colorScheme.errorContainer
@@ -772,31 +777,29 @@ internal fun UrgentNotificationsSection(
                         Icon(
                             imageVector = Icons.Rounded.CreditCard,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer
                             else MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = reminder.account.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isOverdue) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                                append(reminder.account.name)
+                            }
+                            append(" · ")
+                            withStyle(SpanStyle(color = statusColor)) {
+                                append(subtitle)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Text(
                         text = formattedAmount,
-                        style = MaterialTheme.typography.labelLarge.tabular(),
+                        style = MaterialTheme.typography.labelMedium.tabular(),
                         fontWeight = FontWeight.SemiBold,
                         color = if (isOverdue) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface,
@@ -805,7 +808,7 @@ internal fun UrgentNotificationsSection(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -830,22 +833,23 @@ internal fun UrgentNotificationsSection(
                 }
             }
             Surface(
-                onClick = onSubscriptionsClick,
-                modifier = subscriptionsModifier,
+                modifier = subscriptionsModifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable(onClick = onSubscriptionsClick),
                 shape = shape,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center,
@@ -853,29 +857,28 @@ internal fun UrgentNotificationsSection(
                         Icon(
                             imageVector = Icons.Rounded.EventRepeat,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(13.dp),
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.reminder_due_title, upcomingSubscriptions.size),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = subtitleText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)) {
+                                append(stringResource(R.string.reminder_due_title, upcomingSubscriptions.size))
+                            }
+                            append(" · ")
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                append(subtitleText)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     io.github.hootkit_dev.hootbook.presentation.ui.components.SubscriptionIconsStack(
                         subscriptions = upcomingSubscriptions,
-                        iconSize = 28.dp,
+                        iconSize = 20.dp,
                         borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         categoriesMap = categoriesMap,
                         subcategoriesMap = subcategoriesMap,
@@ -883,7 +886,7 @@ internal fun UrgentNotificationsSection(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
