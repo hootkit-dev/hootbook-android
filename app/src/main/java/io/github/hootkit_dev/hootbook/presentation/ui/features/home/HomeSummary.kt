@@ -400,6 +400,7 @@ internal fun AccountCategoryList(
     overview: AccountsOverview?,
     onOpen: (AccountCategory) -> Unit,
     connections: List<BrokerageConnection> = emptyList(),
+    cardStatuses: Map<String, CardStatus> = emptyMap(),
     // The nearest card payment due, said on the credit card row
     modifier: Modifier = Modifier
 ) {
@@ -407,7 +408,20 @@ internal fun AccountCategoryList(
     val grouped = overview?.accounts.orEmpty().groupBy { it.category() }
     val shown = if (overview == null) emptyList() else
         (grouped + (AccountCategory.INVESTMENTS to grouped[AccountCategory.INVESTMENTS].orEmpty())).entries.sortedBy { it.key.ordinal }
-    val nextCardDue = overview?.nearestDue?.dueDate
+    val nextCardDue = remember(overview, cardStatuses) {
+        val activeDueDates = overview?.accounts.orEmpty()
+            .filter { !it.archived && it.kind == AccountKind.CREDIT_CARD }
+            .mapNotNull { card ->
+                val mainDebt = card.pockets.firstOrNull { it.currency == card.mainCurrency }?.balance ?: BigDecimal.ZERO
+                val status = cardStatuses[card.id]
+                when {
+                    status?.outstanding != null && status.outstanding!!.signum() > 0 -> status.dueDate
+                    status != null && mainDebt.signum() > 0 -> status.dueDate
+                    else -> null
+                }
+            }
+        activeDueDates.minByOrNull { it.coreDateText() } ?: overview?.nearestDue?.dueDate
+    }
     val colors = moneyColors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         shown.forEachIndexed { index, item ->
@@ -462,6 +476,203 @@ internal fun AccountCategoryList(
                     if (empty) OutlinedButton(onClick = { onOpen(item.key) }, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(32.dp)) {
                         Text(stringResource(R.string.home_connect))
                     } else Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+internal enum class CreditCardReminderKind {
+    OVERDUE,
+    PAYMENT_DUE,
+    STATEMENT_SOON,
+}
+
+internal data class CreditCardReminder(
+    val account: Account,
+    val kind: CreditCardReminderKind,
+    val amount: BigDecimal,
+    val currency: String,
+    val targetDate: LocalDate,
+    val daysDiff: Int,
+)
+
+internal fun buildCreditCardReminders(
+    accounts: List<Account>,
+    cardStatuses: Map<String, CardStatus>,
+    today: LocalDate = LocalDate.now(),
+): List<CreditCardReminder> {
+    val reminders = mutableListOf<CreditCardReminder>()
+    for (account in accounts) {
+        if (account.archived || account.kind != AccountKind.CREDIT_CARD) continue
+        val status = cardStatuses[account.id]
+        val mainBalance = account.pockets.firstOrNull { it.currency == account.mainCurrency }?.balance ?: BigDecimal.ZERO
+        val outstanding = status?.outstanding
+        if (status != null && outstanding != null && outstanding.signum() > 0) {
+            val dueDate = LocalDate.parse(status.dueDate.coreDateText())
+            val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, dueDate).toInt()
+            if (status.overdue || daysLeft < 0) {
+                reminders += CreditCardReminder(
+                    account = account,
+                    kind = CreditCardReminderKind.OVERDUE,
+                    amount = outstanding,
+                    currency = status.currency,
+                    targetDate = dueDate,
+                    daysDiff = (-daysLeft).coerceAtLeast(1),
+                )
+            } else {
+                reminders += CreditCardReminder(
+                    account = account,
+                    kind = CreditCardReminderKind.PAYMENT_DUE,
+                    amount = outstanding,
+                    currency = status.currency,
+                    targetDate = dueDate,
+                    daysDiff = daysLeft,
+                )
+            }
+        } else if (status != null && status.statementAmount == null && status.statementDate == null && mainBalance.signum() > 0) {
+            val dueDate = LocalDate.parse(status.dueDate.coreDateText())
+            val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, dueDate).toInt()
+            if (daysLeft in 0..7) {
+                reminders += CreditCardReminder(
+                    account = account,
+                    kind = CreditCardReminderKind.PAYMENT_DUE,
+                    amount = mainBalance,
+                    currency = account.mainCurrency,
+                    targetDate = dueDate,
+                    daysDiff = daysLeft,
+                )
+            }
+        } else if (mainBalance.signum() > 0 && account.statementDay != null) {
+            val statementDay = account.statementDay!!.toInt()
+            val thisMonthStatement = today.withDayOfMonth(minOf(statementDay, today.lengthOfMonth()))
+            val nextStatement = if (thisMonthStatement > today) {
+                thisMonthStatement
+            } else {
+                val nextMonth = today.plusMonths(1)
+                nextMonth.withDayOfMonth(minOf(statementDay, nextMonth.lengthOfMonth()))
+            }
+            val daysUntilStatement = java.time.temporal.ChronoUnit.DAYS.between(today, nextStatement).toInt()
+            if (daysUntilStatement in 0..5) {
+                reminders += CreditCardReminder(
+                    account = account,
+                    kind = CreditCardReminderKind.STATEMENT_SOON,
+                    amount = mainBalance,
+                    currency = account.mainCurrency,
+                    targetDate = nextStatement,
+                    daysDiff = daysUntilStatement,
+                )
+            }
+        }
+    }
+    return reminders.sortedWith(
+        compareBy<CreditCardReminder> { it.kind.ordinal }
+            .thenBy { if (it.kind == CreditCardReminderKind.OVERDUE) -it.daysDiff else it.daysDiff }
+    )
+}
+
+@Composable
+internal fun CreditCardRemindersCard(
+    reminders: List<CreditCardReminder>,
+    customSymbols: Map<String, String>,
+    onAccountClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (reminders.isEmpty()) return
+    val locale = locale()
+    val dateFormat = remember(locale) {
+        DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)
+    }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        reminders.forEachIndexed { index, reminder ->
+            val top = if (index == 0) 24.dp else 6.dp
+            val bottom = if (index == reminders.lastIndex) 24.dp else 6.dp
+            val isOverdue = reminder.kind == CreditCardReminderKind.OVERDUE
+            val dateText = reminder.targetDate.format(dateFormat)
+            val subtitle = when (reminder.kind) {
+                CreditCardReminderKind.OVERDUE ->
+                    "${stringResource(R.string.card_due_on, dateText)} · ${stringResource(R.string.card_overdue, reminder.daysDiff)}"
+                CreditCardReminderKind.PAYMENT_DUE -> {
+                    val leftText = if (reminder.daysDiff == 0) stringResource(R.string.card_due_today)
+                    else stringResource(R.string.card_due_in, reminder.daysDiff)
+                    "${stringResource(R.string.card_due_on, dateText)} · $leftText"
+                }
+                CreditCardReminderKind.STATEMENT_SOON -> {
+                    if (reminder.daysDiff == 0) stringResource(R.string.card_statement_today)
+                    else "${stringResource(R.string.card_statement_on, dateText)} · ${stringResource(R.string.card_due_in, reminder.daysDiff)}"
+                }
+            }
+            val amountLabel = when (reminder.kind) {
+                CreditCardReminderKind.OVERDUE, CreditCardReminderKind.PAYMENT_DUE ->
+                    stringResource(R.string.card_remaining, CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols))
+                CreditCardReminderKind.STATEMENT_SOON ->
+                    stringResource(R.string.card_unbilled_amount, CurrencyFormatter.format(reminder.amount, reminder.currency, customSymbols))
+            }
+            Surface(
+                onClick = { onAccountClick(reminder.account.id) },
+                shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isOverdue) MaterialTheme.colorScheme.errorContainer
+                                else MaterialTheme.colorScheme.secondaryContainer
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CreditCard,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer
+                            else MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = reminder.account.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Text(
+                        text = amountLabel,
+                        style = MaterialTheme.typography.labelLarge.tabular(),
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isOverdue) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

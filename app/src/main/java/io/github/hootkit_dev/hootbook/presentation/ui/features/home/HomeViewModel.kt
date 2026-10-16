@@ -55,7 +55,14 @@ class HomeViewModel @Inject constructor(
     }
 
     private suspend fun query(core: HootKitCoreInterface, today: JavaDate, display: String?, hidden: Set<HomeWidget>): HomeUiState {
-        val overview = core.accounts().use { it.overview() }
+        val (overview, cardStatuses) = core.accounts().use { api ->
+            val ov = api.overview()
+            val statuses = ov.accounts
+                .filter { !it.archived && it.kind == AccountKind.CREDIT_CARD }
+                .mapNotNull { card -> runCatching { api.cardStatus(card.id, today.coreDate()) }.getOrNull()?.let { card.id to it } }
+                .toMap()
+            ov to statuses
+        }
         val connections = core.brokerage().use { it.connections() }
         val pendingConflictCount = runCatching {
             core.sync().use { sync -> sync.conflicts().count { it.pending } }
@@ -121,6 +128,7 @@ class HomeViewModel @Inject constructor(
             displayNetWorth = netWorth, recentConversions = conversions, availableCurrencies = currencies,
             loading = false, displayTotals = totals, customSymbols = symbols,
             pendingConflictCount = pendingConflictCount, pendingAiReview = pendingAiReview,
+            cardStatuses = cardStatuses,
         )
     }
 

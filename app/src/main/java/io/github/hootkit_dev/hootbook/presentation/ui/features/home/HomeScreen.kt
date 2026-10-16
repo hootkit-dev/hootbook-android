@@ -282,7 +282,26 @@ fun SharedTransitionScope.HomeScreen(
                                     item(key = "account_overview") {
                                         AccountCategoryList(
                                             uiState.overview, openCategory, connections = uiState.connections,
+                                            cardStatuses = uiState.cardStatuses,
                                             modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem()
+                                        )
+                                    }
+                                }
+                                val cardReminders = buildCreditCardReminders(
+                                    accounts = uiState.overview?.accounts.orEmpty(),
+                                    cardStatuses = uiState.cardStatuses,
+                                )
+                                if (cardReminders.isNotEmpty()) {
+                                    item(key = "credit_card_reminders") {
+                                        CreditCardRemindersCard(
+                                            reminders = cardReminders,
+                                            customSymbols = uiState.customSymbols,
+                                            onAccountClick = { id ->
+                                                navController.safeNavigate(
+                                                    io.github.hootkit_dev.hootbook.presentation.navigation.AccountDetail(id)
+                                                )
+                                            },
+                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content).animateItem(),
                                         )
                                     }
                                 }

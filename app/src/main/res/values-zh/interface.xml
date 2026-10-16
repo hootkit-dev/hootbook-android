@@ -196,9 +196,13 @@
     <string name="card_due_in">还有 %1$d 天</string>
     <string name="card_statement_amount">本期账单</string>
     <string name="card_paid">已还清</string>
+    <string name="card_mark_paid">标为已还清</string>
     <string name="card_remaining">还需还 %1$s</string>
     <string name="card_next_statement">下期账单日</string>
     <string name="card_due_on">%1$s 还款</string>
+    <string name="card_statement_on">%1$s 出账</string>
+    <string name="card_statement_today">今天出账</string>
+    <string name="card_unbilled_amount">未出账 %1$s</string>
     <string name="home_cards_due">%1$d 个账户，%2$s还款</string>
     <string name="cycle_unit_day">天</string>
     <string name="cycle_unit_week">周</string>

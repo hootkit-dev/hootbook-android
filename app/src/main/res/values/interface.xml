@@ -205,9 +205,13 @@
     <string name="card_due_in">%1$d days left</string>
     <string name="card_statement_amount">Statement balance</string>
     <string name="card_paid">Paid in full</string>
+    <string name="card_mark_paid">Mark as paid</string>
     <string name="card_remaining">%1$s to pay</string>
     <string name="card_next_statement">Next statement</string>
     <string name="card_due_on">Due %1$s</string>
+    <string name="card_statement_on">Statement %1$s</string>
+    <string name="card_statement_today">Statement today</string>
+    <string name="card_unbilled_amount">Unbilled %1$s</string>
     <string name="home_cards_due">%1$d accounts, due %2$s</string>
     <string name="cycle_unit_day">days</string>
     <string name="cycle_unit_week">weeks</string>

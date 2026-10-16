@@ -185,7 +185,15 @@ fun SharedTransitionScope.AccountDetailScreen(
                     uiState.account?.let { account ->
                         Column(Modifier.padding(horizontal = Dimensions.Padding.content), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             AccountCard(account, onBalanceClick = { showCalibration = true })
-                            if (account.kind == AccountKind.CREDIT_CARD) CardBillPanel(uiState.cardStatus, account.mainCurrency) { showEdit = true }
+                            if (account.kind == AccountKind.CREDIT_CARD) {
+                                CardBillPanel(
+                                    status = uiState.cardStatus,
+                                    currency = account.mainCurrency,
+                                    saving = uiState.saving,
+                                    onSetDates = { showEdit = true },
+                                    onMarkPaid = accountDetailViewModel::markStatementPaid,
+                                )
+                            }
                             account.securities?.let { securities ->
                                 Text(stringResource(R.string.core_full_securities, CoreMoneyPresentation.formatCurrency(securities.amount, securities.currency)), style = MaterialTheme.typography.bodyMedium)
                             }
@@ -618,7 +626,13 @@ fun DateRange.getLocalizedLabel(): String {
 }
 
 @Composable
-private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () -> Unit) {
+private fun CardBillPanel(
+    status: CardStatus?,
+    currency: String,
+    saving: Boolean = false,
+    onSetDates: () -> Unit,
+    onMarkPaid: () -> Unit = {},
+) {
     val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val dateFormat = remember(locale) {
         java.time.format.DateTimeFormatter.ofPattern(if (locale.language == "zh") "M月d日" else "MMM d", locale)
@@ -640,6 +654,7 @@ private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () 
             daysLeft == 0L -> stringResource(R.string.card_due_today)
             else -> stringResource(R.string.card_due_in, daysLeft.toInt())
         }
+        val canMarkPaid = status.statementDate != null && status.outstanding != null && status.outstanding!!.signum() > 0
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -675,6 +690,20 @@ private fun CardBillPanel(status: CardStatus?, currency: String, onSetDates: () 
                     style = MaterialTheme.typography.bodySmall,
                     color = if (status.overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (canMarkPaid) {
+                    Spacer(Modifier.height(6.dp))
+                    FilledTonalButton(
+                        onClick = onMarkPaid,
+                        enabled = !saving,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(30.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.card_mark_paid),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
             }
         }
     }

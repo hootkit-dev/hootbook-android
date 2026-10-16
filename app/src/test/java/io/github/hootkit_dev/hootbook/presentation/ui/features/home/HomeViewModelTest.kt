@@ -143,6 +143,40 @@ class HomeViewModelTest {
         } finally { store.clear(); Dispatchers.resetMain() }
     }
 
+    @Test fun buildCreditCardRemindersCoversOverdueDueAndStatementSoon() {
+        val now = LocalDateTime(2026, 10u, 16u, 9u, 0u, 0u, 0u)
+        fun card(id: String, name: String, balance: String, statementDay: UByte?, dueDay: UByte?) = Account(
+            id = id, name = name, last4 = "1008", kind = AccountKind.CREDIT_CARD, mainCurrency = "USD",
+            pockets = listOf(Pocket("USD", BigDecimal(balance), null, null, null)),
+            total = Money(BigDecimal(balance), "USD"), totalComplete = true, securities = null, broker = null,
+            creditLimit = null, statementDay = statementDay, dueDay = dueDay, institutionKey = "amex",
+            icon = "type_finance_bank", color = "#33B5E5", archived = false, isDefault = false, sortOrder = 0, createdAt = now,
+        )
+        val overdueCard = card("c1", "AMEX HILTON", "294.94", 31u, 15u)
+        val dueSoonCard = card("c2", "Chase Sapphire", "120.00", 5u, 20u)
+        val statementSoonCard = card("c3", "Citi Premier", "88.00", 18u, 5u)
+        val settledFarCard = card("c4", "AMEX Settled", "294.94", 31u, 15u)
+        val statuses = mapOf(
+            "c1" to CardStatus("c1", "USD", LocalDate(2026, 9u, 30u), LocalDate(2026, 10u, 15u), BigDecimal("489.09"), BigDecimal.ZERO, BigDecimal("489.09"), true),
+            "c2" to CardStatus("c2", "USD", LocalDate(2026, 10u, 5u), LocalDate(2026, 10u, 20u), BigDecimal("120.00"), BigDecimal.ZERO, BigDecimal("120.00"), false),
+            "c3" to CardStatus("c3", "USD", LocalDate(2026, 10u, 18u), LocalDate(2026, 11u, 5u), null, null, null, false),
+            "c4" to CardStatus("c4", "USD", LocalDate(2026, 10u, 31u), LocalDate(2026, 11u, 15u), null, null, null, false),
+        )
+        val reminders = buildCreditCardReminders(
+            accounts = listOf(settledFarCard, statementSoonCard, dueSoonCard, overdueCard),
+            cardStatuses = statuses,
+            today = JavaDate.of(2026, 10, 16),
+        )
+        assertEquals(listOf("c1", "c2", "c3"), reminders.map { it.account.id })
+        assertEquals(CreditCardReminderKind.OVERDUE, reminders[0].kind)
+        assertEquals(BigDecimal("489.09"), reminders[0].amount)
+        assertEquals(1, reminders[0].daysDiff)
+        assertEquals(CreditCardReminderKind.PAYMENT_DUE, reminders[1].kind)
+        assertEquals(4, reminders[1].daysDiff)
+        assertEquals(CreditCardReminderKind.STATEMENT_SOON, reminders[2].kind)
+        assertEquals(2, reminders[2].daysDiff)
+    }
+
 }
 
 /** Complete generated service overrides for the production widget path; no native calls in JVM. */
@@ -166,7 +200,7 @@ private class WidgetCore:HootKitCore(NoPointer){
     var connections = emptyList<BrokerageConnection>()
     override fun brokerage(): Brokerage {opened++;return object:Brokerage(NoPointer){override suspend fun connections()=this@WidgetCore.connections;private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun categories(): Categories {opened++;return object:Categories(NoPointer){override suspend fun list(kind:CategoryKind?,includeHidden:Boolean)=listOf(category);private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
-    override fun accounts():Accounts {opened++;return object:Accounts(NoPointer){override suspend fun overview():AccountsOverview { if (overviewError) error("Overview failed"); return this@WidgetCore.overview };private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
+    override fun accounts():Accounts {opened++;return object:Accounts(NoPointer){override suspend fun overview():AccountsOverview { if (overviewError) error("Overview failed"); return this@WidgetCore.overview };override suspend fun cardStatus(accountId:String,today:LocalDate):CardStatus?=null;private var released=false;override fun destroy(){if(!released){released=true;destroyed++};super.destroy()}}}
     override fun ledger():Ledger {opened++;return object:Ledger(NoPointer){
         override suspend fun summary(filter:TransactionFilter):LedgerSummary {summaryFilters += filter;return this@WidgetCore.summary}
         override suspend fun list(filter:TransactionFilter,page:PageRequest):TransactionPage=if(filter.from==null){recentReads++;TransactionPage(listOf(transaction),1u)}else{dailyReads++;TransactionPage(emptyList(),3u)}

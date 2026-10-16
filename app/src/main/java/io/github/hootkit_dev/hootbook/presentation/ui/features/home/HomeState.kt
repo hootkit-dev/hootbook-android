@@ -26,6 +26,7 @@ data class HomeUiState(
     val customSymbols: Map<String, String> = emptyMap(),
     val pendingConflictCount: Int = 0,
     val pendingAiReview: AiPendingReview? = null,
+    val cardStatuses: Map<String, CardStatus> = emptyMap(),
     val submitting: Boolean = false,
 ) {
     val displayCurrency: String get() = displayNetWorth?.currency ?: overview?.netWorth?.currency.orEmpty()
