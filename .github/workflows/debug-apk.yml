@@ -169,7 +169,7 @@ jobs:
             dist/debug/*.apk
             dist/debug/SHA256SUMS
             dist/debug/SIGNING-CERTIFICATE.json
-          retention-days: 14
+          retention-days: 3
 
       - name: Drop previous debug assets
         if: github.ref == 'refs/heads/main'

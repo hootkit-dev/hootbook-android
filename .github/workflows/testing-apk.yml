@@ -146,7 +146,7 @@ jobs:
         with:
           name: Hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-arm64-v8a
           path: dist/testing/*arm64-v8a.apk
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload universal APK artifact
         if: hashFiles('dist/testing/*universal.apk') != ''
@@ -154,7 +154,7 @@ jobs:
         with:
           name: Hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-universal
           path: dist/testing/*universal.apk
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload armeabi-v7a APK artifact
         if: hashFiles('dist/testing/*armeabi-v7a.apk') != ''
@@ -162,7 +162,7 @@ jobs:
         with:
           name: Hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-armeabi-v7a
           path: dist/testing/*armeabi-v7a.apk
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload x86_64 APK artifact
         if: hashFiles('dist/testing/*x86_64.apk') != ''
@@ -170,7 +170,7 @@ jobs:
         with:
           name: Hootbook-testing-c${{ steps.version.outputs.commit_count }}-${{ steps.version.outputs.short_sha }}-x86_64
           path: dist/testing/*x86_64.apk
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload all APKs bundle
         uses: actions/upload-artifact@v4
@@ -179,7 +179,7 @@ jobs:
           path: |
             dist/testing/*.apk
             dist/testing/SHA256SUMS
-          retention-days: 14
+          retention-days: 3
 
       - name: Drop previous testing assets
         env:
