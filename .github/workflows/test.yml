@@ -46,7 +46,7 @@ jobs:
             core-platform/build/reports/lint-results-debug.html
             core-platform/build/outputs/apk/androidTest/debug/
             core-bindings/build/outputs/aar/
-          retention-days: 7
+          retention-days: 3
   app-tests:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -111,4 +111,4 @@ jobs:
             app/build/test-results/testStandardDebugUnitTest/
             app/build/reports/lint-results-standardDebug.html
             app/build/outputs/apk/androidTest/standard/debug/
-          retention-days: 7
+          retention-days: 3

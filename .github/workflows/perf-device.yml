@@ -125,7 +125,7 @@ jobs:
         with:
           name: apk-candidate
           path: apks/
-          retention-days: 14
+          retention-days: 3
 
   base:
     if: inputs.mode != 'profile'
@@ -228,7 +228,7 @@ jobs:
         with:
           name: apk-base
           path: apks/base.apk
-          retention-days: 14
+          retention-days: 3
 
   device:
     needs: [candidate, base]
@@ -355,7 +355,7 @@ jobs:
             out/
             device-run.txt
             report.md
-          retention-days: 14
+          retention-days: 3
 
   profile:
     if: inputs.mode == 'profile'
@@ -462,4 +462,4 @@ jobs:
           path: |
             profile/
             device-run.txt
-          retention-days: 14
+          retention-days: 3
